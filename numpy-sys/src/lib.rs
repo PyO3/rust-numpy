@@ -1,8 +1,8 @@
 
 extern crate libc;
-extern crate cpython;
+extern crate python3_sys as pyffi;
 
-use cpython::_detail::ffi::*;
+use pyffi::*;
 use libc::FILE;
 
 pub type npy_intp = Py_intptr_t;

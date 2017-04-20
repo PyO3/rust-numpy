@@ -5,4 +5,4 @@ authors = ["Toshiki Teramura <toshiki.teramura@gmail.com>"]
 
 [dependencies]
 libc = "*"
-cpython = "*"
+python3-sys = "*"
