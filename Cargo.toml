@@ -2,3 +2,8 @@
 name = "numpy"
 version = "0.1.0"
 authors = ["Toshiki Teramura <toshiki.teramura@gmail.com>"]
+
+[dependencies.numpy-sys]
+version = "0.1.0"
+path = "numpy-sys"
+
