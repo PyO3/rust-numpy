@@ -1,3 +1,5 @@
+#![allow(non_camel_case_types)]
+// FIXME ^ should be removed
 
 extern crate libc;
 extern crate python3_sys as pyffi;
