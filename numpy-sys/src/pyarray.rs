@@ -57,6 +57,20 @@ pub struct PyArray_Chunk {
 }
 
 #[repr(C)]
+#[derive(Clone, Copy)]
+pub struct PyArrayInterface {
+    pub two: ::std::os::raw::c_int,
+    pub nd: ::std::os::raw::c_int,
+    pub typekind: ::std::os::raw::c_char,
+    pub itemsize: ::std::os::raw::c_int,
+    pub flags: ::std::os::raw::c_int,
+    pub shape: *mut npy_intp,
+    pub strides: *mut npy_intp,
+    pub data: *mut ::std::os::raw::c_void,
+    pub descr: *mut PyObject,
+}
+
+#[repr(C)]
 #[derive(Copy, Clone)]
 pub struct PyArray_Descr {
     pub ob_base: PyObject,
