@@ -93,6 +93,14 @@ pub struct PyArray_Descr {
 pub struct PyMemberDef([u8; 0]);
 
 #[repr(C)]
+#[derive(Clone, Copy)]
+pub struct PyAsyncMethods {
+    pub am_await: unaryfunc,
+    pub am_aiter: unaryfunc,
+    pub am_anext: unaryfunc,
+}
+
+#[repr(C)]
 #[derive(Copy, Clone)]
 pub struct PyTypeObject {
     pub ob_base: PyVarObject,
@@ -143,6 +151,47 @@ pub struct PyTypeObject {
     pub tp_del: destructor,
     pub tp_version_tag: ::std::os::raw::c_uint,
     pub tp_finalize: destructor,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct PyNumberMethods {
+    pub nb_add: binaryfunc,
+    pub nb_subtract: binaryfunc,
+    pub nb_multiply: binaryfunc,
+    pub nb_remainder: binaryfunc,
+    pub nb_divmod: binaryfunc,
+    pub nb_power: ternaryfunc,
+    pub nb_negative: unaryfunc,
+    pub nb_positive: unaryfunc,
+    pub nb_absolute: unaryfunc,
+    pub nb_bool: inquiry,
+    pub nb_invert: unaryfunc,
+    pub nb_lshift: binaryfunc,
+    pub nb_rshift: binaryfunc,
+    pub nb_and: binaryfunc,
+    pub nb_xor: binaryfunc,
+    pub nb_or: binaryfunc,
+    pub nb_int: unaryfunc,
+    pub nb_reserved: *mut ::std::os::raw::c_void,
+    pub nb_float: unaryfunc,
+    pub nb_inplace_add: binaryfunc,
+    pub nb_inplace_subtract: binaryfunc,
+    pub nb_inplace_multiply: binaryfunc,
+    pub nb_inplace_remainder: binaryfunc,
+    pub nb_inplace_power: ternaryfunc,
+    pub nb_inplace_lshift: binaryfunc,
+    pub nb_inplace_rshift: binaryfunc,
+    pub nb_inplace_and: binaryfunc,
+    pub nb_inplace_xor: binaryfunc,
+    pub nb_inplace_or: binaryfunc,
+    pub nb_floor_divide: binaryfunc,
+    pub nb_true_divide: binaryfunc,
+    pub nb_inplace_floor_divide: binaryfunc,
+    pub nb_inplace_true_divide: binaryfunc,
+    pub nb_index: unaryfunc,
+    pub nb_matrix_multiply: binaryfunc,
+    pub nb_inplace_matrix_multiply: binaryfunc,
 }
 
 #[repr(C)]
