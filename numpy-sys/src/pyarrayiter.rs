@@ -30,3 +30,15 @@ pub struct PyArrayIterObject {
     pub limits_sizes: [npy_intp; 32usize],
     pub translate: npy_iter_get_dataptr_t,
 }
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct PyArrayMultiIterObject {
+    pub ob_base: PyObject,
+    pub numiter: ::std::os::raw::c_int,
+    pub size: npy_intp,
+    pub index: npy_intp,
+    pub nd: ::std::os::raw::c_int,
+    pub dimensions: [npy_intp; 32usize],
+    pub iters: [*mut PyArrayIterObject; 32usize],
+}
