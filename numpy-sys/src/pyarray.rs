@@ -1,11 +1,8 @@
 #![allow(non_camel_case_types)]
-// FIXME ^ should be removed
 
 use pyffi::*;
 use libc::FILE;
-
-pub type npy_intp = Py_intptr_t;
-pub type npy_hash_t = Py_hash_t;
+use super::types::*;
 
 #[repr(u32)]
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]

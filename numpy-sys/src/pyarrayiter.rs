@@ -2,6 +2,7 @@
 // FIXME ^ should be removed
 
 use pyffi::*;
+use super::types::*;
 use super::pyarray::*;
 
 pub type npy_bool = ::std::os::raw::c_uchar;
