@@ -32,6 +32,31 @@ pub struct PyMethodDef {
 }
 
 #[repr(C)]
+#[derive(Clone, Copy)]
+pub struct PyArrayFlagsObject {
+    pub ob_base: PyObject,
+    pub arr: *mut PyObject,
+    pub flags: ::std::os::raw::c_int,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct PyArray_Dims {
+    pub ptr: *mut npy_intp,
+    pub len: ::std::os::raw::c_int,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct PyArray_Chunk {
+    pub ob_base: PyObject,
+    pub base: *mut PyObject,
+    pub ptr: *mut ::std::os::raw::c_void,
+    pub len: npy_intp,
+    pub flags: ::std::os::raw::c_int,
+}
+
+#[repr(C)]
 #[derive(Copy, Clone)]
 pub struct PyArray_Descr {
     pub ob_base: PyObject,
