@@ -5,7 +5,6 @@ use pyffi::*;
 use super::types::*;
 use super::array::*;
 
-pub type npy_bool = ::std::os::raw::c_uchar;
 pub type npy_iter_get_dataptr_t =
     ::std::option::Option<unsafe extern "C" fn(iter: *mut PyArrayIterObject,
                                                  arg1: *mut npy_intp)
