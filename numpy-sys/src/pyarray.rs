@@ -159,11 +159,9 @@ pub struct PyArray_ArrFuncs {
     pub argmin: PyArray_ArgFunc,
 }
 
-pub type NpyAuxData = NpyAuxData_tag;
-
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub struct NpyAuxData_tag {
+pub struct NpyAuxData {
     pub free: NpyAuxData_FreeFunc,
     pub clone: NpyAuxData_CloneFunc,
     pub reserved: [*mut ::std::os::raw::c_void; 2usize],
@@ -299,4 +297,4 @@ pub type PyArray_FastTakeFunc =
                                                  -> ::std::os::raw::c_int>;
 pub type NpyAuxData_FreeFunc = ::std::option::Option<unsafe extern "C" fn(arg1: *mut NpyAuxData)>;
 pub type NpyAuxData_CloneFunc =
-    ::std::option::Option<unsafe extern "C" fn(arg1: *mut NpyAuxData) -> *mut NpyAuxData_tag>;
+    ::std::option::Option<unsafe extern "C" fn(arg1: *mut NpyAuxData) -> *mut NpyAuxData>;
