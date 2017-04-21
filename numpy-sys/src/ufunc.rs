@@ -2,10 +2,8 @@
 // FIXME ^ should be removed
 
 use pyffi::*;
-use super::pyarray::*;
-
-pub type npy_intp = Py_intptr_t;
-pub type npy_uint32 = ::std::os::raw::c_uint;
+use super::types::*;
+use super::array::*;
 
 #[repr(u32)]
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
