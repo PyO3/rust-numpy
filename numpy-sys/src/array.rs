@@ -1,7 +1,7 @@
 #![allow(non_camel_case_types)]
 
-use pyffi::*;
 use libc::FILE;
+use pyffi::*;
 use super::types::*;
 
 #[repr(u32)]
@@ -17,15 +17,6 @@ pub enum NPY_CLIPMODE {
 pub struct _object {
     pub ob_refcnt: Py_ssize_t,
     pub ob_type: *mut PyTypeObject,
-}
-
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct PyMethodDef {
-    pub ml_name: *const ::std::os::raw::c_char,
-    pub ml_meth: PyCFunction,
-    pub ml_flags: ::std::os::raw::c_int,
-    pub ml_doc: *const ::std::os::raw::c_char,
 }
 
 #[repr(C)]
@@ -90,112 +81,6 @@ pub struct PyArray_Descr {
 
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub struct PyMemberDef([u8; 0]);
-
-#[repr(C)]
-#[derive(Clone, Copy)]
-pub struct PyAsyncMethods {
-    pub am_await: unaryfunc,
-    pub am_aiter: unaryfunc,
-    pub am_anext: unaryfunc,
-}
-
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct PyTypeObject {
-    pub ob_base: PyVarObject,
-    pub tp_name: *const ::std::os::raw::c_char,
-    pub tp_basicsize: Py_ssize_t,
-    pub tp_itemsize: Py_ssize_t,
-    pub tp_dealloc: destructor,
-    pub tp_print: printfunc,
-    pub tp_getattr: getattrfunc,
-    pub tp_setattr: setattrfunc,
-    pub tp_as_async: *mut PyAsyncMethods,
-    pub tp_repr: reprfunc,
-    pub tp_as_number: *mut PyNumberMethods,
-    pub tp_as_sequence: *mut PySequenceMethods,
-    pub tp_as_mapping: *mut PyMappingMethods,
-    pub tp_hash: hashfunc,
-    pub tp_call: ternaryfunc,
-    pub tp_str: reprfunc,
-    pub tp_getattro: getattrofunc,
-    pub tp_setattro: setattrofunc,
-    pub tp_as_buffer: *mut PyBufferProcs,
-    pub tp_flags: ::std::os::raw::c_ulong,
-    pub tp_doc: *const ::std::os::raw::c_char,
-    pub tp_traverse: traverseproc,
-    pub tp_clear: inquiry,
-    pub tp_richcompare: richcmpfunc,
-    pub tp_weaklistoffset: Py_ssize_t,
-    pub tp_iter: getiterfunc,
-    pub tp_iternext: iternextfunc,
-    pub tp_methods: *mut PyMethodDef,
-    pub tp_members: *mut PyMemberDef,
-    pub tp_getset: *mut PyGetSetDef,
-    pub tp_base: *mut PyTypeObject,
-    pub tp_dict: *mut PyObject,
-    pub tp_descr_get: descrgetfunc,
-    pub tp_descr_set: descrsetfunc,
-    pub tp_dictoffset: Py_ssize_t,
-    pub tp_init: initproc,
-    pub tp_alloc: allocfunc,
-    pub tp_new: newfunc,
-    pub tp_free: freefunc,
-    pub tp_is_gc: inquiry,
-    pub tp_bases: *mut PyObject,
-    pub tp_mro: *mut PyObject,
-    pub tp_cache: *mut PyObject,
-    pub tp_subclasses: *mut PyObject,
-    pub tp_weaklist: *mut PyObject,
-    pub tp_del: destructor,
-    pub tp_version_tag: ::std::os::raw::c_uint,
-    pub tp_finalize: destructor,
-}
-
-#[repr(C)]
-#[derive(Clone, Copy)]
-pub struct PyNumberMethods {
-    pub nb_add: binaryfunc,
-    pub nb_subtract: binaryfunc,
-    pub nb_multiply: binaryfunc,
-    pub nb_remainder: binaryfunc,
-    pub nb_divmod: binaryfunc,
-    pub nb_power: ternaryfunc,
-    pub nb_negative: unaryfunc,
-    pub nb_positive: unaryfunc,
-    pub nb_absolute: unaryfunc,
-    pub nb_bool: inquiry,
-    pub nb_invert: unaryfunc,
-    pub nb_lshift: binaryfunc,
-    pub nb_rshift: binaryfunc,
-    pub nb_and: binaryfunc,
-    pub nb_xor: binaryfunc,
-    pub nb_or: binaryfunc,
-    pub nb_int: unaryfunc,
-    pub nb_reserved: *mut ::std::os::raw::c_void,
-    pub nb_float: unaryfunc,
-    pub nb_inplace_add: binaryfunc,
-    pub nb_inplace_subtract: binaryfunc,
-    pub nb_inplace_multiply: binaryfunc,
-    pub nb_inplace_remainder: binaryfunc,
-    pub nb_inplace_power: ternaryfunc,
-    pub nb_inplace_lshift: binaryfunc,
-    pub nb_inplace_rshift: binaryfunc,
-    pub nb_inplace_and: binaryfunc,
-    pub nb_inplace_xor: binaryfunc,
-    pub nb_inplace_or: binaryfunc,
-    pub nb_floor_divide: binaryfunc,
-    pub nb_true_divide: binaryfunc,
-    pub nb_inplace_floor_divide: binaryfunc,
-    pub nb_inplace_true_divide: binaryfunc,
-    pub nb_index: unaryfunc,
-    pub nb_matrix_multiply: binaryfunc,
-    pub nb_inplace_matrix_multiply: binaryfunc,
-}
-
-#[repr(C)]
-#[derive(Copy, Clone)]
 pub struct PyArrayObject {
     pub ob_base: PyObject,
     pub data: *mut ::std::os::raw::c_char,
@@ -207,7 +92,6 @@ pub struct PyArrayObject {
     pub flags: ::std::os::raw::c_int,
     pub weakreflist: *mut PyObject,
 }
-
 
 #[repr(C)]
 #[derive(Copy, Clone)]

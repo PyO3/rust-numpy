@@ -1,6 +1,6 @@
 #![allow(non_camel_case_types)]
 
-use pyffi::*;
+use pyffi::{Py_intptr_t, Py_uintptr_t, Py_hash_t};
 
 pub type npy_intp = Py_intptr_t;
 pub type npy_uintp = Py_uintptr_t;
