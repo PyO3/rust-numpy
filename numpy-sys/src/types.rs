@@ -59,3 +59,105 @@ pub struct npy_clongdouble {
     pub real: npy_longdouble,
     pub imag: npy_longdouble,
 }
+
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum NPY_ORDER {
+    NPY_ANYORDER = -1,
+    NPY_CORDER = 0,
+    NPY_FORTRANORDER = 1,
+    NPY_KEEPORDER = 2,
+}
+
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum NPY_SCALARKIND {
+    NPY_NOSCALAR = -1,
+    NPY_BOOL_SCALAR = 0,
+    NPY_INTPOS_SCALAR = 1,
+    NPY_INTNEG_SCALAR = 2,
+    NPY_FLOAT_SCALAR = 3,
+    NPY_COMPLEX_SCALAR = 4,
+    NPY_OBJECT_SCALAR = 5,
+}
+
+#[repr(u32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum NPY_SORTKIND {
+    NPY_QUICKSORT = 0,
+    NPY_HEAPSORT = 1,
+    NPY_MERGESORT = 2,
+}
+
+#[repr(u32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum NPY_SEARCHSIDE {
+    NPY_SEARCHLEFT = 0,
+    NPY_SEARCHRIGHT = 1,
+}
+
+#[repr(u32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum NPY_DATETIMEUNIT {
+    NPY_FR_Y = 0,
+    NPY_FR_M = 1,
+    NPY_FR_W = 2,
+    NPY_FR_D = 4,
+    NPY_FR_h = 5,
+    NPY_FR_m = 6,
+    NPY_FR_s = 7,
+    NPY_FR_ms = 8,
+    NPY_FR_us = 9,
+    NPY_FR_ns = 10,
+    NPY_FR_ps = 11,
+    NPY_FR_fs = 12,
+    NPY_FR_as = 13,
+    NPY_FR_GENERIC = 14,
+}
+
+#[repr(u32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum NPY_SELECTKIND {
+    NPY_INTROSELECT = 0,
+}
+
+#[repr(u32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum NPY_CASTING {
+    NPY_NO_CASTING = 0,
+    NPY_EQUIV_CASTING = 1,
+    NPY_SAFE_CASTING = 2,
+    NPY_SAME_KIND_CASTING = 3,
+    NPY_UNSAFE_CASTING = 4,
+}
+
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct npy_datetimestruct {
+    pub year: npy_int64,
+    pub month: npy_int32,
+    pub day: npy_int32,
+    pub hour: npy_int32,
+    pub min: npy_int32,
+    pub sec: npy_int32,
+    pub us: npy_int32,
+    pub ps: npy_int32,
+    pub as_: npy_int32,
+}
+
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct npy_timedeltastruct {
+    pub day: npy_int64,
+    pub sec: npy_int32,
+    pub us: npy_int32,
+    pub ps: npy_int32,
+    pub as_: npy_int32,
+}
+
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct npy_stride_sort_item {
+    pub perm: npy_intp,
+    pub stride: npy_intp,
+}

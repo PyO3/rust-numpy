@@ -6,3 +6,4 @@ pub mod types;
 pub mod array;
 pub mod arrayiter;
 pub mod ufunc;
+pub mod multiarray;
