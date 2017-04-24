@@ -13,13 +13,6 @@ pub enum NPY_CLIPMODE {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone)]
-pub struct _object {
-    pub ob_refcnt: Py_ssize_t,
-    pub ob_type: *mut PyTypeObject,
-}
-
-#[repr(C)]
 #[derive(Clone, Copy)]
 pub struct PyArrayFlagsObject {
     pub ob_base: PyObject,
@@ -70,7 +63,7 @@ pub struct PyArray_Descr {
     pub type_num: ::std::os::raw::c_int,
     pub elsize: ::std::os::raw::c_int,
     pub alignment: ::std::os::raw::c_int,
-    pub subarray: *mut _PyArray_Descr__arr_descr,
+    pub subarray: *mut PyArrray_ArrayDescr,
     pub fields: *mut PyObject,
     pub names: *mut PyObject,
     pub f: *mut PyArray_ArrFuncs,
@@ -95,7 +88,7 @@ pub struct PyArrayObject {
 
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub struct _PyArray_Descr__arr_descr {
+pub struct PyArrray_ArrayDescr {
     pub base: *mut PyArray_Descr,
     pub shape: *mut PyObject,
 }
@@ -140,7 +133,7 @@ pub struct NpyAuxData {
 pub type PyArray_GetItemFunc =
     ::std::option::Option<unsafe extern "C" fn(arg1: *mut ::std::os::raw::c_void,
                                                  arg2: *mut ::std::os::raw::c_void)
-                                                 -> *mut _object>;
+                                                 -> *mut PyObject>;
 pub type PyArray_SetItemFunc =
     ::std::option::Option<unsafe extern "C" fn(arg1: *mut PyObject,
                                                  arg2: *mut ::std::os::raw::c_void,
