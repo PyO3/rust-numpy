@@ -5,16 +5,6 @@ use pyffi::*;
 use super::types::*;
 use super::array::*;
 
-#[repr(u32)]
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
-pub enum NPY_CASTING {
-    NPY_NO_CASTING = 0,
-    NPY_EQUIV_CASTING = 1,
-    NPY_SAFE_CASTING = 2,
-    NPY_SAME_KIND_CASTING = 3,
-    NPY_UNSAFE_CASTING = 4,
-}
-
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct PyUFuncObject {
