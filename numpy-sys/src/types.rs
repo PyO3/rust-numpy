@@ -131,6 +131,14 @@ pub enum NPY_CASTING {
     NPY_UNSAFE_CASTING = 4,
 }
 
+#[repr(u32)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+pub enum NPY_CLIPMODE {
+    NPY_CLIP = 0,
+    NPY_WRAP = 1,
+    NPY_RAISE = 2,
+}
+
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct npy_datetimestruct {

@@ -493,8 +493,6 @@ extern "C" {
                                     dims: *mut npy_intp,
                                     nd: ::std::os::raw::c_int)
                                     -> *mut PyObject;
-    pub fn _PyArray_SigintHandler(signum: ::std::os::raw::c_int);
-    pub fn _PyArray_GetSigintBuf() -> *mut ::std::os::raw::c_void;
     pub fn PyArray_DescrAlignConverter(obj: *mut PyObject,
                                        at: *mut *mut PyArray_Descr)
                                        -> ::std::os::raw::c_int;

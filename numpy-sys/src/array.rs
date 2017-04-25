@@ -4,14 +4,6 @@ use libc::FILE;
 use pyffi::*;
 use super::types::*;
 
-#[repr(u32)]
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
-pub enum NPY_CLIPMODE {
-    NPY_CLIP = 0,
-    NPY_WRAP = 1,
-    NPY_RAISE = 2,
-}
-
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct PyArrayFlagsObject {
