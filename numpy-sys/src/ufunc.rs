@@ -66,20 +66,18 @@ pub type PyUFunc_TypeResolutionFunc = Option<unsafe extern "C" fn(ufunc: *mut Py
                                                                   type_tup: *mut PyObject,
                                                                   out_dtypes: *mut *mut PyArray_Descr)
                                                                   -> c_int>;
-pub type PyUFunc_LegacyInnerLoopSelectionFunc =
-    Option<unsafe extern "C" fn(ufunc: *mut PyUFuncObject,
-                                dtypes: *mut *mut PyArray_Descr,
-                                out_innerloop: *mut PyUFuncGenericFunction,
-                                out_innerloopdata: *mut *mut c_void,
-                                out_needs_api: *mut c_int)
-                                -> c_int>;
-pub type PyUFunc_MaskedInnerLoopSelectionFunc =
-    Option<unsafe extern "C" fn(ufunc: *mut PyUFuncObject,
-                                dtypes: *mut *mut PyArray_Descr,
-                                mask_dtype: *mut PyArray_Descr,
-                                fixed_strides: *mut npy_intp,
-                                fixed_mask_stride: npy_intp,
-                                out_innerloop: *mut PyUFunc_MaskedStridedInnerLoopFunc,
-                                out_innerloopdata: *mut *mut NpyAuxData,
-                                out_needs_api: *mut c_int)
-                                -> c_int>;
+pub type PyUFunc_LegacyInnerLoopSelectionFunc = Option<unsafe extern "C" fn(ufunc: *mut PyUFuncObject,
+                                                                            dtypes: *mut *mut PyArray_Descr,
+                                                                            out_innerloop: *mut PyUFuncGenericFunction,
+                                                                            out_innerloopdata: *mut *mut c_void,
+                                                                            out_needs_api: *mut c_int)
+                                                                            -> c_int>;
+pub type PyUFunc_MaskedInnerLoopSelectionFunc = Option<unsafe extern "C" fn(ufunc: *mut PyUFuncObject,
+                                                                            dtypes: *mut *mut PyArray_Descr,
+                                                                            mask_dtype: *mut PyArray_Descr,
+                                                                            fixed_strides: *mut npy_intp,
+                                                                            fixed_mask_stride: npy_intp,
+                                                                            out_innerloop: *mut PyUFunc_MaskedStridedInnerLoopFunc,
+                                                                            out_innerloopdata: *mut *mut NpyAuxData,
+                                                                            out_needs_api: *mut c_int)
+                                                                            -> c_int>;

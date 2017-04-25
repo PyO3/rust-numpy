@@ -20,8 +20,7 @@ pub type PyDataMem_EventHookFunc = Option<unsafe extern "C" fn(inp: *mut c_void,
                                                                size: usize,
                                                                user_data: *mut c_void)>;
 
-pub type npy_iter_get_dataptr_t = Option<unsafe extern "C" fn(iter: *mut PyArrayIterObject, arg1: *mut npy_intp)
-                                                              -> *mut c_char>;
+pub type npy_iter_get_dataptr_t = Option<unsafe extern "C" fn(iter: *mut PyArrayIterObject, arg1: *mut npy_intp) -> *mut c_char>;
 
 #[repr(C)]
 #[derive(Clone, Copy)]
@@ -121,12 +120,7 @@ pub struct PyArrayMapIterObject {
 }
 
 extern "C" {
-    pub fn NpyIter_New(op: *mut PyArrayObject,
-                       flags: npy_uint32,
-                       order: NPY_ORDER,
-                       casting: NPY_CASTING,
-                       dtype: *mut PyArray_Descr)
-                       -> *mut NpyIter;
+    pub fn NpyIter_New(op: *mut PyArrayObject, flags: npy_uint32, order: NPY_ORDER, casting: NPY_CASTING, dtype: *mut PyArray_Descr) -> *mut NpyIter;
     pub fn NpyIter_MultiNew(nop: c_int,
                             op_in: *mut *mut PyArrayObject,
                             flags: npy_uint32,
@@ -155,15 +149,8 @@ extern "C" {
     pub fn NpyIter_GetInnerStrideArray(iter: *mut NpyIter) -> *mut npy_intp;
     pub fn NpyIter_GetInnerLoopSizePtr(iter: *mut NpyIter) -> *mut npy_intp;
     pub fn NpyIter_Reset(iter: *mut NpyIter, errmsg: *mut *mut c_char) -> c_int;
-    pub fn NpyIter_ResetBasePointers(iter: *mut NpyIter,
-                                     baseptrs: *mut *mut c_char,
-                                     errmsg: *mut *mut c_char)
-                                     -> c_int;
-    pub fn NpyIter_ResetToIterIndexRange(iter: *mut NpyIter,
-                                         istart: npy_intp,
-                                         iend: npy_intp,
-                                         errmsg: *mut *mut c_char)
-                                         -> c_int;
+    pub fn NpyIter_ResetBasePointers(iter: *mut NpyIter, baseptrs: *mut *mut c_char, errmsg: *mut *mut c_char) -> c_int;
+    pub fn NpyIter_ResetToIterIndexRange(iter: *mut NpyIter, istart: npy_intp, iend: npy_intp, errmsg: *mut *mut c_char) -> c_int;
     pub fn NpyIter_GetNDim(iter: *mut NpyIter) -> c_int;
     pub fn NpyIter_GetNOp(iter: *mut NpyIter) -> c_int;
     pub fn NpyIter_GetIterNext(iter: *mut NpyIter, errmsg: *mut *mut c_char) -> NpyIter_IterNextFunc;
