@@ -8,6 +8,10 @@ use std::option::Option;
 use super::types::*;
 use super::iterator::*;
 
+extern "C" {
+    pub static PyArray_API: *const *const c_void;
+}
+
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct PyArrayFlagsObject {
