@@ -81,3 +81,91 @@ pub type PyUFunc_MaskedInnerLoopSelectionFunc = Option<unsafe extern "C" fn(ufun
                                                                             out_innerloopdata: *mut *mut NpyAuxData,
                                                                             out_needs_api: *mut c_int)
                                                                             -> c_int>;
+
+extern "C" {
+    pub fn PyUFunc_FromFuncAndData(func: *mut PyUFuncGenericFunction,
+                                   data: *mut *mut c_void,
+                                   types: *mut c_char,
+                                   ntypes: c_int,
+                                   nin: c_int,
+                                   nout: c_int,
+                                   identity: c_int,
+                                   name: *const c_char,
+                                   doc: *const c_char,
+                                   unused: c_int)
+                                   -> *mut PyObject;
+    pub fn PyUFunc_RegisterLoopForType(ufunc: *mut PyUFuncObject,
+                                       usertype: c_int,
+                                       function: PyUFuncGenericFunction,
+                                       arg_types: *mut c_int,
+                                       data: *mut c_void)
+                                       -> c_int;
+    pub fn PyUFunc_GenericFunction(ufunc: *mut PyUFuncObject, args: *mut PyObject, kwds: *mut PyObject, op: *mut *mut PyArrayObject) -> c_int;
+    pub fn PyUFunc_f_f_As_d_d(args: *mut *mut c_char, dimensions: *mut npy_intp, steps: *mut npy_intp, func: *mut c_void);
+    pub fn PyUFunc_d_d(args: *mut *mut c_char, dimensions: *mut npy_intp, steps: *mut npy_intp, func: *mut c_void);
+    pub fn PyUFunc_f_f(args: *mut *mut c_char, dimensions: *mut npy_intp, steps: *mut npy_intp, func: *mut c_void);
+    pub fn PyUFunc_g_g(args: *mut *mut c_char, dimensions: *mut npy_intp, steps: *mut npy_intp, func: *mut c_void);
+    pub fn PyUFunc_F_F_As_D_D(args: *mut *mut c_char, dimensions: *mut npy_intp, steps: *mut npy_intp, func: *mut c_void);
+    pub fn PyUFunc_F_F(args: *mut *mut c_char, dimensions: *mut npy_intp, steps: *mut npy_intp, func: *mut c_void);
+    pub fn PyUFunc_D_D(args: *mut *mut c_char, dimensions: *mut npy_intp, steps: *mut npy_intp, func: *mut c_void);
+    pub fn PyUFunc_G_G(args: *mut *mut c_char, dimensions: *mut npy_intp, steps: *mut npy_intp, func: *mut c_void);
+    pub fn PyUFunc_O_O(args: *mut *mut c_char, dimensions: *mut npy_intp, steps: *mut npy_intp, func: *mut c_void);
+    pub fn PyUFunc_ff_f_As_dd_d(args: *mut *mut c_char, dimensions: *mut npy_intp, steps: *mut npy_intp, func: *mut c_void);
+    pub fn PyUFunc_ff_f(args: *mut *mut c_char, dimensions: *mut npy_intp, steps: *mut npy_intp, func: *mut c_void);
+    pub fn PyUFunc_dd_d(args: *mut *mut c_char, dimensions: *mut npy_intp, steps: *mut npy_intp, func: *mut c_void);
+    pub fn PyUFunc_gg_g(args: *mut *mut c_char, dimensions: *mut npy_intp, steps: *mut npy_intp, func: *mut c_void);
+    pub fn PyUFunc_FF_F_As_DD_D(args: *mut *mut c_char, dimensions: *mut npy_intp, steps: *mut npy_intp, func: *mut c_void);
+    pub fn PyUFunc_DD_D(args: *mut *mut c_char, dimensions: *mut npy_intp, steps: *mut npy_intp, func: *mut c_void);
+    pub fn PyUFunc_FF_F(args: *mut *mut c_char, dimensions: *mut npy_intp, steps: *mut npy_intp, func: *mut c_void);
+    pub fn PyUFunc_GG_G(args: *mut *mut c_char, dimensions: *mut npy_intp, steps: *mut npy_intp, func: *mut c_void);
+    pub fn PyUFunc_OO_O(args: *mut *mut c_char, dimensions: *mut npy_intp, steps: *mut npy_intp, func: *mut c_void);
+    pub fn PyUFunc_O_O_method(args: *mut *mut c_char, dimensions: *mut npy_intp, steps: *mut npy_intp, func: *mut c_void);
+    pub fn PyUFunc_OO_O_method(args: *mut *mut c_char, dimensions: *mut npy_intp, steps: *mut npy_intp, func: *mut c_void);
+    pub fn PyUFunc_On_Om(args: *mut *mut c_char, dimensions: *mut npy_intp, steps: *mut npy_intp, func: *mut c_void);
+    pub fn PyUFunc_GetPyValues(name: *mut c_char, bufsize: *mut c_int, errmask: *mut c_int, errobj: *mut *mut PyObject) -> c_int;
+    pub fn PyUFunc_checkfperr(errmask: c_int, errobj: *mut PyObject, first: *mut c_int) -> c_int;
+    pub fn PyUFunc_clearfperr();
+    pub fn PyUFunc_getfperr() -> c_int;
+    pub fn PyUFunc_handlefperr(errmask: c_int, errobj: *mut PyObject, retstatus: c_int, first: *mut c_int) -> c_int;
+    pub fn PyUFunc_ReplaceLoopBySignature(func: *mut PyUFuncObject,
+                                          newfunc: PyUFuncGenericFunction,
+                                          signature: *mut c_int,
+                                          oldfunc: *mut PyUFuncGenericFunction)
+                                          -> c_int;
+    pub fn PyUFunc_FromFuncAndDataAndSignature(func: *mut PyUFuncGenericFunction,
+                                               data: *mut *mut c_void,
+                                               types: *mut c_char,
+                                               ntypes: c_int,
+                                               nin: c_int,
+                                               nout: c_int,
+                                               identity: c_int,
+                                               name: *const c_char,
+                                               doc: *const c_char,
+                                               unused: c_int,
+                                               signature: *const c_char)
+                                               -> *mut PyObject;
+    pub fn PyUFunc_SetUsesArraysAsData(data: *mut *mut c_void, i: usize) -> c_int;
+    pub fn PyUFunc_e_e(args: *mut *mut c_char, dimensions: *mut npy_intp, steps: *mut npy_intp, func: *mut c_void);
+    pub fn PyUFunc_e_e_As_f_f(args: *mut *mut c_char, dimensions: *mut npy_intp, steps: *mut npy_intp, func: *mut c_void);
+    pub fn PyUFunc_e_e_As_d_d(args: *mut *mut c_char, dimensions: *mut npy_intp, steps: *mut npy_intp, func: *mut c_void);
+    pub fn PyUFunc_ee_e(args: *mut *mut c_char, dimensions: *mut npy_intp, steps: *mut npy_intp, func: *mut c_void);
+    pub fn PyUFunc_ee_e_As_ff_f(args: *mut *mut c_char, dimensions: *mut npy_intp, steps: *mut npy_intp, func: *mut c_void);
+    pub fn PyUFunc_ee_e_As_dd_d(args: *mut *mut c_char, dimensions: *mut npy_intp, steps: *mut npy_intp, func: *mut c_void);
+    pub fn PyUFunc_DefaultTypeResolver(ufunc: *mut PyUFuncObject,
+                                       casting: NPY_CASTING,
+                                       operands: *mut *mut PyArrayObject,
+                                       type_tup: *mut PyObject,
+                                       out_dtypes: *mut *mut PyArray_Descr)
+                                       -> c_int;
+    pub fn PyUFunc_ValidateCasting(ufunc: *mut PyUFuncObject,
+                                   casting: NPY_CASTING,
+                                   operands: *mut *mut PyArrayObject,
+                                   dtypes: *mut *mut PyArray_Descr)
+                                   -> c_int;
+    pub fn PyUFunc_RegisterLoopForDescr(ufunc: *mut PyUFuncObject,
+                                        user_dtype: *mut PyArray_Descr,
+                                        function: PyUFuncGenericFunction,
+                                        arg_dtypes: *mut *mut PyArray_Descr,
+                                        data: *mut c_void)
+                                        -> c_int;
+}
