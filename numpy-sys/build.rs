@@ -1,6 +1,7 @@
 
 extern crate glob;
 
+use std::fs::canonicalize;
 use std::path::PathBuf;
 use std::process::Command;
 use glob::glob;
@@ -8,7 +9,7 @@ use glob::glob;
 
 fn main() {
     let source = PathBuf::from("numpy");
-    let libpath = PathBuf::from("numpy/build/lib.linux-x86_64-3.6/numpy/core");
+    let libpath = canonicalize(PathBuf::from("numpy/build/lib.linux-x86_64-3.6/numpy/core")).unwrap();
 
     Command::new("python").args(&["setup.py", "build"]).current_dir(&source).status().expect("Failed to build numpy");
 
