@@ -11,4 +11,4 @@ libc = "0.2.21"
 python3-sys = "0.1.3"
 
 [build-dependencies]
-cpython = "*"
+glob = "*"
