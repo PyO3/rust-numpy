@@ -24,6 +24,8 @@ addons:
       - cython
       - gfortran
       - libblas-dev
+      - liblapack-dev
+      - liblapacke-dev
 
 env:
   - RUST_BACKTRACE=1
