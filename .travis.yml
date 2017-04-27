@@ -1,13 +1,9 @@
 language: rust
-sudo: required
 
 rust:
   - stable
   - beta
   - nightly
-
-os:
-  - linux
 
 cache: cargo
 
