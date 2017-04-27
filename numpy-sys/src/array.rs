@@ -8,22 +8,6 @@ use std::option::Option;
 use super::types::*;
 use super::iterator::*;
 
-extern "C" {
-    pub static PyArray_API: *const c_void;
-}
-
-macro_rules! pyarray_api {
-    [ $offset:expr; $fname:ident ( $($arg:ident : $t:ty),* ) $( -> $ret:ty )* ] => {
-
-#[allow(non_snake_case)]
-pub unsafe fn $fname($($arg : $t), *) $( -> $ret )* {
-    let api = &PyArray_API as *const *const c_void;
-    let fptr = api.offset($offset) as (*const extern fn ($($arg : $t), *) $( -> $ret )* );
-    (*fptr)($($arg), *)
-}
-
-}} // pyarray_api!
-
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct PyArrayFlagsObject {
@@ -235,6 +219,22 @@ pub type PyArray_FastTakeFunc = Option<unsafe extern "C" fn(dest: *mut c_void,
                                                             nelem: npy_intp,
                                                             clipmode: NPY_CLIPMODE)
                                                             -> c_int>;
+
+extern "C" {
+    static PyArray_API: *const c_void;
+}
+
+macro_rules! pyarray_api {
+    [ $offset:expr; $fname:ident ( $($arg:ident : $t:ty),* ) $( -> $ret:ty )* ] => {
+
+#[allow(non_snake_case)]
+pub unsafe fn $fname($($arg : $t), *) $( -> $ret )* {
+    let api = &PyArray_API as *const *const c_void;
+    let fptr = api.offset($offset) as (*const extern fn ($($arg : $t), *) $( -> $ret )* );
+    (*fptr)($($arg), *)
+}
+
+}} // pyarray_api!
 
 pyarray_api![0; PyArray_GetNDArrayCVersion() -> c_uint];
 pyarray_api![40; PyArray_SetNumericOps(dict: *mut PyObject) -> c_int];
