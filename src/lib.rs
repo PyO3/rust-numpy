@@ -1,6 +1,4 @@
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-    }
-}
+
+extern crate python3_sys as py_ffi;
+extern crate numpy_sys as np_ffi;
+extern crate cpython;
