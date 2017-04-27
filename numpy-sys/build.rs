@@ -6,8 +6,12 @@ use std::path::PathBuf;
 use std::process::Command;
 use glob::glob;
 
+fn glob1(regex: &str) -> PathBuf {
+    glob(regex).unwrap().last().unwrap().unwrap()
+}
+
 fn search_lib(libpath: &PathBuf, regex: &str) -> PathBuf {
-    glob(libpath.join(regex).to_str().unwrap()).unwrap().last().unwrap().unwrap()
+    glob1(libpath.join(regex).to_str().unwrap())
 }
 
 fn create_symlink(libpath: &PathBuf, lib: &PathBuf, name: &str) {
@@ -22,8 +26,8 @@ fn create_symlink(libpath: &PathBuf, lib: &PathBuf, name: &str) {
 
 fn main() {
     let source = PathBuf::from("numpy");
-    Command::new("python").args(&["setup.py", "build"]).current_dir(&source).status().expect("Failed to build numpy");
-    let libpath = canonicalize(PathBuf::from("numpy/build/lib.linux-x86_64-3.6/numpy/core")).unwrap();
+    Command::new("python3").args(&["setup.py", "build"]).current_dir(&source).status().expect("Failed to build numpy");
+    let libpath = canonicalize(glob1("numpy/build/lib.*/numpy/core")).unwrap();
     let multiarray = search_lib(&libpath, "multiarray.*.so");
     let umath = search_lib(&libpath, "umath.*.so");
     create_symlink(&libpath, &multiarray, "libmultiarray.so");
