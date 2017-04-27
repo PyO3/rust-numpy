@@ -9,7 +9,7 @@ use super::types::*;
 use super::iterator::*;
 
 extern "C" {
-    pub static PyArray_API: *const *const c_void;
+    pub static PyArray_API: *const c_void;
 }
 
 #[repr(C)]
