@@ -1,13 +1,12 @@
 language: rust
-sudo: required
+
+dist: trusty
+sudo: false
 
 rust:
   - stable
   - beta
   - nightly
-
-os:
-  - linux
 
 cache: cargo
 
@@ -16,13 +15,17 @@ matrix:
     - rust: nightly
 
 script:
-  - cargo test
+  - cargo test -vv
 
 addons:
   apt:
     packages:
       - python3-dev
-      - python3-numpy
+      - cython
+      - gfortran
+      - libblas-dev
+      - liblapack-dev
+      - liblapacke-dev
 
 env:
   - RUST_BACKTRACE=1
