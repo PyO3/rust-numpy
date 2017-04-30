@@ -1,4 +1,4 @@
-#![allow(non_camel_case_types)]
+#![allow(non_camel_case_types, non_snake_case)]
 
 use libc::FILE;
 use pyffi::*;
@@ -9,43 +9,52 @@ use super::types::*;
 use super::iterator::*;
 
 extern "C" {
-    pub static PyBigArray_Type: PyTypeObject;
-    pub static PyArray_Type: PyTypeObject;
-    pub static PyArrayDescr_Type: PyTypeObject;
-    pub static PyArrayFlags_Type: PyTypeObject;
-    pub static PyArrayIter_Type: PyTypeObject;
-    pub static PyArrayMultiIter_Type: PyTypeObject;
-    pub static PyBoolArrType_Type: PyTypeObject;
-    pub static PyGenericArrType_Type: PyTypeObject;
-    pub static PyNumberArrType_Type: PyTypeObject;
-    pub static PyIntegerArrType_Type: PyTypeObject;
-    pub static PySignedIntegerArrType_Type: PyTypeObject;
-    pub static PyUnsignedIntegerArrType_Type: PyTypeObject;
-    pub static PyInexactArrType_Type: PyTypeObject;
-    pub static PyFloatingArrType_Type: PyTypeObject;
-    pub static PyComplexFloatingArrType_Type: PyTypeObject;
-    pub static PyFlexibleArrType_Type: PyTypeObject;
-    pub static PyCharacterArrType_Type: PyTypeObject;
-    pub static PyByteArrType_Type: PyTypeObject;
-    pub static PyShortArrType_Type: PyTypeObject;
-    pub static PyIntArrType_Type: PyTypeObject;
-    pub static PyLongArrType_Type: PyTypeObject;
-    pub static PyLongLongArrType_Type: PyTypeObject;
-    pub static PyUByteArrType_Type: PyTypeObject;
-    pub static PyUShortArrType_Type: PyTypeObject;
-    pub static PyUIntArrType_Type: PyTypeObject;
-    pub static PyULongArrType_Type: PyTypeObject;
-    pub static PyULongLongArrType_Type: PyTypeObject;
-    pub static PyFloatArrType_Type: PyTypeObject;
-    pub static PyDoubleArrType_Type: PyTypeObject;
-    pub static PyLongDoubleArrType_Type: PyTypeObject;
-    pub static PyCFloatArrType_Type: PyTypeObject;
-    pub static PyCDoubleArrType_Type: PyTypeObject;
-    pub static PyCLongDoubleArrType_Type: PyTypeObject;
-    pub static PyObjectArrType_Type: PyTypeObject;
-    pub static PyStringArrType_Type: PyTypeObject;
-    pub static PyUnicodeArrType_Type: PyTypeObject;
-    pub static PyVoidArrType_Type: PyTypeObject;
+    pub static mut PyBigArray_Type: PyTypeObject;
+    pub static mut PyArray_Type: PyTypeObject;
+    pub static mut PyArrayDescr_Type: PyTypeObject;
+    pub static mut PyArrayFlags_Type: PyTypeObject;
+    pub static mut PyArrayIter_Type: PyTypeObject;
+    pub static mut PyArrayMultiIter_Type: PyTypeObject;
+    pub static mut PyBoolArrType_Type: PyTypeObject;
+    pub static mut PyGenericArrType_Type: PyTypeObject;
+    pub static mut PyNumberArrType_Type: PyTypeObject;
+    pub static mut PyIntegerArrType_Type: PyTypeObject;
+    pub static mut PySignedIntegerArrType_Type: PyTypeObject;
+    pub static mut PyUnsignedIntegerArrType_Type: PyTypeObject;
+    pub static mut PyInexactArrType_Type: PyTypeObject;
+    pub static mut PyFloatingArrType_Type: PyTypeObject;
+    pub static mut PyComplexFloatingArrType_Type: PyTypeObject;
+    pub static mut PyFlexibleArrType_Type: PyTypeObject;
+    pub static mut PyCharacterArrType_Type: PyTypeObject;
+    pub static mut PyByteArrType_Type: PyTypeObject;
+    pub static mut PyShortArrType_Type: PyTypeObject;
+    pub static mut PyIntArrType_Type: PyTypeObject;
+    pub static mut PyLongArrType_Type: PyTypeObject;
+    pub static mut PyLongLongArrType_Type: PyTypeObject;
+    pub static mut PyUByteArrType_Type: PyTypeObject;
+    pub static mut PyUShortArrType_Type: PyTypeObject;
+    pub static mut PyUIntArrType_Type: PyTypeObject;
+    pub static mut PyULongArrType_Type: PyTypeObject;
+    pub static mut PyULongLongArrType_Type: PyTypeObject;
+    pub static mut PyFloatArrType_Type: PyTypeObject;
+    pub static mut PyDoubleArrType_Type: PyTypeObject;
+    pub static mut PyLongDoubleArrType_Type: PyTypeObject;
+    pub static mut PyCFloatArrType_Type: PyTypeObject;
+    pub static mut PyCDoubleArrType_Type: PyTypeObject;
+    pub static mut PyCLongDoubleArrType_Type: PyTypeObject;
+    pub static mut PyObjectArrType_Type: PyTypeObject;
+    pub static mut PyStringArrType_Type: PyTypeObject;
+    pub static mut PyUnicodeArrType_Type: PyTypeObject;
+    pub static mut PyVoidArrType_Type: PyTypeObject;
+}
+
+pub unsafe fn PyArray_Check(op: *mut PyObject) -> c_int {
+    PyObject_TypeCheck(op, &mut PyArray_Type as *mut PyTypeObject)
+}
+
+pub unsafe fn PyArray_CheckExact(op: *mut PyObject) -> c_int {
+    let u: *mut PyTypeObject = &mut PyArray_Type;
+    (Py_TYPE(op) == u) as c_int
 }
 
 #[repr(C)]
