@@ -7,6 +7,10 @@ use std::option::Option;
 use super::types::*;
 use super::array::*;
 
+extern "C" {
+    pub static PyUFunc_Type: PyTypeObject;
+}
+
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct PyUFuncObject {
