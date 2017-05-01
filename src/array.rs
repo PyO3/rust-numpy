@@ -1,43 +1,46 @@
 
-use np_ffi;
-use py_ffi;
-use cpython::*;
-use np_ffi::types::npy_intp;
 use std::ptr::null_mut;
 use std::os::raw::c_void;
+
+use npffi;
+use pyffi;
+use cpython::*;
+use npffi::types::npy_intp;
+use super::NPY_TYPES;
 
 pub struct PyArray(PyObject);
 
 impl PyArray {
-    pub fn as_ptr(&self) -> *mut np_ffi::PyArrayObject {
-        self.0.as_ptr() as *mut np_ffi::PyArrayObject
+    pub fn as_ptr(&self) -> *mut npffi::PyArrayObject {
+        self.0.as_ptr() as *mut npffi::PyArrayObject
     }
 
-    pub fn steal_ptr(self) -> *mut np_ffi::PyArrayObject {
-        self.0.steal_ptr() as *mut np_ffi::PyArrayObject
+    pub fn steal_ptr(self) -> *mut npffi::PyArrayObject {
+        self.0.steal_ptr() as *mut npffi::PyArrayObject
     }
 
-    pub unsafe fn from_owned_ptr(py: Python, ptr: *mut py_ffi::PyObject) -> Self {
+    pub unsafe fn from_owned_ptr(py: Python, ptr: *mut pyffi::PyObject) -> Self {
         let obj = PyObject::from_owned_ptr(py, ptr);
         PyArray(obj)
     }
 
-    pub unsafe fn from_borrowed_ptr(py: Python, ptr: *mut py_ffi::PyObject) -> Self {
+    pub unsafe fn from_borrowed_ptr(py: Python, ptr: *mut pyffi::PyObject) -> Self {
         let obj = PyObject::from_borrowed_ptr(py, ptr);
         PyArray(obj)
     }
 
-    pub fn new(py: Python, dims: &mut [npy_intp], typenum: np_ffi::NPY_TYPES) -> Self {
+    pub fn new(py: Python, dims: &[usize], typenum: NPY_TYPES) -> Self {
+        let dims: Vec<npy_intp> = dims.iter().map(|d| *d as npy_intp).collect();
         unsafe {
-            let ptr = np_ffi::PyArray_New(&mut np_ffi::PyArray_Type,
-                                          dims.len() as i32,
-                                          dims.as_mut_ptr() as *mut npy_intp,
-                                          typenum as i32,
-                                          null_mut::<isize>(),
-                                          null_mut::<c_void>(),
-                                          0,
-                                          0,
-                                          null_mut::<py_ffi::PyObject>());
+            let ptr = npffi::PyArray_New(&mut npffi::PyArray_Type,
+                                         dims.len() as i32,
+                                         dims.as_ptr() as *mut npy_intp,
+                                         typenum as i32,
+                                         null_mut::<isize>(),
+                                         null_mut::<c_void>(),
+                                         0,
+                                         0,
+                                         null_mut::<pyffi::PyObject>());
             Self::from_owned_ptr(py, ptr)
         }
     }
@@ -78,7 +81,7 @@ impl PythonObjectWithCheckedDowncast for PyArray {
                          obj: PyObject)
                          -> Result<PyArray, PythonObjectDowncastError<'p>> {
         unsafe {
-            if np_ffi::PyArray_Check(obj.as_ptr()) != 0 {
+            if npffi::PyArray_Check(obj.as_ptr()) != 0 {
                 Ok(PyArray(obj))
             } else {
                 Err(PythonObjectDowncastError(py))
@@ -90,7 +93,7 @@ impl PythonObjectWithCheckedDowncast for PyArray {
                                     obj: &'a PyObject)
                                     -> Result<&'a PyArray, PythonObjectDowncastError<'p>> {
         unsafe {
-            if np_ffi::PyArray_Check(obj.as_ptr()) != 0 {
+            if npffi::PyArray_Check(obj.as_ptr()) != 0 {
                 Ok(::std::mem::transmute(obj))
             } else {
                 Err(PythonObjectDowncastError(py))

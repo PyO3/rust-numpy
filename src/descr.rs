@@ -1,33 +1,34 @@
 
-use np_ffi;
-use py_ffi;
+use npffi;
+use pyffi;
 
 use cpython::*;
+use super::NPY_TYPES;
 
 pub struct PyArrayDescr(PyObject);
 
 impl PyArrayDescr {
-    pub fn as_ptr(&self) -> *mut np_ffi::PyArray_Descr {
-        self.0.as_ptr() as *mut np_ffi::PyArray_Descr
+    pub fn as_ptr(&self) -> *mut npffi::PyArray_Descr {
+        self.0.as_ptr() as *mut npffi::PyArray_Descr
     }
 
-    pub fn steal_ptr(self) -> *mut np_ffi::PyArray_Descr {
-        self.0.steal_ptr() as *mut np_ffi::PyArray_Descr
+    pub fn steal_ptr(self) -> *mut npffi::PyArray_Descr {
+        self.0.steal_ptr() as *mut npffi::PyArray_Descr
     }
 
-    pub unsafe fn from_owned_ptr(py: Python, ptr: *mut np_ffi::PyArray_Descr) -> Self {
-        let obj = PyObject::from_owned_ptr(py, ptr as *mut py_ffi::PyObject);
+    pub unsafe fn from_owned_ptr(py: Python, ptr: *mut npffi::PyArray_Descr) -> Self {
+        let obj = PyObject::from_owned_ptr(py, ptr as *mut pyffi::PyObject);
         PyArrayDescr(obj)
     }
 
-    pub unsafe fn from_borrowed_ptr(py: Python, ptr: *mut np_ffi::PyArray_Descr) -> Self {
-        let obj = PyObject::from_borrowed_ptr(py, ptr as *mut py_ffi::PyObject);
+    pub unsafe fn from_borrowed_ptr(py: Python, ptr: *mut npffi::PyArray_Descr) -> Self {
+        let obj = PyObject::from_borrowed_ptr(py, ptr as *mut pyffi::PyObject);
         PyArrayDescr(obj)
     }
 
-    pub fn new(py: Python, typenum: np_ffi::NPY_TYPES) -> Self {
+    pub fn new(py: Python, typenum: NPY_TYPES) -> Self {
         unsafe {
-            let ptr = np_ffi::PyArray_DescrFromType(typenum as i32);
+            let ptr = npffi::PyArray_DescrFromType(typenum as i32);
             Self::from_owned_ptr(py, ptr)
         }
     }
