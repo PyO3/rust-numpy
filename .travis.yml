@@ -21,6 +21,7 @@ addons:
   apt:
     packages:
       - python3-dev
+      - libpython3-dev
       - cython
       - gfortran
       - libblas-dev
