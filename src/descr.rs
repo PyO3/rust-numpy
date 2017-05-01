@@ -27,7 +27,7 @@ impl PyArrayDescr {
 
     pub fn new(py: Python, typenum: np_ffi::NPY_TYPES) -> Self {
         unsafe {
-            let ptr = np_ffi::PyArray_DescrFromType(typenum);
+            let ptr = np_ffi::PyArray_DescrFromType(typenum as i32);
             Self::from_owned_ptr(py, ptr)
         }
     }

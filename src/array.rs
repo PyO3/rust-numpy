@@ -1,8 +1,10 @@
 
 use np_ffi;
 use py_ffi;
-
 use cpython::*;
+use np_ffi::types::npy_intp;
+use std::ptr::null_mut;
+use std::os::raw::c_void;
 
 pub struct PyArray(PyObject);
 
@@ -15,14 +17,29 @@ impl PyArray {
         self.0.steal_ptr() as *mut np_ffi::PyArrayObject
     }
 
-    pub unsafe fn from_owned_ptr(py: Python, ptr: *mut np_ffi::PyArrayObject) -> Self {
-        let obj = PyObject::from_owned_ptr(py, ptr as *mut py_ffi::PyObject);
+    pub unsafe fn from_owned_ptr(py: Python, ptr: *mut py_ffi::PyObject) -> Self {
+        let obj = PyObject::from_owned_ptr(py, ptr);
         PyArray(obj)
     }
 
-    pub unsafe fn from_borrowed_ptr(py: Python, ptr: *mut np_ffi::PyArrayObject) -> Self {
-        let obj = PyObject::from_borrowed_ptr(py, ptr as *mut py_ffi::PyObject);
+    pub unsafe fn from_borrowed_ptr(py: Python, ptr: *mut py_ffi::PyObject) -> Self {
+        let obj = PyObject::from_borrowed_ptr(py, ptr);
         PyArray(obj)
+    }
+
+    pub fn new(py: Python, dims: &mut [npy_intp], typenum: np_ffi::NPY_TYPES) -> Self {
+        unsafe {
+            let ptr = np_ffi::PyArray_New(&mut np_ffi::PyArray_Type,
+                                          dims.len() as i32,
+                                          dims.as_mut_ptr() as *mut npy_intp,
+                                          typenum as i32,
+                                          null_mut::<isize>(),
+                                          null_mut::<c_void>(),
+                                          0,
+                                          0,
+                                          null_mut::<py_ffi::PyObject>());
+            Self::from_owned_ptr(py, ptr)
+        }
     }
 }
 
