@@ -7,3 +7,4 @@ pub mod array;
 pub mod descr;
 
 pub use npffi::NPY_TYPES;
+pub use array::PyArray;
