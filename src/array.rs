@@ -41,6 +41,10 @@ impl PyArray {
         dims.into_iter().map(|d| *d as usize).collect()
     }
 
+    pub fn shape(&self) -> Vec<usize> {
+        self.dims()
+    }
+
     pub fn strides(&self) -> Vec<isize> {
         let n = self.ndim();
         let ptr = self.as_ptr();
