@@ -26,6 +26,31 @@ impl PyArray {
         PyArray(obj)
     }
 
+    pub fn ndim(&self) -> usize {
+        let ptr = self.as_ptr();
+        unsafe { (*ptr).nd as usize }
+    }
+
+    pub fn dims(&self) -> Vec<usize> {
+        let n = self.ndim();
+        let ptr = self.as_ptr();
+        let dims = unsafe {
+            let p = (*ptr).dimensions;
+            ::std::slice::from_raw_parts(p, n)
+        };
+        dims.into_iter().map(|d| *d as usize).collect()
+    }
+
+    pub fn strides(&self) -> Vec<isize> {
+        let n = self.ndim();
+        let ptr = self.as_ptr();
+        let dims = unsafe {
+            let p = (*ptr).strides;
+            ::std::slice::from_raw_parts(p, n)
+        };
+        dims.into_iter().map(|d| *d as isize).collect()
+    }
+
     pub fn zeros(py: Python, dims: &[usize], typenum: NPY_TYPES, order: NPY_ORDER) -> Self {
         let dims: Vec<npy_intp> = dims.iter().map(|d| *d as npy_intp).collect();
         unsafe {
