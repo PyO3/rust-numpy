@@ -6,5 +6,5 @@ extern crate cpython;
 pub mod array;
 pub mod descr;
 
-pub use npffi::NPY_TYPES;
+pub use npffi::{NPY_TYPES, NPY_ORDER};
 pub use array::PyArray;

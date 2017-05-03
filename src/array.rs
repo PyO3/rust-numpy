@@ -1,12 +1,9 @@
 
-use std::ptr::null_mut;
-use std::os::raw::c_void;
-
 use npffi;
 use pyffi;
 use cpython::*;
 use npffi::types::npy_intp;
-use super::NPY_TYPES;
+use super::{NPY_TYPES, NPY_ORDER};
 
 pub struct PyArray(PyObject);
 
@@ -29,30 +26,14 @@ impl PyArray {
         PyArray(obj)
     }
 
-    pub fn zeros(py: Python, dims: &[usize], typenum: NPY_TYPES, is_fortran_order: i32) -> Self {
+    pub fn zeros(py: Python, dims: &[usize], typenum: NPY_TYPES, order: NPY_ORDER) -> Self {
         let dims: Vec<npy_intp> = dims.iter().map(|d| *d as npy_intp).collect();
         unsafe {
             let descr = npffi::PyArray_DescrFromType(typenum as i32);
             let ptr = npffi::PyArray_Zeros(dims.len() as i32,
                                            dims.as_ptr() as *mut npy_intp,
                                            descr,
-                                           is_fortran_order);
-            Self::from_owned_ptr(py, ptr)
-        }
-    }
-
-    pub fn new(py: Python, dims: &[usize], typenum: NPY_TYPES) -> Self {
-        let dims: Vec<npy_intp> = dims.iter().map(|d| *d as npy_intp).collect();
-        unsafe {
-            let ptr = npffi::PyArray_New(npffi::ARRAY_TYPE::PyArray_Type.as_type_object(),
-                                         dims.len() as i32,
-                                         dims.as_ptr() as *mut npy_intp,
-                                         typenum as i32,
-                                         null_mut::<isize>(),
-                                         null_mut::<c_void>(),
-                                         0,
-                                         0,
-                                         null_mut::<pyffi::PyObject>());
+                                           order as i32);
             Self::from_owned_ptr(py, ptr)
         }
     }
