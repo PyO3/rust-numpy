@@ -68,6 +68,15 @@ impl PyArray {
         }
     }
 
+    pub fn as_slice_mut<T>(&mut self) -> &mut [T] {
+        let n = self.len();
+        let ptr = self.as_ptr();
+        unsafe {
+            let p = (*ptr).data as *mut T;
+            ::std::slice::from_raw_parts_mut(p, n)
+        }
+    }
+
     pub fn zeros(py: Python, dims: &[usize], typenum: NPY_TYPES, order: NPY_ORDER) -> Self {
         let dims: Vec<npy_intp> = dims.iter().map(|d| *d as npy_intp).collect();
         unsafe {
