@@ -14,7 +14,7 @@ last_msg="$(git log -1 --pretty=%B)"
 trap "cd \"$dir\"; rm -rf \"$tmp\"" EXIT
 
 msg "Cloning into a temporary directory..."
-git clone -qb gh-pages $dir $tmp
+git clone -qb gh-pages $dir $tmp --recursive
 cd "$tmp"
 git checkout -q master
 ln -s $dir/target $tmp/target
