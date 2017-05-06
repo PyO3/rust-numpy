@@ -1,0 +1,5 @@
+pipeline:
+  build:
+    image: termoshtt/rust
+    commands:
+      - cargo test -v
