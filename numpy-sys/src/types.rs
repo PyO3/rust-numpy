@@ -118,6 +118,39 @@ pub enum NPY_DATETIMEUNIT {
 
 #[repr(u32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum NPY_TYPES {
+    NPY_BOOL = 0,
+    NPY_BYTE = 1,
+    NPY_UBYTE = 2,
+    NPY_SHORT = 3,
+    NPY_USHORT = 4,
+    NPY_INT = 5,
+    NPY_UINT = 6,
+    NPY_LONG = 7,
+    NPY_ULONG = 8,
+    NPY_LONGLONG = 9,
+    NPY_ULONGLONG = 10,
+    NPY_FLOAT = 11,
+    NPY_DOUBLE = 12,
+    NPY_LONGDOUBLE = 13,
+    NPY_CFLOAT = 14,
+    NPY_CDOUBLE = 15,
+    NPY_CLONGDOUBLE = 16,
+    NPY_OBJECT = 17,
+    NPY_STRING = 18,
+    NPY_UNICODE = 19,
+    NPY_VOID = 20,
+    NPY_DATETIME = 21,
+    NPY_TIMEDELTA = 22,
+    NPY_HALF = 23,
+    NPY_NTYPES = 24,
+    NPY_NOTYPE = 25,
+    NPY_CHAR = 26,
+    NPY_USERDEF = 256,
+}
+
+#[repr(u32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum NPY_SELECTKIND {
     NPY_INTROSELECT = 0,
 }
