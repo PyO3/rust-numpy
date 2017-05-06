@@ -2,7 +2,9 @@
 extern crate python3_sys as pyffi;
 extern crate cpython;
 extern crate libc;
+extern crate num_complex;
 
+pub mod types;
 pub mod array;
 pub mod npyffi;
 
