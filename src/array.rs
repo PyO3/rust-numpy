@@ -77,6 +77,24 @@ impl PyArray {
         }
     }
 
+    /// a wrapper of PyArray_SimpleNew
+    /// https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_SimpleNew
+    pub fn new(py: Python, dims: &[usize], typenum: NPY_TYPES) -> Self {
+        let dims: Vec<npy_intp> = dims.iter().map(|d| *d as npy_intp).collect();
+        unsafe {
+            let ptr = npffi::PyArray_New(npffi::ARRAY_TYPE::PyArray_Type.as_type_object(),
+                                         dims.len() as i32,
+                                         dims.as_ptr() as *mut npy_intp,
+                                         typenum as i32,
+                                         ::std::ptr::null_mut(),
+                                         ::std::ptr::null_mut(),
+                                         0,
+                                         0,
+                                         ::std::ptr::null_mut());
+            Self::from_owned_ptr(py, ptr)
+        }
+    }
+
     pub fn zeros(py: Python, dims: &[usize], typenum: NPY_TYPES, order: NPY_ORDER) -> Self {
         let dims: Vec<npy_intp> = dims.iter().map(|d| *d as npy_intp).collect();
         unsafe {
