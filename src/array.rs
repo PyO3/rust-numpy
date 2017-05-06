@@ -41,6 +41,10 @@ impl PyArray {
         dims.into_iter().map(|d| *d as usize).collect()
     }
 
+    pub fn len(&self) -> usize {
+        self.dims().iter().fold(1, |a, b| a * b)
+    }
+
     pub fn shape(&self) -> Vec<usize> {
         self.dims()
     }
@@ -55,6 +59,15 @@ impl PyArray {
         dims.into_iter().map(|d| *d as isize).collect()
     }
 
+    pub fn as_slice<T>(&self) -> &[T] {
+        let n = self.len();
+        let ptr = self.as_ptr();
+        unsafe {
+            let p = (*ptr).data as *mut T;
+            ::std::slice::from_raw_parts(p, n)
+        }
+    }
+
     pub fn zeros(py: Python, dims: &[usize], typenum: NPY_TYPES, order: NPY_ORDER) -> Self {
         let dims: Vec<npy_intp> = dims.iter().map(|d| *d as npy_intp).collect();
         unsafe {
@@ -63,6 +76,13 @@ impl PyArray {
                                            dims.as_ptr() as *mut npy_intp,
                                            descr,
                                            order as i32);
+            Self::from_owned_ptr(py, ptr)
+        }
+    }
+
+    pub fn arange(py: Python, start: f64, stop: f64, step: f64, typenum: NPY_TYPES) -> Self {
+        unsafe {
+            let ptr = npffi::PyArray_Arange(start, stop, step, typenum as i32);
             Self::from_owned_ptr(py, ptr)
         }
     }
