@@ -95,6 +95,8 @@ impl PyArray {
         }
     }
 
+    /// a wrapper of PyArray_ZEROS
+    /// https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_ZEROS
     pub fn zeros(py: Python, dims: &[usize], typenum: NPY_TYPES, order: NPY_ORDER) -> Self {
         let dims: Vec<npy_intp> = dims.iter().map(|d| *d as npy_intp).collect();
         unsafe {
@@ -107,6 +109,8 @@ impl PyArray {
         }
     }
 
+    /// a wrapper of PyArray_Arange
+    /// https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_Arange
     pub fn arange(py: Python, start: f64, stop: f64, step: f64, typenum: NPY_TYPES) -> Self {
         unsafe {
             let ptr = npffi::PyArray_Arange(start, stop, step, typenum as i32);
