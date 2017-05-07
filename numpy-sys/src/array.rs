@@ -505,7 +505,7 @@ impl ARRAY_TYPE {
     pub unsafe fn as_type_object(self) -> *mut PyTypeObject {
         let api = &PyArray_API as *const *const c_void;
         match self {
-            $( ARRAY_TYPE::$tname => api.offset($offset) as *mut PyTypeObject ),*
+            $( ARRAY_TYPE::$tname => *(api.offset($offset)) as *mut PyTypeObject ),*
         }
     }
 }
