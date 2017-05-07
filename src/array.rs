@@ -4,6 +4,7 @@ use pyffi;
 use cpython::*;
 use npffi::types::npy_intp;
 use super::{NPY_TYPES, NPY_ORDER};
+use std::os::raw::c_void;
 
 pub struct PyArray(PyObject);
 
@@ -24,6 +25,20 @@ impl PyArray {
     pub unsafe fn from_borrowed_ptr(py: Python, ptr: *mut pyffi::PyObject) -> Self {
         let obj = PyObject::from_borrowed_ptr(py, ptr);
         PyArray(obj)
+    }
+
+    unsafe fn arrfuncs(&self) -> *const npffi::PyArray_ArrFuncs {
+        let descr_ptr = (*self.as_ptr()).descr;
+        (*descr_ptr).f
+    }
+
+    pub fn nonzero(&self) -> bool {
+        let ptr = self.as_ptr();
+        unsafe {
+            let f = (*self.arrfuncs()).nonzero;
+            let data = (*ptr).data as *mut c_void;
+            f.unwrap()(data, ptr as *mut c_void)
+        }
     }
 
     /// The number of dimensions in the array

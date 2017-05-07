@@ -143,7 +143,7 @@ pub type PyArray_CopySwapFunc = Option<unsafe extern "C" fn(arg1: *mut c_void,
                                                             arg2: *mut c_void,
                                                             arg3: c_int,
                                                             arg4: *mut c_void)>;
-pub type PyArray_NonzeroFunc = Option<unsafe extern "C" fn(arg1: *mut c_void, arg2: *mut c_void) -> c_uchar>;
+pub type PyArray_NonzeroFunc = Option<unsafe extern "C" fn(arg1: *mut c_void, arg2: *mut c_void) -> bool>;
 pub type PyArray_CompareFunc = Option<unsafe extern "C" fn(arg1: *const c_void, arg2: *const c_void, arg3: *mut c_void) -> c_int>;
 pub type PyArray_ArgFunc = Option<unsafe extern "C" fn(arg1: *mut c_void,
                                                        arg2: npy_intp,
