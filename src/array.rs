@@ -26,11 +26,15 @@ impl PyArray {
         PyArray(obj)
     }
 
+    /// The number of dimensions in the array
+    /// https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_NDIM
     pub fn ndim(&self) -> usize {
         let ptr = self.as_ptr();
         unsafe { (*ptr).nd as usize }
     }
 
+    /// dimensions of the array
+    /// https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_DIMS
     pub fn dims(&self) -> Vec<usize> {
         let n = self.ndim();
         let ptr = self.as_ptr();
@@ -45,10 +49,14 @@ impl PyArray {
         self.dims().iter().fold(1, |a, b| a * b)
     }
 
+    /// A synonym for PyArray_DIMS, named to be consistent with the ‘shape’ usage within Python.
     pub fn shape(&self) -> Vec<usize> {
         self.dims()
     }
 
+    /// The number of elements matches the number of dimensions of the array
+    /// https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_STRIDES
+    /// For the explaination of stride, see also https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.strides.html#numpy.ndarray.strides
     pub fn strides(&self) -> Vec<isize> {
         let n = self.ndim();
         let ptr = self.as_ptr();
@@ -59,6 +67,7 @@ impl PyArray {
         dims.into_iter().map(|d| *d as isize).collect()
     }
 
+    /// Get data as a Rust immutable slice
     pub fn as_slice<T>(&self) -> &[T] {
         let n = self.len();
         let ptr = self.as_ptr();
@@ -68,6 +77,7 @@ impl PyArray {
         }
     }
 
+    /// Get data as a Rust mutable slice
     pub fn as_slice_mut<T>(&mut self) -> &mut [T] {
         let n = self.len();
         let ptr = self.as_ptr();
