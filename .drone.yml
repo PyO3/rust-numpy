@@ -4,3 +4,10 @@ pipeline:
     commands:
       - cargo build -v
       - cargo test -v
+
+  pytest:
+    image: termoshtt/rust
+    commands:
+      - cd numpy-test
+      - cargo build
+      - python test.py
