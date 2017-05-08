@@ -32,12 +32,16 @@ impl PyArray {
         (*descr_ptr).f
     }
 
-    pub fn nonzero(&self) -> bool {
+    unsafe fn data<T>(&self) -> *mut T {
         let ptr = self.as_ptr();
+        (*ptr).data as *mut T
+    }
+
+    pub fn nonzero(&self) -> bool {
         unsafe {
             let f = (*self.arrfuncs()).nonzero;
-            let data = (*ptr).data as *mut c_void;
-            f.unwrap()(data, ptr as *mut c_void)
+            let data = self.data();
+            f.unwrap()(data, self.as_ptr() as *mut c_void)
         }
     }
 
@@ -85,21 +89,13 @@ impl PyArray {
     /// Get data as a Rust immutable slice
     pub fn as_slice<T>(&self) -> &[T] {
         let n = self.len();
-        let ptr = self.as_ptr();
-        unsafe {
-            let p = (*ptr).data as *mut T;
-            ::std::slice::from_raw_parts(p, n)
-        }
+        unsafe { ::std::slice::from_raw_parts(self.data(), n) }
     }
 
     /// Get data as a Rust mutable slice
     pub fn as_slice_mut<T>(&mut self) -> &mut [T] {
         let n = self.len();
-        let ptr = self.as_ptr();
-        unsafe {
-            let p = (*ptr).data as *mut T;
-            ::std::slice::from_raw_parts_mut(p, n)
-        }
+        unsafe { ::std::slice::from_raw_parts_mut(self.data(), n) }
     }
 
     /// a wrapper of PyArray_SimpleNew
