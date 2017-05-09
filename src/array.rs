@@ -8,6 +8,10 @@ use std::os::raw::c_void;
 
 pub struct PyArray(PyObject);
 
+extern "C" {
+    fn PyFloat_AsDouble(pyfloat: *mut pyffi::PyObject) -> f64;
+}
+
 impl PyArray {
     pub fn as_ptr(&self) -> *mut npffi::PyArrayObject {
         self.0.as_ptr() as *mut npffi::PyArrayObject
@@ -42,6 +46,15 @@ impl PyArray {
             let f = (*self.arrfuncs()).nonzero;
             let data = self.data();
             f.unwrap()(data, self.as_ptr() as *mut c_void)
+        }
+    }
+
+    pub fn getitem(&self, offset: isize) -> f64 {
+        unsafe {
+            let f = (*self.arrfuncs()).getitem;
+            let data: *mut f64 = self.data().offset(offset);
+            let ptr = f.unwrap()(data as *mut c_void, self.as_ptr() as *mut c_void);
+            PyFloat_AsDouble(ptr)
         }
     }
 

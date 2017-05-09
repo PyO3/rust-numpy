@@ -57,3 +57,11 @@ fn nonzero() {
     assert!(!z.nonzero()); // must be zero
     assert!(nz.nonzero()); // must be non-zero
 }
+
+#[test]
+fn getitem() {
+    let gil = cpython::Python::acquire_gil();
+    let z = PyArray::arange(gil.python(), 1.0, 2.0, 0.1, NPY_TYPES::NPY_DOUBLE);
+    let i = z.getitem(4);
+    println!("{:?}", i);
+}
