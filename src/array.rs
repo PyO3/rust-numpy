@@ -4,8 +4,13 @@ use pyffi;
 use cpython::*;
 use npffi::types::npy_intp;
 use super::{NPY_TYPES, NPY_ORDER};
+use std::os::raw::c_void;
 
 pub struct PyArray(PyObject);
+
+extern "C" {
+    fn PyFloat_AsDouble(pyfloat: *mut pyffi::PyObject) -> f64;
+}
 
 impl PyArray {
     pub fn as_ptr(&self) -> *mut npffi::PyArrayObject {
@@ -24,6 +29,33 @@ impl PyArray {
     pub unsafe fn from_borrowed_ptr(py: Python, ptr: *mut pyffi::PyObject) -> Self {
         let obj = PyObject::from_borrowed_ptr(py, ptr);
         PyArray(obj)
+    }
+
+    unsafe fn arrfuncs(&self) -> *const npffi::PyArray_ArrFuncs {
+        let descr_ptr = (*self.as_ptr()).descr;
+        (*descr_ptr).f
+    }
+
+    unsafe fn data<T>(&self) -> *mut T {
+        let ptr = self.as_ptr();
+        (*ptr).data as *mut T
+    }
+
+    pub fn nonzero(&self) -> bool {
+        unsafe {
+            let f = (*self.arrfuncs()).nonzero;
+            let data = self.data();
+            f.unwrap()(data, self.as_ptr() as *mut c_void)
+        }
+    }
+
+    pub fn getitem(&self, offset: isize) -> f64 {
+        unsafe {
+            let f = (*self.arrfuncs()).getitem;
+            let data: *mut f64 = self.data().offset(offset);
+            let ptr = f.unwrap()(data as *mut c_void, self.as_ptr() as *mut c_void);
+            PyFloat_AsDouble(ptr)
+        }
     }
 
     /// The number of dimensions in the array
@@ -70,21 +102,13 @@ impl PyArray {
     /// Get data as a Rust immutable slice
     pub fn as_slice<T>(&self) -> &[T] {
         let n = self.len();
-        let ptr = self.as_ptr();
-        unsafe {
-            let p = (*ptr).data as *mut T;
-            ::std::slice::from_raw_parts(p, n)
-        }
+        unsafe { ::std::slice::from_raw_parts(self.data(), n) }
     }
 
     /// Get data as a Rust mutable slice
     pub fn as_slice_mut<T>(&mut self) -> &mut [T] {
         let n = self.len();
-        let ptr = self.as_ptr();
-        unsafe {
-            let p = (*ptr).data as *mut T;
-            ::std::slice::from_raw_parts_mut(p, n)
-        }
+        unsafe { ::std::slice::from_raw_parts_mut(self.data(), n) }
     }
 
     /// a wrapper of PyArray_SimpleNew
