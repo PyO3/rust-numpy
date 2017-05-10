@@ -1,5 +1,5 @@
 [package]
-name = "numpy-test"
+name = "numpy-example"
 version = "0.1.0"
 authors = ["Toshiki Teramura <toshiki.teramura@gmail.com>"]
 

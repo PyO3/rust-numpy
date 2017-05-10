@@ -5,9 +5,9 @@ pipeline:
       - cargo build -v
       - cargo test -v
 
-  pytest:
+  example:
     image: termoshtt/rust
     commands:
-      - cd numpy-test
+      - cd numpy-example
       - cargo build
-      - python test.py
+      - python example.py
