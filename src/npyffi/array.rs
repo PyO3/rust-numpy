@@ -6,7 +6,6 @@ use std::os::raw::*;
 use std::option::Option;
 
 use super::types::*;
-use super::iterator::*;
 
 #[repr(C)]
 #[derive(Copy, Clone)]

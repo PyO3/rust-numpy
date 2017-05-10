@@ -1,10 +1,11 @@
+#![allow(non_camel_case_types, non_snake_case)]
 
 use std::os::raw::*;
 use std::ptr::null_mut;
 use libc::FILE;
 use std::ops::Deref;
 
-use pyffi::{PyObject, PyTypeObject, PyCapsule_GetPointer};
+use pyffi::{PyObject, PyTypeObject, PyCapsule_GetPointer, PyObject_TypeCheck, Py_TYPE};
 use cpython::{Python, PythonObject, ObjectProtocol, PyResult, PyModule};
 
 use npyffi::*;
@@ -22,7 +23,7 @@ impl Deref for MultiArray {
 }
 
 impl MultiArray {
-    pub fn new(py: Python) -> PyResult<Self> {
+    pub fn import(py: Python) -> PyResult<Self> {
         let numpy = PyModule::new(py, "numpy.core.multiarray")?;
         let c_api = numpy.as_object().getattr(py, "_ARRAY_API")?;
         let api = unsafe {
@@ -363,10 +364,10 @@ impl_array_type!((1, PyBigArray_Type),
                  (38, PyUnicodeArrType_Type),
                  (39, PyVoidArrType_Type));
 
-pub unsafe fn PyArray_Check(op: *mut PyObject) -> c_int {
-    PyObject_TypeCheck(op, ARRAY_TYPE::PyArray_Type.as_type_object())
+pub unsafe fn PyArray_Check(np: &MultiArray, op: *mut PyObject) -> c_int {
+    PyObject_TypeCheck(op, np.get_type_object(ARRAY_TYPE::PyArray_Type))
 }
 
-pub unsafe fn PyArray_CheckExact(op: *mut PyObject) -> c_int {
-    (Py_TYPE(op) == ARRAY_TYPE::PyArray_Type.as_type_object()) as c_int
+pub unsafe fn PyArray_CheckExact(np: &MultiArray, op: *mut PyObject) -> c_int {
+    (Py_TYPE(op) == np.get_type_object(ARRAY_TYPE::PyArray_Type)) as c_int
 }

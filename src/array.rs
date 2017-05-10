@@ -2,8 +2,8 @@
 use npyffi;
 use pyffi;
 use cpython::*;
-use npyffi::types::npy_intp;
-use super::{NPY_TYPES, NPY_ORDER};
+use npyffi::MultiArray;
+use super::*;
 
 pub struct PyArray(PyObject);
 
@@ -89,41 +89,52 @@ impl PyArray {
 
     /// a wrapper of PyArray_SimpleNew
     /// https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_SimpleNew
-    pub fn new(py: Python, dims: &[usize], typenum: NPY_TYPES) -> Self {
+    pub fn new(py: Python, np: MultiArray, dims: &[usize], typenum: NPY_TYPES) -> Self {
         let dims: Vec<npy_intp> = dims.iter().map(|d| *d as npy_intp).collect();
         unsafe {
-            let ptr = npyffi::PyArray_New(npyffi::ARRAY_TYPE::PyArray_Type.as_type_object(),
-                                          dims.len() as i32,
-                                          dims.as_ptr() as *mut npy_intp,
-                                          typenum as i32,
-                                          ::std::ptr::null_mut(),
-                                          ::std::ptr::null_mut(),
-                                          0,
-                                          0,
-                                          ::std::ptr::null_mut());
+            let ptr = np.PyArray_New(np.get_type_object(npyffi::ARRAY_TYPE::PyArray_Type),
+                                     dims.len() as i32,
+                                     dims.as_ptr() as *mut npy_intp,
+                                     typenum as i32,
+                                     ::std::ptr::null_mut(),
+                                     ::std::ptr::null_mut(),
+                                     0,
+                                     0,
+                                     ::std::ptr::null_mut());
             Self::from_owned_ptr(py, ptr)
         }
     }
 
     /// a wrapper of PyArray_ZEROS
     /// https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_ZEROS
-    pub fn zeros(py: Python, dims: &[usize], typenum: NPY_TYPES, order: NPY_ORDER) -> Self {
+    pub fn zeros(py: Python,
+                 np: MultiArray,
+                 dims: &[usize],
+                 typenum: NPY_TYPES,
+                 order: NPY_ORDER)
+                 -> Self {
         let dims: Vec<npy_intp> = dims.iter().map(|d| *d as npy_intp).collect();
         unsafe {
-            let descr = npyffi::PyArray_DescrFromType(typenum as i32);
-            let ptr = npyffi::PyArray_Zeros(dims.len() as i32,
-                                            dims.as_ptr() as *mut npy_intp,
-                                            descr,
-                                            order as i32);
+            let descr = np.PyArray_DescrFromType(typenum as i32);
+            let ptr = np.PyArray_Zeros(dims.len() as i32,
+                                       dims.as_ptr() as *mut npy_intp,
+                                       descr,
+                                       order as i32);
             Self::from_owned_ptr(py, ptr)
         }
     }
 
     /// a wrapper of PyArray_Arange
     /// https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_Arange
-    pub fn arange(py: Python, start: f64, stop: f64, step: f64, typenum: NPY_TYPES) -> Self {
+    pub fn arange(py: Python,
+                  np: MultiArray,
+                  start: f64,
+                  stop: f64,
+                  step: f64,
+                  typenum: NPY_TYPES)
+                  -> Self {
         unsafe {
-            let ptr = npyffi::PyArray_Arange(start, stop, step, typenum as i32);
+            let ptr = np.PyArray_Arange(start, stop, step, typenum as i32);
             Self::from_owned_ptr(py, ptr)
         }
     }
@@ -163,8 +174,9 @@ impl PythonObjectWithCheckedDowncast for PyArray {
     fn downcast_from<'p>(py: Python<'p>,
                          obj: PyObject)
                          -> Result<PyArray, PythonObjectDowncastError<'p>> {
+        let np = MultiArray::import(py).unwrap();
         unsafe {
-            if npyffi::PyArray_Check(obj.as_ptr()) != 0 {
+            if npyffi::PyArray_Check(&np, obj.as_ptr()) != 0 {
                 Ok(PyArray(obj))
             } else {
                 Err(PythonObjectDowncastError(py))
@@ -175,8 +187,9 @@ impl PythonObjectWithCheckedDowncast for PyArray {
     fn downcast_borrow_from<'a, 'p>(py: Python<'p>,
                                     obj: &'a PyObject)
                                     -> Result<&'a PyArray, PythonObjectDowncastError<'p>> {
+        let np = MultiArray::import(py).unwrap();
         unsafe {
-            if npyffi::PyArray_Check(obj.as_ptr()) != 0 {
+            if npyffi::PyArray_Check(&np, obj.as_ptr()) != 0 {
                 Ok(::std::mem::transmute(obj))
             } else {
                 Err(PythonObjectDowncastError(py))

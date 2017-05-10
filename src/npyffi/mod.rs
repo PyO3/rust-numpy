@@ -9,3 +9,4 @@ pub use self::types::*;
 pub use self::array::*;
 pub use self::iterator::*;
 pub use self::ufunc::*;
+pub use self::module::*;
