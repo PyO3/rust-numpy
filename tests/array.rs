@@ -7,7 +7,7 @@ use numpy::*;
 #[test]
 fn new() {
     let gil = cpython::Python::acquire_gil();
-    let np = MultiArray::import(gil.python()).unwrap();
+    let np = PyArrayModule::import(gil.python()).unwrap();
     let n = 3;
     let m = 5;
     let arr = PyArray::new(gil.python(), &np, &[n, m], NPY_TYPES::NPY_DOUBLE);
@@ -19,7 +19,7 @@ fn new() {
 #[test]
 fn zeros() {
     let gil = cpython::Python::acquire_gil();
-    let np = MultiArray::import(gil.python()).unwrap();
+    let np = PyArrayModule::import(gil.python()).unwrap();
     let n = 3;
     let m = 5;
     let arr = PyArray::zeros(gil.python(),
@@ -44,7 +44,7 @@ fn zeros() {
 #[test]
 fn arange() {
     let gil = cpython::Python::acquire_gil();
-    let np = MultiArray::import(gil.python()).unwrap();
+    let np = PyArrayModule::import(gil.python()).unwrap();
     let arr = PyArray::arange(gil.python(), &np, 0.0, 1.0, 0.1, NPY_TYPES::NPY_DOUBLE);
     println!("ndim = {:?}", arr.ndim());
     println!("dims = {:?}", arr.dims());

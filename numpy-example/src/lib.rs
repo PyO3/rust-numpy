@@ -13,7 +13,7 @@ py_module_initializer!(librust2py, initlibrust2py, PyInit_librust2py, |py, m| {
 });
 
 fn get_arr_py(py: Python) -> PyResult<PyArray> {
-    let np = MultiArray::import(py)?;
+    let np = PyArrayModule::import(py)?;
     let arr = PyArray::zeros(py,
                              &np,
                              &[3, 5],
