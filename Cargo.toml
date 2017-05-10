@@ -7,8 +7,3 @@ authors = ["Toshiki Teramura <toshiki.teramura@gmail.com>"]
 libc = "*"
 cpython = "0.1"
 python3-sys = "0.1"
-
-[dependencies.numpy-sys]
-version = "0.1"
-path = "numpy-sys"
-

@@ -1,3 +1,0 @@
-[submodule "numpy-sys/numpy"]
-	path = numpy-sys/numpy
-	url = https://github.com/numpy/numpy
