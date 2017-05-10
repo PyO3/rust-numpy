@@ -1,239 +1,52 @@
 #![allow(non_camel_case_types, non_snake_case)]
 
-use libc::FILE;
-use pyffi::*;
 use std::os::raw::*;
-use std::option::Option;
+use std::ptr::null_mut;
+use libc::FILE;
+use std::ops::Deref;
 
-use super::types::*;
-use super::iterator::*;
+use pyffi;
+use pyffi::{PyObject, PyTypeObject};
+use cpython::{Python, PythonObject, ObjectProtocol, PyResult, PyModule};
 
-#[repr(C)]
-#[derive(Clone, Copy)]
-pub struct PyArrayFlagsObject {
-    pub ob_base: PyObject,
-    pub arr: *mut PyObject,
-    pub flags: c_int,
+use npyffi::*;
+
+pub struct PyArrayModule {
+    numpy: PyModule,
+    api: *const *const c_void,
 }
 
-#[repr(C)]
-#[derive(Clone, Copy)]
-pub struct PyArray_Dims {
-    pub ptr: *mut npy_intp,
-    pub len: c_int,
+impl Deref for PyArrayModule {
+    type Target = PyModule;
+    fn deref(&self) -> &Self::Target {
+        &self.numpy
+    }
 }
 
-#[repr(C)]
-#[derive(Clone, Copy)]
-pub struct PyArray_Chunk {
-    pub ob_base: PyObject,
-    pub base: *mut PyObject,
-    pub ptr: *mut c_void,
-    pub len: npy_intp,
-    pub flags: c_int,
-}
-
-#[repr(C)]
-#[derive(Clone, Copy)]
-pub struct PyArrayInterface {
-    pub two: c_int,
-    pub nd: c_int,
-    pub typekind: c_char,
-    pub itemsize: c_int,
-    pub flags: c_int,
-    pub shape: *mut npy_intp,
-    pub strides: *mut npy_intp,
-    pub data: *mut c_void,
-    pub descr: *mut PyObject,
-}
-
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct PyArray_Descr {
-    pub ob_base: PyObject,
-    pub typeobj: *mut PyTypeObject,
-    pub kind: c_char,
-    pub type_: c_char,
-    pub byteorder: c_char,
-    pub flags: c_char,
-    pub type_num: c_int,
-    pub elsize: c_int,
-    pub alignment: c_int,
-    pub subarray: *mut PyArrray_ArrayDescr,
-    pub fields: *mut PyObject,
-    pub names: *mut PyObject,
-    pub f: *mut PyArray_ArrFuncs,
-    pub metadata: *mut PyObject,
-    pub c_metadata: *mut NpyAuxData,
-    pub hash: npy_hash_t,
-}
-
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct PyArrayObject {
-    pub ob_base: PyObject,
-    pub data: *mut c_char,
-    pub nd: c_int,
-    pub dimensions: *mut npy_intp,
-    pub strides: *mut npy_intp,
-    pub base: *mut PyObject,
-    pub descr: *mut PyArray_Descr,
-    pub flags: c_int,
-    pub weakreflist: *mut PyObject,
-}
-
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct PyArrray_ArrayDescr {
-    pub base: *mut PyArray_Descr,
-    pub shape: *mut PyObject,
-}
-
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct PyArray_ArrFuncs {
-    pub cast: [PyArray_VectorUnaryFunc; 21usize],
-    pub getitem: PyArray_GetItemFunc,
-    pub setitem: PyArray_SetItemFunc,
-    pub copyswapn: PyArray_CopySwapNFunc,
-    pub copyswap: PyArray_CopySwapFunc,
-    pub compare: PyArray_CompareFunc,
-    pub argmax: PyArray_ArgFunc,
-    pub dotfunc: PyArray_DotFunc,
-    pub scanfunc: PyArray_ScanFunc,
-    pub fromstr: PyArray_FromStrFunc,
-    pub nonzero: PyArray_NonzeroFunc,
-    pub fill: PyArray_FillFunc,
-    pub fillwithscalar: PyArray_FillWithScalarFunc,
-    pub sort: [PyArray_SortFunc; 3usize],
-    pub argsort: [PyArray_ArgSortFunc; 3usize],
-    pub castdict: *mut PyObject,
-    pub scalarkind: PyArray_ScalarKindFunc,
-    pub cancastscalarkindto: *mut *mut c_int,
-    pub cancastto: *mut c_int,
-    pub fastclip: PyArray_FastClipFunc,
-    pub fastputmask: PyArray_FastPutmaskFunc,
-    pub fasttake: PyArray_FastTakeFunc,
-    pub argmin: PyArray_ArgFunc,
-}
-
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct NpyAuxData {
-    pub free: NpyAuxData_FreeFunc,
-    pub clone: NpyAuxData_CloneFunc,
-    pub reserved: [*mut c_void; 2usize],
-}
-
-pub type NpyAuxData_FreeFunc = Option<unsafe extern "C" fn(arg1: *mut NpyAuxData)>;
-
-pub type NpyAuxData_CloneFunc = Option<unsafe extern "C" fn(arg1: *mut NpyAuxData) -> *mut NpyAuxData>;
-
-
-pub type PyArray_GetItemFunc = Option<unsafe extern "C" fn(arg1: *mut c_void, arg2: *mut c_void) -> *mut PyObject>;
-pub type PyArray_SetItemFunc = Option<unsafe extern "C" fn(arg1: *mut PyObject, arg2: *mut c_void, arg3: *mut c_void) -> c_int>;
-pub type PyArray_CopySwapNFunc = Option<unsafe extern "C" fn(arg1: *mut c_void,
-                                                             arg2: npy_intp,
-                                                             arg3: *mut c_void,
-                                                             arg4: npy_intp,
-                                                             arg5: npy_intp,
-                                                             arg6: c_int,
-                                                             arg7: *mut c_void)>;
-pub type PyArray_CopySwapFunc = Option<unsafe extern "C" fn(arg1: *mut c_void,
-                                                            arg2: *mut c_void,
-                                                            arg3: c_int,
-                                                            arg4: *mut c_void)>;
-pub type PyArray_NonzeroFunc = Option<unsafe extern "C" fn(arg1: *mut c_void, arg2: *mut c_void) -> c_uchar>;
-pub type PyArray_CompareFunc = Option<unsafe extern "C" fn(arg1: *const c_void, arg2: *const c_void, arg3: *mut c_void) -> c_int>;
-pub type PyArray_ArgFunc = Option<unsafe extern "C" fn(arg1: *mut c_void,
-                                                       arg2: npy_intp,
-                                                       arg3: *mut npy_intp,
-                                                       arg4: *mut c_void)
-                                                       -> c_int>;
-pub type PyArray_DotFunc = Option<unsafe extern "C" fn(arg1: *mut c_void,
-                                                       arg2: npy_intp,
-                                                       arg3: *mut c_void,
-                                                       arg4: npy_intp,
-                                                       arg5: *mut c_void,
-                                                       arg6: npy_intp,
-                                                       arg7: *mut c_void)>;
-pub type PyArray_VectorUnaryFunc = Option<unsafe extern "C" fn(arg1: *mut c_void,
-                                                               arg2: *mut c_void,
-                                                               arg3: npy_intp,
-                                                               arg4: *mut c_void,
-                                                               arg5: *mut c_void)>;
-pub type PyArray_ScanFunc = Option<unsafe extern "C" fn(fp: *mut FILE,
-                                                        dptr: *mut c_void,
-                                                        ignore: *mut c_char,
-                                                        arg1: *mut PyArray_Descr)
-                                                        -> c_int>;
-pub type PyArray_FromStrFunc = Option<unsafe extern "C" fn(s: *mut c_char,
-                                                           dptr: *mut c_void,
-                                                           endptr: *mut *mut c_char,
-                                                           arg1: *mut PyArray_Descr)
-                                                           -> c_int>;
-pub type PyArray_FillFunc = Option<unsafe extern "C" fn(arg1: *mut c_void, arg2: npy_intp, arg3: *mut c_void) -> c_int>;
-pub type PyArray_SortFunc = Option<unsafe extern "C" fn(arg1: *mut c_void, arg2: npy_intp, arg3: *mut c_void) -> c_int>;
-pub type PyArray_ArgSortFunc = Option<unsafe extern "C" fn(arg1: *mut c_void,
-                                                           arg2: *mut npy_intp,
-                                                           arg3: npy_intp,
-                                                           arg4: *mut c_void)
-                                                           -> c_int>;
-pub type PyArray_PartitionFunc = Option<unsafe extern "C" fn(arg1: *mut c_void,
-                                                             arg2: npy_intp,
-                                                             arg3: npy_intp,
-                                                             arg4: *mut npy_intp,
-                                                             arg5: *mut npy_intp,
-                                                             arg6: *mut c_void)
-                                                             -> c_int>;
-pub type PyArray_ArgPartitionFunc = Option<unsafe extern "C" fn(arg1: *mut c_void,
-                                                                arg2: *mut npy_intp,
-                                                                arg3: npy_intp,
-                                                                arg4: npy_intp,
-                                                                arg5: *mut npy_intp,
-                                                                arg6: *mut npy_intp,
-                                                                arg7: *mut c_void)
-                                                                -> c_int>;
-pub type PyArray_FillWithScalarFunc = Option<unsafe extern "C" fn(arg1: *mut c_void,
-                                                                  arg2: npy_intp,
-                                                                  arg3: *mut c_void,
-                                                                  arg4: *mut c_void)
-                                                                  -> c_int>;
-pub type PyArray_ScalarKindFunc = Option<unsafe extern "C" fn(arg1: *mut c_void) -> c_int>;
-pub type PyArray_FastClipFunc = Option<unsafe extern "C" fn(in_: *mut c_void,
-                                                            n_in: npy_intp,
-                                                            min: *mut c_void,
-                                                            max: *mut c_void,
-                                                            out: *mut c_void)>;
-pub type PyArray_FastPutmaskFunc = Option<unsafe extern "C" fn(in_: *mut c_void,
-                                                               mask: *mut c_void,
-                                                               n_in: npy_intp,
-                                                               values: *mut c_void,
-                                                               nv: npy_intp)>;
-pub type PyArray_FastTakeFunc = Option<unsafe extern "C" fn(dest: *mut c_void,
-                                                            src: *mut c_void,
-                                                            indarray: *mut npy_intp,
-                                                            nindarray: npy_intp,
-                                                            n_outer: npy_intp,
-                                                            m_middle: npy_intp,
-                                                            nelem: npy_intp,
-                                                            clipmode: NPY_CLIPMODE)
-                                                            -> c_int>;
-
-extern "C" {
-    static PyArray_API: *const c_void;
+impl PyArrayModule {
+    pub fn import(py: Python) -> PyResult<Self> {
+        let numpy = py.import("numpy.core.multiarray")?;
+        let c_api = numpy.as_object().getattr(py, "_ARRAY_API")?;
+        let api = unsafe {
+            pyffi::PyCapsule_GetPointer(c_api.as_object().as_ptr(), null_mut()) as
+            *const *const c_void
+        };
+        Ok(Self {
+            numpy: numpy,
+            api: api,
+        })
+    }
 }
 
 macro_rules! pyarray_api {
     [ $offset:expr; $fname:ident ( $($arg:ident : $t:ty),* ) $( -> $ret:ty )* ] => {
-
+impl PyArrayModule {
 #[allow(non_snake_case)]
-pub unsafe fn $fname($($arg : $t), *) $( -> $ret )* {
-    let api = &PyArray_API as *const *const c_void;
-    let fptr = api.offset($offset) as (*const extern fn ($($arg : $t), *) $( -> $ret )* );
+pub unsafe fn $fname(&self, $($arg : $t), *) $( -> $ret )* {
+    let fptr = self.api.offset($offset) as (*const extern fn ($($arg : $t), *) $( -> $ret )* );
     (*fptr)($($arg), *)
 }
-
+} // impl PyArrayModule
 }} // pyarray_api!
 
 pyarray_api![0; PyArray_GetNDArrayCVersion() -> c_uint];
@@ -501,14 +314,14 @@ pub enum ARRAY_TYPE {
     $($tname),*
 }
 
-impl ARRAY_TYPE {
-    pub unsafe fn as_type_object(self) -> *mut PyTypeObject {
-        let api = &PyArray_API as *const *const c_void;
-        match self {
-            $( ARRAY_TYPE::$tname => *(api.offset($offset)) as *mut PyTypeObject ),*
+impl PyArrayModule {
+    pub unsafe fn get_type_object(&self, ty: ARRAY_TYPE) -> *mut PyTypeObject {
+        match ty {
+            $( ARRAY_TYPE::$tname => *(self.api.offset($offset)) as *mut PyTypeObject ),*
         }
     }
 }
+
 }} // impl_array_type!;
 
 impl_array_type!((1, PyBigArray_Type),
@@ -551,10 +364,10 @@ impl_array_type!((1, PyBigArray_Type),
                  (38, PyUnicodeArrType_Type),
                  (39, PyVoidArrType_Type));
 
-pub unsafe fn PyArray_Check(op: *mut PyObject) -> c_int {
-    PyObject_TypeCheck(op, ARRAY_TYPE::PyArray_Type.as_type_object())
+pub unsafe fn PyArray_Check(np: &PyArrayModule, op: *mut PyObject) -> c_int {
+    pyffi::PyObject_TypeCheck(op, np.get_type_object(ARRAY_TYPE::PyArray_Type))
 }
 
-pub unsafe fn PyArray_CheckExact(op: *mut PyObject) -> c_int {
-    (Py_TYPE(op) == ARRAY_TYPE::PyArray_Type.as_type_object()) as c_int
+pub unsafe fn PyArray_CheckExact(np: &PyArrayModule, op: *mut PyObject) -> c_int {
+    (pyffi::Py_TYPE(op) == np.get_type_object(ARRAY_TYPE::PyArray_Type)) as c_int
 }

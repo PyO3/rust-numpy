@@ -4,3 +4,11 @@ pipeline:
     commands:
       - cargo build -v
       - cargo test -v
+
+  example:
+    image: termoshtt/rust
+    commands:
+      - cd example
+      - pip3 install -r requirements.txt
+      - python3 setup.py develop
+      - python3 test.py
