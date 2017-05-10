@@ -8,6 +8,7 @@ pipeline:
   example:
     image: termoshtt/rust
     commands:
-      - cd numpy-example
-      - cargo build
-      - python example.py
+      - cd example
+      - pip install -r requirements.txt
+      - python setup.py develop
+      - ./test.py
