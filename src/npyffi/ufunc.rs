@@ -1,38 +1,56 @@
 #![allow(non_camel_case_types)]
 
-use pyffi::*;
 use std::os::raw::*;
+use std::ptr::null_mut;
+use std::ops::Deref;
+
+use pyffi;
+use pyffi::{PyObject, PyTypeObject};
+use cpython::{Python, PythonObject, ObjectProtocol, PyResult, PyModule};
 
 use super::types::*;
 use super::objects::*;
 
-extern "C" {
-    pub static PyUFunc_Type: PyTypeObject;
+pub struct PyUFuncModule {
+    numpy: PyModule,
+    api: *const *const c_void,
 }
 
-#[repr(C)]
-#[derive(Debug, Clone, Copy)]
-pub struct NpyAuxData {
-    pub free: NpyAuxData_FreeFunc,
-    pub clone: NpyAuxData_CloneFunc,
-    pub reserved: [*mut c_void; 2usize],
+impl Deref for PyUFuncModule {
+    type Target = PyModule;
+    fn deref(&self) -> &Self::Target {
+        &self.numpy
+    }
 }
 
+impl PyUFuncModule {
+    pub fn import(py: Python) -> PyResult<Self> {
+        let numpy = py.import("numpy.core.umath")?;
+        let c_api = numpy.as_object().getattr(py, "_UFUNC_API")?;
+        let api = unsafe {
+            pyffi::PyCapsule_GetPointer(c_api.as_object().as_ptr(), null_mut()) as
+            *const *const c_void
+        };
+        Ok(Self {
+            numpy: numpy,
+            api: api,
+        })
+    }
 
-extern "C" {
-    static PyUFunc_API: *const c_void;
+    pub unsafe fn get_pyufunc_type(&self) -> *mut PyTypeObject {
+        *self.api as *mut PyTypeObject
+    }
 }
 
 macro_rules! pyufunc_api {
     [ $offset:expr; $fname:ident ( $($arg:ident : $t:ty),* ) $( -> $ret:ty )* ] => {
-
+impl PyUFuncModule {
 #[allow(non_snake_case)]
-pub unsafe fn $fname($($arg : $t), *) $( -> $ret )* {
-    let api = &PyUFunc_API as *const *const c_void;
-    let fptr = api.offset($offset) as (*const extern fn ($($arg : $t), *) $( -> $ret )* );
+pub unsafe fn $fname(&self, $($arg : $t), *) $( -> $ret )* {
+    let fptr = self.api.offset($offset) as (*const extern fn ($($arg : $t), *) $( -> $ret )* );
     (*fptr)($($arg), *)
 }
-
+} // impl PyUFuncModule
 }} // pyufunc_api!
 
 pyufunc_api![1; PyUFunc_FromFuncAndData(func: *mut PyUFuncGenericFunction, data: *mut *mut c_void, types: *mut c_char, ntypes: c_int, nin: c_int, nout: c_int, identity: c_int, name: *const c_char, doc: *const c_char, unused: c_int) -> *mut PyObject];

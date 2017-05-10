@@ -31,7 +31,7 @@ impl PyArrayModule {
             pyffi::PyCapsule_GetPointer(c_api.as_object().as_ptr(), null_mut()) as
             *const *const c_void
         };
-        Ok(PyArrayModule {
+        Ok(Self {
             numpy: numpy,
             api: api,
         })
