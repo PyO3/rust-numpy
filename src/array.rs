@@ -89,7 +89,7 @@ impl PyArray {
 
     /// a wrapper of PyArray_SimpleNew
     /// https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_SimpleNew
-    pub fn new(py: Python, np: MultiArray, dims: &[usize], typenum: NPY_TYPES) -> Self {
+    pub fn new(py: Python, np: &MultiArray, dims: &[usize], typenum: NPY_TYPES) -> Self {
         let dims: Vec<npy_intp> = dims.iter().map(|d| *d as npy_intp).collect();
         unsafe {
             let ptr = np.PyArray_New(np.get_type_object(npyffi::ARRAY_TYPE::PyArray_Type),
@@ -108,7 +108,7 @@ impl PyArray {
     /// a wrapper of PyArray_ZEROS
     /// https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_ZEROS
     pub fn zeros(py: Python,
-                 np: MultiArray,
+                 np: &MultiArray,
                  dims: &[usize],
                  typenum: NPY_TYPES,
                  order: NPY_ORDER)
@@ -127,7 +127,7 @@ impl PyArray {
     /// a wrapper of PyArray_Arange
     /// https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_Arange
     pub fn arange(py: Python,
-                  np: MultiArray,
+                  np: &MultiArray,
                   start: f64,
                   stop: f64,
                   step: f64,

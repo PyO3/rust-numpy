@@ -5,14 +5,15 @@ use std::ptr::null_mut;
 use libc::FILE;
 use std::ops::Deref;
 
-use pyffi::{PyObject, PyTypeObject, PyCapsule_GetPointer, PyObject_TypeCheck, Py_TYPE};
+use pyffi;
+use pyffi::{PyObject, PyTypeObject};
 use cpython::{Python, PythonObject, ObjectProtocol, PyResult, PyModule};
 
 use npyffi::*;
 
 pub struct MultiArray {
     numpy: PyModule,
-    api: *const c_void,
+    api: *const *const c_void,
 }
 
 impl Deref for MultiArray {
@@ -24,10 +25,11 @@ impl Deref for MultiArray {
 
 impl MultiArray {
     pub fn import(py: Python) -> PyResult<Self> {
-        let numpy = PyModule::new(py, "numpy.core.multiarray")?;
+        let numpy = py.import("numpy.core.multiarray")?;
         let c_api = numpy.as_object().getattr(py, "_ARRAY_API")?;
         let api = unsafe {
-            *(PyCapsule_GetPointer(c_api.as_object().as_ptr(), null_mut()) as *const *const c_void)
+            pyffi::PyCapsule_GetPointer(c_api.as_object().as_ptr(), null_mut()) as
+            *const *const c_void
         };
         Ok(MultiArray {
             numpy: numpy,
@@ -41,8 +43,7 @@ macro_rules! pyarray_api {
 impl MultiArray {
 #[allow(non_snake_case)]
 pub unsafe fn $fname(&self, $($arg : $t), *) $( -> $ret )* {
-    let api = &self.api as *const *const c_void;
-    let fptr = api.offset($offset) as (*const extern fn ($($arg : $t), *) $( -> $ret )* );
+    let fptr = self.api.offset($offset) as (*const extern fn ($($arg : $t), *) $( -> $ret )* );
     (*fptr)($($arg), *)
 }
 } // impl MultiArray
@@ -315,9 +316,8 @@ pub enum ARRAY_TYPE {
 
 impl MultiArray {
     pub unsafe fn get_type_object(&self, ty: ARRAY_TYPE) -> *mut PyTypeObject {
-        let api = &self.api as *const *const c_void;
         match ty {
-            $( ARRAY_TYPE::$tname => *(api.offset($offset)) as *mut PyTypeObject ),*
+            $( ARRAY_TYPE::$tname => *(self.api.offset($offset)) as *mut PyTypeObject ),*
         }
     }
 }
@@ -365,9 +365,9 @@ impl_array_type!((1, PyBigArray_Type),
                  (39, PyVoidArrType_Type));
 
 pub unsafe fn PyArray_Check(np: &MultiArray, op: *mut PyObject) -> c_int {
-    PyObject_TypeCheck(op, np.get_type_object(ARRAY_TYPE::PyArray_Type))
+    pyffi::PyObject_TypeCheck(op, np.get_type_object(ARRAY_TYPE::PyArray_Type))
 }
 
 pub unsafe fn PyArray_CheckExact(np: &MultiArray, op: *mut PyObject) -> c_int {
-    (Py_TYPE(op) == np.get_type_object(ARRAY_TYPE::PyArray_Type)) as c_int
+    (pyffi::Py_TYPE(op) == np.get_type_object(ARRAY_TYPE::PyArray_Type)) as c_int
 }
