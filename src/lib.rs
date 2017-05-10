@@ -7,4 +7,4 @@ pub mod array;
 pub mod npyffi;
 
 pub use array::PyArray;
-pub use npyffi::{MultiArray, npy_intp, NPY_TYPES, NPY_ORDER};
+pub use npyffi::{PyArrayModule, npy_intp, NPY_TYPES, NPY_ORDER};
