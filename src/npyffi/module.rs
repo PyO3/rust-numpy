@@ -304,3 +304,69 @@ pyarray_api![298; PyArray_SelectkindConverter(obj: *mut PyObject, selectkind: *m
 pyarray_api![299; PyDataMem_NEW_ZEROED(size: usize, elsize: usize) -> *mut c_void];
 pyarray_api![300; PyArray_CheckAnyScalarExact(obj: *mut PyObject) -> c_int];
 pyarray_api![301; PyArray_MapIterArrayCopyIfOverlap(a: *mut PyArrayObject, index: *mut PyObject, copy_if_overlap: c_int, extra_op: *mut PyArrayObject) -> *mut PyObject];
+
+macro_rules! impl_array_type {
+    ($(($offset:expr, $tname:ident)),*) => {
+
+pub enum ARRAY_TYPE {
+    $($tname),*
+}
+
+impl MultiArray {
+    pub unsafe fn get_type_object(&self, ty: ARRAY_TYPE) -> *mut PyTypeObject {
+        let api = &self.api as *const *const c_void;
+        match ty {
+            $( ARRAY_TYPE::$tname => *(api.offset($offset)) as *mut PyTypeObject ),*
+        }
+    }
+}
+
+}} // impl_array_type!;
+
+impl_array_type!((1, PyBigArray_Type),
+                 (2, PyArray_Type),
+                 (3, PyArrayDescr_Type),
+                 (4, PyArrayFlags_Type),
+                 (5, PyArrayIter_Type),
+                 (6, PyArrayMultiIter_Type),
+                 (7, NPY_NUMUSERTYPES),
+                 (8, PyBoolArrType_Type),
+                 (9, _PyArrayScalar_BoolValues),
+                 (10, PyGenericArrType_Type),
+                 (11, PyNumberArrType_Type),
+                 (12, PyIntegerArrType_Type),
+                 (13, PySignedIntegerArrType_Type),
+                 (14, PyUnsignedIntegerArrType_Type),
+                 (15, PyInexactArrType_Type),
+                 (16, PyFloatingArrType_Type),
+                 (17, PyComplexFloatingArrType_Type),
+                 (18, PyFlexibleArrType_Type),
+                 (19, PyCharacterArrType_Type),
+                 (20, PyByteArrType_Type),
+                 (21, PyShortArrType_Type),
+                 (22, PyIntArrType_Type),
+                 (23, PyLongArrType_Type),
+                 (24, PyLongLongArrType_Type),
+                 (25, PyUByteArrType_Type),
+                 (26, PyUShortArrType_Type),
+                 (27, PyUIntArrType_Type),
+                 (28, PyULongArrType_Type),
+                 (29, PyULongLongArrType_Type),
+                 (30, PyFloatArrType_Type),
+                 (31, PyDoubleArrType_Type),
+                 (32, PyLongDoubleArrType_Type),
+                 (33, PyCFloatArrType_Type),
+                 (34, PyCDoubleArrType_Type),
+                 (35, PyCLongDoubleArrType_Type),
+                 (36, PyObjectArrType_Type),
+                 (37, PyStringArrType_Type),
+                 (38, PyUnicodeArrType_Type),
+                 (39, PyVoidArrType_Type));
+
+pub unsafe fn PyArray_Check(op: *mut PyObject) -> c_int {
+    PyObject_TypeCheck(op, ARRAY_TYPE::PyArray_Type.as_type_object())
+}
+
+pub unsafe fn PyArray_CheckExact(op: *mut PyObject) -> c_int {
+    (Py_TYPE(op) == ARRAY_TYPE::PyArray_Type.as_type_object()) as c_int
+}
