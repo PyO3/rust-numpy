@@ -1,4 +1,3 @@
-#!/usr/bin/python
 
 import rust_ext
 
