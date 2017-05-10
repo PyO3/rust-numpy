@@ -6,9 +6,9 @@ extern crate numpy;
 use numpy::*;
 use cpython::{PyResult, Python};
 
-py_module_initializer!(librust2py, initlibrust2py, PyInit_librust2py, |py, m| {
-    try!(m.add(py, "__doc__", "This module is implemented in Rust."));
-    try!(m.add(py, "get_arr", py_fn!(py, get_arr_py())));
+py_module_initializer!(_rust_ext, init_rust_ext, PyInit__rust_ext, |py, m| {
+    m.add(py, "__doc__", "This module is implemented in Rust.")?;
+    m.add(py, "get_arr", py_fn!(py, get_arr_py()))?;
     Ok(())
 });
 

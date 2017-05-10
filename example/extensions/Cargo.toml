@@ -4,12 +4,9 @@ version = "0.1.0"
 authors = ["Toshiki Teramura <toshiki.teramura@gmail.com>"]
 
 [lib]
-name = "rust2py"
+name = "rust_ext"
 crate-type = ["cdylib"]
 
 [dependencies]
-numpy = { path = ".." }
-
-[dependencies.cpython]
-version = "*"
-features = ["extension-module"]
+numpy = { path = "../.." }
+cpython = "*"
