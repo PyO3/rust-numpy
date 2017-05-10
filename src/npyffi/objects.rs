@@ -214,6 +214,183 @@ pub struct PyArrayInterface {
 }
 
 #[repr(C)]
+#[derive(Clone, Copy)]
+pub struct PyUFuncObject {
+    pub ob_base: PyObject,
+    pub nin: c_int,
+    pub nout: c_int,
+    pub nargs: c_int,
+    pub identity: c_int,
+    pub functions: *mut PyUFuncGenericFunction,
+    pub data: *mut *mut c_void,
+    pub ntypes: c_int,
+    pub reserved1: c_int,
+    pub name: *const c_char,
+    pub types: *mut c_char,
+    pub doc: *const c_char,
+    pub ptr: *mut c_void,
+    pub obj: *mut PyObject,
+    pub userloops: *mut PyObject,
+    pub core_enabled: c_int,
+    pub core_num_dim_ix: c_int,
+    pub core_num_dims: *mut c_int,
+    pub core_dim_ixs: *mut c_int,
+    pub core_offsets: *mut c_int,
+    pub core_signature: *mut c_char,
+    pub type_resolver: PyUFunc_TypeResolutionFunc,
+    pub legacy_inner_loop_selector: PyUFunc_LegacyInnerLoopSelectionFunc,
+    pub reserved2: *mut c_void,
+    pub masked_inner_loop_selector: PyUFunc_MaskedInnerLoopSelectionFunc,
+    pub op_flags: *mut npy_uint32,
+    pub iter_flags: npy_uint32,
+}
+
+pub type PyUFuncGenericFunction = Option<unsafe extern "C" fn(*mut *mut c_char,
+                                                              *mut npy_intp,
+                                                              *mut npy_intp,
+                                                              *mut c_void)>;
+pub type PyUFunc_MaskedStridedInnerLoopFunc = Option<unsafe extern "C" fn(*mut *mut c_char,
+                                                                          *mut npy_intp,
+                                                                          *mut c_char,
+                                                                          npy_intp,
+                                                                          npy_intp,
+                                                                          *mut NpyAuxData)>;
+pub type PyUFunc_TypeResolutionFunc = Option<unsafe extern "C" fn(*mut PyUFuncObject,
+                                                                  NPY_CASTING,
+                                                                  *mut *mut PyArrayObject,
+                                                                  *mut PyObject,
+                                                                  *mut *mut PyArray_Descr)
+                                                                  -> c_int>;
+pub type PyUFunc_LegacyInnerLoopSelectionFunc =
+    Option<unsafe extern "C" fn(*mut PyUFuncObject,
+                                *mut *mut PyArray_Descr,
+                                *mut PyUFuncGenericFunction,
+                                *mut *mut c_void,
+                                *mut c_int)
+                                -> c_int>;
+pub type PyUFunc_MaskedInnerLoopSelectionFunc =
+    Option<unsafe extern "C" fn(*mut PyUFuncObject,
+                                *mut *mut PyArray_Descr,
+                                *mut PyArray_Descr,
+                                *mut npy_intp,
+                                npy_intp,
+                                *mut PyUFunc_MaskedStridedInnerLoopFunc,
+                                *mut *mut NpyAuxData,
+                                *mut c_int)
+                                -> c_int>;
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct NpyIter([u8; 0]);
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct PyArrayIterObject {
+    pub ob_base: PyObject,
+    pub nd_m1: c_int,
+    pub index: npy_intp,
+    pub size: npy_intp,
+    pub coordinates: [npy_intp; 32usize],
+    pub dims_m1: [npy_intp; 32usize],
+    pub strides: [npy_intp; 32usize],
+    pub backstrides: [npy_intp; 32usize],
+    pub factors: [npy_intp; 32usize],
+    pub ao: *mut PyArrayObject,
+    pub dataptr: *mut c_char,
+    pub contiguous: npy_bool,
+    pub bounds: [[npy_intp; 2usize]; 32usize],
+    pub limits: [[npy_intp; 2usize]; 32usize],
+    pub limits_sizes: [npy_intp; 32usize],
+    pub translate: npy_iter_get_dataptr_t,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct PyArrayMultiIterObject {
+    pub ob_base: PyObject,
+    pub numiter: c_int,
+    pub size: npy_intp,
+    pub index: npy_intp,
+    pub nd: c_int,
+    pub dimensions: [npy_intp; 32usize],
+    pub iters: [*mut PyArrayIterObject; 32usize],
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct PyArrayNeighborhoodIterObject {
+    pub ob_base: PyObject,
+    pub nd_m1: c_int,
+    pub index: npy_intp,
+    pub size: npy_intp,
+    pub coordinates: [npy_intp; 32usize],
+    pub dims_m1: [npy_intp; 32usize],
+    pub strides: [npy_intp; 32usize],
+    pub backstrides: [npy_intp; 32usize],
+    pub factors: [npy_intp; 32usize],
+    pub ao: *mut PyArrayObject,
+    pub dataptr: *mut c_char,
+    pub contiguous: npy_bool,
+    pub bounds: [[npy_intp; 2usize]; 32usize],
+    pub limits: [[npy_intp; 2usize]; 32usize],
+    pub limits_sizes: [npy_intp; 32usize],
+    pub translate: npy_iter_get_dataptr_t,
+    pub nd: npy_intp,
+    pub dimensions: [npy_intp; 32usize],
+    pub _internal_iter: *mut PyArrayIterObject,
+    pub constant: *mut c_char,
+    pub mode: c_int,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct PyArrayMapIterObject {
+    pub ob_base: PyObject,
+    pub numiter: c_int,
+    pub size: npy_intp,
+    pub index: npy_intp,
+    pub nd: c_int,
+    pub dimensions: [npy_intp; 32usize],
+    pub outer: *mut NpyIter,
+    pub unused: [*mut c_void; 30usize],
+    pub array: *mut PyArrayObject,
+    pub ait: *mut PyArrayIterObject,
+    pub subspace: *mut PyArrayObject,
+    pub iteraxes: [c_int; 32usize],
+    pub fancy_strides: [npy_intp; 32usize],
+    pub baseoffset: *mut c_char,
+    pub consec: c_int,
+    pub dataptr: *mut c_char,
+    pub nd_fancy: c_int,
+    pub fancy_dims: [npy_intp; 32usize],
+    pub needs_api: c_int,
+    pub extra_op: *mut PyArrayObject,
+    pub extra_op_dtype: *mut PyArray_Descr,
+    pub extra_op_flags: *mut npy_uint32,
+    pub extra_op_iter: *mut NpyIter,
+    pub extra_op_next: NpyIter_IterNextFunc,
+    pub extra_op_ptrs: *mut *mut c_char,
+    pub outer_next: NpyIter_IterNextFunc,
+    pub outer_ptrs: *mut *mut c_char,
+    pub outer_strides: *mut npy_intp,
+    pub subspace_iter: *mut NpyIter,
+    pub subspace_next: NpyIter_IterNextFunc,
+    pub subspace_ptrs: *mut *mut c_char,
+    pub subspace_strides: *mut npy_intp,
+    pub iter_count: npy_intp,
+}
+
+pub type NpyIter_IterNextFunc = Option<unsafe extern "C" fn(*mut NpyIter) -> c_int>;
+pub type NpyIter_GetMultiIndexFunc = Option<unsafe extern "C" fn(*mut NpyIter, *mut npy_intp)>;
+pub type PyDataMem_EventHookFunc = Option<unsafe extern "C" fn(*mut c_void,
+                                                               *mut c_void,
+                                                               usize,
+                                                               *mut c_void)>;
+pub type npy_iter_get_dataptr_t = Option<unsafe extern "C" fn(*mut PyArrayIterObject,
+                                                              *mut npy_intp)
+                                                              -> *mut c_char>;
+
+#[repr(C)]
 #[derive(Copy, Clone)]
 pub struct NpyAuxData {
     pub free: NpyAuxData_FreeFunc,
