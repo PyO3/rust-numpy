@@ -38,14 +38,15 @@ fn get_arr_py(py: Python) -> PyResult<PyArray> {
 Contribution
 -------------
 This project is in pre-alpha or proof-of-concept status.
-We need your feedback. Don't hesitate to open [issue](issues)!
+
+We need your feedback. Don't hesitate to open [issue](https://github.com/termoshtt/rust-numpy/issues)!
 
 Version
 --------
 
-### v0.1.1 2017/5/11
-- Update documents
+- v0.1.1 2017/5/11
+  - Update documents
 
-### v0.1.0 2017/5/11
-- First Release
-- Expose unsafe interfase of Array and UFunc API
+- v0.1.0 2017/5/11
+  - First Release
+  - Expose unsafe interfase of Array and UFunc API
