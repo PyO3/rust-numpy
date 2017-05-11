@@ -1,3 +1,4 @@
+//! Untyped safe interface for NumPy ndarray
 
 use npyffi;
 use pyffi;
@@ -5,6 +6,7 @@ use cpython::*;
 use npyffi::PyArrayModule;
 use super::*;
 
+/// Untyped safe interface for NumPy ndarray.
 pub struct PyArray(PyObject);
 
 impl PyArray {
@@ -27,6 +29,7 @@ impl PyArray {
     }
 
     /// The number of dimensions in the array
+    ///
     /// https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_NDIM
     pub fn ndim(&self) -> usize {
         let ptr = self.as_ptr();
@@ -34,6 +37,7 @@ impl PyArray {
     }
 
     /// dimensions of the array
+    ///
     /// https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_DIMS
     pub fn dims(&self) -> Vec<usize> {
         let n = self.ndim();
@@ -55,8 +59,9 @@ impl PyArray {
     }
 
     /// The number of elements matches the number of dimensions of the array
-    /// https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_STRIDES
-    /// For the explaination of stride, see also https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.strides.html#numpy.ndarray.strides
+    ///
+    /// - https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_STRIDES
+    /// - https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.strides.html#numpy.ndarray.strides
     pub fn strides(&self) -> Vec<isize> {
         let n = self.ndim();
         let ptr = self.as_ptr();
@@ -87,8 +92,7 @@ impl PyArray {
         }
     }
 
-    /// a wrapper of PyArray_SimpleNew
-    /// https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_SimpleNew
+    /// a wrapper of [PyArray_SimpleNew](https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_SimpleNew)
     pub fn new(py: Python, np: &PyArrayModule, dims: &[usize], typenum: NPY_TYPES) -> Self {
         let dims: Vec<npy_intp> = dims.iter().map(|d| *d as npy_intp).collect();
         unsafe {
@@ -105,8 +109,7 @@ impl PyArray {
         }
     }
 
-    /// a wrapper of PyArray_ZEROS
-    /// https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_ZEROS
+    /// a wrapper of [PyArray_ZEROS](https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_ZEROS)
     pub fn zeros(py: Python,
                  np: &PyArrayModule,
                  dims: &[usize],
@@ -124,8 +127,7 @@ impl PyArray {
         }
     }
 
-    /// a wrapper of PyArray_Arange
-    /// https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_Arange
+    /// a wrapper of [PyArray_Arange](https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_Arange)
     pub fn arange(py: Python,
                   np: &PyArrayModule,
                   start: f64,
