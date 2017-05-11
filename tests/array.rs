@@ -13,7 +13,7 @@ fn new() {
     let arr = PyArray::new(gil.python(), &np, &[n, m], NPY_TYPES::NPY_DOUBLE);
     assert!(arr.ndim() == 2);
     assert!(arr.dims() == [n, m]);
-    assert!(arr.strides() == [m * 8, 8]);
+    assert!(arr.strides() == [m as isize * 8, 8]);
 }
 
 #[test]
@@ -29,7 +29,7 @@ fn zeros() {
                              NPY_ORDER::NPY_CORDER);
     assert!(arr.ndim() == 2);
     assert!(arr.dims() == [n, m]);
-    assert!(arr.strides() == [m * 8, 8]);
+    assert!(arr.strides() == [m as isize * 8, 8]);
 
     let arr = PyArray::zeros(gil.python(),
                              &np,
@@ -38,7 +38,7 @@ fn zeros() {
                              NPY_ORDER::NPY_FORTRANORDER);
     assert!(arr.ndim() == 2);
     assert!(arr.dims() == [n, m]);
-    assert!(arr.strides() == [8, n * 8]);
+    assert!(arr.strides() == [8, n as isize * 8]);
 }
 
 #[test]
@@ -62,7 +62,7 @@ fn as_array() {
                              NPY_ORDER::NPY_CORDER);
     let a = arr.as_array::<f64>().unwrap();
     assert_eq!(arr.shape(), a.shape());
-    assert_eq!(arr.strides().iter().map(|x| (x / 8) as isize).collect::<Vec<_>>(),
+    assert_eq!(arr.strides().iter().map(|x| x / 8).collect::<Vec<_>>(),
                a.strides());
 }
 

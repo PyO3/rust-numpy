@@ -64,14 +64,14 @@ impl PyArray {
     ///
     /// - https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_STRIDES
     /// - https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.strides.html#numpy.ndarray.strides
-    pub fn strides(&self) -> Vec<usize> {
+    pub fn strides(&self) -> Vec<isize> {
         let n = self.ndim();
         let ptr = self.as_ptr();
         let dims = unsafe {
             let p = (*ptr).strides;
             ::std::slice::from_raw_parts(p, n)
         };
-        dims.into_iter().map(|d| *d as usize).collect()
+        dims.into_iter().map(|d| *d as isize).collect()
     }
 
     unsafe fn data<T>(&self) -> *mut T {
@@ -83,7 +83,7 @@ impl PyArray {
         // FIXME may be done more simply
         let shape: Shape<_> = Dim(self.shape()).into();
         let st: Vec<usize> =
-            self.strides().iter().map(|x| x / ::std::mem::size_of::<A>()).collect();
+            self.strides().iter().map(|&x| x as usize / ::std::mem::size_of::<A>()).collect();
         shape.strides(Dim(st))
     }
 
