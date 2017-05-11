@@ -1,4 +1,6 @@
-#![allow(non_camel_case_types)]
+//! Low-Level binding for UFunc API
+//!
+//! https://docs.scipy.org/doc/numpy/reference/c-api.ufunc.html
 
 use std::os::raw::*;
 use std::ptr::null_mut;
@@ -11,7 +13,7 @@ use cpython::{Python, PythonObject, ObjectProtocol, PyResult, PyModule};
 use super::types::*;
 use super::objects::*;
 
-/// UFunc API
+/// Low-Level binding for UFunc API
 /// https://docs.scipy.org/doc/numpy/reference/c-api.ufunc.html
 ///
 /// Most of UFunc API is exposed as the related function of this module object.

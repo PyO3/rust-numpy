@@ -1,3 +1,6 @@
+//! Low-Level binding for Array API
+//!
+//! https://docs.scipy.org/doc/numpy/reference/c-api.array.html
 
 use std::os::raw::*;
 use std::ptr::null_mut;
@@ -10,7 +13,7 @@ use cpython::{Python, PythonObject, ObjectProtocol, PyResult, PyModule};
 
 use npyffi::*;
 
-/// Array API
+/// Low-Level binding for Array API
 /// https://docs.scipy.org/doc/numpy/reference/c-api.array.html
 ///
 /// Most of Array API is exposed as the related function of this module object.
