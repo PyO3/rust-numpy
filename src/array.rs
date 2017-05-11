@@ -95,10 +95,12 @@ impl PyArray {
     }
 
     fn type_check<A: types::TypeNum>(&self) -> Result<(), ArrayCastError> {
+        let test = A::typenum();
+        let truth = self.typenum();
         if A::typenum() == self.typenum() {
             Ok(())
         } else {
-            Err(ArrayCastError {})
+            Err(ArrayCastError::new(test, truth))
         }
     }
 
