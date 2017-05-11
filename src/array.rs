@@ -3,8 +3,10 @@
 use npyffi;
 use pyffi;
 use cpython::*;
-use npyffi::PyArrayModule;
+use ndarray::*;
+
 use super::*;
+use super::error::ArrayCastError;
 
 /// Untyped safe interface for NumPy ndarray.
 pub struct PyArray(PyObject);
@@ -62,34 +64,56 @@ impl PyArray {
     ///
     /// - https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_STRIDES
     /// - https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.strides.html#numpy.ndarray.strides
-    pub fn strides(&self) -> Vec<isize> {
+    pub fn strides(&self) -> Vec<usize> {
         let n = self.ndim();
         let ptr = self.as_ptr();
         let dims = unsafe {
             let p = (*ptr).strides;
             ::std::slice::from_raw_parts(p, n)
         };
-        dims.into_iter().map(|d| *d as isize).collect()
+        dims.into_iter().map(|d| *d as usize).collect()
+    }
+
+    unsafe fn data<T>(&self) -> *mut T {
+        let ptr = self.as_ptr();
+        (*ptr).data as *mut T
+    }
+
+    fn ndarray_shape<A>(&self) -> StrideShape<IxDyn> {
+        // FIXME may be done more simply
+        let shape: Shape<_> = Dim(self.shape()).into();
+        let st: Vec<usize> =
+            self.strides().iter().map(|x| x / ::std::mem::size_of::<A>()).collect();
+        shape.strides(Dim(st))
+    }
+
+    fn type_check<A>(&self) -> Result<(), ArrayCastError> {
+        // TODO type check
+        Ok(())
+    }
+
+    /// Get data as a ndarray::ArrayView
+    pub fn as_array<A>(&self) -> Result<ArrayViewD<A>, ArrayCastError> {
+        self.type_check::<A>()?;
+        unsafe { Ok(ArrayView::from_shape_ptr(self.ndarray_shape::<A>(), self.data())) }
+    }
+
+    /// Get data as a ndarray::ArrayViewMut
+    pub fn as_array_mut<A>(&mut self) -> Result<ArrayViewMutD<A>, ArrayCastError> {
+        self.type_check::<A>()?;
+        unsafe { Ok(ArrayViewMut::from_shape_ptr(self.ndarray_shape::<A>(), self.data())) }
     }
 
     /// Get data as a Rust immutable slice
-    pub fn as_slice<T>(&self) -> &[T] {
-        let n = self.len();
-        let ptr = self.as_ptr();
-        unsafe {
-            let p = (*ptr).data as *mut T;
-            ::std::slice::from_raw_parts(p, n)
-        }
+    pub fn as_slice<A>(&self) -> Result<&[A], ArrayCastError> {
+        self.type_check::<A>()?;
+        unsafe { Ok(::std::slice::from_raw_parts(self.data(), self.len())) }
     }
 
     /// Get data as a Rust mutable slice
-    pub fn as_slice_mut<T>(&mut self) -> &mut [T] {
-        let n = self.len();
-        let ptr = self.as_ptr();
-        unsafe {
-            let p = (*ptr).data as *mut T;
-            ::std::slice::from_raw_parts_mut(p, n)
-        }
+    pub fn as_slice_mut<A>(&mut self) -> Result<&mut [A], ArrayCastError> {
+        self.type_check::<A>()?;
+        unsafe { Ok(::std::slice::from_raw_parts_mut(self.data(), self.len())) }
     }
 
     /// a wrapper of [PyArray_SimpleNew](https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_SimpleNew)
