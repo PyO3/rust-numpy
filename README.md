@@ -26,11 +26,7 @@ py_module_initializer!(_rust_ext, init_rust_ext, PyInit__rust_ext, |py, m| {
 
 fn get_arr_py(py: Python) -> PyResult<PyArray> {
     let np = PyArrayModule::import(py)?;
-    let arr = PyArray::zeros(py,
-                             &np,
-                             &[3, 5],
-                             NPY_TYPES::NPY_DOUBLE,
-                             NPY_ORDER::NPY_CORDER);
+    let arr = PyArray::zeros(py, &np, &[3, 5], NPY_TYPES::NPY_DOUBLE, NPY_ORDER::NPY_CORDER);
     Ok(arr)
 }
 ```
@@ -38,7 +34,6 @@ fn get_arr_py(py: Python) -> PyResult<PyArray> {
 Contribution
 -------------
 This project is in pre-alpha or proof-of-concept status.
-
 We need your feedback. Don't hesitate to open [issue](https://github.com/termoshtt/rust-numpy/issues)!
 
 Version
