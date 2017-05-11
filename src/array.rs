@@ -92,7 +92,7 @@ impl PyArray {
     pub fn new(py: Python, np: &PyArrayModule, dims: &[usize], typenum: NPY_TYPES) -> Self {
         let dims: Vec<npy_intp> = dims.iter().map(|d| *d as npy_intp).collect();
         unsafe {
-            let ptr = np.PyArray_New(np.get_type_object(npyffi::ARRAY_TYPE::PyArray_Type),
+            let ptr = np.PyArray_New(np.get_type_object(npyffi::ArrayType::PyArray_Type),
                                      dims.len() as i32,
                                      dims.as_ptr() as *mut npy_intp,
                                      typenum as i32,
