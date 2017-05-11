@@ -65,3 +65,16 @@ fn as_array() {
     assert_eq!(arr.strides().iter().map(|x| (x / 8) as isize).collect::<Vec<_>>(),
                a.strides());
 }
+
+#[test]
+#[should_panic]
+fn as_array_panic() {
+    let gil = cpython::Python::acquire_gil();
+    let np = PyArrayModule::import(gil.python()).unwrap();
+    let arr = PyArray::zeros(gil.python(),
+                             &np,
+                             &[3, 2, 4],
+                             NPY_TYPES::NPY_INT,
+                             NPY_ORDER::NPY_CORDER);
+    let _a = arr.as_array::<f32>().unwrap();
+}

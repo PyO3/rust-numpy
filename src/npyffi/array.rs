@@ -320,6 +320,7 @@ impl PyArrayModule {
 macro_rules! impl_array_type {
     ($(($offset:expr, $tname:ident)),*) => {
 #[allow(non_camel_case_types)]
+#[repr(i32)]
 pub enum ArrayType { $($tname),* }
 impl PyArrayModule {
     pub unsafe fn get_type_object(&self, ty: ArrayType) -> *mut PyTypeObject {

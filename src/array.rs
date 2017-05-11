@@ -87,31 +87,41 @@ impl PyArray {
         shape.strides(Dim(st))
     }
 
-    fn type_check<A>(&self) -> Result<(), ArrayCastError> {
-        // TODO type check
-        Ok(())
+    pub fn typenum(&self) -> i32 {
+        unsafe {
+            let descr = (*self.as_ptr()).descr;
+            (*descr).type_num
+        }
+    }
+
+    fn type_check<A: types::TypeNum>(&self) -> Result<(), ArrayCastError> {
+        if A::typenum() == self.typenum() {
+            Ok(())
+        } else {
+            Err(ArrayCastError {})
+        }
     }
 
     /// Get data as a ndarray::ArrayView
-    pub fn as_array<A>(&self) -> Result<ArrayViewD<A>, ArrayCastError> {
+    pub fn as_array<A: types::TypeNum>(&self) -> Result<ArrayViewD<A>, ArrayCastError> {
         self.type_check::<A>()?;
         unsafe { Ok(ArrayView::from_shape_ptr(self.ndarray_shape::<A>(), self.data())) }
     }
 
     /// Get data as a ndarray::ArrayViewMut
-    pub fn as_array_mut<A>(&mut self) -> Result<ArrayViewMutD<A>, ArrayCastError> {
+    pub fn as_array_mut<A: types::TypeNum>(&mut self) -> Result<ArrayViewMutD<A>, ArrayCastError> {
         self.type_check::<A>()?;
         unsafe { Ok(ArrayViewMut::from_shape_ptr(self.ndarray_shape::<A>(), self.data())) }
     }
 
     /// Get data as a Rust immutable slice
-    pub fn as_slice<A>(&self) -> Result<&[A], ArrayCastError> {
+    pub fn as_slice<A: types::TypeNum>(&self) -> Result<&[A], ArrayCastError> {
         self.type_check::<A>()?;
         unsafe { Ok(::std::slice::from_raw_parts(self.data(), self.len())) }
     }
 
     /// Get data as a Rust mutable slice
-    pub fn as_slice_mut<A>(&mut self) -> Result<&mut [A], ArrayCastError> {
+    pub fn as_slice_mut<A: types::TypeNum>(&mut self) -> Result<&mut [A], ArrayCastError> {
         self.type_check::<A>()?;
         unsafe { Ok(::std::slice::from_raw_parts_mut(self.data(), self.len())) }
     }
