@@ -1,9 +1,10 @@
 [package]
 name = "numpy"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Toshiki Teramura <toshiki.teramura@gmail.com>"]
 
 description = "Rust binding of NumPy C-API"
+documentation = "https://docs.rs/numpy/"
 repository = "https://github.com/termoshtt/rust-numpy"
 keywords = ["numpy", "python", "binding"]
 license-file = "LICENSE"
