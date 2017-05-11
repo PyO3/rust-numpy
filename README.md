@@ -33,7 +33,7 @@ fn get_arr_py(py: Python) -> PyResult<PyArray> {
 
 Contribution
 -------------
-This project is in pre-alpha or proof-of-concept status.
+This project is in pre-alpha version.
 We need your feedback. Don't hesitate to open [issue](https://github.com/termoshtt/rust-numpy/issues)!
 
 Version
