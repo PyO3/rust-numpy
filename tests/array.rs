@@ -78,3 +78,15 @@ fn as_array_panic() {
                              NPY_ORDER::NPY_CORDER);
     let _a = arr.as_array::<f32>().unwrap();
 }
+
+#[test]
+fn into_pyarray() {
+    let gil = cpython::Python::acquire_gil();
+    let np = PyArrayModule::import(gil.python()).unwrap();
+
+    let a = vec![1, 2, 3];
+    let arr = a.into_pyarray(gil.python(), &np);
+    println!("arr.shape = {:?}", arr.shape());
+    println!("arr = {:?}", arr.as_slice::<i32>().unwrap());
+    panic!("into_pyarray!")
+}

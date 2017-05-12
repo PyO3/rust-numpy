@@ -136,11 +136,12 @@ impl PyArray {
                                      dims.len() as i32,
                                      dims.as_ptr() as *mut npy_intp,
                                      typenum as i32,
-                                     ::std::ptr::null_mut(),
-                                     ::std::ptr::null_mut(),
-                                     0,
-                                     0,
-                                     ::std::ptr::null_mut());
+                                     ::std::ptr::null_mut(), // strides
+                                     ::std::ptr::null_mut(), // data
+                                     0,                      // itemsize
+                                     0,                      // flag
+                                     ::std::ptr::null_mut()  //obj
+                                     );
             Self::from_owned_ptr(py, ptr)
         }
     }
