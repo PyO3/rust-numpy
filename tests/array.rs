@@ -88,5 +88,4 @@ fn into_pyarray() {
     let arr = a.into_pyarray(gil.python(), &np);
     println!("arr.shape = {:?}", arr.shape());
     println!("arr = {:?}", arr.as_slice::<i32>().unwrap());
-    panic!("into_pyarray!")
 }
