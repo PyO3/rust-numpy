@@ -10,7 +10,7 @@ fn new() {
     let np = PyArrayModule::import(gil.python()).unwrap();
     let n = 3;
     let m = 5;
-    let arr = PyArray::new(gil.python(), &np, &[n, m], NPY_TYPES::NPY_DOUBLE);
+    let arr = PyArray::new::<f64>(gil.python(), &np, &[n, m]);
     assert!(arr.ndim() == 2);
     assert!(arr.dims() == [n, m]);
     assert!(arr.strides() == [m as isize * 8, 8]);
