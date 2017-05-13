@@ -157,15 +157,14 @@ impl PyArray {
     }
 
     /// a wrapper of [PyArray_ZEROS](https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_ZEROS)
-    pub fn zeros(py: Python,
-                 np: &PyArrayModule,
-                 dims: &[usize],
-                 typenum: NPY_TYPES,
-                 order: NPY_ORDER)
-                 -> Self {
+    pub fn zeros<T: TypeNum>(py: Python,
+                             np: &PyArrayModule,
+                             dims: &[usize],
+                             order: NPY_ORDER)
+                             -> Self {
         let dims: Vec<npy_intp> = dims.iter().map(|d| *d as npy_intp).collect();
         unsafe {
-            let descr = np.PyArray_DescrFromType(typenum as i32);
+            let descr = np.PyArray_DescrFromType(T::typenum());
             let ptr = np.PyArray_Zeros(dims.len() as i32,
                                        dims.as_ptr() as *mut npy_intp,
                                        descr,
@@ -175,15 +174,14 @@ impl PyArray {
     }
 
     /// a wrapper of [PyArray_Arange](https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_Arange)
-    pub fn arange(py: Python,
-                  np: &PyArrayModule,
-                  start: f64,
-                  stop: f64,
-                  step: f64,
-                  typenum: NPY_TYPES)
-                  -> Self {
+    pub fn arange<T: TypeNum>(py: Python,
+                              np: &PyArrayModule,
+                              start: f64,
+                              stop: f64,
+                              step: f64)
+                              -> Self {
         unsafe {
-            let ptr = np.PyArray_Arange(start, stop, step, typenum as i32);
+            let ptr = np.PyArray_Arange(start, stop, step, T::typenum());
             Self::from_owned_ptr(py, ptr)
         }
     }

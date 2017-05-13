@@ -24,20 +24,12 @@ fn zeros() {
     let np = PyArrayModule::import(gil.python()).unwrap();
     let n = 3;
     let m = 5;
-    let arr = PyArray::zeros(gil.python(),
-                             &np,
-                             &[n, m],
-                             NPY_TYPES::NPY_DOUBLE,
-                             NPY_ORDER::NPY_CORDER);
+    let arr = PyArray::zeros::<f64>(gil.python(), &np, &[n, m], NPY_CORDER);
     assert!(arr.ndim() == 2);
     assert!(arr.dims() == [n, m]);
     assert!(arr.strides() == [m as isize * 8, 8]);
 
-    let arr = PyArray::zeros(gil.python(),
-                             &np,
-                             &[n, m],
-                             NPY_TYPES::NPY_DOUBLE,
-                             NPY_ORDER::NPY_FORTRANORDER);
+    let arr = PyArray::zeros::<f64>(gil.python(), &np, &[n, m], NPY_FORTRANORDER);
     assert!(arr.ndim() == 2);
     assert!(arr.dims() == [n, m]);
     assert!(arr.strides() == [8, n as isize * 8]);
@@ -47,7 +39,7 @@ fn zeros() {
 fn arange() {
     let gil = cpython::Python::acquire_gil();
     let np = PyArrayModule::import(gil.python()).unwrap();
-    let arr = PyArray::arange(gil.python(), &np, 0.0, 1.0, 0.1, NPY_TYPES::NPY_DOUBLE);
+    let arr = PyArray::arange::<f64>(gil.python(), &np, 0.0, 1.0, 0.1);
     println!("ndim = {:?}", arr.ndim());
     println!("dims = {:?}", arr.dims());
     println!("array = {:?}", arr.as_slice::<f64>().unwrap());
@@ -57,11 +49,7 @@ fn arange() {
 fn as_array() {
     let gil = cpython::Python::acquire_gil();
     let np = PyArrayModule::import(gil.python()).unwrap();
-    let arr = PyArray::zeros(gil.python(),
-                             &np,
-                             &[3, 2, 4],
-                             NPY_TYPES::NPY_DOUBLE,
-                             NPY_ORDER::NPY_CORDER);
+    let arr = PyArray::zeros::<f64>(gil.python(), &np, &[3, 2, 4], NPY_CORDER);
     let a = arr.as_array::<f64>().unwrap();
     assert_eq!(arr.shape(), a.shape());
     assert_eq!(arr.strides().iter().map(|x| x / 8).collect::<Vec<_>>(),
@@ -73,11 +61,7 @@ fn as_array() {
 fn as_array_panic() {
     let gil = cpython::Python::acquire_gil();
     let np = PyArrayModule::import(gil.python()).unwrap();
-    let arr = PyArray::zeros(gil.python(),
-                             &np,
-                             &[3, 2, 4],
-                             NPY_TYPES::NPY_INT,
-                             NPY_ORDER::NPY_CORDER);
+    let arr = PyArray::zeros::<i32>(gil.python(), &np, &[3, 2, 4], NPY_CORDER);
     let _a = arr.as_array::<f32>().unwrap();
 }
 
