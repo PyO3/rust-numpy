@@ -1,6 +1,6 @@
 [package]
 name = "numpy"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["Toshiki Teramura <toshiki.teramura@gmail.com>"]
 
 description = "Rust binding of NumPy C-API"

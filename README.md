@@ -39,9 +39,13 @@ We need your feedback. Don't hesitate to open [issue](https://github.com/termosh
 Version
 --------
 
-- v0.1.1 2017/5/11
+- v0.2.0
+  - NEW: traits `IntoPython`, `ToPython`
+  - MOD: Interface of `PyArray` creation functions are changed
+
+- v0.1.1
   - Update documents
 
-- v0.1.0 2017/5/11
+- v0.1.0
   - First Release
   - Expose unsafe interfase of Array and UFunc API
