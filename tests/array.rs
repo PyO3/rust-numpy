@@ -88,4 +88,15 @@ fn into_pyarray() {
     let arr = a.into_pyarray(gil.python(), &np);
     println!("arr.shape = {:?}", arr.shape());
     println!("arr = {:?}", arr.as_slice::<i32>().unwrap());
+    assert_eq!(arr.shape(), [3]);
+}
+
+#[test]
+fn iter_to_pyarray() {
+    let gil = cpython::Python::acquire_gil();
+    let np = PyArrayModule::import(gil.python()).unwrap();
+    let arr = (0..10).map(|x| x * x).to_pyarray(gil.python(), &np);
+    println!("arr.shape = {:?}", arr.shape());
+    println!("arr = {:?}", arr.as_slice::<i32>().unwrap());
+    assert_eq!(arr.shape(), [10]);
 }

@@ -13,5 +13,5 @@ pub mod convert;
 
 pub use array::PyArray;
 pub use types::TypeNum;
-pub use convert::IntoPyArray;
+pub use convert::{IntoPyArray, ToPyArray};
 pub use npyffi::{PyArrayModule, PyUFuncModule, npy_intp, NPY_TYPES, NPY_ORDER};

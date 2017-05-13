@@ -1,6 +1,8 @@
 
 use cpython::Python;
 use std::os::raw::c_void;
+use std::ptr::null_mut;
+use std::iter::Iterator;
 
 use super::*;
 
@@ -10,20 +12,24 @@ pub trait IntoPyArray {
 
 impl<T: TypeNum> IntoPyArray for Vec<T> {
     fn into_pyarray(self, py: Python, np: &PyArrayModule) -> PyArray {
-        let mut dims = [self.len() as npy_intp];
+        let dims = [self.len()];
         unsafe {
             let ptr: *mut [T] = Box::into_raw(self.into_boxed_slice());
             let data = (*ptr).as_ref().as_ptr() as *mut c_void;
-            let ptr = np.PyArray_New(np.get_type_object(super::npyffi::ArrayType::PyArray_Type),
-                                     dims.len() as i32,
-                                     dims.as_mut_ptr(),
-                                     T::typenum(),
-                                     ::std::ptr::null_mut(),
-                                     data,
-                                     0,
-                                     0,
-                                     ::std::ptr::null_mut());
-            PyArray::from_owned_ptr(py, ptr)
+            PyArray::new_::<T>(py, np, &dims, null_mut(), data)
         }
+    }
+}
+
+pub trait ToPyArray {
+    fn to_pyarray(self, Python, &PyArrayModule) -> PyArray;
+}
+
+impl<Iter, T: TypeNum> ToPyArray for Iter
+    where Iter: Iterator<Item = T> + Sized
+{
+    fn to_pyarray(self, py: Python, np: &PyArrayModule) -> PyArray {
+        let vec: Vec<T> = self.collect();
+        vec.into_pyarray(py, np)
     }
 }
