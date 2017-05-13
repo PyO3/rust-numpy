@@ -1,7 +1,9 @@
 
 extern crate cpython;
 extern crate numpy;
+extern crate ndarray;
 
+use ndarray::*;
 use numpy::*;
 
 #[test]
@@ -80,7 +82,7 @@ fn as_array_panic() {
 }
 
 #[test]
-fn into_pyarray() {
+fn into_pyarray_vec() {
     let gil = cpython::Python::acquire_gil();
     let np = PyArrayModule::import(gil.python()).unwrap();
 
@@ -89,6 +91,23 @@ fn into_pyarray() {
     println!("arr.shape = {:?}", arr.shape());
     println!("arr = {:?}", arr.as_slice::<i32>().unwrap());
     assert_eq!(arr.shape(), [3]);
+}
+
+#[test]
+fn into_pyarray_array() {
+    let gil = cpython::Python::acquire_gil();
+    let np = PyArrayModule::import(gil.python()).unwrap();
+
+    let a = Array3::<f64>::zeros((3, 4, 2));
+    let shape = a.shape().iter().cloned().collect::<Vec<_>>();
+    let strides = a.strides().iter().map(|d| d * 8).collect::<Vec<_>>();
+    println!("a.shape   = {:?}", a.shape());
+    println!("a.strides = {:?}", a.strides());
+    let pa = a.into_pyarray(gil.python(), &np);
+    println!("pa.shape   = {:?}", pa.shape());
+    println!("pa.strides = {:?}", pa.strides());
+    assert_eq!(pa.shape(), shape);
+    assert_eq!(pa.strides(), strides);
 }
 
 #[test]
