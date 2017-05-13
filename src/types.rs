@@ -2,7 +2,11 @@
 pub use num_complex::Complex32 as c32;
 pub use num_complex::Complex64 as c64;
 
-pub use super::npyffi::NPY_TYPES;
+pub use super::npyffi::NPY_ORDER;
+pub use super::npyffi::NPY_ORDER::{NPY_CORDER, NPY_FORTRANORDER};
+pub use super::npyffi::npy_intp;
+
+use super::npyffi::NPY_TYPES;
 
 pub trait TypeNum {
     fn typenum_enum() -> NPY_TYPES;

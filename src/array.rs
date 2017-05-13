@@ -5,6 +5,9 @@ use pyffi;
 use cpython::*;
 use ndarray::*;
 
+use std::os::raw::c_void;
+use std::ptr::null_mut;
+
 use super::*;
 use super::error::ArrayCastError;
 
@@ -128,33 +131,40 @@ impl PyArray {
         unsafe { Ok(::std::slice::from_raw_parts_mut(self.data(), self.len())) }
     }
 
-    /// a wrapper of [PyArray_SimpleNew](https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_SimpleNew)
-    pub fn new(py: Python, np: &PyArrayModule, dims: &[usize], typenum: NPY_TYPES) -> Self {
-        let dims: Vec<npy_intp> = dims.iter().map(|d| *d as npy_intp).collect();
-        unsafe {
-            let ptr = np.PyArray_New(np.get_type_object(npyffi::ArrayType::PyArray_Type),
+    pub unsafe fn new_<T: TypeNum>(py: Python,
+                                   np: &PyArrayModule,
+                                   dims: &[usize],
+                                   strides: *mut npy_intp,
+                                   data: *mut c_void)
+                                   -> Self {
+        let dims: Vec<_> = dims.iter().map(|d| *d as npy_intp).collect();
+        let ptr = np.PyArray_New(np.get_type_object(npyffi::ArrayType::PyArray_Type),
                                      dims.len() as i32,
                                      dims.as_ptr() as *mut npy_intp,
-                                     typenum as i32,
-                                     ::std::ptr::null_mut(),
-                                     ::std::ptr::null_mut(),
-                                     0,
-                                     0,
-                                     ::std::ptr::null_mut());
-            Self::from_owned_ptr(py, ptr)
-        }
+                                     T::typenum(),
+                                     strides,
+                                     data,
+                                     0,                      // itemsize
+                                     0,                      // flag
+                                     ::std::ptr::null_mut()  //obj
+                                     );
+        Self::from_owned_ptr(py, ptr)
+    }
+
+    /// a wrapper of [PyArray_SimpleNew](https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_SimpleNew)
+    pub fn new<T: TypeNum>(py: Python, np: &PyArrayModule, dims: &[usize]) -> Self {
+        unsafe { Self::new_::<T>(py, np, dims, null_mut(), null_mut()) }
     }
 
     /// a wrapper of [PyArray_ZEROS](https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_ZEROS)
-    pub fn zeros(py: Python,
-                 np: &PyArrayModule,
-                 dims: &[usize],
-                 typenum: NPY_TYPES,
-                 order: NPY_ORDER)
-                 -> Self {
+    pub fn zeros<T: TypeNum>(py: Python,
+                             np: &PyArrayModule,
+                             dims: &[usize],
+                             order: NPY_ORDER)
+                             -> Self {
         let dims: Vec<npy_intp> = dims.iter().map(|d| *d as npy_intp).collect();
         unsafe {
-            let descr = np.PyArray_DescrFromType(typenum as i32);
+            let descr = np.PyArray_DescrFromType(T::typenum());
             let ptr = np.PyArray_Zeros(dims.len() as i32,
                                        dims.as_ptr() as *mut npy_intp,
                                        descr,
@@ -164,15 +174,14 @@ impl PyArray {
     }
 
     /// a wrapper of [PyArray_Arange](https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_Arange)
-    pub fn arange(py: Python,
-                  np: &PyArrayModule,
-                  start: f64,
-                  stop: f64,
-                  step: f64,
-                  typenum: NPY_TYPES)
-                  -> Self {
+    pub fn arange<T: TypeNum>(py: Python,
+                              np: &PyArrayModule,
+                              start: f64,
+                              stop: f64,
+                              step: f64)
+                              -> Self {
         unsafe {
-            let ptr = np.PyArray_Arange(start, stop, step, typenum as i32);
+            let ptr = np.PyArray_Arange(start, stop, step, T::typenum());
             Self::from_owned_ptr(py, ptr)
         }
     }

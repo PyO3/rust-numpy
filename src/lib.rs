@@ -9,6 +9,9 @@ pub mod types;
 pub mod array;
 pub mod npyffi;
 pub mod error;
+pub mod convert;
 
 pub use array::PyArray;
-pub use npyffi::{PyArrayModule, PyUFuncModule, npy_intp, NPY_TYPES, NPY_ORDER};
+pub use types::*;
+pub use convert::{IntoPyArray, ToPyArray};
+pub use npyffi::{PyArrayModule, PyUFuncModule};
