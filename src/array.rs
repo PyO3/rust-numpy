@@ -187,6 +187,18 @@ impl PyArray {
     }
 }
 
+impl<'source> FromPyObject<'source> for PyArray {
+    fn extract(py: Python, obj: &'source PyObject) -> PyResult<Self> {
+        Ok(obj.clone_ref(py).cast_into::<PyArray>(py)?)
+    }
+}
+
+impl<'source> FromPyObject<'source> for &'source PyArray {
+    fn extract(py: Python, obj: &'source PyObject) -> PyResult<Self> {
+        Ok(obj.cast_as::<PyArray>(py)?)
+    }
+}
+
 impl ToPyObject for PyArray {
     type ObjectType = Self;
 
