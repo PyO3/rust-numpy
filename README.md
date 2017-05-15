@@ -40,7 +40,7 @@ Version
 --------
 
 - v0.2.0
-  - NEW: traits `IntoPython`, `ToPython`
+  - NEW: traits `IntoPyArray`, `ToPyArray`
   - MOD: Interface of `PyArray` creation functions are changed
 
 - v0.1.1
