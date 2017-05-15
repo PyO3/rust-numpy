@@ -1,5 +1,7 @@
 
 import rust_ext
+import numpy as np
 
-arr = rust_ext.get_arr()
-print(arr)
+a = np.array([1.0, 2.0])
+rust_ext.mult_two(a)
+print(a)

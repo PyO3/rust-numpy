@@ -12,10 +12,10 @@ py_module_initializer!(_rust_ext, init_rust_ext, PyInit__rust_ext, |py, m| {
     m.add(py, "__doc__", "Rust extension for NumPy")?;
     m.add(py, "get_arr", py_fn!(py, get_arr_py()))?;
     m.add(py,
-             "print",
-             py_fn!(py, print_py(pyarr: PyArray) -> PyResult<PyObject> {
-        let arr = pyarr.as_array().unwrap();
-        print(arr);
+             "mult_two",
+             py_fn!(py, mult_two_py(pyarr: PyArray) -> PyResult<PyObject> {
+        let arr = pyarr.as_array_mut().unwrap();
+        mult_two(arr);
         Ok(py.None())
     }))?;
     Ok(())
@@ -27,6 +27,6 @@ fn get_arr_py(py: Python) -> PyResult<PyArray> {
     Ok(arr)
 }
 
-fn print(x: ArrayViewD<f64>) {
-    println!("{:?}", x);
+fn mult_two(mut x: ArrayViewMutD<f64>) {
+    x *= 2.0;
 }

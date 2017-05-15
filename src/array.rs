@@ -114,7 +114,7 @@ impl PyArray {
     }
 
     /// Get data as a ndarray::ArrayViewMut
-    pub fn as_array_mut<A: types::TypeNum>(&mut self) -> Result<ArrayViewMutD<A>, ArrayCastError> {
+    pub fn as_array_mut<A: types::TypeNum>(&self) -> Result<ArrayViewMutD<A>, ArrayCastError> {
         self.type_check::<A>()?;
         unsafe { Ok(ArrayViewMut::from_shape_ptr(self.ndarray_shape::<A>(), self.data())) }
     }
@@ -126,7 +126,7 @@ impl PyArray {
     }
 
     /// Get data as a Rust mutable slice
-    pub fn as_slice_mut<A: types::TypeNum>(&mut self) -> Result<&mut [A], ArrayCastError> {
+    pub fn as_slice_mut<A: types::TypeNum>(&self) -> Result<&mut [A], ArrayCastError> {
         self.type_check::<A>()?;
         unsafe { Ok(::std::slice::from_raw_parts_mut(self.data(), self.len())) }
     }
