@@ -6,27 +6,26 @@ extern crate ndarray;
 
 use numpy::*;
 use ndarray::*;
-use cpython::{PyResult, Python, PyObject};
+use cpython::{PyResult, Python};
 
+// Pure Rust ndarray function
+fn axpy(a: f64, x: ArrayViewD<f64>, y: ArrayViewD<f64>) -> ArrayD<f64> {
+    a * &x + &y
+}
+
+// Python-wrapper of `axpy`
+fn axpy_py(py: Python, a: f64, x: PyArray, y: PyArray) -> PyResult<PyArray> {
+    let np = PyArrayModule::import(py)?;
+    let x = x.as_array().expect("x must be f64 array");
+    let y = y.as_array().expect("y must be f64 array");
+    Ok(axpy(a, x, y).into_pyarray(py, &np))
+}
+
+// Define module "_rust_ext"
 py_module_initializer!(_rust_ext, init_rust_ext, PyInit__rust_ext, |py, m| {
     m.add(py, "__doc__", "Rust extension for NumPy")?;
-    m.add(py, "get_arr", py_fn!(py, get_arr_py()))?;
     m.add(py,
-             "mult",
-             py_fn!(py, mult_py(a: f64, pyarr: PyArray) -> PyResult<PyObject> {
-        let arr = pyarr.as_array_mut().unwrap();
-        mult(a, arr);
-        Ok(py.None())
-    }))?;
+             "axpy",
+             py_fn!(py, axpy_py(a: f64, x: PyArray, y: PyArray)))?;
     Ok(())
 });
-
-fn get_arr_py(py: Python) -> PyResult<PyArray> {
-    let np = PyArrayModule::import(py)?;
-    let arr = PyArray::zeros::<f64>(py, &np, &[3, 5], NPY_CORDER);
-    Ok(arr)
-}
-
-fn mult(a: f64, mut x: ArrayViewMutD<f64>) {
-    x *= a;
-}
