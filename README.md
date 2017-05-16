@@ -74,6 +74,9 @@ We need your feedback. Don't hesitate to open [issue](https://github.com/termosh
 Version
 --------
 
+- v0.2.1
+  - NEW: trait `IntoPyErr`, `IntoPyResult` for error translation
+
 - v0.2.0
   - NEW: traits `IntoPyArray`, `ToPyArray`
   - MOD: Interface of `PyArray` creation functions are changed
