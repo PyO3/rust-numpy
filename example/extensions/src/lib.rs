@@ -25,14 +25,14 @@ fn mult(a: f64, mut x: ArrayViewMutD<f64>) {
 // wrapper of `axpy`
 fn axpy_py(py: Python, a: f64, x: PyArray, y: PyArray) -> PyResult<PyArray> {
     let np = PyArrayModule::import(py)?;
-    let x = x.as_array().expect("x must be f64 array");
-    let y = y.as_array().expect("y must be f64 array");
+    let x = x.as_array().into_pyresult(py, "x must be f64 array")?;
+    let y = y.as_array().into_pyresult(py, "y must be f64 array")?;
     Ok(axpy(a, x, y).into_pyarray(py, &np))
 }
 
 // wrapper of `mult`
 fn mult_py(py: Python, a: f64, x: PyArray) -> PyResult<PyObject> {
-    let x = x.as_array_mut().expect("x must be f64 array");
+    let x = x.as_array_mut().into_pyresult(py, "x must be f64 array")?;
     mult(a, x);
     Ok(py.None()) // Python function must returns
 }
