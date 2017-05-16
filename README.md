@@ -6,6 +6,14 @@ rust-numpy
 
 Rust binding of NumPy C-API
 
+Dependencies
+-------------
+
+- [rust-ndarray](https://github.com/bluss/rust-ndarray)
+- [rust-cpython](https://github.com/dgrunwald/rust-cpython)
+
+and more (see [Cargo.toml](Cargo.toml))
+
 Example
 ---------
 Please see [example](example) directory for a complete example
