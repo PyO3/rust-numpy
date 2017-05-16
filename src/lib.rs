@@ -13,5 +13,6 @@ pub mod convert;
 
 pub use array::PyArray;
 pub use types::*;
+pub use error::*;
 pub use convert::{IntoPyArray, ToPyArray};
 pub use npyffi::{PyArrayModule, PyUFuncModule};
