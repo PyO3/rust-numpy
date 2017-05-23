@@ -18,6 +18,17 @@ Example
 ---------
 Please see [example](example) directory for a complete example
 
+```
+[lib]
+name = "rust_ext"
+crate-type = ["cdylib"]
+
+[dependencies]
+numpy = "*"
+cpython = "*"
+ndarray = "*"
+```
+
 ```rust
 #[macro_use]
 extern crate cpython;
