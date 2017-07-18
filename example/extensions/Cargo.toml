@@ -9,5 +9,5 @@ crate-type = ["cdylib"]
 
 [dependencies]
 numpy = { path = "../.." }
-cpython = "*"
-ndarray = "*"
+cpython = "0.1"
+ndarray = "0.10"
