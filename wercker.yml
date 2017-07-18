@@ -5,14 +5,14 @@ build:
     - script:
       name: cargo test
       code: |
-        - cargo test -v
+        cargo test -v
 
 example:
   steps:
     - script:
       name: Build sample python binding
       code: |
-        - cd example
-        - pip3 install -r requirements.txt
-        - python3 setup.py develop
-        - python3 test.py
+        cd example
+        pip3 install -r requirements.txt
+        python3 setup.py develop
+        python3 test.py
