@@ -1,6 +1,6 @@
 rust-numpy
 ===========
-[![Build Status](http://termoshtt.tk/api/badges/termoshtt/rust-numpy/status.svg)](http://termoshtt.tk/termoshtt/rust-numpy)
+[![wercker status](https://app.wercker.com/status/f971e2378f50c16fdd22a5247c609d4c/s/master "wercker status")](https://app.wercker.com/project/byKey/f971e2378f50c16fdd22a5247c609d4c)
 [![Crate](http://meritbadge.herokuapp.com/numpy)](https://crates.io/crates/numpy)
 [![docs.rs](https://docs.rs/numpy/badge.svg)](https://docs.rs/numpy)
 
