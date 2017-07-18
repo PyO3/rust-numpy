@@ -1,18 +1,21 @@
-box: termoshtt/rust:latest
 
 build:
+  box: termoshtt/rust:latest
   steps:
     - script:
       name: cargo test
       code: |
-        cargo test -v
+        cargo test
 
 example:
+  box: python:3.6
   steps:
     - script:
       name: Build sample python binding
       code: |
+        curl https://sh.rustup.rs -sSf | sh -s -- -y
+        source /root/.cargo/env
         cd example
         pip3 install -r requirements.txt
-        python3 setup.py develop
-        python3 test.py
+        python setup.py develop
+        ./test.py
