@@ -5,18 +5,18 @@ use std::error;
 use std::fmt;
 
 pub trait IntoPyErr {
-    fn into_pyerr(self, py: Python, msg: &str) -> PyErr;
+    fn into_pyerr(self, msg: &str) -> PyErr;
 }
 
 pub trait IntoPyResult {
     type ValueType;
-    fn into_pyresult(self, py: Python, message: &str) -> PyResult<Self::ValueType>;
+    fn into_pyresult(self, msg: &str) -> PyResult<Self::ValueType>;
 }
 
 impl<T, E: IntoPyErr> IntoPyResult for Result<T, E> {
     type ValueType = T;
-    fn into_pyresult(self, py: Python, msg: &str) -> PyResult<T> {
-        self.map_err(|e| e.into_pyerr(py, msg))
+    fn into_pyresult(self, msg: &str) -> PyResult<T> {
+        self.map_err(|e| e.into_pyerr(msg))
     }
 }
 
@@ -49,8 +49,8 @@ impl error::Error for ArrayCastError {
 }
 
 impl IntoPyErr for ArrayCastError {
-    fn into_pyerr(self, py: Python, msg: &str) -> PyErr {
+    fn into_pyerr(self, msg: &str) -> PyErr {
         let msg = format!("rust_numpy::ArrayCastError: {}", msg);
-        PyErr::new::<exc::TypeError, _>(py, msg)
+        PyErr::new::<exc::TypeError, _>(msg)
     }
 }
