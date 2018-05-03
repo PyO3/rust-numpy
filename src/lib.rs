@@ -1,8 +1,7 @@
-extern crate cpython;
 extern crate libc;
 extern crate ndarray;
 extern crate num_complex;
-extern crate python3_sys as pyffi;
+extern crate pyo3;
 
 pub mod array;
 pub mod convert;
