@@ -9,7 +9,7 @@ use std::ptr::null_mut;
 
 use pyo3::ffi;
 use pyo3::ffi::{PyObject, PyTypeObject};
-use pyo3::{ObjectProtocol, PyModule, PyResult, Python};
+use pyo3::{ObjectProtocol, PyModule, PyResult, Python, ToPyPointer};
 
 use npyffi::*;
 
@@ -20,15 +20,15 @@ use npyffi::*;
 /// Some APIs (including most accessor) in the above URL are not implemented
 /// since they are defined as C macro, and cannot be called from rust.
 /// Some of these are implemented on the high-level interface as a Rust function.
-pub struct PyArrayModule {
-    numpy: PyModule,
+pub struct PyArrayModule<'py> {
+    numpy: &'py PyModule,
     api: *const *const c_void,
 }
 
-impl Deref for PyArrayModule {
+impl<'py> Deref for PyArrayModule<'py> {
     type Target = PyModule;
     fn deref(&self) -> &Self::Target {
-        &self.numpy
+        self.numpy
     }
 }
 
@@ -42,14 +42,13 @@ pub unsafe fn $fname(&self, $($arg : $t), *) $( -> $ret )* {
 }
 }} // pyarray_api!
 
-impl PyArrayModule {
+impl<'py> PyArrayModule<'py> {
     /// Import `numpy.core.multiarray` to use Array API.
-    pub fn import(py: Python) -> PyResult<Self> {
+    pub fn import(py: Python<'py>) -> PyResult<Self> {
         let numpy = py.import("numpy.core.multiarray")?;
-        let c_api = numpy.as_object().getattr(py, "_ARRAY_API")?;
+        let c_api = numpy.getattr("_ARRAY_API")?;
         let api = unsafe {
-            pyo3::ffi::PyCapsule_GetPointer(c_api.as_object().as_ptr(), null_mut())
-                as *const *const c_void
+            ffi::PyCapsule_GetPointer(c_api.as_ptr(), null_mut()) as *const *const c_void
         };
         Ok(Self {
             numpy: numpy,
@@ -322,7 +321,7 @@ macro_rules! impl_array_type {
 #[allow(non_camel_case_types)]
 #[repr(i32)]
 pub enum ArrayType { $($tname),* }
-impl PyArrayModule {
+impl<'py> PyArrayModule<'py> {
     pub unsafe fn get_type_object(&self, ty: ArrayType) -> *mut PyTypeObject {
         match ty {
             $( ArrayType::$tname => *(self.api.offset($offset)) as *mut PyTypeObject ),*
@@ -375,10 +374,10 @@ impl_array_type!(
 
 #[allow(non_snake_case)]
 pub unsafe fn PyArray_Check(np: &PyArrayModule, op: *mut PyObject) -> c_int {
-    pyo3::ffi::PyObject_TypeCheck(op, np.get_type_object(ArrayType::PyArray_Type))
+    ffi::PyObject_TypeCheck(op, np.get_type_object(ArrayType::PyArray_Type))
 }
 
 #[allow(non_snake_case)]
 pub unsafe fn PyArray_CheckExact(np: &PyArrayModule, op: *mut PyObject) -> c_int {
-    (pyo3::ffi::Py_TYPE(op) == np.get_type_object(ArrayType::PyArray_Type)) as c_int
+    (ffi::Py_TYPE(op) == np.get_type_object(ArrayType::PyArray_Type)) as c_int
 }

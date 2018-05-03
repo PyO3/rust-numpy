@@ -8,7 +8,7 @@ use std::ptr::null_mut;
 
 use pyo3::ffi;
 use pyo3::ffi::{PyObject, PyTypeObject};
-use pyo3::{ObjectProtocol, PyModule, PyResult, Python};
+use pyo3::{ObjectProtocol, PyModule, PyResult, Python, ToPyPointer};
 
 use super::objects::*;
 use super::types::*;
@@ -17,15 +17,15 @@ use super::types::*;
 /// https://docs.scipy.org/doc/numpy/reference/c-api.ufunc.html
 ///
 /// Most of UFunc API is exposed as the related function of this module object.
-pub struct PyUFuncModule {
-    numpy: PyModule,
+pub struct PyUFuncModule<'py> {
+    numpy: &'py PyModule,
     api: *const *const c_void,
 }
 
-impl Deref for PyUFuncModule {
+impl<'py> Deref for PyUFuncModule<'py> {
     type Target = PyModule;
     fn deref(&self) -> &Self::Target {
-        &self.numpy
+        self.numpy
     }
 }
 
@@ -39,14 +39,13 @@ pub unsafe fn $fname(&self, $($arg : $t), *) $( -> $ret )* {
 }
 }} // pyufunc_api!
 
-impl PyUFuncModule {
+impl<'py> PyUFuncModule<'py> {
     /// Import `numpy.core.umath` to use UFunc API.
-    pub fn import(py: Python) -> PyResult<Self> {
+    pub fn import(py: Python<'py>) -> PyResult<Self> {
         let numpy = py.import("numpy.core.umath")?;
-        let c_api = numpy.as_object().getattr(py, "_UFUNC_API")?;
+        let c_api = numpy.getattr("_UFUNC_API")?;
         let api = unsafe {
-            pyo3::ffi::PyCapsule_GetPointer(c_api.as_object().as_ptr(), null_mut())
-                as *const *const c_void
+            ffi::PyCapsule_GetPointer(c_api.as_ptr(), null_mut()) as *const *const c_void
         };
         Ok(Self {
             numpy: numpy,
