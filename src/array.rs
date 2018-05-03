@@ -1,9 +1,9 @@
 //! Untyped safe interface for NumPy ndarray
 
-use cpython::*;
 use ndarray::*;
 use npyffi;
-use pyffi;
+use pyo3::ffi;
+use pyo3::*;
 
 use std::os::raw::c_void;
 use std::ptr::null_mut;
@@ -23,12 +23,12 @@ impl PyArray {
         self.0.steal_ptr() as *mut npyffi::PyArrayObject
     }
 
-    pub unsafe fn from_owned_ptr(py: Python, ptr: *mut pyffi::PyObject) -> Self {
+    pub unsafe fn from_owned_ptr(py: Python, ptr: *mut pyo3::ffi::PyObject) -> Self {
         let obj = PyObject::from_owned_ptr(py, ptr);
         PyArray(obj)
     }
 
-    pub unsafe fn from_borrowed_ptr(py: Python, ptr: *mut pyffi::PyObject) -> Self {
+    pub unsafe fn from_borrowed_ptr(py: Python, ptr: *mut pyo3::ffi::PyObject) -> Self {
         let obj = PyObject::from_borrowed_ptr(py, ptr);
         PyArray(obj)
     }

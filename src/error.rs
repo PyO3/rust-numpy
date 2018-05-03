@@ -1,6 +1,6 @@
 //! Define Errors
 
-use cpython::*;
+use pyo3::*;
 use std::error;
 use std::fmt;
 

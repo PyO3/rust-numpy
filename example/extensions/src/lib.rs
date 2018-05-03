@@ -1,12 +1,12 @@
 
 #[macro_use]
-extern crate cpython;
+extern crate pyo3;
 extern crate numpy;
 extern crate ndarray;
 
 use numpy::*;
 use ndarray::*;
-use cpython::{PyResult, Python, PyObject};
+use pyo3::{PyResult, Python, PyObject};
 
 /* Pure rust-ndarray functions */
 
@@ -20,7 +20,7 @@ fn mult(a: f64, mut x: ArrayViewMutD<f64>) {
     x *= a;
 }
 
-/* rust-cpython wrappers (to be exposed) */
+/* rust-pyo3 wrappers (to be exposed) */
 
 // wrapper of `axpy`
 fn axpy_py(py: Python, a: f64, x: PyArray, y: PyArray) -> PyResult<PyArray> {

@@ -4,7 +4,7 @@
 #![allow(non_camel_case_types, non_snake_case)]
 
 use libc::FILE;
-use pyffi::*;
+use pyo3::ffi::*;
 use std::option::Option;
 use std::os::raw::*;
 

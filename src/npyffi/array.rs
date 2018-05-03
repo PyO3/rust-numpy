@@ -7,9 +7,9 @@ use std::ops::Deref;
 use std::os::raw::*;
 use std::ptr::null_mut;
 
-use cpython::{ObjectProtocol, PyModule, PyResult, Python, PythonObject};
-use pyffi;
-use pyffi::{PyObject, PyTypeObject};
+use pyo3::ffi;
+use pyo3::ffi::{PyObject, PyTypeObject};
+use pyo3::{ObjectProtocol, PyModule, PyResult, Python};
 
 use npyffi::*;
 
@@ -48,7 +48,7 @@ impl PyArrayModule {
         let numpy = py.import("numpy.core.multiarray")?;
         let c_api = numpy.as_object().getattr(py, "_ARRAY_API")?;
         let api = unsafe {
-            pyffi::PyCapsule_GetPointer(c_api.as_object().as_ptr(), null_mut())
+            pyo3::ffi::PyCapsule_GetPointer(c_api.as_object().as_ptr(), null_mut())
                 as *const *const c_void
         };
         Ok(Self {
@@ -375,10 +375,10 @@ impl_array_type!(
 
 #[allow(non_snake_case)]
 pub unsafe fn PyArray_Check(np: &PyArrayModule, op: *mut PyObject) -> c_int {
-    pyffi::PyObject_TypeCheck(op, np.get_type_object(ArrayType::PyArray_Type))
+    pyo3::ffi::PyObject_TypeCheck(op, np.get_type_object(ArrayType::PyArray_Type))
 }
 
 #[allow(non_snake_case)]
 pub unsafe fn PyArray_CheckExact(np: &PyArrayModule, op: *mut PyObject) -> c_int {
-    (pyffi::Py_TYPE(op) == np.get_type_object(ArrayType::PyArray_Type)) as c_int
+    (pyo3::ffi::Py_TYPE(op) == np.get_type_object(ArrayType::PyArray_Type)) as c_int
 }

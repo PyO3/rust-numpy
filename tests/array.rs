@@ -1,4 +1,4 @@
-extern crate cpython;
+extern crate pyo3;
 extern crate ndarray;
 extern crate numpy;
 
@@ -7,7 +7,7 @@ use numpy::*;
 
 #[test]
 fn new() {
-    let gil = cpython::Python::acquire_gil();
+    let gil = pyo3::Python::acquire_gil();
     let np = PyArrayModule::import(gil.python()).unwrap();
     let n = 3;
     let m = 5;
@@ -19,7 +19,7 @@ fn new() {
 
 #[test]
 fn zeros() {
-    let gil = cpython::Python::acquire_gil();
+    let gil = pyo3::Python::acquire_gil();
     let np = PyArrayModule::import(gil.python()).unwrap();
     let n = 3;
     let m = 5;
@@ -36,7 +36,7 @@ fn zeros() {
 
 #[test]
 fn arange() {
-    let gil = cpython::Python::acquire_gil();
+    let gil = pyo3::Python::acquire_gil();
     let np = PyArrayModule::import(gil.python()).unwrap();
     let arr = PyArray::arange::<f64>(gil.python(), &np, 0.0, 1.0, 0.1);
     println!("ndim = {:?}", arr.ndim());
@@ -46,7 +46,7 @@ fn arange() {
 
 #[test]
 fn as_array() {
-    let gil = cpython::Python::acquire_gil();
+    let gil = pyo3::Python::acquire_gil();
     let np = PyArrayModule::import(gil.python()).unwrap();
     let arr = PyArray::zeros::<f64>(gil.python(), &np, &[3, 2, 4], NPY_CORDER);
     let a = arr.as_array::<f64>().unwrap();
@@ -60,7 +60,7 @@ fn as_array() {
 #[test]
 #[should_panic]
 fn as_array_panic() {
-    let gil = cpython::Python::acquire_gil();
+    let gil = pyo3::Python::acquire_gil();
     let np = PyArrayModule::import(gil.python()).unwrap();
     let arr = PyArray::zeros::<i32>(gil.python(), &np, &[3, 2, 4], NPY_CORDER);
     let _a = arr.as_array::<f32>().unwrap();
@@ -68,7 +68,7 @@ fn as_array_panic() {
 
 #[test]
 fn into_pyarray_vec() {
-    let gil = cpython::Python::acquire_gil();
+    let gil = pyo3::Python::acquire_gil();
     let np = PyArrayModule::import(gil.python()).unwrap();
 
     let a = vec![1, 2, 3];
@@ -80,7 +80,7 @@ fn into_pyarray_vec() {
 
 #[test]
 fn into_pyarray_array() {
-    let gil = cpython::Python::acquire_gil();
+    let gil = pyo3::Python::acquire_gil();
     let np = PyArrayModule::import(gil.python()).unwrap();
 
     let a = Array3::<f64>::zeros((3, 4, 2));
@@ -97,7 +97,7 @@ fn into_pyarray_array() {
 
 #[test]
 fn iter_to_pyarray() {
-    let gil = cpython::Python::acquire_gil();
+    let gil = pyo3::Python::acquire_gil();
     let np = PyArrayModule::import(gil.python()).unwrap();
     let arr = (0..10).map(|x| x * x).to_pyarray(gil.python(), &np);
     println!("arr.shape = {:?}", arr.shape());

@@ -6,9 +6,9 @@ use std::ops::Deref;
 use std::os::raw::*;
 use std::ptr::null_mut;
 
-use cpython::{ObjectProtocol, PyModule, PyResult, Python, PythonObject};
-use pyffi;
-use pyffi::{PyObject, PyTypeObject};
+use pyo3::ffi;
+use pyo3::ffi::{PyObject, PyTypeObject};
+use pyo3::{ObjectProtocol, PyModule, PyResult, Python};
 
 use super::objects::*;
 use super::types::*;
@@ -45,7 +45,7 @@ impl PyUFuncModule {
         let numpy = py.import("numpy.core.umath")?;
         let c_api = numpy.as_object().getattr(py, "_UFUNC_API")?;
         let api = unsafe {
-            pyffi::PyCapsule_GetPointer(c_api.as_object().as_ptr(), null_mut())
+            pyo3::ffi::PyCapsule_GetPointer(c_api.as_object().as_ptr(), null_mut())
                 as *const *const c_void
         };
         Ok(Self {
