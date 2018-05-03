@@ -1,10 +1,9 @@
-
 pub use num_complex::Complex32 as c32;
 pub use num_complex::Complex64 as c64;
 
+pub use super::npyffi::npy_intp;
 pub use super::npyffi::NPY_ORDER;
 pub use super::npyffi::NPY_ORDER::{NPY_CORDER, NPY_FORTRANORDER};
-pub use super::npyffi::npy_intp;
 
 use super::npyffi::NPY_TYPES;
 
@@ -17,12 +16,13 @@ pub trait TypeNum {
 
 macro_rules! impl_type_num {
     ($t:ty, $npy_t:ident) => {
-impl TypeNum for $t {
-    fn typenum_enum() -> NPY_TYPES {
-        NPY_TYPES::$npy_t
-    }
-}
-}} // impl_type_num!
+        impl TypeNum for $t {
+            fn typenum_enum() -> NPY_TYPES {
+                NPY_TYPES::$npy_t
+            }
+        }
+    };
+} // impl_type_num!
 
 impl_type_num!(bool, NPY_BOOL);
 impl_type_num!(i32, NPY_INT);

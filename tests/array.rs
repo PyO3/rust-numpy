@@ -1,7 +1,6 @@
-
 extern crate cpython;
-extern crate numpy;
 extern crate ndarray;
+extern crate numpy;
 
 use ndarray::*;
 use numpy::*;
@@ -52,8 +51,10 @@ fn as_array() {
     let arr = PyArray::zeros::<f64>(gil.python(), &np, &[3, 2, 4], NPY_CORDER);
     let a = arr.as_array::<f64>().unwrap();
     assert_eq!(arr.shape(), a.shape());
-    assert_eq!(arr.strides().iter().map(|x| x / 8).collect::<Vec<_>>(),
-               a.strides());
+    assert_eq!(
+        arr.strides().iter().map(|x| x / 8).collect::<Vec<_>>(),
+        a.strides()
+    );
 }
 
 #[test]

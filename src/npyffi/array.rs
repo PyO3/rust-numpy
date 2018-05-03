@@ -2,14 +2,14 @@
 //!
 //! https://docs.scipy.org/doc/numpy/reference/c-api.array.html
 
-use std::os::raw::*;
-use std::ptr::null_mut;
 use libc::FILE;
 use std::ops::Deref;
+use std::os::raw::*;
+use std::ptr::null_mut;
 
+use cpython::{ObjectProtocol, PyModule, PyResult, Python, PythonObject};
 use pyffi;
 use pyffi::{PyObject, PyTypeObject};
-use cpython::{Python, PythonObject, ObjectProtocol, PyResult, PyModule};
 
 use npyffi::*;
 
@@ -48,8 +48,8 @@ impl PyArrayModule {
         let numpy = py.import("numpy.core.multiarray")?;
         let c_api = numpy.as_object().getattr(py, "_ARRAY_API")?;
         let api = unsafe {
-            pyffi::PyCapsule_GetPointer(c_api.as_object().as_ptr(), null_mut()) as
-            *const *const c_void
+            pyffi::PyCapsule_GetPointer(c_api.as_object().as_ptr(), null_mut())
+                as *const *const c_void
         };
         Ok(Self {
             numpy: numpy,
@@ -331,45 +331,47 @@ impl PyArrayModule {
 }
 }} // impl_array_type!;
 
-impl_array_type!((1, PyBigArray_Type),
-                 (2, PyArray_Type),
-                 (3, PyArrayDescr_Type),
-                 (4, PyArrayFlags_Type),
-                 (5, PyArrayIter_Type),
-                 (6, PyArrayMultiIter_Type),
-                 (7, NPY_NUMUSERTYPES),
-                 (8, PyBoolArrType_Type),
-                 (9, _PyArrayScalar_BoolValues),
-                 (10, PyGenericArrType_Type),
-                 (11, PyNumberArrType_Type),
-                 (12, PyIntegerArrType_Type),
-                 (13, PySignedIntegerArrType_Type),
-                 (14, PyUnsignedIntegerArrType_Type),
-                 (15, PyInexactArrType_Type),
-                 (16, PyFloatingArrType_Type),
-                 (17, PyComplexFloatingArrType_Type),
-                 (18, PyFlexibleArrType_Type),
-                 (19, PyCharacterArrType_Type),
-                 (20, PyByteArrType_Type),
-                 (21, PyShortArrType_Type),
-                 (22, PyIntArrType_Type),
-                 (23, PyLongArrType_Type),
-                 (24, PyLongLongArrType_Type),
-                 (25, PyUByteArrType_Type),
-                 (26, PyUShortArrType_Type),
-                 (27, PyUIntArrType_Type),
-                 (28, PyULongArrType_Type),
-                 (29, PyULongLongArrType_Type),
-                 (30, PyFloatArrType_Type),
-                 (31, PyDoubleArrType_Type),
-                 (32, PyLongDoubleArrType_Type),
-                 (33, PyCFloatArrType_Type),
-                 (34, PyCDoubleArrType_Type),
-                 (35, PyCLongDoubleArrType_Type),
-                 (36, PyObjectArrType_Type),
-                 (37, PyStringArrType_Type),
-                 (38, PyUnicodeArrType_Type),
-                 (39, PyVoidArrType_Type));
+impl_array_type!(
+    (1, PyBigArray_Type),
+    (2, PyArray_Type),
+    (3, PyArrayDescr_Type),
+    (4, PyArrayFlags_Type),
+    (5, PyArrayIter_Type),
+    (6, PyArrayMultiIter_Type),
+    (7, NPY_NUMUSERTYPES),
+    (8, PyBoolArrType_Type),
+    (9, _PyArrayScalar_BoolValues),
+    (10, PyGenericArrType_Type),
+    (11, PyNumberArrType_Type),
+    (12, PyIntegerArrType_Type),
+    (13, PySignedIntegerArrType_Type),
+    (14, PyUnsignedIntegerArrType_Type),
+    (15, PyInexactArrType_Type),
+    (16, PyFloatingArrType_Type),
+    (17, PyComplexFloatingArrType_Type),
+    (18, PyFlexibleArrType_Type),
+    (19, PyCharacterArrType_Type),
+    (20, PyByteArrType_Type),
+    (21, PyShortArrType_Type),
+    (22, PyIntArrType_Type),
+    (23, PyLongArrType_Type),
+    (24, PyLongLongArrType_Type),
+    (25, PyUByteArrType_Type),
+    (26, PyUShortArrType_Type),
+    (27, PyUIntArrType_Type),
+    (28, PyULongArrType_Type),
+    (29, PyULongLongArrType_Type),
+    (30, PyFloatArrType_Type),
+    (31, PyDoubleArrType_Type),
+    (32, PyLongDoubleArrType_Type),
+    (33, PyCFloatArrType_Type),
+    (34, PyCDoubleArrType_Type),
+    (35, PyCLongDoubleArrType_Type),
+    (36, PyObjectArrType_Type),
+    (37, PyStringArrType_Type),
+    (38, PyUnicodeArrType_Type),
+    (39, PyVoidArrType_Type)
+);
 
 #[allow(non_snake_case)]
 pub unsafe fn PyArray_Check(np: &PyArrayModule, op: *mut PyObject) -> c_int {

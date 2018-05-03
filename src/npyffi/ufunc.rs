@@ -2,16 +2,16 @@
 //!
 //! https://docs.scipy.org/doc/numpy/reference/c-api.ufunc.html
 
+use std::ops::Deref;
 use std::os::raw::*;
 use std::ptr::null_mut;
-use std::ops::Deref;
 
+use cpython::{ObjectProtocol, PyModule, PyResult, Python, PythonObject};
 use pyffi;
 use pyffi::{PyObject, PyTypeObject};
-use cpython::{Python, PythonObject, ObjectProtocol, PyResult, PyModule};
 
-use super::types::*;
 use super::objects::*;
+use super::types::*;
 
 /// Low-Level binding for UFunc API
 /// https://docs.scipy.org/doc/numpy/reference/c-api.ufunc.html
@@ -45,8 +45,8 @@ impl PyUFuncModule {
         let numpy = py.import("numpy.core.umath")?;
         let c_api = numpy.as_object().getattr(py, "_UFUNC_API")?;
         let api = unsafe {
-            pyffi::PyCapsule_GetPointer(c_api.as_object().as_ptr(), null_mut()) as
-            *const *const c_void
+            pyffi::PyCapsule_GetPointer(c_api.as_object().as_ptr(), null_mut())
+                as *const *const c_void
         };
         Ok(Self {
             numpy: numpy,

@@ -9,12 +9,12 @@
 //! - http://docs.python.jp/3/c-api/
 //! - http://dgrunwald.github.io/rust-cpython/doc/cpython/
 
-pub mod types;
-pub mod objects;
 pub mod array;
+pub mod objects;
+pub mod types;
 pub mod ufunc;
 
-pub use self::types::*;
-pub use self::objects::*;
 pub use self::array::*;
+pub use self::objects::*;
+pub use self::types::*;
 pub use self::ufunc::*;

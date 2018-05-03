@@ -1,11 +1,10 @@
-
 use cpython::Python;
 use ndarray::*;
 
-use std::os::raw::c_void;
-use std::ptr::null_mut;
 use std::iter::Iterator;
 use std::mem::size_of;
+use std::os::raw::c_void;
+use std::ptr::null_mut;
 
 use super::*;
 
@@ -44,7 +43,8 @@ pub trait ToPyArray {
 }
 
 impl<Iter, T: TypeNum> ToPyArray for Iter
-    where Iter: Iterator<Item = T> + Sized
+where
+    Iter: Iterator<Item = T> + Sized,
 {
     fn to_pyarray(self, py: Python, np: &PyArrayModule) -> PyArray {
         let vec: Vec<T> = self.collect();

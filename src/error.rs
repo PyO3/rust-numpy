@@ -1,8 +1,8 @@
 //! Define Errors
 
+use cpython::*;
 use std::error;
 use std::fmt;
-use cpython::*;
 
 pub trait IntoPyErr {
     fn into_pyerr(self, py: Python, msg: &str) -> PyErr;

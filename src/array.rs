@@ -1,15 +1,15 @@
 //! Untyped safe interface for NumPy ndarray
 
-use npyffi;
-use pyffi;
 use cpython::*;
 use ndarray::*;
+use npyffi;
+use pyffi;
 
 use std::os::raw::c_void;
 use std::ptr::null_mut;
 
-use super::*;
 use super::error::ArrayCastError;
+use super::*;
 
 /// Untyped safe interface for NumPy ndarray.
 pub struct PyArray(PyObject);
@@ -85,8 +85,10 @@ impl PyArray {
     fn ndarray_shape<A>(&self) -> StrideShape<IxDyn> {
         // FIXME may be done more simply
         let shape: Shape<_> = Dim(self.shape()).into();
-        let st: Vec<usize> =
-            self.strides().iter().map(|&x| x as usize / ::std::mem::size_of::<A>()).collect();
+        let st: Vec<usize> = self.strides()
+            .iter()
+            .map(|&x| x as usize / ::std::mem::size_of::<A>())
+            .collect();
         shape.strides(Dim(st))
     }
 
@@ -110,13 +112,23 @@ impl PyArray {
     /// Get data as a ndarray::ArrayView
     pub fn as_array<A: types::TypeNum>(&self) -> Result<ArrayViewD<A>, ArrayCastError> {
         self.type_check::<A>()?;
-        unsafe { Ok(ArrayView::from_shape_ptr(self.ndarray_shape::<A>(), self.data())) }
+        unsafe {
+            Ok(ArrayView::from_shape_ptr(
+                self.ndarray_shape::<A>(),
+                self.data(),
+            ))
+        }
     }
 
     /// Get data as a ndarray::ArrayViewMut
     pub fn as_array_mut<A: types::TypeNum>(&self) -> Result<ArrayViewMutD<A>, ArrayCastError> {
         self.type_check::<A>()?;
-        unsafe { Ok(ArrayViewMut::from_shape_ptr(self.ndarray_shape::<A>(), self.data())) }
+        unsafe {
+            Ok(ArrayViewMut::from_shape_ptr(
+                self.ndarray_shape::<A>(),
+                self.data(),
+            ))
+        }
     }
 
     /// Get data as a Rust immutable slice
@@ -131,23 +143,25 @@ impl PyArray {
         unsafe { Ok(::std::slice::from_raw_parts_mut(self.data(), self.len())) }
     }
 
-    pub unsafe fn new_<T: TypeNum>(py: Python,
-                                   np: &PyArrayModule,
-                                   dims: &[usize],
-                                   strides: *mut npy_intp,
-                                   data: *mut c_void)
-                                   -> Self {
+    pub unsafe fn new_<T: TypeNum>(
+        py: Python,
+        np: &PyArrayModule,
+        dims: &[usize],
+        strides: *mut npy_intp,
+        data: *mut c_void,
+    ) -> Self {
         let dims: Vec<_> = dims.iter().map(|d| *d as npy_intp).collect();
-        let ptr = np.PyArray_New(np.get_type_object(npyffi::ArrayType::PyArray_Type),
-                                     dims.len() as i32,
-                                     dims.as_ptr() as *mut npy_intp,
-                                     T::typenum(),
-                                     strides,
-                                     data,
-                                     0,                      // itemsize
-                                     0,                      // flag
-                                     ::std::ptr::null_mut()  //obj
-                                     );
+        let ptr = np.PyArray_New(
+            np.get_type_object(npyffi::ArrayType::PyArray_Type),
+            dims.len() as i32,
+            dims.as_ptr() as *mut npy_intp,
+            T::typenum(),
+            strides,
+            data,
+            0,                      // itemsize
+            0,                      // flag
+            ::std::ptr::null_mut(), //obj
+        );
         Self::from_owned_ptr(py, ptr)
     }
 
@@ -157,29 +171,33 @@ impl PyArray {
     }
 
     /// a wrapper of [PyArray_ZEROS](https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_ZEROS)
-    pub fn zeros<T: TypeNum>(py: Python,
-                             np: &PyArrayModule,
-                             dims: &[usize],
-                             order: NPY_ORDER)
-                             -> Self {
+    pub fn zeros<T: TypeNum>(
+        py: Python,
+        np: &PyArrayModule,
+        dims: &[usize],
+        order: NPY_ORDER,
+    ) -> Self {
         let dims: Vec<npy_intp> = dims.iter().map(|d| *d as npy_intp).collect();
         unsafe {
             let descr = np.PyArray_DescrFromType(T::typenum());
-            let ptr = np.PyArray_Zeros(dims.len() as i32,
-                                       dims.as_ptr() as *mut npy_intp,
-                                       descr,
-                                       order as i32);
+            let ptr = np.PyArray_Zeros(
+                dims.len() as i32,
+                dims.as_ptr() as *mut npy_intp,
+                descr,
+                order as i32,
+            );
             Self::from_owned_ptr(py, ptr)
         }
     }
 
     /// a wrapper of [PyArray_Arange](https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_Arange)
-    pub fn arange<T: TypeNum>(py: Python,
-                              np: &PyArrayModule,
-                              start: f64,
-                              stop: f64,
-                              step: f64)
-                              -> Self {
+    pub fn arange<T: TypeNum>(
+        py: Python,
+        np: &PyArrayModule,
+        start: f64,
+        stop: f64,
+        step: f64,
+    ) -> Self {
         unsafe {
             let ptr = np.PyArray_Arange(start, stop, step, T::typenum());
             Self::from_owned_ptr(py, ptr)
@@ -230,9 +248,10 @@ impl PythonObject for PyArray {
 }
 
 impl PythonObjectWithCheckedDowncast for PyArray {
-    fn downcast_from<'p>(py: Python<'p>,
-                         obj: PyObject)
-                         -> Result<PyArray, PythonObjectDowncastError<'p>> {
+    fn downcast_from<'p>(
+        py: Python<'p>,
+        obj: PyObject,
+    ) -> Result<PyArray, PythonObjectDowncastError<'p>> {
         let np = PyArrayModule::import(py).unwrap();
         unsafe {
             if npyffi::PyArray_Check(&np, obj.as_ptr()) != 0 {
@@ -243,9 +262,10 @@ impl PythonObjectWithCheckedDowncast for PyArray {
         }
     }
 
-    fn downcast_borrow_from<'a, 'p>(py: Python<'p>,
-                                    obj: &'a PyObject)
-                                    -> Result<&'a PyArray, PythonObjectDowncastError<'p>> {
+    fn downcast_borrow_from<'a, 'p>(
+        py: Python<'p>,
+        obj: &'a PyObject,
+    ) -> Result<&'a PyArray, PythonObjectDowncastError<'p>> {
         let np = PyArrayModule::import(py).unwrap();
         unsafe {
             if npyffi::PyArray_Check(&np, obj.as_ptr()) != 0 {
