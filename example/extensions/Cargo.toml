@@ -9,5 +9,8 @@ crate-type = ["cdylib"]
 
 [dependencies]
 numpy = { path = "../.." }
-cpython = "0.1"
 ndarray = "0.10"
+
+[dependencies.pyo3]
+version = "*"
+features = ["extension-module"]
