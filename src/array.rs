@@ -14,13 +14,15 @@ use super::*;
 /// Untyped safe interface for NumPy ndarray.
 pub struct PyArray(PyObject);
 
-impl PyArray {
-    pub fn as_ptr(&self) -> *mut npyffi::PyArrayObject {
-        self.0.as_ptr() as *mut npyffi::PyArrayObject
+impl ToPyPointer for PyArray {
+    fn as_ptr(&self) -> *mut ffi::PyObject {
+        self.0.as_ptr()
     }
+}
 
-    pub fn steal_ptr(self) -> *mut npyffi::PyArrayObject {
-        self.0.steal_ptr() as *mut npyffi::PyArrayObject
+impl PyArray {
+    pub fn as_array_ptr(&self) -> *mut npyffi::PyArrayObject {
+        self.as_ptr() as _
     }
 
     pub unsafe fn from_owned_ptr(py: Python, ptr: *mut pyo3::ffi::PyObject) -> Self {
@@ -37,7 +39,7 @@ impl PyArray {
     ///
     /// https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_NDIM
     pub fn ndim(&self) -> usize {
-        let ptr = self.as_ptr();
+        let ptr = self.as_array_ptr();
         unsafe { (*ptr).nd as usize }
     }
 
@@ -46,7 +48,7 @@ impl PyArray {
     /// https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_DIMS
     pub fn dims(&self) -> Vec<usize> {
         let n = self.ndim();
-        let ptr = self.as_ptr();
+        let ptr = self.as_array_ptr();
         let dims = unsafe {
             let p = (*ptr).dimensions;
             ::std::slice::from_raw_parts(p, n)
@@ -69,7 +71,7 @@ impl PyArray {
     /// - https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.strides.html#numpy.ndarray.strides
     pub fn strides(&self) -> Vec<isize> {
         let n = self.ndim();
-        let ptr = self.as_ptr();
+        let ptr = self.as_array_ptr();
         let dims = unsafe {
             let p = (*ptr).strides;
             ::std::slice::from_raw_parts(p, n)
@@ -78,7 +80,7 @@ impl PyArray {
     }
 
     unsafe fn data<T>(&self) -> *mut T {
-        let ptr = self.as_ptr();
+        let ptr = self.as_array_ptr();
         (*ptr).data as *mut T
     }
 
@@ -94,7 +96,7 @@ impl PyArray {
 
     pub fn typenum(&self) -> i32 {
         unsafe {
-            let descr = (*self.as_ptr()).descr;
+            let descr = (*self.as_array_ptr()).descr;
             (*descr).type_num
         }
     }
@@ -143,7 +145,7 @@ impl PyArray {
         unsafe { Ok(::std::slice::from_raw_parts_mut(self.data(), self.len())) }
     }
 
-    pub unsafe fn new_<T: TypeNum>(
+    pub unsafe fn new_<T: types::TypeNum>(
         py: Python,
         np: &PyArrayModule,
         dims: &[usize],
@@ -201,78 +203,6 @@ impl PyArray {
         unsafe {
             let ptr = np.PyArray_Arange(start, stop, step, T::typenum());
             Self::from_owned_ptr(py, ptr)
-        }
-    }
-}
-
-impl<'source> FromPyObject<'source> for PyArray {
-    fn extract(py: Python, obj: &'source PyObject) -> PyResult<Self> {
-        Ok(obj.clone_ref(py).cast_into::<PyArray>(py)?)
-    }
-}
-
-impl<'source> FromPyObject<'source> for &'source PyArray {
-    fn extract(py: Python, obj: &'source PyObject) -> PyResult<Self> {
-        Ok(obj.cast_as::<PyArray>(py)?)
-    }
-}
-
-impl ToPyObject for PyArray {
-    type ObjectType = Self;
-
-    fn to_py_object(&self, py: Python) -> Self {
-        PyClone::clone_ref(self, py)
-    }
-}
-
-impl PythonObject for PyArray {
-    #[inline]
-    fn as_object(&self) -> &PyObject {
-        &self.0
-    }
-
-    #[inline]
-    fn into_object(self) -> PyObject {
-        self.0
-    }
-
-    #[inline]
-    unsafe fn unchecked_downcast_from(obj: PyObject) -> Self {
-        PyArray(obj)
-    }
-
-    #[inline]
-    unsafe fn unchecked_downcast_borrow_from<'a>(obj: &'a PyObject) -> &'a Self {
-        ::std::mem::transmute(obj)
-    }
-}
-
-impl PythonObjectWithCheckedDowncast for PyArray {
-    fn downcast_from<'p>(
-        py: Python<'p>,
-        obj: PyObject,
-    ) -> Result<PyArray, PythonObjectDowncastError<'p>> {
-        let np = PyArrayModule::import(py).unwrap();
-        unsafe {
-            if npyffi::PyArray_Check(&np, obj.as_ptr()) != 0 {
-                Ok(PyArray(obj))
-            } else {
-                Err(PythonObjectDowncastError(py))
-            }
-        }
-    }
-
-    fn downcast_borrow_from<'a, 'p>(
-        py: Python<'p>,
-        obj: &'a PyObject,
-    ) -> Result<&'a PyArray, PythonObjectDowncastError<'p>> {
-        let np = PyArrayModule::import(py).unwrap();
-        unsafe {
-            if npyffi::PyArray_Check(&np, obj.as_ptr()) != 0 {
-                Ok(::std::mem::transmute(obj))
-            } else {
-                Err(PythonObjectDowncastError(py))
-            }
         }
     }
 }
