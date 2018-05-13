@@ -14,11 +14,7 @@ use super::*;
 /// Untyped safe interface for NumPy ndarray.
 pub struct PyArray(PyObject);
 
-impl ToPyPointer for PyArray {
-    fn as_ptr(&self) -> *mut ffi::PyObject {
-        self.0.as_ptr()
-    }
-}
+pyobject_native_type!(PyArray, npyffi::PyArray_Type, npyffi::PyArray_Check);
 
 impl PyArray {
     pub fn as_array_ptr(&self) -> *mut npyffi::PyArrayObject {

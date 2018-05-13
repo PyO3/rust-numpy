@@ -13,4 +13,8 @@ license-file = "LICENSE"
 libc = "0.2"
 num-complex = "0.1"
 ndarray = "0.10"
-pyo3 = "0.2"
+
+[dependencies.pyo3]
+git = "http://github.com/termoshtt/pyo3"
+branch = "pyobject_macros"
+version = "0.2"
