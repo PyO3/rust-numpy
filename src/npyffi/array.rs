@@ -26,7 +26,7 @@ pub struct PyArrayModule<'py> {
 }
 
 #[allow(non_upper_case_globals)]
-pub static mut PyArray_Type_Global: PyTypeObject = ffi::PyTypeObject_INIT;
+pub static mut PyArray_Type_Ptr: *mut PyTypeObject = null_mut();
 
 impl<'py> Deref for PyArrayModule<'py> {
     type Target = PyModule;
@@ -55,7 +55,7 @@ impl<'py> PyArrayModule<'py> {
         };
         let mod_ = PyArrayModule { numpy, api };
         unsafe {
-            PyArray_Type_Global = *mod_.get_type_object(ArrayType::PyArray_Type);
+            PyArray_Type_Ptr = mod_.get_type_object(ArrayType::PyArray_Type);
         }
         Ok(mod_)
     }
@@ -378,12 +378,10 @@ impl_array_type!(
 
 #[allow(non_snake_case)]
 pub unsafe fn PyArray_Check(op: *mut PyObject) -> c_int {
-    let typeobj_ptr: *mut PyTypeObject = &mut PyArray_Type_Global;
-    ffi::PyObject_TypeCheck(op, typeobj_ptr)
+    ffi::PyObject_TypeCheck(op, PyArray_Type_Ptr)
 }
 
 #[allow(non_snake_case)]
 pub unsafe fn PyArray_CheckExact(op: *mut PyObject) -> c_int {
-    let typeobj_ptr: *mut _ = &mut PyArray_Type_Global;
-    (ffi::Py_TYPE(op) == typeobj_ptr) as c_int
+    (ffi::Py_TYPE(op) == PyArray_Type_Ptr) as c_int
 }

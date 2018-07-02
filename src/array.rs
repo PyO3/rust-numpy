@@ -12,7 +12,7 @@ use super::*;
 
 /// Untyped safe interface for NumPy ndarray.
 pub struct PyArray(PyObject);
-pyobject_native_type!(PyArray, npyffi::PyArray_Type_Global, npyffi::PyArray_Check);
+pyobject_native_type!(PyArray, *npyffi::PyArray_Type_Ptr, npyffi::PyArray_Check);
 
 impl PyArray {
     pub fn as_array_ptr(&self) -> *mut npyffi::PyArrayObject {
