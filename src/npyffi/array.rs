@@ -25,6 +25,9 @@ pub struct PyArrayModule<'py> {
     api: *const *const c_void,
 }
 
+#[allow(non_upper_case_globals)]
+pub static mut PyArray_Type_Global: PyTypeObject = ffi::PyTypeObject_INIT;
+
 impl<'py> Deref for PyArrayModule<'py> {
     type Target = PyModule;
     fn deref(&self) -> &Self::Target {
@@ -50,10 +53,11 @@ impl<'py> PyArrayModule<'py> {
         let api = unsafe {
             ffi::PyCapsule_GetPointer(c_api.as_ptr(), null_mut()) as *const *const c_void
         };
-        Ok(Self {
-            numpy: numpy,
-            api: api,
-        })
+        let mod_ = PyArrayModule { numpy, api };
+        unsafe {
+            PyArray_Type_Global = *mod_.get_type_object(ArrayType::PyArray_Type);
+        }
+        Ok(mod_)
     }
 
     pyarray_api![0; PyArray_GetNDArrayCVersion() -> c_uint];
@@ -373,11 +377,13 @@ impl_array_type!(
 );
 
 #[allow(non_snake_case)]
-pub unsafe fn PyArray_Check(np: &PyArrayModule, op: *mut PyObject) -> c_int {
-    ffi::PyObject_TypeCheck(op, np.get_type_object(ArrayType::PyArray_Type))
+pub unsafe fn PyArray_Check(op: *mut PyObject) -> c_int {
+    let typeobj_ptr: *mut PyTypeObject = &mut PyArray_Type_Global;
+    ffi::PyObject_TypeCheck(op, typeobj_ptr)
 }
 
 #[allow(non_snake_case)]
-pub unsafe fn PyArray_CheckExact(np: &PyArrayModule, op: *mut PyObject) -> c_int {
-    (ffi::Py_TYPE(op) == np.get_type_object(ArrayType::PyArray_Type)) as c_int
+pub unsafe fn PyArray_CheckExact(op: *mut PyObject) -> c_int {
+    let typeobj_ptr: *mut _ = &mut PyArray_Type_Global;
+    (ffi::Py_TYPE(op) == typeobj_ptr) as c_int
 }
