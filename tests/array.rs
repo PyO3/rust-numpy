@@ -104,3 +104,13 @@ fn iter_to_pyarray() {
     println!("arr = {:?}", arr.as_slice::<i32>().unwrap());
     assert_eq!(arr.shape(), [10]);
 }
+
+#[test]
+fn is_instance() {
+    let gil = pyo3::Python::acquire_gil();
+    let py = gil.python();
+    let np = PyArrayModule::import(py).unwrap();
+    let arr = PyArray::new::<f64>(gil.python(), &np, &[3, 5]);
+    assert!(py.is_instance::<PyArray, _>(&arr).unwrap());
+    assert!(!py.is_instance::<pyo3::PyList, _>(&arr).unwrap());
+}
