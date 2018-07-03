@@ -26,7 +26,7 @@ pub struct PyArrayModule<'py> {
 }
 
 #[allow(non_upper_case_globals)]
-pub static mut PyArray_Type_Ptr: *mut PyTypeObject = null_mut();
+pub(crate) static mut PyArray_Type_Ptr: *mut PyTypeObject = null_mut();
 
 impl<'py> Deref for PyArrayModule<'py> {
     type Target = PyModule;
