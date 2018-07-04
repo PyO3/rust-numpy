@@ -1,6 +1,6 @@
 #![allow(non_camel_case_types)]
 
-use pyffi::{Py_hash_t, Py_intptr_t, Py_uintptr_t};
+use pyo3::ffi::{Py_hash_t, Py_intptr_t, Py_uintptr_t};
 use std::os::raw::*;
 
 pub type npy_intp = Py_intptr_t;

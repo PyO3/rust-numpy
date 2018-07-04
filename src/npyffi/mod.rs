@@ -7,7 +7,7 @@
 //! basic usage of Python C API, especially for the reference counting.
 //!
 //! - http://docs.python.jp/3/c-api/
-//! - http://dgrunwald.github.io/rust-cpython/doc/cpython/
+//! - http://dgrunwald.github.io/rust-pyo3/doc/pyo3/
 
 pub mod array;
 pub mod objects;

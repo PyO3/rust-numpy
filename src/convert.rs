@@ -1,5 +1,5 @@
-use cpython::Python;
 use ndarray::*;
+use pyo3::Python;
 
 use std::iter::Iterator;
 use std::mem::size_of;

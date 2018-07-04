@@ -1,8 +1,10 @@
-extern crate cpython;
+#![feature(specialization)]
+
 extern crate libc;
 extern crate ndarray;
 extern crate num_complex;
-extern crate python3_sys as pyffi;
+#[macro_use]
+extern crate pyo3;
 
 pub mod array;
 pub mod convert;
