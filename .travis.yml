@@ -33,7 +33,7 @@ before_install:
   - source ./ci/travis/setup.sh
 
 install:
-  - pip install setuptools-rust
+  - pip install -r ./example/requirements.txt
 
 script:
   - ./ci/travis/test.sh
