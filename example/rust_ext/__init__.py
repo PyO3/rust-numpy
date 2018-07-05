@@ -1,1 +1,1 @@
-from ._rust_ext import *
+from numpy_rust_ext._rust_ext import *

@@ -14,6 +14,12 @@ use super::*;
 pub struct PyArray(PyObject);
 pyobject_native_type!(PyArray, *npyffi::PyArray_Type_Ptr, npyffi::PyArray_Check);
 
+impl IntoPyObject for PyArray {
+    fn into_object(self, _py: Python) -> PyObject {
+        self.0
+    }
+}
+
 impl PyArray {
     pub fn as_array_ptr(&self) -> *mut npyffi::PyArrayObject {
         self.as_ptr() as _

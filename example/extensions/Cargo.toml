@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["Toshiki Teramura <toshiki.teramura@gmail.com>"]
 
 [lib]
-name = "rust_ext"
+name = "numpy_rust_ext"
 crate-type = ["cdylib"]
 
 [dependencies]
@@ -12,5 +12,6 @@ numpy = { path = "../.." }
 ndarray = "0.10"
 
 [dependencies.pyo3]
-version = "*"
+git = "https://github.com/PyO3/pyo3.git"
+rev = "4169b0317826dc62eafcdd0faab7d009f6808c06"
 features = ["extension-module"]
