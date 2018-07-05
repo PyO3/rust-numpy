@@ -6,5 +6,5 @@ cargo build --verbose --all
 cargo test --verbose --all
 
 cd example
-python setup.py develop
-./test.py
+python setup.py install
+python setup.py test
