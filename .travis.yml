@@ -1,0 +1,39 @@
+sudo: required
+dist: trusty
+language: python
+
+cache:
+  pip: true
+  directories:
+  - "$HOME/.cargo"
+
+matrix:
+  include:
+  - python: "3.5"
+  - python: "3.6"
+
+env:
+  global:
+    - TRAVIS_RUST_VERSION=nightly
+    - RUST_BACKTRACE=1
+    - FEATURES=python3
+
+addons:
+  apt:
+    packages:
+      - libcurl4-openssl-dev
+      - libelf-dev
+      - libdw-dev
+      - cmake
+      - gcc
+      - binutils-dev
+      - libiberty-dev
+
+before_install:
+  - source ./ci/travis/setup.sh
+
+install:
+  - pip install -r ./example/requirements.txt
+
+script:
+  - ./ci/travis/test.sh
