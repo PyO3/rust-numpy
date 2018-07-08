@@ -1,6 +1,6 @@
 rust-numpy
 ===========
-[![wercker status](https://app.wercker.com/status/f971e2378f50c16fdd22a5247c609d4c/s/master "wercker status")](https://app.wercker.com/project/byKey/f971e2378f50c16fdd22a5247c609d4c)
+[![Build Status](https://travis-ci.org/rust-numpy/rust-numpy.svg?branch=master)](https://travis-ci.org/rust-numpy/rust-numpy)
 [![Crate](http://meritbadge.herokuapp.com/numpy)](https://crates.io/crates/numpy)
 [![docs.rs](https://docs.rs/numpy/badge.svg)](https://docs.rs/numpy)
 
