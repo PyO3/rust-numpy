@@ -13,7 +13,4 @@ license-file = "LICENSE"
 libc = "0.2"
 num-complex = "0.1"
 ndarray = "0.10"
-
-[dependencies.pyo3]
-git = "https://github.com/PyO3/pyo3"
-rev = "4169b0317826dc62eafcdd0faab7d009f6808c06"
+pyo3 = "0.3.1"

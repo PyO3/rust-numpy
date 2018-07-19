@@ -1,4 +1,4 @@
-#![feature(proc_macro, specialization)]
+#![feature(use_extern_macros, specialization)]
 
 extern crate ndarray;
 extern crate numpy;
@@ -6,10 +6,10 @@ extern crate pyo3;
 
 use ndarray::*;
 use numpy::*;
-use pyo3::{py::modinit as pymodinit, PyModule, PyResult, Python};
+use pyo3::prelude::*;
 
-#[pymodinit(_rust_ext)]
-fn init_module(py: Python, m: &PyModule) -> PyResult<()> {
+#[pymodinit]
+fn rust_ext(py: Python, m: &PyModule) -> PyResult<()> {
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     // You **must** write this sentence for PyArray type checker working correctly
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
