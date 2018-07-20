@@ -21,6 +21,7 @@ impl IntoPyObject for PyArray {
 }
 
 impl PyArray {
+    /// Get raw pointer for PyArrayObject
     pub fn as_array_ptr(&self) -> *mut npyffi::PyArrayObject {
         self.as_ptr() as _
     }
@@ -35,48 +36,82 @@ impl PyArray {
         PyArray(obj)
     }
 
-    /// The number of dimensions in the array
+    /// Returns the number of dimensions in the array.
     ///
-    /// https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_NDIM
+    /// Same as [numpy.ndarray.ndim](https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.ndim.html)
+    ///
+    /// # Example
+    /// ```
+    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// use numpy::{PyArray, PyArrayModule};
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let np = PyArrayModule::import(gil.python()).unwrap();
+    /// let arr = PyArray::new::<f64>(gil.python(), &np, &[4, 5, 6]);
+    /// assert_eq!(arr.ndim(), 3);
+    /// # }
+    /// ```
+    // C API: https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_NDIM
     pub fn ndim(&self) -> usize {
         let ptr = self.as_array_ptr();
         unsafe { (*ptr).nd as usize }
     }
 
-    /// dimensions of the array
+    /// Same as [shape](./struct.PyArray.html#method.shape)
     ///
-    /// https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_DIMS
-    pub fn dims(&self) -> Vec<usize> {
-        let n = self.ndim();
-        let ptr = self.as_array_ptr();
-        let dims = unsafe {
-            let p = (*ptr).dimensions;
-            ::std::slice::from_raw_parts(p, n)
-        };
-        dims.into_iter().map(|d| *d as usize).collect()
+    /// Reserved for backward compatibility.
+    #[inline]
+    pub fn dims(&self) -> &[usize] {
+        self.shape()
     }
 
     pub fn len(&self) -> usize {
-        self.dims().iter().fold(1, |a, b| a * b)
+        self.shape().iter().fold(1, |a, b| a * b)
     }
 
-    /// A synonym for PyArray_DIMS, named to be consistent with the ‘shape’ usage within Python.
-    pub fn shape(&self) -> Vec<usize> {
-        self.dims()
-    }
-
-    /// The number of elements matches the number of dimensions of the array
+    /// Returns a slice which contains dimmensions of the array.
     ///
-    /// - https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_STRIDES
-    /// - https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.strides.html#numpy.ndarray.strides
-    pub fn strides(&self) -> Vec<isize> {
+    /// Same as [numpy.ndarray.shape](https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.shape.html)
+    /// # Example
+    /// ```
+    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// use numpy::{PyArray, PyArrayModule};
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let np = PyArrayModule::import(gil.python()).unwrap();
+    /// let arr = PyArray::new::<f64>(gil.python(), &np, &[4, 5, 6]);
+    /// assert_eq!(arr.shape(), &[4, 5, 6]);
+    /// # }
+    /// ```
+    // C API: https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_DIMS
+    pub fn shape(&self) -> &[usize] {
         let n = self.ndim();
         let ptr = self.as_array_ptr();
-        let dims = unsafe {
+        unsafe {
+            let p = (*ptr).dimensions as *mut usize;
+            ::std::slice::from_raw_parts(p, n)
+        }
+    }
+
+    /// Returns a slice which contains how many bytes you need to jump to the next row.
+    ///
+    /// Same as [numpy.ndarray.strides](https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.strides.html)
+    /// # Example
+    /// ```
+    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// use numpy::{PyArray, PyArrayModule};
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let np = PyArrayModule::import(gil.python()).unwrap();
+    /// let arr = PyArray::new::<f64>(gil.python(), &np, &[4, 5, 6]);
+    /// assert_eq!(arr.strides(), &[240, 48, 8]);
+    /// # }
+    /// ```
+    // C API: https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_STRIDES
+    pub fn strides(&self) -> &[isize] {
+        let n = self.ndim();
+        let ptr = self.as_array_ptr();
+        unsafe {
             let p = (*ptr).strides;
             ::std::slice::from_raw_parts(p, n)
-        };
-        dims.into_iter().map(|d| *d as isize).collect()
+        }
     }
 
     unsafe fn data<T>(&self) -> *mut T {
@@ -87,7 +122,8 @@ impl PyArray {
     fn ndarray_shape<A>(&self) -> StrideShape<IxDyn> {
         // FIXME may be done more simply
         let shape: Shape<_> = Dim(self.shape()).into();
-        let st: Vec<usize> = self.strides()
+        let st: Vec<usize> = self
+            .strides()
             .iter()
             .map(|&x| x as usize / ::std::mem::size_of::<A>())
             .collect();

@@ -1,6 +1,6 @@
-extern crate pyo3;
 extern crate ndarray;
 extern crate numpy;
+extern crate pyo3;
 
 use ndarray::*;
 use numpy::*;
@@ -91,8 +91,8 @@ fn into_pyarray_array() {
     let pa = a.into_pyarray(gil.python(), &np);
     println!("pa.shape   = {:?}", pa.shape());
     println!("pa.strides = {:?}", pa.strides());
-    assert_eq!(pa.shape(), shape);
-    assert_eq!(pa.strides(), strides);
+    assert_eq!(pa.shape(), shape.as_slice());
+    assert_eq!(pa.strides(), strides.as_slice());
 }
 
 #[test]
