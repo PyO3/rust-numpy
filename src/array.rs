@@ -26,6 +26,46 @@ impl PyArray {
         self.as_ptr() as _
     }
 
+    /// Construct one-dimension PyArray from Vec.
+    ///
+    /// # Example
+    /// ```
+    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// use numpy::{PyArray, PyArrayModule};
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let np = PyArrayModule::import(gil.python()).unwrap();
+    /// let pyarray = PyArray::from_vec::<u32>(gil.python(), &np, vec![1, 2, 3, 4, 5]);
+    /// assert_eq!(pyarray.as_slice::<u32>().unwrap(), &[1, 2, 3, 4, 5]);
+    /// # }
+    /// ```
+    pub fn from_vec<T: TypeNum>(py: Python, np: &PyArrayModule, v: Vec<T>) -> PyArray {
+        IntoPyArray::into_pyarray(v, py, np)
+    }
+
+    /// Construct one-dimension PyArray from ndarray::Array.
+    ///
+    /// # Example
+    /// ```
+    /// # extern crate pyo3; extern crate numpy; #[macro_use] extern crate ndarray; fn main() {
+    /// use numpy::{PyArray, PyArrayModule};
+    /// use ndarray::Dim;
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let np = PyArrayModule::import(gil.python()).unwrap();
+    /// let pyarray = PyArray::from_ndarray::<u32, _>(gil.python(), &np, array![[1, 2], [3, 4]]);
+    /// assert_eq!(
+    ///     pyarray.as_array::<u32>().unwrap().into_shape(Dim([2, 2])).unwrap(),
+    ///     array![[1, 2], [3, 4]],
+    /// );
+    /// # }
+    /// ```
+    pub fn from_ndarray<A, D>(py: Python, np: &PyArrayModule, arr: Array<A, D>) -> PyArray
+    where
+        A: TypeNum,
+        D: Dimension,
+    {
+        IntoPyArray::into_pyarray(arr, py, np)
+    }
+
     pub unsafe fn from_owned_ptr(py: Python, ptr: *mut pyo3::ffi::PyObject) -> Self {
         let obj = PyObject::from_owned_ptr(py, ptr);
         PyArray(obj)

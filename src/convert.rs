@@ -21,8 +21,8 @@ impl<T: TypeNum> IntoPyArray for Vec<T> {
 
 impl<A: TypeNum, D: Dimension> IntoPyArray for Array<A, D> {
     fn into_pyarray(self, py: Python, np: &PyArrayModule) -> PyArray {
-        let dims: Vec<usize> = self.shape().iter().cloned().collect();
-        let mut strides: Vec<npy_intp> = self.strides()
+        let dims: Vec<_> = self.shape().iter().cloned().collect();
+        let mut strides: Vec<_> = self.strides()
             .into_iter()
             .map(|n| n * size_of::<A>() as npy_intp)
             .collect();
