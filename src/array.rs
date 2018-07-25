@@ -42,13 +42,12 @@ impl PyArray {
         IntoPyArray::into_pyarray(v, py, np)
     }
 
-    /// Construct one-dimension PyArray from ndarray::Array.
+    /// Construct PyArray from ndarray::Array.
     ///
     /// # Example
     /// ```
     /// # extern crate pyo3; extern crate numpy; #[macro_use] extern crate ndarray; fn main() {
     /// use numpy::{PyArray, PyArrayModule};
-    /// use ndarray::Dim;
     /// let gil = pyo3::Python::acquire_gil();
     /// let np = PyArrayModule::import(gil.python()).unwrap();
     /// let pyarray = PyArray::from_ndarray::<u32, _>(gil.python(), &np, array![[1, 2], [3, 4]]);
