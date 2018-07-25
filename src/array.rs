@@ -224,7 +224,7 @@ impl PyArray {
         if A::typenum() == self.typenum() {
             Ok(())
         } else {
-            Err(ArrayCastError::into_array(test, truth))
+            Err(ArrayCastError::to_rust(test, truth))
         }
     }
 
