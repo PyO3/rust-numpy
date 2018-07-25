@@ -12,10 +12,27 @@ pub trait IntoPyArray {
     fn into_pyarray(self, Python, &PyArrayModule) -> PyArray;
 }
 
+impl<T: TypeNum> IntoPyArray for Box<[T]> {
+    fn into_pyarray(self, py: Python, np: &PyArrayModule) -> PyArray {
+        let dims = [self.len()];
+        let ptr = Box::into_raw(self);
+        unsafe { PyArray::new_::<T>(py, np, &dims, null_mut(), ptr as *mut c_void) }
+    }
+}
+
 impl<T: TypeNum> IntoPyArray for Vec<T> {
     fn into_pyarray(self, py: Python, np: &PyArrayModule) -> PyArray {
         let dims = [self.len()];
         unsafe { PyArray::new_::<T>(py, np, &dims, null_mut(), into_raw(self)) }
+    }
+}
+
+impl<T: TypeNum> IntoPyArray for Vec<Vec<T>> {
+    fn into_pyarray(self, py: Python, np: &PyArrayModule) -> PyArray {
+        let inner_dim = self.last().map(Vec::len).unwrap_or(0);
+        let dims = [self.len(), inner_dim];
+        let vec: Vec<_> = self.into_iter().flatten().collect();
+        unsafe { PyArray::new_::<T>(py, np, &dims, null_mut(), into_raw(vec)) }
     }
 }
 
@@ -34,8 +51,8 @@ impl<A: TypeNum, D: Dimension> IntoPyArray for Array<A, D> {
 }
 
 unsafe fn into_raw<T>(x: Vec<T>) -> *mut c_void {
-    let ptr: *mut [T] = Box::into_raw(x.into_boxed_slice());
-    (*ptr).as_ref().as_ptr() as *mut c_void
+    let ptr = Box::into_raw(x.into_boxed_slice());
+    ptr as *mut c_void
 }
 
 pub trait ToPyArray {
@@ -50,4 +67,14 @@ where
         let vec: Vec<T> = self.collect();
         vec.into_pyarray(py, np)
     }
+}
+
+
+#[test]
+fn vec2_test() {
+    let vec2 = vec![vec![1, 2, 3]; 2];
+    let gil = pyo3::Python::acquire_gil();
+    let np = PyArrayModule::import(gil.python()).unwrap();
+    let pyarray = vec2.into_pyarray(gil.python(), &np);
+    println!("{:?}", pyarray);
 }
