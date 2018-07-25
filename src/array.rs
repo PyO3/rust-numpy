@@ -65,22 +65,12 @@ impl PyArray {
         v: Vec<Vec<T>>,
     ) -> Result<PyArray, ArrayCastError>
     {
-        let mut flattend = Vec::new();
-        let mut size = None;
-        let len = v.len();
-        if !v.into_iter().all(|v| {
-            let len = v.len();
-            match size {
-                Some(x) if x != v.len() => return false,
-                None => size = Some(len),
-                _ => {}
-            }
-            flattend.extend(v);
-            true
-        }) {
+        let last_len = v.last().map_or(0, |v| v.len());
+        if v.iter().any(|v| v.len() != last_len) {
             return Err(ArrayCastError::FromVec);
         }
-        let dims = [len, size.unwrap_or(0)];
+        let dims = [v.len(), last_len];
+        let flattend: Vec<_> = v.into_iter().flatten().collect();
         unsafe {
             let data = convert::into_raw(flattend);
             Ok(PyArray::new_::<T>(py, np, &dims, null_mut(), data))
