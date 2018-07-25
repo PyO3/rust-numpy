@@ -52,10 +52,7 @@ impl PyArray {
     /// let gil = pyo3::Python::acquire_gil();
     /// let np = PyArrayModule::import(gil.python()).unwrap();
     /// let pyarray = PyArray::from_ndarray::<u32, _>(gil.python(), &np, array![[1, 2], [3, 4]]);
-    /// assert_eq!(
-    ///     pyarray.as_array::<u32>().unwrap().into_shape(Dim([2, 2])).unwrap(),
-    ///     array![[1, 2], [3, 4]],
-    /// );
+    /// assert_eq!(pyarray.as_array::<u32>().unwrap(), array![[1, 2], [3, 4]].into_dyn());
     /// # }
     /// ```
     pub fn from_ndarray<A, D>(py: Python, np: &PyArrayModule, arr: Array<A, D>) -> PyArray
