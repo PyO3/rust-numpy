@@ -42,6 +42,51 @@ impl PyArray {
         IntoPyArray::into_pyarray(v, py, np)
     }
 
+    /// Construct two-dimension PyArray from `Vec<Vec<T>>`.
+    ///
+    /// This function checks all dimension of inner vec, and if there's any vec
+    /// where its dimension differs from others, it returns `ArrayCastError`.
+    ///
+    /// # Example
+    /// ```
+    /// # extern crate pyo3; extern crate numpy; #[macro_use] extern crate ndarray; fn main() {
+    /// use numpy::{PyArray, PyArrayModule};
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let np = PyArrayModule::import(gil.python()).unwrap();
+    /// let vec2 = vec![vec![1, 2, 3]; 2];
+    /// let pyarray = PyArray::from_vec2::<u32>(gil.python(), &np, vec2).unwrap();
+    /// assert_eq!(pyarray.as_array::<u32>().unwrap(), array![[1, 2, 3], [1, 2, 3]].into_dyn());
+    /// assert!(PyArray::from_vec2::<u32>(gil.python(), &np, vec![vec![1], vec![2, 3]]).is_err());
+    /// # }
+    /// ```
+    pub fn from_vec2<T: TypeNum>(
+        py: Python,
+        np: &PyArrayModule,
+        v: Vec<Vec<T>>,
+    ) -> Result<PyArray, ArrayCastError>
+    {
+        let mut flattend = Vec::new();
+        let mut size = None;
+        let len = v.len();
+        if !v.into_iter().all(|v| {
+            let len = v.len();
+            match size {
+                Some(x) if x != v.len() => return false,
+                None => size = Some(len),
+                _ => {}
+            }
+            flattend.extend(v);
+            true
+        }) {
+            return Err(ArrayCastError::FromVec);
+        }
+        let dims = [len, size.unwrap_or(0)];
+        unsafe {
+            let data = convert::into_raw(flattend);
+            Ok(PyArray::new_::<T>(py, np, &dims, null_mut(), data))
+        }
+    }
+
     /// Construct PyArray from ndarray::Array.
     ///
     /// # Example
@@ -179,7 +224,7 @@ impl PyArray {
         if A::typenum() == self.typenum() {
             Ok(())
         } else {
-            Err(ArrayCastError::new(test, truth))
+            Err(ArrayCastError::into_array(test, truth))
         }
     }
 
