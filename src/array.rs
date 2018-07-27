@@ -71,22 +71,22 @@ impl PyArray {
     /// let gil = pyo3::Python::acquire_gil();
     /// let np = PyArrayModule::import(gil.python()).unwrap();
     /// let vec2 = vec![vec![1, 2, 3]; 2];
-    /// let pyarray = PyArray::from_vec2::<u32>(gil.python(), &np, vec2).unwrap();
+    /// let pyarray = PyArray::from_vec2::<u32>(gil.python(), &np, &vec2).unwrap();
     /// assert_eq!(pyarray.as_array::<u32>().unwrap(), array![[1, 2, 3], [1, 2, 3]].into_dyn());
-    /// assert!(PyArray::from_vec2::<u32>(gil.python(), &np, vec![vec![1], vec![2, 3]]).is_err());
+    /// assert!(PyArray::from_vec2::<u32>(gil.python(), &np, &vec![vec![1], vec![2, 3]]).is_err());
     /// # }
     /// ```
     pub fn from_vec2<T: TypeNum>(
         py: Python,
         np: &PyArrayModule,
-        v: Vec<Vec<T>>,
+        v: &Vec<Vec<T>>,
     ) -> Result<PyArray, ArrayCastError> {
         let last_len = v.last().map_or(0, |v| v.len());
         if v.iter().any(|v| v.len() != last_len) {
             return Err(ArrayCastError::FromVec);
         }
         let dims = [v.len(), last_len];
-        let flattend: Vec<_> = v.into_iter().flatten().collect();
+        let flattend: Vec<_> = v.iter().cloned().flatten().collect();
         unsafe {
             let data = convert::into_raw(flattend);
             Ok(PyArray::new_::<T>(py, np, &dims, null_mut(), data))
@@ -105,18 +105,18 @@ impl PyArray {
     /// let gil = pyo3::Python::acquire_gil();
     /// let np = PyArrayModule::import(gil.python()).unwrap();
     /// let vec2 = vec![vec![vec![1, 2]; 2]; 2];
-    /// let pyarray = PyArray::from_vec3::<u32>(gil.python(), &np, vec2).unwrap();
+    /// let pyarray = PyArray::from_vec3::<u32>(gil.python(), &np, &vec2).unwrap();
     /// assert_eq!(
     ///     pyarray.as_array::<u32>().unwrap(),
     ///     array![[[1, 2], [1, 2]], [[1, 2], [1, 2]]].into_dyn()
     /// );
-    /// assert!(PyArray::from_vec3::<u32>(gil.python(), &np, vec![vec![vec![1], vec![]]]).is_err());
+    /// assert!(PyArray::from_vec3::<u32>(gil.python(), &np, &vec![vec![vec![1], vec![]]]).is_err());
     /// # }
     /// ```
     pub fn from_vec3<T: TypeNum>(
         py: Python,
         np: &PyArrayModule,
-        v: Vec<Vec<Vec<T>>>,
+        v: &Vec<Vec<Vec<T>>>,
     ) -> Result<PyArray, ArrayCastError> {
         let dim2 = v.last().map_or(0, |v| v.len());
         if v.iter().any(|v| v.len() != dim2) {
@@ -127,7 +127,7 @@ impl PyArray {
             return Err(ArrayCastError::FromVec);
         }
         let dims = [v.len(), dim2, dim3];
-        let flattend: Vec<_> = v.into_iter().flat_map(|v| v.into_iter().flatten()).collect();
+        let flattend: Vec<_> = v.iter().flat_map(|v| v.iter().cloned().flatten()).collect();
         unsafe {
             let data = convert::into_raw(flattend);
             Ok(PyArray::new_::<T>(py, np, &dims, null_mut(), data))
