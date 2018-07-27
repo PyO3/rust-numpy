@@ -26,6 +26,23 @@ impl PyArray {
         self.as_ptr() as _
     }
 
+    /// Construct one-dimension PyArray from boxed slice.
+    ///
+    /// # Example
+    /// ```
+    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// use numpy::{PyArray, PyArrayModule};
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let np = PyArrayModule::import(gil.python()).unwrap();
+    /// let slice = vec![1, 2, 3, 4, 5].into_boxed_slice();
+    /// let pyarray = PyArray::from_boxed_slice::<u32>(gil.python(), &np, slice);
+    /// assert_eq!(pyarray.as_slice::<u32>().unwrap(), &[1, 2, 3, 4, 5]);
+    /// # }
+    /// ```
+    pub fn from_boxed_slice<T: TypeNum>(py: Python, np: &PyArrayModule, v: Box<[T]>) -> PyArray {
+        IntoPyArray::into_pyarray(v, py, np)
+    }
+
     /// Construct one-dimension PyArray from Vec.
     ///
     /// # Example
@@ -40,6 +57,81 @@ impl PyArray {
     /// ```
     pub fn from_vec<T: TypeNum>(py: Python, np: &PyArrayModule, v: Vec<T>) -> PyArray {
         IntoPyArray::into_pyarray(v, py, np)
+    }
+
+    /// Construct a two-dimension PyArray from `Vec<Vec<T>>`.
+    ///
+    /// This function checks all dimension of inner vec, and if there's any vec
+    /// where its dimension differs from others, it returns `ArrayCastError`.
+    ///
+    /// # Example
+    /// ```
+    /// # extern crate pyo3; extern crate numpy; #[macro_use] extern crate ndarray; fn main() {
+    /// use numpy::{PyArray, PyArrayModule};
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let np = PyArrayModule::import(gil.python()).unwrap();
+    /// let vec2 = vec![vec![1, 2, 3]; 2];
+    /// let pyarray = PyArray::from_vec2::<u32>(gil.python(), &np, &vec2).unwrap();
+    /// assert_eq!(pyarray.as_array::<u32>().unwrap(), array![[1, 2, 3], [1, 2, 3]].into_dyn());
+    /// assert!(PyArray::from_vec2::<u32>(gil.python(), &np, &vec![vec![1], vec![2, 3]]).is_err());
+    /// # }
+    /// ```
+    pub fn from_vec2<T: TypeNum>(
+        py: Python,
+        np: &PyArrayModule,
+        v: &Vec<Vec<T>>,
+    ) -> Result<PyArray, ArrayCastError> {
+        let last_len = v.last().map_or(0, |v| v.len());
+        if v.iter().any(|v| v.len() != last_len) {
+            return Err(ArrayCastError::FromVec);
+        }
+        let dims = [v.len(), last_len];
+        let flattend: Vec<_> = v.iter().cloned().flatten().collect();
+        unsafe {
+            let data = convert::into_raw(flattend);
+            Ok(PyArray::new_::<T>(py, np, &dims, null_mut(), data))
+        }
+    }
+
+    /// Construct a three-dimension PyArray from `Vec<Vec<Vec<T>>>`.
+    ///
+    /// This function checks all dimension of inner vec, and if there's any vec
+    /// where its dimension differs from others, it returns `ArrayCastError`.
+    ///
+    /// # Example
+    /// ```
+    /// # extern crate pyo3; extern crate numpy; #[macro_use] extern crate ndarray; fn main() {
+    /// use numpy::{PyArray, PyArrayModule};
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let np = PyArrayModule::import(gil.python()).unwrap();
+    /// let vec2 = vec![vec![vec![1, 2]; 2]; 2];
+    /// let pyarray = PyArray::from_vec3::<u32>(gil.python(), &np, &vec2).unwrap();
+    /// assert_eq!(
+    ///     pyarray.as_array::<u32>().unwrap(),
+    ///     array![[[1, 2], [1, 2]], [[1, 2], [1, 2]]].into_dyn()
+    /// );
+    /// assert!(PyArray::from_vec3::<u32>(gil.python(), &np, &vec![vec![vec![1], vec![]]]).is_err());
+    /// # }
+    /// ```
+    pub fn from_vec3<T: TypeNum>(
+        py: Python,
+        np: &PyArrayModule,
+        v: &Vec<Vec<Vec<T>>>,
+    ) -> Result<PyArray, ArrayCastError> {
+        let dim2 = v.last().map_or(0, |v| v.len());
+        if v.iter().any(|v| v.len() != dim2) {
+            return Err(ArrayCastError::FromVec);
+        }
+        let dim3 = v.last().map_or(0, |v| v.last().map_or(0, |v| v.len()));
+        if v.iter().any(|v| v.iter().any(|v| v.len() != dim3)) {
+            return Err(ArrayCastError::FromVec);
+        }
+        let dims = [v.len(), dim2, dim3];
+        let flattend: Vec<_> = v.iter().flat_map(|v| v.iter().cloned().flatten()).collect();
+        unsafe {
+            let data = convert::into_raw(flattend);
+            Ok(PyArray::new_::<T>(py, np, &dims, null_mut(), data))
+        }
     }
 
     /// Construct PyArray from ndarray::Array.
@@ -179,7 +271,7 @@ impl PyArray {
         if A::typenum() == self.typenum() {
             Ok(())
         } else {
-            Err(ArrayCastError::new(test, truth))
+            Err(ArrayCastError::to_rust(test, truth))
         }
     }
 

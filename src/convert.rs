@@ -12,6 +12,14 @@ pub trait IntoPyArray {
     fn into_pyarray(self, Python, &PyArrayModule) -> PyArray;
 }
 
+impl<T: TypeNum> IntoPyArray for Box<[T]> {
+    fn into_pyarray(self, py: Python, np: &PyArrayModule) -> PyArray {
+        let dims = [self.len()];
+        let ptr = Box::into_raw(self);
+        unsafe { PyArray::new_::<T>(py, np, &dims, null_mut(), ptr as *mut c_void) }
+    }
+}
+
 impl<T: TypeNum> IntoPyArray for Vec<T> {
     fn into_pyarray(self, py: Python, np: &PyArrayModule) -> PyArray {
         let dims = [self.len()];
@@ -33,9 +41,9 @@ impl<A: TypeNum, D: Dimension> IntoPyArray for Array<A, D> {
     }
 }
 
-unsafe fn into_raw<T>(x: Vec<T>) -> *mut c_void {
-    let ptr: *mut [T] = Box::into_raw(x.into_boxed_slice());
-    (*ptr).as_ref().as_ptr() as *mut c_void
+pub(crate) unsafe fn into_raw<T>(x: Vec<T>) -> *mut c_void {
+    let ptr = Box::into_raw(x.into_boxed_slice());
+    ptr as *mut c_void
 }
 
 pub trait ToPyArray {
@@ -51,3 +59,4 @@ where
         vec.into_pyarray(py, np)
     }
 }
+

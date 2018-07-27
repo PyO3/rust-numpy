@@ -7,7 +7,7 @@ pub use super::npyffi::NPY_ORDER::{NPY_CORDER, NPY_FORTRANORDER};
 
 use super::npyffi::NPY_TYPES;
 
-pub trait TypeNum {
+pub trait TypeNum: Clone {
     fn typenum_enum() -> NPY_TYPES;
     fn typenum() -> i32 {
         Self::typenum_enum() as i32

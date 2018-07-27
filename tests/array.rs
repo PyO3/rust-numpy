@@ -114,3 +114,25 @@ fn is_instance() {
     assert!(py.is_instance::<PyArray, _>(&arr).unwrap());
     assert!(!py.is_instance::<pyo3::PyList, _>(&arr).unwrap());
 }
+
+#[test]
+fn from_vec2() {
+    let vec2 = vec![vec![1, 2, 3]; 2];
+    let gil = pyo3::Python::acquire_gil();
+    let np = PyArrayModule::import(gil.python()).unwrap();
+    let pyarray = PyArray::from_vec2::<u32>(gil.python(), &np, &vec2).unwrap();
+    assert_eq!(pyarray.as_array::<u32>().unwrap(), array![[1, 2, 3], [1, 2, 3]].into_dyn());
+    assert!(PyArray::from_vec2::<u32>(gil.python(), &np, &vec![vec![1], vec![2, 3]]).is_err());
+}
+
+#[test]
+fn from_vec3() {
+    let gil = pyo3::Python::acquire_gil();
+    let np = PyArrayModule::import(gil.python()).unwrap();
+    let vec3 = vec![vec![vec![1, 2]; 2]; 2];
+    let pyarray = PyArray::from_vec3::<u32>(gil.python(), &np, &vec3).unwrap();
+    assert_eq!(
+        pyarray.as_array::<u32>().unwrap(),
+        array![[[1, 2], [1, 2]], [[1, 2], [1, 2]]].into_dyn()
+    );
+}
