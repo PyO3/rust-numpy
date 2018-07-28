@@ -2,6 +2,7 @@ extern crate ndarray;
 extern crate numpy;
 extern crate pyo3;
 
+use pyo3::prelude::*;
 use ndarray::*;
 use numpy::*;
 
@@ -138,4 +139,19 @@ fn from_small_array() {
     let array: [i32; 5] = [1, 2, 3, 4, 5];
     let pyarray = array.into_pyarray(gil.python(), &np);
     assert_eq!(pyarray.as_slice().unwrap(), &[1, 2, 3, 4, 5]);
+}
+
+#[test]
+fn from_eval() {
+    let gil = pyo3::Python::acquire_gil();
+    let np = PyArrayModule::import(gil.python()).unwrap();
+    let dict = PyDict::new(gil.python());
+    dict.set_item("np", np.as_pymodule()).unwrap();
+    let pyarray: &PyArray<i32> = gil
+        .python()
+        .eval("np.array([1, 2, 3], dtype='int32')", Some(&dict), None)
+        .unwrap()
+        .extract()
+        .unwrap();
+    assert_eq!(pyarray.as_slice().unwrap(), &[1, 2, 3]);
 }

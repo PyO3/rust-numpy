@@ -60,6 +60,32 @@ impl<'py> PyArrayModule<'py> {
         Ok(mod_)
     }
 
+    /// Returns internal `PyModule` type, which includes `numpy.core.multiarray`,
+    /// so that you can use `PyArrayModule` with some pyo3 functions.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # extern crate numpy; extern crate pyo3; fn main() {
+    /// use numpy::*;
+    /// use pyo3::prelude::*;
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let np = PyArrayModule::import(gil.python()).unwrap();
+    /// let dict = PyDict::new(gil.python());
+    /// dict.set_item("np", np.as_pymodule()).unwrap();
+    /// let pyarray: &PyArray<i32> = gil
+    ///     .python()
+    ///     .eval("np.array([1, 2, 3], dtype='int32')", Some(&dict), None)
+    ///     .unwrap()
+    ///     .extract()
+    ///     .unwrap();
+    /// assert_eq!(pyarray.as_slice().unwrap(), &[1, 2, 3]);
+    /// # }
+    /// ```
+    pub fn as_pymodule(&self) -> &'py PyModule {
+        self.numpy
+    }
+
     pyarray_api![0; PyArray_GetNDArrayCVersion() -> c_uint];
     pyarray_api![40; PyArray_SetNumericOps(dict: *mut PyObject) -> c_int];
     pyarray_api![41; PyArray_GetNumericOps() -> *mut PyObject];
