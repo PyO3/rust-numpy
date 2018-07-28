@@ -13,12 +13,36 @@ use super::*;
 /// Untyped safe interface for NumPy ndarray.
 pub struct PyArray<T>(PyObject, PhantomData<T>);
 
-pyobject_native_type!(
+pyobject_native_type_convert!(
     PyArray<T>,
     *npyffi::PyArray_Type_Ptr,
     npyffi::PyArray_Check,
     T
 );
+
+pyobject_native_type_named!(PyArray<T>, T);
+
+impl<'a, T> ::std::convert::From<&'a PyArray<T>> for &'a PyObjectRef {
+    fn from(ob: &'a PyArray<T>) -> Self {
+        unsafe { &*(ob as *const PyArray<T> as *const PyObjectRef) }
+    }
+}
+
+impl<'a, T: TypeNum> FromPyObject<'a> for &'a PyArray<T> {
+    fn extract(ob: &'a PyObjectRef) -> PyResult<Self> {
+        unsafe {
+            if npyffi::PyArray_Check(ob.as_ptr()) == 0 {
+                return Err(PyDowncastError.into());
+            }
+            let array = &*(ob as *const PyObjectRef as *const PyArray<T>);
+            println!(">_<");
+            array
+                .type_check()
+                .map(|_| array)
+                .map_err(|err| err.into_pyerr("FromPyObject::extract failed"))
+        }
+    }
+}
 
 impl<T> IntoPyObject for PyArray<T> {
     fn into_object(self, _py: Python) -> PyObject {
@@ -278,7 +302,7 @@ impl<T: TypeNum> PyArray<T> {
         if test == truth {
             Ok(())
         } else {
-            Err(ArrayCastError::to_rust(test, truth))
+            Err(ArrayCastError::to_rust(truth, test))
         }
     }
 

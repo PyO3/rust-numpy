@@ -2,9 +2,9 @@ extern crate ndarray;
 extern crate numpy;
 extern crate pyo3;
 
-use pyo3::prelude::*;
 use ndarray::*;
 use numpy::*;
+use pyo3::prelude::*;
 
 #[test]
 fn new() {
@@ -155,3 +155,18 @@ fn from_eval() {
         .unwrap();
     assert_eq!(pyarray.as_slice().unwrap(), &[1, 2, 3]);
 }
+
+#[test]
+fn from_eval_fail() {
+    let gil = pyo3::Python::acquire_gil();
+    let np = PyArrayModule::import(gil.python()).unwrap();
+    let dict = PyDict::new(gil.python());
+    dict.set_item("np", np.as_pymodule()).unwrap();
+    let converted: Result<&PyArray<i32>, _> = gil
+        .python()
+        .eval("np.array([1, 2, 3], dtype='float64')", Some(&dict), None)
+        .unwrap()
+        .extract();
+    assert!(converted.is_err());
+}
+

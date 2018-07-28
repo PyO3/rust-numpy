@@ -7,29 +7,67 @@ pub use super::npyffi::NPY_ORDER::{NPY_CORDER, NPY_FORTRANORDER};
 
 use super::npyffi::NPY_TYPES;
 
+/// An enum type represents numpy data type.
+///
+/// This type is mainly for displaying error, and user don't have to use it directly.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum NpyDataTypes {
+    Bool,
+    Int32,
+    Int64,
+    Uint32,
+    Uint64,
+    Float32,
+    Float64,
+    Complex32,
+    Complex64,
+    Unsupported,
+}
+
+impl NpyDataTypes {
+    pub(crate) fn from_i32(npy_t: i32) -> Self {
+        match npy_t {
+            x if x == NPY_TYPES::NPY_BOOL as i32 => NpyDataTypes::Bool,
+            x if x == NPY_TYPES::NPY_INT as i32 => NpyDataTypes::Int32,
+            x if x == NPY_TYPES::NPY_LONG as i32 => NpyDataTypes::Int64,
+            x if x == NPY_TYPES::NPY_UINT as i32 => NpyDataTypes::Uint32,
+            x if x == NPY_TYPES::NPY_ULONG as i32 => NpyDataTypes::Uint64,
+            x if x == NPY_TYPES::NPY_FLOAT as i32 => NpyDataTypes::Float32,
+            x if x == NPY_TYPES::NPY_DOUBLE as i32 => NpyDataTypes::Float64,
+            x if x == NPY_TYPES::NPY_CFLOAT as i32 => NpyDataTypes::Complex32,
+            x if x == NPY_TYPES::NPY_CDOUBLE as i32 => NpyDataTypes::Complex64,
+            _ => NpyDataTypes::Unsupported,
+        }
+    }
+}
+
 pub trait TypeNum: Clone {
     fn typenum_enum() -> NPY_TYPES;
     fn typenum() -> i32 {
         Self::typenum_enum() as i32
     }
+    fn to_npy_data_type(self) -> NpyDataTypes;
 }
 
 macro_rules! impl_type_num {
-    ($t:ty, $npy_t:ident) => {
+    ($t:ty, $npy_t:ident, $npy_dat_t:ident) => {
         impl TypeNum for $t {
             fn typenum_enum() -> NPY_TYPES {
                 NPY_TYPES::$npy_t
+            }
+            fn to_npy_data_type(self) -> NpyDataTypes {
+                NpyDataTypes::$npy_dat_t
             }
         }
     };
 } // impl_type_num!
 
-impl_type_num!(bool, NPY_BOOL);
-impl_type_num!(i32, NPY_INT);
-impl_type_num!(i64, NPY_LONG);
-impl_type_num!(u32, NPY_UINT);
-impl_type_num!(u64, NPY_ULONG);
-impl_type_num!(f32, NPY_FLOAT);
-impl_type_num!(f64, NPY_DOUBLE);
-impl_type_num!(c32, NPY_CFLOAT);
-impl_type_num!(c64, NPY_CDOUBLE);
+impl_type_num!(bool, NPY_BOOL, Bool);
+impl_type_num!(i32, NPY_INT, Int32);
+impl_type_num!(i64, NPY_LONG, Int64);
+impl_type_num!(u32, NPY_UINT, Uint32);
+impl_type_num!(u64, NPY_ULONG, Uint64);
+impl_type_num!(f32, NPY_FLOAT, Float32);
+impl_type_num!(f64, NPY_DOUBLE, Float64);
+impl_type_num!(c32, NPY_CFLOAT, Complex32);
+impl_type_num!(c64, NPY_CDOUBLE, Complex64);

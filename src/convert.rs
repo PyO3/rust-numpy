@@ -70,7 +70,6 @@ array_impls! {
     30 31 32
 }
 
-
 pub(crate) unsafe fn into_raw<T>(x: Vec<T>) -> *mut c_void {
     let ptr = Box::into_raw(x.into_boxed_slice());
     ptr as *mut c_void
