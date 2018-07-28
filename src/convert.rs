@@ -41,6 +41,30 @@ impl<A: TypeNum, D: Dimension> IntoPyArray for Array<A, D> {
     }
 }
 
+macro_rules! array_impls {
+    ($($N: expr)+) => {
+        $(
+            impl<T: TypeNum> IntoPyArray for [T; $N] {
+                fn into_pyarray(mut self, py: Python, np: &PyArrayModule) -> PyArray {
+                    let dims = [$N];
+                    let ptr = &mut self as *mut [T; $N];
+                    unsafe {
+                        PyArray::new_::<T>(py, np, &dims, null_mut(), ptr as *mut c_void)
+                    }
+                }
+            }
+        )+
+    }
+}
+
+array_impls! {
+     0  1  2  3  4  5  6  7  8  9
+    10 11 12 13 14 15 16 17 18 19
+    20 21 22 23 24 25 26 27 28 29
+    30 31 32
+}
+
+
 pub(crate) unsafe fn into_raw<T>(x: Vec<T>) -> *mut c_void {
     let ptr = Box::into_raw(x.into_boxed_slice());
     ptr as *mut c_void
