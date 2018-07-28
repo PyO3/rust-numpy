@@ -2,10 +2,11 @@
 
 extern crate ndarray;
 extern crate numpy;
+extern crate pyo3;
 
 use ndarray::*;
 use numpy::*;
-use numpy::pyo3::prelude::*;
+use pyo3::prelude::*;
 
 #[pymodinit]
 fn rust_ext(py: Python, m: &PyModule) -> PyResult<()> {

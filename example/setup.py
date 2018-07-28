@@ -4,7 +4,7 @@ import subprocess
 import sys
 from setuptools import find_packages, setup
 from setuptools.command.test import test as TestCommand
-from setuptools_rust import RustExtension, Binding
+from setuptools_rust import RustExtension
 
 
 class CmdTest(TestCommand):

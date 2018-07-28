@@ -3,13 +3,8 @@
 extern crate libc;
 extern crate ndarray;
 extern crate num_complex;
-#[cfg(not(feature = "pyo3-reexport"))]
 #[macro_use]
 extern crate pyo3;
-
-#[cfg(feature = "pyo3-reexport")]
-#[macro_use]
-pub extern crate pyo3;
 
 pub mod array;
 pub mod convert;
