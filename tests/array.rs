@@ -11,7 +11,7 @@ fn new() {
     let np = PyArrayModule::import(gil.python()).unwrap();
     let n = 3;
     let m = 5;
-    let arr = PyArray::new::<f64>(gil.python(), &np, &[n, m]);
+    let arr = PyArray::<f64>::new(gil.python(), &np, &[n, m]);
     assert!(arr.ndim() == 2);
     assert!(arr.dims() == [n, m]);
     assert!(arr.strides() == [m as isize * 8, 8]);
@@ -23,12 +23,12 @@ fn zeros() {
     let np = PyArrayModule::import(gil.python()).unwrap();
     let n = 3;
     let m = 5;
-    let arr = PyArray::zeros::<f64>(gil.python(), &np, &[n, m], NPY_CORDER);
+    let arr = PyArray::<f64>::zeros(gil.python(), &np, &[n, m], NPY_CORDER);
     assert!(arr.ndim() == 2);
     assert!(arr.dims() == [n, m]);
     assert!(arr.strides() == [m as isize * 8, 8]);
 
-    let arr = PyArray::zeros::<f64>(gil.python(), &np, &[n, m], NPY_FORTRANORDER);
+    let arr = PyArray::<f64>::zeros(gil.python(), &np, &[n, m], NPY_FORTRANORDER);
     assert!(arr.ndim() == 2);
     assert!(arr.dims() == [n, m]);
     assert!(arr.strides() == [8, n as isize * 8]);
@@ -38,32 +38,23 @@ fn zeros() {
 fn arange() {
     let gil = pyo3::Python::acquire_gil();
     let np = PyArrayModule::import(gil.python()).unwrap();
-    let arr = PyArray::arange::<f64>(gil.python(), &np, 0.0, 1.0, 0.1);
+    let arr = PyArray::<f64>::arange(gil.python(), &np, 0.0, 1.0, 0.1);
     println!("ndim = {:?}", arr.ndim());
     println!("dims = {:?}", arr.dims());
-    println!("array = {:?}", arr.as_slice::<f64>().unwrap());
+    println!("array = {:?}", arr.as_slice().unwrap());
 }
 
 #[test]
 fn as_array() {
     let gil = pyo3::Python::acquire_gil();
     let np = PyArrayModule::import(gil.python()).unwrap();
-    let arr = PyArray::zeros::<f64>(gil.python(), &np, &[3, 2, 4], NPY_CORDER);
-    let a = arr.as_array::<f64>().unwrap();
+    let arr = PyArray::<f64>::zeros(gil.python(), &np, &[3, 2, 4], NPY_CORDER);
+    let a = arr.as_array().unwrap();
     assert_eq!(arr.shape(), a.shape());
     assert_eq!(
         arr.strides().iter().map(|x| x / 8).collect::<Vec<_>>(),
         a.strides()
     );
-}
-
-#[test]
-#[should_panic]
-fn as_array_panic() {
-    let gil = pyo3::Python::acquire_gil();
-    let np = PyArrayModule::import(gil.python()).unwrap();
-    let arr = PyArray::zeros::<i32>(gil.python(), &np, &[3, 2, 4], NPY_CORDER);
-    let _a = arr.as_array::<f32>().unwrap();
 }
 
 #[test]
@@ -74,7 +65,7 @@ fn into_pyarray_vec() {
     let a = vec![1, 2, 3];
     let arr = a.into_pyarray(gil.python(), &np);
     println!("arr.shape = {:?}", arr.shape());
-    println!("arr = {:?}", arr.as_slice::<i32>().unwrap());
+    println!("arr = {:?}", arr.as_slice().unwrap());
     assert_eq!(arr.shape(), [3]);
 }
 
@@ -101,7 +92,7 @@ fn iter_to_pyarray() {
     let np = PyArrayModule::import(gil.python()).unwrap();
     let arr = (0..10).map(|x| x * x).to_pyarray(gil.python(), &np);
     println!("arr.shape = {:?}", arr.shape());
-    println!("arr = {:?}", arr.as_slice::<i32>().unwrap());
+    println!("arr = {:?}", arr.as_slice().unwrap());
     assert_eq!(arr.shape(), [10]);
 }
 
@@ -110,8 +101,8 @@ fn is_instance() {
     let gil = pyo3::Python::acquire_gil();
     let py = gil.python();
     let np = PyArrayModule::import(py).unwrap();
-    let arr = PyArray::new::<f64>(gil.python(), &np, &[3, 5]);
-    assert!(py.is_instance::<PyArray, _>(&arr).unwrap());
+    let arr = PyArray::<f64>::new(gil.python(), &np, &[3, 5]);
+    assert!(py.is_instance::<PyArray<f64>, _>(&arr).unwrap());
     assert!(!py.is_instance::<pyo3::PyList, _>(&arr).unwrap());
 }
 
@@ -120,9 +111,12 @@ fn from_vec2() {
     let vec2 = vec![vec![1, 2, 3]; 2];
     let gil = pyo3::Python::acquire_gil();
     let np = PyArrayModule::import(gil.python()).unwrap();
-    let pyarray = PyArray::from_vec2::<u32>(gil.python(), &np, &vec2).unwrap();
-    assert_eq!(pyarray.as_array::<u32>().unwrap(), array![[1, 2, 3], [1, 2, 3]].into_dyn());
-    assert!(PyArray::from_vec2::<u32>(gil.python(), &np, &vec![vec![1], vec![2, 3]]).is_err());
+    let pyarray = PyArray::from_vec2(gil.python(), &np, &vec2).unwrap();
+    assert_eq!(
+        pyarray.as_array().unwrap(),
+        array![[1, 2, 3], [1, 2, 3]].into_dyn()
+    );
+    assert!(PyArray::from_vec2(gil.python(), &np, &vec![vec![1], vec![2, 3]]).is_err());
 }
 
 #[test]
@@ -130,13 +124,12 @@ fn from_vec3() {
     let gil = pyo3::Python::acquire_gil();
     let np = PyArrayModule::import(gil.python()).unwrap();
     let vec3 = vec![vec![vec![1, 2]; 2]; 2];
-    let pyarray = PyArray::from_vec3::<u32>(gil.python(), &np, &vec3).unwrap();
+    let pyarray = PyArray::from_vec3(gil.python(), &np, &vec3).unwrap();
     assert_eq!(
-        pyarray.as_array::<u32>().unwrap(),
+        pyarray.as_array().unwrap(),
         array![[[1, 2], [1, 2]], [[1, 2], [1, 2]]].into_dyn()
     );
 }
-
 
 #[test]
 fn from_small_array() {
@@ -144,5 +137,5 @@ fn from_small_array() {
     let np = PyArrayModule::import(gil.python()).unwrap();
     let array: [i32; 5] = [1, 2, 3, 4, 5];
     let pyarray = array.into_pyarray(gil.python(), &np);
-    assert_eq!(pyarray.as_slice::<i32>().unwrap(), &[1, 2, 3, 4, 5]);
+    assert_eq!(pyarray.as_slice().unwrap(), &[1, 2, 3, 4, 5]);
 }

@@ -2,11 +2,10 @@
 
 extern crate ndarray;
 extern crate numpy;
-extern crate pyo3;
 
 use ndarray::*;
 use numpy::*;
-use pyo3::prelude::*;
+use numpy::pyo3::prelude::*;
 
 #[pymodinit]
 fn rust_ext(py: Python, m: &PyModule) -> PyResult<()> {
@@ -27,7 +26,7 @@ fn rust_ext(py: Python, m: &PyModule) -> PyResult<()> {
 
     // wrapper of `axpy`
     #[pyfn(m, "axpy")]
-    fn axpy_py(py: Python, a: f64, x: &PyArray, y: &PyArray) -> PyResult<PyArray> {
+    fn axpy_py(py: Python, a: f64, x: &PyArray<f64>, y: &PyArray<f64>) -> PyResult<PyArray<f64>> {
         let np = PyArrayModule::import(py)?;
         let x = x.as_array().into_pyresult("x must be f64 array")?;
         let y = y.as_array().into_pyresult("y must be f64 array")?;
@@ -36,7 +35,7 @@ fn rust_ext(py: Python, m: &PyModule) -> PyResult<()> {
 
     // wrapper of `mult`
     #[pyfn(m, "mult")]
-    fn mult_py(_py: Python, a: f64, x: &PyArray) -> PyResult<()> {
+    fn mult_py(_py: Python, a: f64, x: &PyArray<f64>) -> PyResult<()> {
         let x = x.as_array_mut().into_pyresult("x must be f64 array")?;
         mult(a, x);
         Ok(())

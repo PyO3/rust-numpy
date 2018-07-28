@@ -9,34 +9,39 @@ use std::ptr::null_mut;
 use super::*;
 
 pub trait IntoPyArray {
-    fn into_pyarray(self, Python, &PyArrayModule) -> PyArray;
+    type Item: TypeNum;
+    fn into_pyarray(self, Python, &PyArrayModule) -> PyArray<Self::Item>;
 }
 
 impl<T: TypeNum> IntoPyArray for Box<[T]> {
-    fn into_pyarray(self, py: Python, np: &PyArrayModule) -> PyArray {
+    type Item = T;
+    fn into_pyarray(self, py: Python, np: &PyArrayModule) -> PyArray<Self::Item> {
         let dims = [self.len()];
         let ptr = Box::into_raw(self);
-        unsafe { PyArray::new_::<T>(py, np, &dims, null_mut(), ptr as *mut c_void) }
+        unsafe { PyArray::new_(py, np, &dims, null_mut(), ptr as *mut c_void) }
     }
 }
 
 impl<T: TypeNum> IntoPyArray for Vec<T> {
-    fn into_pyarray(self, py: Python, np: &PyArrayModule) -> PyArray {
+    type Item = T;
+    fn into_pyarray(self, py: Python, np: &PyArrayModule) -> PyArray<Self::Item> {
         let dims = [self.len()];
-        unsafe { PyArray::new_::<T>(py, np, &dims, null_mut(), into_raw(self)) }
+        unsafe { PyArray::new_(py, np, &dims, null_mut(), into_raw(self)) }
     }
 }
 
 impl<A: TypeNum, D: Dimension> IntoPyArray for Array<A, D> {
-    fn into_pyarray(self, py: Python, np: &PyArrayModule) -> PyArray {
+    type Item = A;
+    fn into_pyarray(self, py: Python, np: &PyArrayModule) -> PyArray<Self::Item> {
         let dims: Vec<_> = self.shape().iter().cloned().collect();
-        let mut strides: Vec<_> = self.strides()
+        let mut strides: Vec<_> = self
+            .strides()
             .into_iter()
             .map(|n| n * size_of::<A>() as npy_intp)
             .collect();
         unsafe {
             let data = into_raw(self.into_raw_vec());
-            PyArray::new_::<A>(py, np, &dims, strides.as_mut_ptr(), data)
+            PyArray::new_(py, np, &dims, strides.as_mut_ptr(), data)
         }
     }
 }
@@ -45,11 +50,12 @@ macro_rules! array_impls {
     ($($N: expr)+) => {
         $(
             impl<T: TypeNum> IntoPyArray for [T; $N] {
-                fn into_pyarray(mut self, py: Python, np: &PyArrayModule) -> PyArray {
+                type Item = T;
+                fn into_pyarray(mut self, py: Python, np: &PyArrayModule) -> PyArray<T> {
                     let dims = [$N];
                     let ptr = &mut self as *mut [T; $N];
                     unsafe {
-                        PyArray::new_::<T>(py, np, &dims, null_mut(), ptr as *mut c_void)
+                        PyArray::new_(py, np, &dims, null_mut(), ptr as *mut c_void)
                     }
                 }
             }
@@ -71,16 +77,17 @@ pub(crate) unsafe fn into_raw<T>(x: Vec<T>) -> *mut c_void {
 }
 
 pub trait ToPyArray {
-    fn to_pyarray(self, Python, &PyArrayModule) -> PyArray;
+    type Item: TypeNum;
+    fn to_pyarray(self, Python, &PyArrayModule) -> PyArray<Self::Item>;
 }
 
 impl<Iter, T: TypeNum> ToPyArray for Iter
 where
     Iter: Iterator<Item = T> + Sized,
 {
-    fn to_pyarray(self, py: Python, np: &PyArrayModule) -> PyArray {
+    type Item = T;
+    fn to_pyarray(self, py: Python, np: &PyArrayModule) -> PyArray<Self::Item> {
         let vec: Vec<T> = self.collect();
         vec.into_pyarray(py, np)
     }
 }
-

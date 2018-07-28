@@ -8,6 +8,5 @@ name = "rust_ext"
 crate-type = ["cdylib"]
 
 [dependencies]
-numpy = { path = "../.." }
+numpy = { path = "../..", features = ["pyo3-reexport"] }
 ndarray = "0.11"
-pyo3 = "0.3.1"
