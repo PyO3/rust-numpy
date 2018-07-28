@@ -136,3 +136,13 @@ fn from_vec3() {
         array![[[1, 2], [1, 2]], [[1, 2], [1, 2]]].into_dyn()
     );
 }
+
+
+#[test]
+fn from_small_array() {
+    let gil = pyo3::Python::acquire_gil();
+    let np = PyArrayModule::import(gil.python()).unwrap();
+    let array: [i32; 5] = [1, 2, 3, 4, 5];
+    let pyarray = array.into_pyarray(gil.python(), &np);
+    assert_eq!(pyarray.as_slice::<i32>().unwrap(), &[1, 2, 3, 4, 5]);
+}
