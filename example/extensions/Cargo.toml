@@ -9,5 +9,5 @@ crate-type = ["cdylib"]
 
 [dependencies]
 numpy = { path = "../.." }
-pyo3 = { git =  "https://github.com/kngwyu/pyo3", branch = "native-type-with-generics"}
+pyo3 = { git =  "https://github.com/pyo3/pyo3", rev = "547fa35604a61d2d750390940ed5a0d34ed09821"}
 ndarray = "0.11"
