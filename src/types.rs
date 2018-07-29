@@ -11,7 +11,7 @@ use super::npyffi::NPY_TYPES;
 ///
 /// This type is mainly for displaying error, and user don't have to use it directly.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum NpyDataTypes {
+pub enum NpyDataType {
     Bool,
     Int32,
     Int64,
@@ -24,19 +24,19 @@ pub enum NpyDataTypes {
     Unsupported,
 }
 
-impl NpyDataTypes {
+impl NpyDataType {
     pub(crate) fn from_i32(npy_t: i32) -> Self {
         match npy_t {
-            x if x == NPY_TYPES::NPY_BOOL as i32 => NpyDataTypes::Bool,
-            x if x == NPY_TYPES::NPY_INT as i32 => NpyDataTypes::Int32,
-            x if x == NPY_TYPES::NPY_LONG as i32 => NpyDataTypes::Int64,
-            x if x == NPY_TYPES::NPY_UINT as i32 => NpyDataTypes::Uint32,
-            x if x == NPY_TYPES::NPY_ULONG as i32 => NpyDataTypes::Uint64,
-            x if x == NPY_TYPES::NPY_FLOAT as i32 => NpyDataTypes::Float32,
-            x if x == NPY_TYPES::NPY_DOUBLE as i32 => NpyDataTypes::Float64,
-            x if x == NPY_TYPES::NPY_CFLOAT as i32 => NpyDataTypes::Complex32,
-            x if x == NPY_TYPES::NPY_CDOUBLE as i32 => NpyDataTypes::Complex64,
-            _ => NpyDataTypes::Unsupported,
+            x if x == NPY_TYPES::NPY_BOOL as i32 => NpyDataType::Bool,
+            x if x == NPY_TYPES::NPY_INT as i32 => NpyDataType::Int32,
+            x if x == NPY_TYPES::NPY_LONG as i32 => NpyDataType::Int64,
+            x if x == NPY_TYPES::NPY_UINT as i32 => NpyDataType::Uint32,
+            x if x == NPY_TYPES::NPY_ULONG as i32 => NpyDataType::Uint64,
+            x if x == NPY_TYPES::NPY_FLOAT as i32 => NpyDataType::Float32,
+            x if x == NPY_TYPES::NPY_DOUBLE as i32 => NpyDataType::Float64,
+            x if x == NPY_TYPES::NPY_CFLOAT as i32 => NpyDataType::Complex32,
+            x if x == NPY_TYPES::NPY_CDOUBLE as i32 => NpyDataType::Complex64,
+            _ => NpyDataType::Unsupported,
         }
     }
 }
@@ -46,7 +46,7 @@ pub trait TypeNum: Clone {
     fn typenum() -> i32 {
         Self::typenum_enum() as i32
     }
-    fn to_npy_data_type(self) -> NpyDataTypes;
+    fn to_npy_data_type(self) -> NpyDataType;
 }
 
 macro_rules! impl_type_num {
@@ -55,8 +55,8 @@ macro_rules! impl_type_num {
             fn typenum_enum() -> NPY_TYPES {
                 NPY_TYPES::$npy_t
             }
-            fn to_npy_data_type(self) -> NpyDataTypes {
-                NpyDataTypes::$npy_dat_t
+            fn to_npy_data_type(self) -> NpyDataType {
+                NpyDataType::$npy_dat_t
             }
         }
     };

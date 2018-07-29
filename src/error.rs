@@ -3,7 +3,7 @@
 use pyo3::*;
 use std::error;
 use std::fmt;
-use types::NpyDataTypes;
+use types::NpyDataType;
 
 pub trait IntoPyErr {
     fn into_pyerr(self, msg: &str) -> PyErr;
@@ -25,8 +25,8 @@ impl<T, E: IntoPyErr> IntoPyResult for Result<T, E> {
 #[derive(Debug)]
 pub enum ArrayCastError {
     ToRust {
-        from: NpyDataTypes,
-        to: NpyDataTypes,
+        from: NpyDataType,
+        to: NpyDataType,
     },
     FromVec,
 }
@@ -34,8 +34,8 @@ pub enum ArrayCastError {
 impl ArrayCastError {
     pub fn to_rust(from: i32, to: i32) -> Self {
         ArrayCastError::ToRust {
-            from: NpyDataTypes::from_i32(from),
-            to: NpyDataTypes::from_i32(to),
+            from: NpyDataType::from_i32(from),
+            to: NpyDataType::from_i32(to),
         }
     }
 }

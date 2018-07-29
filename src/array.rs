@@ -29,18 +29,20 @@ impl<'a, T> ::std::convert::From<&'a PyArray<T>> for &'a PyObjectRef {
 }
 
 impl<'a, T: TypeNum> FromPyObject<'a> for &'a PyArray<T> {
+    // here we do type-check twice
+    // 1. Checks if the object is PyArray
+    // 2. Checks if the data type of the array is T
     fn extract(ob: &'a PyObjectRef) -> PyResult<Self> {
-        unsafe {
+        let array = unsafe {
             if npyffi::PyArray_Check(ob.as_ptr()) == 0 {
                 return Err(PyDowncastError.into());
             }
-            let array = &*(ob as *const PyObjectRef as *const PyArray<T>);
-            println!(">_<");
-            array
-                .type_check()
-                .map(|_| array)
-                .map_err(|err| err.into_pyerr("FromPyObject::extract failed"))
-        }
+            &*(ob as *const PyObjectRef as *const PyArray<T>)
+        };
+        array
+            .type_check()
+            .map(|_| array)
+            .map_err(|err| err.into_pyerr("FromPyObject::extract failed"))
     }
 }
 
@@ -140,6 +142,7 @@ impl<T> PyArray<T> {
         self.shape()
     }
 
+    /// Calcurates the total number of elements in the array.
     pub fn len(&self) -> usize {
         self.shape().iter().fold(1, |a, b| a * b)
     }
@@ -294,6 +297,10 @@ impl<T: TypeNum> PyArray<T> {
             let descr = (*self.as_array_ptr()).descr;
             (*descr).type_num
         }
+    }
+
+    pub fn data_type(&self) -> NpyDataType {
+        NpyDataType::from_i32(self.typenum())
     }
 
     fn type_check(&self) -> Result<(), ArrayCastError> {
