@@ -3,6 +3,7 @@
 use pyo3::*;
 use std::error;
 use std::fmt;
+use types::NpyDataType;
 
 pub trait IntoPyErr {
     fn into_pyerr(self, msg: &str) -> PyErr;
@@ -23,21 +24,27 @@ impl<T, E: IntoPyErr> IntoPyResult for Result<T, E> {
 /// Error for casting `PyArray` into `ArrayView` or `ArrayViewMut`
 #[derive(Debug)]
 pub enum ArrayCastError {
-    ToRust { test: i32, truth: i32 },
+    ToRust {
+        from: NpyDataType,
+        to: NpyDataType,
+    },
     FromVec,
 }
 
 impl ArrayCastError {
-    pub fn to_rust(test: i32, truth: i32) -> Self {
-        ArrayCastError::ToRust { test, truth }
+    pub fn to_rust(from: i32, to: i32) -> Self {
+        ArrayCastError::ToRust {
+            from: NpyDataType::from_i32(from),
+            to: NpyDataType::from_i32(to),
+        }
     }
 }
 
 impl fmt::Display for ArrayCastError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            ArrayCastError::ToRust { test, truth } => {
-                write!(f, "Cast failed: from={}, to={}", test, truth)
+            ArrayCastError::ToRust { from, to } => {
+                write!(f, "Cast failed: from={:?}, to={:?}", from, to)
             }
             ArrayCastError::FromVec => write!(f, "Cast failed: FromVec (maybe invalid dimension)"),
         }
@@ -56,10 +63,11 @@ impl error::Error for ArrayCastError {
 impl IntoPyErr for ArrayCastError {
     fn into_pyerr(self, msg: &str) -> PyErr {
         let msg = match self {
-            ArrayCastError::ToRust { .. } => {
-                format!("rust_numpy::ArrayCastError::IntoArray: {}", msg)
-            }
-            ArrayCastError::FromVec => format!("rust_numpy::ArrayCastError::FromVec: {}", msg),
+            ArrayCastError::ToRust { from, to } => format!(
+                "ArrayCastError::ToRust: from: {:?}, to: {:?}, msg: {}",
+                from, to, msg
+            ),
+            ArrayCastError::FromVec => format!("ArrayCastError::FromVec: {}", msg),
         };
         PyErr::new::<exc::TypeError, _>(msg)
     }
