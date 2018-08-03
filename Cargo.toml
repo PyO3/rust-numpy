@@ -13,5 +13,5 @@ license-file = "LICENSE"
 libc = "0.2"
 num-complex = "0.1"
 ndarray = "0.11"
-pyo3 = { git =  "https://github.com/pyo3/pyo3", rev = "547fa35604a61d2d750390940ed5a0d34ed09821"}
+pyo3 = "0.4.0"
 
