@@ -166,6 +166,24 @@ impl<T: TypeNum> PyArray<T> {
         IntoPyArray::into_pyarray(v, py, np)
     }
 
+    /// Construct one-dimension PyArray from `impl IntoIterator`.
+    ///
+    /// # Example
+    /// ```
+    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// use numpy::{PyArray, PyArrayModule};
+    /// use std::collections::BTreeSet;
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let np = PyArrayModule::import(gil.python()).unwrap();
+    /// let set: BTreeSet<u32> = [4, 3, 2, 5, 1].into_iter().cloned().collect();
+    /// let pyarray = PyArray::from_iter(gil.python(), &np, set);
+    /// assert_eq!(pyarray.as_slice().unwrap(), &[1, 2, 3, 4, 5]);
+    /// # }
+    /// ```
+    pub fn from_iter(py: Python, np: &PyArrayModule, i: impl IntoIterator<Item = T>) -> PyArray<T> {
+        i.into_iter().collect::<Vec<_>>().into_pyarray(py, np)
+    }
+
     /// Construct one-dimension PyArray from Vec.
     ///
     /// # Example
