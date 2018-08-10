@@ -74,19 +74,3 @@ pub(crate) unsafe fn into_raw<T>(x: Vec<T>) -> *mut c_void {
     let ptr = Box::into_raw(x.into_boxed_slice());
     ptr as *mut c_void
 }
-
-pub trait ToPyArray {
-    type Item: TypeNum;
-    fn to_pyarray(self, Python, &PyArrayModule) -> PyArray<Self::Item>;
-}
-
-impl<Iter, T: TypeNum> ToPyArray for Iter
-where
-    Iter: Iterator<Item = T> + Sized,
-{
-    type Item = T;
-    fn to_pyarray(self, py: Python, np: &PyArrayModule) -> PyArray<Self::Item> {
-        let vec: Vec<T> = self.collect();
-        vec.into_pyarray(py, np)
-    }
-}

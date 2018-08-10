@@ -91,10 +91,8 @@ fn into_pyarray_array() {
 fn iter_to_pyarray() {
     let gil = pyo3::Python::acquire_gil();
     let np = PyArrayModule::import(gil.python()).unwrap();
-    let arr = (0..10).map(|x| x * x).to_pyarray(gil.python(), &np);
-    println!("arr.shape = {:?}", arr.shape());
-    println!("arr = {:?}", arr.as_slice().unwrap());
-    assert_eq!(arr.shape(), [10]);
+    let arr = PyArray::from_iter(gil.python(), &np, (0..10).map(|x| x * x));
+    assert_eq!(arr.as_slice().unwrap(), &[0, 1, 4, 9, 16, 25, 36, 49, 64, 81]);
 }
 
 #[test]
