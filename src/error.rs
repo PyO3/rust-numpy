@@ -21,18 +21,20 @@ impl<T, E: IntoPyErr> IntoPyResult for Result<T, E> {
     }
 }
 
-/// Error for casting `PyArray` into `ArrayView` or `ArrayViewMut`
+/// Represents a casting error between rust types and numpy array.
 #[derive(Debug)]
 pub enum ArrayCastError {
+    /// Error for casting `PyArray` into `ArrayView` or `ArrayViewMut`
     ToRust {
         from: NpyDataType,
         to: NpyDataType,
     },
+    /// Error for casting rust's `Vec` into numpy array.
     FromVec,
 }
 
 impl ArrayCastError {
-    pub fn to_rust(from: i32, to: i32) -> Self {
+    pub(crate) fn to_rust(from: i32, to: i32) -> Self {
         ArrayCastError::ToRust {
             from: NpyDataType::from_i32(from),
             to: NpyDataType::from_i32(to),
