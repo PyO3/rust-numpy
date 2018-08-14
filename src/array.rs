@@ -10,7 +10,7 @@ use std::ptr::null_mut;
 use super::error::ArrayCastError;
 use super::*;
 
-/// Untyped safe interface for NumPy ndarray.
+/// Interface for [NumPy ndarray](https://docs.scipy.org/doc/numpy/reference/arrays.ndarray.html).
 pub struct PyArray<T>(PyObject, PhantomData<T>);
 
 pyobject_native_type_convert!(
@@ -53,18 +53,18 @@ impl<T> IntoPyObject for PyArray<T> {
 }
 
 impl<T> PyArray<T> {
-    /// Get raw pointer for PyArrayObject
+    /// Gets a raw `PyArrayObject` pointer.
     pub fn as_array_ptr(&self) -> *mut npyffi::PyArrayObject {
         self.as_ptr() as _
     }
 
-    /// Construct PyArray from raw python object(not increment reference count).
+    /// Constructs `PyArray` from raw python object without incrementing reference counts.
     pub unsafe fn from_owned_ptr(py: Python, ptr: *mut pyo3::ffi::PyObject) -> Self {
         let obj = PyObject::from_owned_ptr(py, ptr);
         PyArray(obj, PhantomData)
     }
 
-    /// Construct PyArray from raw python object(+ increment reference count).
+    /// Constructs PyArray from raw python object and increments reference counts.
     pub unsafe fn from_borrowed_ptr(py: Python, ptr: *mut pyo3::ffi::PyObject) -> Self {
         let obj = PyObject::from_borrowed_ptr(py, ptr);
         PyArray(obj, PhantomData)
@@ -137,8 +137,6 @@ impl<T> PyArray<T> {
     }
 
     /// Same as [shape](./struct.PyArray.html#method.shape)
-    ///
-    /// Reserved for backward compatibility.
     #[inline]
     pub fn dims(&self) -> &[usize] {
         self.shape()
@@ -320,7 +318,7 @@ impl<T: TypeNum> PyArray<T> {
         }
     }
 
-    /// Returns the number type of the array.
+    /// Returns the scalar type of the array.
     pub fn data_type(&self) -> NpyDataType {
         NpyDataType::from_i32(self.typenum())
     }
@@ -364,7 +362,7 @@ impl<T: TypeNum> PyArray<T> {
         unsafe { Ok(::std::slice::from_raw_parts_mut(self.data(), self.len())) }
     }
 
-    /// Construct new PyArray from raw pointer and dimension.
+    /// Construct a new PyArray given a raw pointer and dimensions.
     ///
     /// Please use `new` or from methods instead.
     pub unsafe fn new_(

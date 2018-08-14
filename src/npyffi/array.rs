@@ -1,6 +1,4 @@
-//! Low-Level binding for Array API
-//!
-//! https://docs.scipy.org/doc/numpy/reference/c-api.array.html
+//! Low-Level binding for [Array API](https://docs.scipy.org/doc/numpy/reference/c-api.array.html)
 
 use libc::FILE;
 use std::ops::Deref;
@@ -13,10 +11,9 @@ use pyo3::{ObjectProtocol, PyModule, PyResult, Python, ToPyPointer};
 
 use npyffi::*;
 
-/// Low-Level binding for Array API
-/// https://docs.scipy.org/doc/numpy/reference/c-api.array.html
+/// Low-Level binding for [Array API](https://docs.scipy.org/doc/numpy/reference/c-api.array.html)
 ///
-/// Most of Array API is exposed as the related function of this module object.
+/// Most of the Array APIs are exposed as related functions of this module object.
 /// Some APIs (including most accessor) in the above URL are not implemented
 /// since they are defined as C macro, and cannot be called from rust.
 /// Some of these are implemented on the high-level interface as a Rust function.
@@ -61,7 +58,7 @@ impl<'py> PyArrayModule<'py> {
     }
 
     /// Returns internal `PyModule` type, which includes `numpy.core.multiarray`,
-    /// so that you can use `PyArrayModule` with some pyo3 functions.
+    /// so that you can use `PyArrayModule` with some functions.
     ///
     /// # Example
     ///
