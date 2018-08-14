@@ -8,6 +8,18 @@ use std::ptr::null_mut;
 
 use super::*;
 
+/// Covversion trait from rust types to `PyArray`.
+///
+/// # Example
+/// ```
+/// # extern crate pyo3; extern crate numpy; fn main() {
+/// use numpy::{PyArray, PyArrayModule, IntoPyArray};
+/// let gil = pyo3::Python::acquire_gil();
+/// let np = PyArrayModule::import(gil.python()).unwrap();
+/// let py_array = vec![1, 2, 3].into_pyarray(gil.python(), &np);
+/// assert_eq!(py_array.as_slice().unwrap(), &[1, 2, 3]);
+/// # }
+/// ```
 pub trait IntoPyArray {
     type Item: TypeNum;
     fn into_pyarray(self, Python, &PyArrayModule) -> PyArray<Self::Item>;

@@ -13,8 +13,7 @@ use pyo3::{ObjectProtocol, PyModule, PyResult, Python, ToPyPointer};
 use super::objects::*;
 use super::types::*;
 
-/// Low-Level binding for UFunc API
-/// https://docs.scipy.org/doc/numpy/reference/c-api.ufunc.html
+/// Low-Level binding for [UFunc API](https://docs.scipy.org/doc/numpy/reference/c-api.ufunc.html)
 ///
 /// Most of UFunc API is exposed as the related function of this module object.
 pub struct PyUFuncModule<'py> {

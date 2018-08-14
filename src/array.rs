@@ -10,7 +10,7 @@ use std::ptr::null_mut;
 use super::error::ArrayCastError;
 use super::*;
 
-/// Untyped safe interface for NumPy ndarray.
+/// Interface for [NumPy ndarray](https://docs.scipy.org/doc/numpy/reference/arrays.ndarray.html).
 pub struct PyArray<T>(PyObject, PhantomData<T>);
 
 pyobject_native_type_convert!(
@@ -53,16 +53,18 @@ impl<T> IntoPyObject for PyArray<T> {
 }
 
 impl<T> PyArray<T> {
-    /// Get raw pointer for PyArrayObject
+    /// Gets a raw `PyArrayObject` pointer.
     pub fn as_array_ptr(&self) -> *mut npyffi::PyArrayObject {
         self.as_ptr() as _
     }
 
+    /// Constructs `PyArray` from raw python object without incrementing reference counts.
     pub unsafe fn from_owned_ptr(py: Python, ptr: *mut pyo3::ffi::PyObject) -> Self {
         let obj = PyObject::from_owned_ptr(py, ptr);
         PyArray(obj, PhantomData)
     }
 
+    /// Constructs PyArray from raw python object and increments reference counts.
     pub unsafe fn from_borrowed_ptr(py: Python, ptr: *mut pyo3::ffi::PyObject) -> Self {
         let obj = PyObject::from_borrowed_ptr(py, ptr);
         PyArray(obj, PhantomData)
@@ -135,8 +137,6 @@ impl<T> PyArray<T> {
     }
 
     /// Same as [shape](./struct.PyArray.html#method.shape)
-    ///
-    /// Reserved for backward compatibility.
     #[inline]
     pub fn dims(&self) -> &[usize] {
         self.shape()
@@ -294,6 +294,7 @@ impl<T: TypeNum> PyArray<T> {
         IntoPyArray::into_pyarray(arr, py, np)
     }
 
+    /// Returns the pointer to the first element of the inner array.
     unsafe fn data(&self) -> *mut T {
         let ptr = self.as_array_ptr();
         (*ptr).data as *mut T
@@ -310,13 +311,14 @@ impl<T: TypeNum> PyArray<T> {
         shape.strides(Dim(st))
     }
 
-    pub fn typenum(&self) -> i32 {
+    fn typenum(&self) -> i32 {
         unsafe {
             let descr = (*self.as_array_ptr()).descr;
             (*descr).type_num
         }
     }
 
+    /// Returns the scalar type of the array.
     pub fn data_type(&self) -> NpyDataType {
         NpyDataType::from_i32(self.typenum())
     }
@@ -360,6 +362,9 @@ impl<T: TypeNum> PyArray<T> {
         unsafe { Ok(::std::slice::from_raw_parts_mut(self.data(), self.len())) }
     }
 
+    /// Construct a new PyArray given a raw pointer and dimensions.
+    ///
+    /// Please use `new` or from methods instead.
     pub unsafe fn new_(
         py: Python,
         np: &PyArrayModule,
@@ -382,13 +387,40 @@ impl<T: TypeNum> PyArray<T> {
         Self::from_owned_ptr(py, ptr)
     }
 
-    /// a wrapper of [PyArray_SimpleNew](https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_SimpleNew)
+    /// Creates a new uninitialized array.
+    ///
+    /// See also [PyArray_SimpleNew](https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_SimpleNew).
+    ///
+    /// # Example
+    /// ```
+    /// # extern crate pyo3; extern crate numpy; #[macro_use] extern crate ndarray; fn main() {
+    /// use numpy::{PyArray, PyArrayModule};
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let np = PyArrayModule::import(gil.python()).unwrap();
+    /// let pyarray = PyArray::new(gil.python(), &np, &[2, 2]);
+    /// assert_eq!(pyarray.as_array().unwrap(), array![[0, 0], [0, 0]].into_dyn());
+    /// # }
+    /// ```
     pub fn new(py: Python, np: &PyArrayModule, dims: &[usize]) -> Self {
         unsafe { Self::new_(py, np, dims, null_mut(), null_mut()) }
     }
 
-    /// a wrapper of [PyArray_ZEROS](https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_ZEROS)
-    pub fn zeros(py: Python, np: &PyArrayModule, dims: &[usize], order: NPY_ORDER) -> Self {
+    /// Construct a new nd-dimensional array filled with 0. If `is_fortran` is true, then
+    /// a fortran order array is created, otherwise a C-order array is created.
+    ///
+    /// See also [PyArray_Zeros](https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_Zeros)
+    ///
+    /// # Example
+    /// ```
+    /// # extern crate pyo3; extern crate numpy; #[macro_use] extern crate ndarray; fn main() {
+    /// use numpy::{PyArray, PyArrayModule};
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let np = PyArrayModule::import(gil.python()).unwrap();
+    /// let pyarray = PyArray::zeros(gil.python(), &np, &[2, 2], false);
+    /// assert_eq!(pyarray.as_array().unwrap(), array![[0, 0], [0, 0]].into_dyn());
+    /// # }
+    /// ```
+    pub fn zeros(py: Python, np: &PyArrayModule, dims: &[usize], is_fortran: bool) -> Self {
         let dims: Vec<npy_intp> = dims.iter().map(|d| *d as npy_intp).collect();
         unsafe {
             let descr = np.PyArray_DescrFromType(T::typenum());
@@ -396,13 +428,28 @@ impl<T: TypeNum> PyArray<T> {
                 dims.len() as i32,
                 dims.as_ptr() as *mut npy_intp,
                 descr,
-                order as i32,
+                if is_fortran { -1 } else { 0 },
             );
             Self::from_owned_ptr(py, ptr)
         }
     }
 
-    /// a wrapper of [PyArray_Arange](https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_Arange)
+    /// Return evenly spaced values within a given interval.
+    /// Same as [numpy.arange](https://docs.scipy.org/doc/numpy/reference/generated/numpy.arange.html).
+    ///
+    /// See also [PyArray_Arange](https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_Arange).
+    ///
+    /// # Example
+    /// ```
+    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// use numpy::{PyArray, PyArrayModule, IntoPyArray};
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let np = PyArrayModule::import(gil.python()).unwrap();
+    /// let pyarray = PyArray::<f64>::arange(gil.python(), &np, 2.0, 4.0, 0.5);
+    /// assert_eq!(pyarray.as_slice().unwrap(), &[2.0, 2.5, 3.0, 3.5]);
+    /// let pyarray = PyArray::<i32>::arange(gil.python(), &np, -2.0, 4.0, 3.0);
+    /// assert_eq!(pyarray.as_slice().unwrap(), &[-2, 1]);
+    /// # }
     pub fn arange(py: Python, np: &PyArrayModule, start: f64, stop: f64, step: f64) -> Self {
         unsafe {
             let ptr = np.PyArray_Arange(start, stop, step, T::typenum());
