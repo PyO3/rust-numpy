@@ -24,12 +24,12 @@ fn zeros() {
     let np = PyArrayModule::import(gil.python()).unwrap();
     let n = 3;
     let m = 5;
-    let arr = PyArray::<f64>::zeros(gil.python(), &np, &[n, m], NPY_CORDER);
+    let arr = PyArray::<f64>::zeros(gil.python(), &np, &[n, m], false);
     assert!(arr.ndim() == 2);
     assert!(arr.dims() == [n, m]);
     assert!(arr.strides() == [m as isize * 8, 8]);
 
-    let arr = PyArray::<f64>::zeros(gil.python(), &np, &[n, m], NPY_FORTRANORDER);
+    let arr = PyArray::<f64>::zeros(gil.python(), &np, &[n, m], true);
     assert!(arr.ndim() == 2);
     assert!(arr.dims() == [n, m]);
     assert!(arr.strides() == [8, n as isize * 8]);
@@ -49,7 +49,7 @@ fn arange() {
 fn as_array() {
     let gil = pyo3::Python::acquire_gil();
     let np = PyArrayModule::import(gil.python()).unwrap();
-    let arr = PyArray::<f64>::zeros(gil.python(), &np, &[3, 2, 4], NPY_CORDER);
+    let arr = PyArray::<f64>::zeros(gil.python(), &np, &[3, 2, 4], false);
     let a = arr.as_array().unwrap();
     assert_eq!(arr.shape(), a.shape());
     assert_eq!(
