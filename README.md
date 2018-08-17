@@ -17,7 +17,7 @@ and more (see [Cargo.toml](Cargo.toml))
 
 Example
 ---------
-Please see [example](example) directory for a complete example
+Please see [example](example) directory for a complete
 
 ```
 [lib]
