@@ -35,14 +35,15 @@ impl<'a, T: TypeNum> FromPyObject<'a> for &'a PyArray<T> {
     fn extract(ob: &'a PyObjectRef) -> PyResult<Self> {
         let array = unsafe {
             if npyffi::PyArray_Check(ob.as_ptr()) == 0 {
+                println!("extract: array check failed");
                 return Err(PyDowncastError.into());
             }
             &*(ob as *const PyObjectRef as *const PyArray<T>)
         };
-        array
-            .type_check()
-            .map(|_| array)
-            .map_err(|err| err.into_pyerr("FromPyObject::extract failed"))
+        array.type_check().map(|_| array).map_err(|err| {
+            println!("extract: type check failed");
+            err.into_pyerr("FromPyObject::extract typecheck failed")
+        })
     }
 }
 
