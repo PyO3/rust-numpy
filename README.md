@@ -1,7 +1,7 @@
 rust-numpy
 ===========
 [![Build Status](https://travis-ci.org/rust-numpy/rust-numpy.svg?branch=master)](https://travis-ci.org/rust-numpy/rust-numpy)
-[![Build status](https://ci.appveyor.com/api/projects/status/fbvref80965w64fu/branch/master?svg=true)](https://ci.appveyor.com/project/kngwyu/rust-numpy/branch/master)
+[![Build status](https://ci.appveyor.com/api/projects/status/bjaru43c7t1alx2x/branch/master?svg=true)](https://ci.appveyor.com/project/kngwyu/rust-numpy/branch/master)
 [![Crate](http://meritbadge.herokuapp.com/numpy)](https://crates.io/crates/numpy)
 [![docs.rs](https://docs.rs/numpy/badge.svg)](https://docs.rs/numpy)
 
