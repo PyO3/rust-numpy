@@ -92,7 +92,10 @@ fn iter_to_pyarray() {
     let gil = pyo3::Python::acquire_gil();
     let np = PyArrayModule::import(gil.python()).unwrap();
     let arr = PyArray::from_iter(gil.python(), &np, (0..10).map(|x| x * x));
-    assert_eq!(arr.as_slice().unwrap(), &[0, 1, 4, 9, 16, 25, 36, 49, 64, 81]);
+    assert_eq!(
+        arr.as_slice().unwrap(),
+        &[0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
+    );
 }
 
 #[test]
@@ -131,15 +134,6 @@ fn from_vec3() {
 }
 
 #[test]
-fn from_small_array() {
-    let gil = pyo3::Python::acquire_gil();
-    let np = PyArrayModule::import(gil.python()).unwrap();
-    let array: [i32; 5] = [1, 2, 3, 4, 5];
-    let pyarray = array.into_pyarray(gil.python(), &np);
-    assert_eq!(pyarray.as_slice().unwrap(), &[1, 2, 3, 4, 5]);
-}
-
-#[test]
 fn from_eval() {
     let gil = pyo3::Python::acquire_gil();
     let np = PyArrayModule::import(gil.python()).unwrap();
@@ -168,3 +162,22 @@ fn from_eval_fail() {
     assert!(converted.is_err());
 }
 
+macro_rules! small_array_test {
+    ($($t: ident)+) => {
+        #[test]
+        fn from_small_array() {
+            let gil = pyo3::Python::acquire_gil();
+            let np = PyArrayModule::import(gil.python()).unwrap();
+            $({
+                let array: [$t; 2] = [$t::min_value(), $t::max_value()];
+                let pyarray = array.into_pyarray(gil.python(), &np);
+                assert_eq!(
+                    pyarray.as_slice().unwrap(),
+                    &[$t::min_value(), $t::max_value()]
+                );
+            })+
+        }
+    };
+}
+
+small_array_test!(i8 u8 i16 u16 i32 u32 i64 u64);
