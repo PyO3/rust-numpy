@@ -397,8 +397,8 @@ impl<T: TypeNum> PyArray<T> {
     /// use numpy::{PyArray, PyArrayModule};
     /// let gil = pyo3::Python::acquire_gil();
     /// let np = PyArrayModule::import(gil.python()).unwrap();
-    /// let pyarray = PyArray::new(gil.python(), &np, &[2, 2]);
-    /// assert_eq!(pyarray.as_array().unwrap(), array![[0, 0], [0, 0]].into_dyn());
+    /// let pyarray = PyArray::<i32>::new(gil.python(), &np, &[4, 5, 6]);
+    /// assert_eq!(pyarray.shape(), &[4, 5, 6]);
     /// # }
     /// ```
     pub fn new(py: Python, np: &PyArrayModule, dims: &[usize]) -> Self {
