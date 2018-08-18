@@ -1,4 +1,4 @@
-//! Untyped safe interface for NumPy ndarray
+//! Safe interface for NumPy ndarray
 
 use ndarray::*;
 use npyffi;
