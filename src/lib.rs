@@ -1,5 +1,7 @@
 #![feature(specialization)]
 
+#[macro_use]
+extern crate cfg_if;
 extern crate libc;
 extern crate ndarray;
 extern crate num_complex;

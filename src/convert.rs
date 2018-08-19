@@ -63,9 +63,9 @@ macro_rules! array_impls {
         $(
             impl<T: TypeNum> IntoPyArray for [T; $N] {
                 type Item = T;
-                fn into_pyarray(mut self, py: Python, np: &PyArrayModule) -> PyArray<T> {
+                fn into_pyarray(self, py: Python, np: &PyArrayModule) -> PyArray<T> {
                     let dims = [$N];
-                    let ptr = &mut self as *mut [T; $N];
+                    let ptr = Box::into_raw(Box::new(self));
                     unsafe {
                         PyArray::new_(py, np, &dims, null_mut(), ptr as *mut c_void)
                     }

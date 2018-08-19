@@ -1,4 +1,4 @@
-//! Untyped safe interface for NumPy ndarray
+//! Safe interface for NumPy ndarray
 
 use ndarray::*;
 use npyffi;
@@ -42,7 +42,7 @@ impl<'a, T: TypeNum> FromPyObject<'a> for &'a PyArray<T> {
         array
             .type_check()
             .map(|_| array)
-            .map_err(|err| err.into_pyerr("FromPyObject::extract failed"))
+            .map_err(|err| err.into_pyerr("FromPyObject::extract typecheck failed"))
     }
 }
 
@@ -324,12 +324,11 @@ impl<T: TypeNum> PyArray<T> {
     }
 
     fn type_check(&self) -> Result<(), ArrayCastError> {
-        let test = T::typenum();
         let truth = self.typenum();
-        if test == truth {
+        if T::is_same_type(truth) {
             Ok(())
         } else {
-            Err(ArrayCastError::to_rust(truth, test))
+            Err(ArrayCastError::to_rust(truth, T::npy_data_type()))
         }
     }
 
@@ -377,7 +376,7 @@ impl<T: TypeNum> PyArray<T> {
             np.get_type_object(npyffi::ArrayType::PyArray_Type),
             dims.len() as i32,
             dims.as_ptr() as *mut npy_intp,
-            T::typenum(),
+            T::typenum_default(),
             strides,
             data,
             0,                      // itemsize
@@ -397,8 +396,8 @@ impl<T: TypeNum> PyArray<T> {
     /// use numpy::{PyArray, PyArrayModule};
     /// let gil = pyo3::Python::acquire_gil();
     /// let np = PyArrayModule::import(gil.python()).unwrap();
-    /// let pyarray = PyArray::new(gil.python(), &np, &[2, 2]);
-    /// assert_eq!(pyarray.as_array().unwrap(), array![[0, 0], [0, 0]].into_dyn());
+    /// let pyarray = PyArray::<i32>::new(gil.python(), &np, &[4, 5, 6]);
+    /// assert_eq!(pyarray.shape(), &[4, 5, 6]);
     /// # }
     /// ```
     pub fn new(py: Python, np: &PyArrayModule, dims: &[usize]) -> Self {
@@ -423,7 +422,7 @@ impl<T: TypeNum> PyArray<T> {
     pub fn zeros(py: Python, np: &PyArrayModule, dims: &[usize], is_fortran: bool) -> Self {
         let dims: Vec<npy_intp> = dims.iter().map(|d| *d as npy_intp).collect();
         unsafe {
-            let descr = np.PyArray_DescrFromType(T::typenum());
+            let descr = np.PyArray_DescrFromType(T::typenum_default());
             let ptr = np.PyArray_Zeros(
                 dims.len() as i32,
                 dims.as_ptr() as *mut npy_intp,
@@ -452,7 +451,7 @@ impl<T: TypeNum> PyArray<T> {
     /// # }
     pub fn arange(py: Python, np: &PyArrayModule, start: f64, stop: f64, step: f64) -> Self {
         unsafe {
-            let ptr = np.PyArray_Arange(start, stop, step, T::typenum());
+            let ptr = np.PyArray_Arange(start, stop, step, T::typenum_default());
             Self::from_owned_ptr(py, ptr)
         }
     }
