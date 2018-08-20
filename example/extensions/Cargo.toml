@@ -8,10 +8,8 @@ name = "rust_ext"
 crate-type = ["cdylib"]
 
 [dependencies]
-numpy = { path = "../.." }
 ndarray = "0.11"
 
-[dependencies.pyo3]
-git = "https://github.com/kngwyu/pyo3.git"
-branch = "upd"
-features = ["extension-module"]
+[dependencies.numpy]
+path = "../.."
+features = ["extension"]
