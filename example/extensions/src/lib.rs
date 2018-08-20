@@ -1,11 +1,10 @@
-#![feature(use_extern_macros, specialization)]
+#![feature(specialization)]
 
 extern crate ndarray;
 extern crate numpy;
-extern crate pyo3;
 
-use ndarray::*;
-use numpy::*;
+use ndarray::prelude::*;
+use numpy::{pyo3, PyArray, PyArrayModule, IntoPyResult, IntoPyArray};
 use pyo3::prelude::*;
 
 #[pymodinit]
