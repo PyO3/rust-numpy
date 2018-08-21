@@ -38,5 +38,12 @@ install:
 script:
   - ./ci/travis/test.sh
 
-after_success:
-  - ./ci/travis/deploy.sh
+deploy:
+  - provider: script
+    skip-cleanup: true
+    script: ./ci/travis/deploy.sh
+    on:
+      branch: master
+      repo: rust-numpy/rust-numpy
+      python: 3.6
+
