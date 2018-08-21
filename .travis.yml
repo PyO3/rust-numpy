@@ -37,3 +37,6 @@ install:
 
 script:
   - ./ci/travis/test.sh
+
+after_success:
+  - ./ci/travis/deploy.sh
