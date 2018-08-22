@@ -29,21 +29,63 @@ If you want to use rust-cpython, use version 0.2.1 from crates.io.
 
 Example
 ---------
-Please see [example](example) directory for a complete example
+
+
+## Exec python program and get data
+
+``` toml
+[package]
+name = "numpy-test"
+
+[dependencies]
+pyo3 = "^0.4.1"
+numpy = "0.3"
+```
+
+
+``` rust
+extern crate numpy;
+extern crate pyo3;
+use pyo3::prelude::*;
+use numpy::*;
+fn main() -> PyResult<()> {
+    let gil = Python::acquire_gil();
+    let py = gil.python();
+    let np = PyArrayModule::import(gil.python())?;
+    let dict = PyDict::new(gil.python());
+    dict.set_item("np", np.as_pymodule())?;
+    let pyarray: &PyArray<i32> = py
+        .eval("np.array([1, 2, 3], dtype='int32')", Some(&dict), None)?
+        .extract()?;
+    let slice = pyarray.as_slice().into_pyresult("Array Cast failed")?;
+    assert_eq!(slice, &[1, 2, 3]);
+    Ok(())
+}
 
 ```
+
+
+
+## Write Python module by rust
+
+Please see [example](example) directory for a complete example
+
+```toml
 [lib]
 name = "rust_ext"
 crate-type = ["cdylib"]
 
 [dependencies]
 numpy = "0.3"
-pyo3 = "^0.3.1"
 ndarray = "0.11"
+
+[dependencies.pyo3]
+version = "^0.4.1"
+features = ["extension-module"]
 ```
 
 ```rust
-#![feature(use_extern_macros, specialization)]
+#![feature(specialization)]
 
 extern crate ndarray;
 extern crate numpy;
