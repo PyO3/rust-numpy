@@ -1,4 +1,4 @@
-//! Define Errors
+//! Defines error types.
 
 use pyo3::*;
 use std::error;
