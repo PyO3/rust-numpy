@@ -1,10 +1,10 @@
-//! `rust-numpy` provides Rust interfaces for [numpy](http://www.numpy.org/) APIs,
-//! especially [ndarray](https://www.numpy.org/devdocs/reference/arrays.ndarray.html) class.
+//! `rust-numpy` provides Rust interfaces for [NumPy C APIs](https://docs.scipy.org/doc/numpy/reference/c-api.html),
+//! especially for [ndarray](https://www.numpy.org/devdocs/reference/arrays.ndarray.html) class.
 //!
 //! It uses [pyo3](https://github.com/PyO3/pyo3) for rust bindings to cpython, and uses
 //! [ndarray](https://github.com/bluss/ndarray) for rust side matrix library.
 //!
-//! For numpy dependency, it calls `import numpy.core` internally so you just need numpy
+//! For numpy dependency, it calls `import numpy.core` internally. So you just need numpy
 //! installed by `pip install numpy` or other ways in your python environment.
 //! You can use both system environment and `virtualenv`.
 //!

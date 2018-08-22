@@ -8,13 +8,14 @@ Rust binding of NumPy C-API
 
 API documentation
 -------------
-- [Latest release(can be broken)](https://docs.rs/numpy)
+- [Latest release(possibly broken)](https://docs.rs/numpy)
 - [Current Master](https://rust-numpy.github.io/rust-numpy)
 
 
-Dependencies
+Requirements
 -------------
-- nightly version of rust compiler (see [pyo3](https://github.com/PyO3/pyo3))
+- current nightly rust (see https://github.com/PyO3/pyo3/issues/5 for nightly features, and
+https://github.com/PyO3/pyo3/blob/master/build.rs for minimum required version)
 - some rust libraries
   - [rust-ndarray](https://github.com/bluss/rust-ndarray) for rust-side matrix library
   - [pyo3](https://github.com/PyO3/pyo3) for cpython binding
@@ -23,7 +24,7 @@ Dependencies
 
 **Note**
 From 0.3, we migrated from rust-cpython to pyo3.
-If you want rust-cpython, use version 0.2.1 from crates.io.
+If you want to use rust-cpython, use version 0.2.1 from crates.io.
 
 
 Example
