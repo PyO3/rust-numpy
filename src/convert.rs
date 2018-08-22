@@ -1,3 +1,5 @@
+//! Defines conversion trait between rust types and numpy data types.
+
 use ndarray::*;
 use pyo3::Python;
 
