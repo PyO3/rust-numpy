@@ -14,7 +14,6 @@
 //! #[macro_use]
 //! extern crate ndarray;
 //! extern crate numpy;
-//! #[macro_use]
 //! extern crate pyo3;
 //! use pyo3::prelude::*;
 //! use numpy::*;

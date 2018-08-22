@@ -42,17 +42,25 @@ pyo3 = "^0.4.1"
 numpy = "0.3"
 ```
 
-
 ``` rust
 extern crate numpy;
 extern crate pyo3;
 use pyo3::prelude::*;
 use numpy::*;
-fn main() -> PyResult<()> {
+
+fn main() -> Result<(), ()> {
     let gil = Python::acquire_gil();
-    let py = gil.python();
-    let np = PyArrayModule::import(gil.python())?;
-    let dict = PyDict::new(gil.python());
+    main_(gil.python()).map_err(|e| {
+        eprintln!("error! :{:?}", e);
+        // we can't display python error type via ::std::fmt::Display
+        // so print error here manually
+        e.print_and_set_sys_last_vars(gil.python());
+    })
+}
+
+fn main_<'py>(py: Python<'py>) -> PyResult<()> {
+    let np = PyArrayModule::import(py)?;
+    let dict = PyDict::new(py);
     dict.set_item("np", np.as_pymodule())?;
     let pyarray: &PyArray<i32> = py
         .eval("np.array([1, 2, 3], dtype='int32')", Some(&dict), None)?
@@ -61,10 +69,7 @@ fn main() -> PyResult<()> {
     assert_eq!(slice, &[1, 2, 3]);
     Ok(())
 }
-
 ```
-
-
 
 ## Write Python module by rust
 
@@ -85,8 +90,6 @@ features = ["extension-module"]
 ```
 
 ```rust
-#![feature(specialization)]
-
 extern crate ndarray;
 extern crate numpy;
 extern crate pyo3;
@@ -114,7 +117,7 @@ fn rust_ext(py: Python, m: &PyModule) -> PyResult<()> {
 
     // wrapper of `axpy`
     #[pyfn(m, "axpy")]
-    fn axpy_py(py: Python, a: f64, x: &PyArray, y: &PyArray) -> PyResult<PyArray> {
+    fn axpy_py(py: Python, a: f64, x: &PyArray<f64>, y: &PyArray<f64>) -> PyResult<PyArray<f64>> {
         let np = PyArrayModule::import(py)?;
         let x = x.as_array().into_pyresult("x must be f64 array")?;
         let y = y.as_array().into_pyresult("y must be f64 array")?;
@@ -123,7 +126,7 @@ fn rust_ext(py: Python, m: &PyModule) -> PyResult<()> {
 
     // wrapper of `mult`
     #[pyfn(m, "mult")]
-    fn mult_py(_py: Python, a: f64, x: &PyArray) -> PyResult<()> {
+    fn mult_py(_py: Python, a: f64, x: &PyArray<f64>) -> PyResult<()> {
         let x = x.as_array_mut().into_pyresult("x must be f64 array")?;
         mult(a, x);
         Ok(())

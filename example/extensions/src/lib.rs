@@ -1,5 +1,3 @@
-#![feature(specialization)]
-
 extern crate ndarray;
 extern crate numpy;
 extern crate pyo3;
