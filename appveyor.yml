@@ -22,7 +22,7 @@ build_script:
 test_script:
   - cargo build --verbose --all
   - cargo test --verbose --all
-  - rustdoc -L target/debug/deps/ --test README.md
+  - rustdoc --test README.md -L native="%PYTHON%\\libs" -L target/debug/deps/
   - pip install setuptools-rust
   - cd example
   - python setup.py install
