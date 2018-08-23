@@ -1,5 +1,3 @@
-#![feature(use_extern_macros, specialization)]
-
 extern crate ndarray;
 extern crate numpy;
 extern crate pyo3;

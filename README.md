@@ -29,22 +29,67 @@ If you want to use rust-cpython, use version 0.2.1 from crates.io.
 
 Example
 ---------
+
+
+## Exec python program and get data
+
+``` toml
+[package]
+name = "numpy-test"
+
+[dependencies]
+pyo3 = "^0.4.1"
+numpy = "0.3"
+```
+
+``` rust
+extern crate numpy;
+extern crate pyo3;
+use pyo3::prelude::*;
+use numpy::*;
+
+fn main() -> Result<(), ()> {
+    let gil = Python::acquire_gil();
+    main_(gil.python()).map_err(|e| {
+        eprintln!("error! :{:?}", e);
+        // we can't display python error type via ::std::fmt::Display
+        // so print error here manually
+        e.print_and_set_sys_last_vars(gil.python());
+    })
+}
+
+fn main_<'py>(py: Python<'py>) -> PyResult<()> {
+    let np = PyArrayModule::import(py)?;
+    let dict = PyDict::new(py);
+    dict.set_item("np", np.as_pymodule())?;
+    let pyarray: &PyArray<i32> = py
+        .eval("np.array([1, 2, 3], dtype='int32')", Some(&dict), None)?
+        .extract()?;
+    let slice = pyarray.as_slice().into_pyresult("Array Cast failed")?;
+    assert_eq!(slice, &[1, 2, 3]);
+    Ok(())
+}
+```
+
+## Write Python module by rust
+
 Please see [example](example) directory for a complete example
 
-```
+```toml
 [lib]
 name = "rust_ext"
 crate-type = ["cdylib"]
 
 [dependencies]
 numpy = "0.3"
-pyo3 = "^0.3.1"
 ndarray = "0.11"
+
+[dependencies.pyo3]
+version = "^0.4.1"
+features = ["extension-module"]
 ```
 
 ```rust
-#![feature(use_extern_macros, specialization)]
-
 extern crate ndarray;
 extern crate numpy;
 extern crate pyo3;
@@ -72,7 +117,7 @@ fn rust_ext(py: Python, m: &PyModule) -> PyResult<()> {
 
     // wrapper of `axpy`
     #[pyfn(m, "axpy")]
-    fn axpy_py(py: Python, a: f64, x: &PyArray, y: &PyArray) -> PyResult<PyArray> {
+    fn axpy_py(py: Python, a: f64, x: &PyArray<f64>, y: &PyArray<f64>) -> PyResult<PyArray<f64>> {
         let np = PyArrayModule::import(py)?;
         let x = x.as_array().into_pyresult("x must be f64 array")?;
         let y = y.as_array().into_pyresult("y must be f64 array")?;
@@ -81,7 +126,7 @@ fn rust_ext(py: Python, m: &PyModule) -> PyResult<()> {
 
     // wrapper of `mult`
     #[pyfn(m, "mult")]
-    fn mult_py(_py: Python, a: f64, x: &PyArray) -> PyResult<()> {
+    fn mult_py(_py: Python, a: f64, x: &PyArray<f64>) -> PyResult<()> {
         let x = x.as_array_mut().into_pyresult("x must be f64 array")?;
         mult(a, x);
         Ok(())
