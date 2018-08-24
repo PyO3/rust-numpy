@@ -45,8 +45,8 @@ numpy = "0.3"
 ``` rust
 extern crate numpy;
 extern crate pyo3;
-use pyo3::prelude::*;
-use numpy::*;
+use numpy::{IntoPyResult, PyArray, PyArrayModule};
+use pyo3::prelude::{ObjectProtocol, PyDict, PyResult, Python};
 
 fn main() -> Result<(), ()> {
     let gil = Python::acquire_gil();
@@ -94,9 +94,9 @@ extern crate ndarray;
 extern crate numpy;
 extern crate pyo3;
 
-use ndarray::*;
-use numpy::*;
-use pyo3::prelude::*;
+use ndarray::{ArrayD, ArrayViewD, ArrayViewMutD};
+use numpy::{IntoPyArray, IntoPyResult, PyArray, PyArrayModule};
+use pyo3::prelude::{pymodinit, PyModule, PyResult, Python};
 
 #[pymodinit]
 fn rust_ext(py: Python, m: &PyModule) -> PyResult<()> {
