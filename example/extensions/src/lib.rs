@@ -2,9 +2,9 @@ extern crate ndarray;
 extern crate numpy;
 extern crate pyo3;
 
-use ndarray::*;
-use numpy::*;
-use pyo3::prelude::*;
+use ndarray::{ArrayD, ArrayViewD, ArrayViewMutD};
+use numpy::{IntoPyArray, IntoPyResult, PyArray, PyArrayModule};
+use pyo3::prelude::{pymodinit, PyModule, PyResult, Python};
 
 #[pymodinit]
 fn rust_ext(py: Python, m: &PyModule) -> PyResult<()> {

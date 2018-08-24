@@ -15,8 +15,8 @@
 //! extern crate ndarray;
 //! extern crate numpy;
 //! extern crate pyo3;
-//! use pyo3::prelude::*;
-//! use numpy::*;
+//! use pyo3::prelude::Python;
+//! use numpy::{IntoPyArray, PyArray, PyArrayModule};
 //! fn main() {
 //!     let gil = Python::acquire_gil();
 //!     let py = gil.python();
