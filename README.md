@@ -17,7 +17,7 @@ Requirements
 - current nightly rust (see https://github.com/PyO3/pyo3/issues/5 for nightly features, and
 https://github.com/PyO3/pyo3/blob/master/build.rs for minimum required version)
 - some rust libraries
-  - [rust-ndarray](https://github.com/bluss/rust-ndarray) for rust-side matrix library
+  - [ndarray](https://github.com/bluss/ndarray) for rust-side matrix library
   - [pyo3](https://github.com/PyO3/pyo3) for cpython binding
   - and more (see [Cargo.toml](Cargo.toml))
 - [numpy](http://www.numpy.org/) installed in your python environments(e.g. via `pip install numpy`)
