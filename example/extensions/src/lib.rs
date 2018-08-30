@@ -9,7 +9,7 @@ use pyo3::prelude::{pymodinit, PyModule, PyResult, Python};
 #[pymodinit]
 fn rust_ext(py: Python, m: &PyModule) -> PyResult<()> {
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // You **must** write this sentence for PyArray type checker working correctly
+    // You **must** write this statement for the PyArray type checker to work correctly
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     let _np = PyArrayModule::import(py)?;
 
