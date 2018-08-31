@@ -4,11 +4,11 @@ rust-numpy
 [![Build status](https://ci.appveyor.com/api/projects/status/bjaru43c7t1alx2x/branch/master?svg=true)](https://ci.appveyor.com/project/kngwyu/rust-numpy/branch/master)
 [![Crate](http://meritbadge.herokuapp.com/numpy)](https://crates.io/crates/numpy)
 
-Rust binding of NumPy C-API
+Rust bindings for the NumPy C-API
 
 API documentation
 -------------
-- [Latest release(possibly broken)](https://docs.rs/numpy)
+- [Latest release (possibly broken)](https://docs.rs/numpy)
 - [Current Master](https://rust-numpy.github.io/rust-numpy)
 
 
@@ -20,10 +20,10 @@ https://github.com/PyO3/pyo3/blob/master/build.rs for minimum required version)
   - [ndarray](https://github.com/bluss/ndarray) for rust-side matrix library
   - [pyo3](https://github.com/PyO3/pyo3) for cpython binding
   - and more (see [Cargo.toml](Cargo.toml))
-- [numpy](http://www.numpy.org/) installed in your python environments(e.g. via `pip install numpy`)
+- [numpy](http://www.numpy.org/) installed in your python environments (e.g., via `pip install numpy`)
 
 **Note**
-From 0.3, we migrated from rust-cpython to pyo3.
+Starting from 0.3, rust-numpy migrated from rust-cpython to pyo3.
 If you want to use rust-cpython, use version 0.2.1 from crates.io.
 
 
@@ -31,7 +31,7 @@ Example
 ---------
 
 
-## Exec python program and get data
+## Execute a Python program from Rust and get results
 
 ``` toml
 [package]
@@ -71,9 +71,9 @@ fn main_<'py>(py: Python<'py>) -> PyResult<()> {
 }
 ```
 
-## Write Python module by rust
+## Write a Python module in Rust
 
-Please see [example](example) directory for a complete example
+Please see the [example](example) directory for a complete example
 
 ```toml
 [lib]
@@ -101,7 +101,7 @@ use pyo3::prelude::{pymodinit, PyModule, PyResult, Python};
 #[pymodinit]
 fn rust_ext(py: Python, m: &PyModule) -> PyResult<()> {
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // You **must** write this sentence for PyArray type checker working correctly
+    // You **must** write this statement for the PyArray type checker to work correctly
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     let _np = PyArrayModule::import(py)?;
 
@@ -138,7 +138,7 @@ fn rust_ext(py: Python, m: &PyModule) -> PyResult<()> {
 
 Contribution
 -------------
-This project is in pre-alpha version.
+This project is still in pre-alpha.
 We need your feedback. Don't hesitate to open [issues](https://github.com/termoshtt/rust-numpy/issues)!
 
 Version
