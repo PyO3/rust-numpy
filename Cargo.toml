@@ -1,6 +1,6 @@
 [package]
 name = "numpy"
-version = "0.3.0"
+version = "0.3.1"
 authors = ["Toshiki Teramura <toshiki.teramura@gmail.com>"]
 
 description = "Rust binding of NumPy C-API"
@@ -13,5 +13,5 @@ license-file = "LICENSE"
 cfg-if = "0.1.5"
 libc = "0.2"
 num-complex = "0.1"
-ndarray = "0.12"
+ndarray = ">= 0.11"
 pyo3 = "0.4.1"
