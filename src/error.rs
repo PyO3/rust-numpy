@@ -28,6 +28,8 @@ pub enum ArrayCastError {
     ToRust { from: NpyDataType, to: NpyDataType },
     /// Error for casting rust's `Vec` into numpy array.
     FromVec,
+    /// Error in numpy -> numpy data conversion
+    Numpy { from: NpyDataType, to: NpyDataType },
 }
 
 impl ArrayCastError {
@@ -46,18 +48,16 @@ impl fmt::Display for ArrayCastError {
                 write!(f, "Cast failed: from={:?}, to={:?}", from, to)
             }
             ArrayCastError::FromVec => write!(f, "Cast failed: FromVec (maybe invalid dimension)"),
+            ArrayCastError::Numpy { from, to } => write!(
+                f,
+                "Cast failed: from=ndarray(dtype={:?}), to=ndarray(dtype={:?})",
+                from, to
+            ),
         }
     }
 }
 
-impl error::Error for ArrayCastError {
-    fn description(&self) -> &str {
-        match self {
-            ArrayCastError::ToRust { .. } => "ArrayCast failed(IntoArray)",
-            ArrayCastError::FromVec => "ArrayCast failed(FromVec)",
-        }
-    }
-}
+impl error::Error for ArrayCastError {}
 
 impl IntoPyErr for ArrayCastError {
     fn into_pyerr(self, msg: &str) -> PyErr {
@@ -67,6 +67,10 @@ impl IntoPyErr for ArrayCastError {
                 from, to, msg
             ),
             ArrayCastError::FromVec => format!("ArrayCastError::FromVec: {}", msg),
+            ArrayCastError::Numpy { from, to } => format!(
+                "ArrayCastError::Numpy: from: {:?}, to: {:?}, msg: {}",
+                from, to, msg
+            ),
         };
         PyErr::new::<exc::TypeError, _>(msg)
     }

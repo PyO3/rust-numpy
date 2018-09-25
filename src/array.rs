@@ -455,4 +455,95 @@ impl<T: TypeNum> PyArray<T> {
             Self::from_owned_ptr(py, ptr)
         }
     }
+
+    /// Copies self into `other`, performing a data-type conversion if necessary.
+    /// # Example
+    /// ```
+    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// use numpy::{PyArray, PyArrayModule, IntoPyArray};
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let np = PyArrayModule::import(gil.python()).unwrap();
+    /// let pyarray_f = PyArray::<f64>::arange(gil.python(), &np, 2.0, 5.0, 1.0);
+    /// let mut pyarray_i = PyArray::<i64>::new(gil.python(), &np, &[3]);
+    /// assert!(pyarray_f.copy_to(&np, &mut pyarray_i).is_ok());
+    /// assert_eq!(pyarray_i.as_slice().unwrap(), &[2, 3, 4]);
+    /// # }
+    pub fn copy_to<U: TypeNum>(
+        &self,
+        np: &PyArrayModule,
+        other: &mut PyArray<U>,
+    ) -> Result<(), ArrayCastError> {
+        let self_ptr = self.as_array_ptr();
+        let other_ptr = other.as_array_ptr();
+        let result = unsafe { np.PyArray_CopyInto(other_ptr, self_ptr) };
+        if result == -1 {
+            Err(ArrayCastError::Numpy {
+                from: T::npy_data_type(),
+                to: U::npy_data_type(),
+            })
+        } else {
+            Ok(())
+        }
+    }
+
+    /// Move the data of self into `other`, performing a data-type conversion if necessary.
+    /// # Example
+    /// ```
+    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// use numpy::{PyArray, PyArrayModule, IntoPyArray};
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let np = PyArrayModule::import(gil.python()).unwrap();
+    /// let pyarray_f = PyArray::<f64>::arange(gil.python(), &np, 2.0, 5.0, 1.0);
+    /// let mut pyarray_i = PyArray::<i64>::new(gil.python(), &np, &[3]);
+    /// assert!(pyarray_f.move_to(&np, &mut pyarray_i).is_ok());
+    /// assert_eq!(pyarray_i.as_slice().unwrap(), &[2, 3, 4]);
+    /// # }
+    pub fn move_to<U: TypeNum>(
+        self,
+        np: &PyArrayModule,
+        other: &mut PyArray<U>,
+    ) -> Result<(), ArrayCastError> {
+        let self_ptr = self.as_array_ptr();
+        let other_ptr = other.as_array_ptr();
+        let result = unsafe { np.PyArray_MoveInto(other_ptr, self_ptr) };
+        if result == -1 {
+            Err(ArrayCastError::Numpy {
+                from: T::npy_data_type(),
+                to: U::npy_data_type(),
+            })
+        } else {
+            Ok(())
+        }
+    }
+
+    /// Cast the `PyArray<T>` to `PyArray<U>`, by allocating a new array.
+    /// # Example
+    /// ```
+    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// use numpy::{PyArray, PyArrayModule, IntoPyArray};
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let np = PyArrayModule::import(gil.python()).unwrap();
+    /// let pyarray_f = PyArray::<f64>::arange(gil.python(), &np, 2.0, 5.0, 1.0);
+    /// let pyarray_i = pyarray_f.cast::<i32>(gil.python(), &np, false).unwrap();
+    /// assert_eq!(pyarray_i.as_slice().unwrap(), &[2, 3, 4]);
+    /// # }
+    pub fn cast<U: TypeNum>(
+        &self,
+        py: Python,
+        np: &PyArrayModule,
+        is_fortran: bool,
+    ) -> Result<PyArray<U>, ArrayCastError> {
+        let ptr = unsafe {
+            let descr = np.PyArray_DescrFromType(U::typenum_default());
+            np.PyArray_CastToType(self.as_array_ptr(), descr, if is_fortran { -1 } else { 0 })
+        };
+        if ptr.is_null() {
+            Err(ArrayCastError::Numpy {
+                from: T::npy_data_type(),
+                to: U::npy_data_type(),
+            })
+        } else {
+            unsafe { Ok(PyArray::<U>::from_owned_ptr(py, ptr)) }
+        }
+    }
 }
