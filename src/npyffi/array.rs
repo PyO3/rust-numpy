@@ -7,7 +7,7 @@ use std::ptr::null_mut;
 
 use pyo3::ffi;
 use pyo3::ffi::{PyObject, PyTypeObject};
-use pyo3::{ObjectProtocol, PyModule, PyResult, Python, ToPyPointer};
+use pyo3::{ObjectProtocol, PyModule, PyObjectWithToken, PyResult, Python, ToPyPointer};
 
 use npyffi::*;
 
@@ -81,6 +81,11 @@ impl<'py> PyArrayModule<'py> {
     /// ```
     pub fn as_pymodule(&self) -> &'py PyModule {
         self.numpy
+    }
+
+    /// Retrieve a Python instance with the same lifetime as PyArrayModule.
+    pub fn py(&self) -> Python<'py> {
+        self.numpy.py()
     }
 
     pyarray_api![0; PyArray_GetNDArrayCVersion() -> c_uint];

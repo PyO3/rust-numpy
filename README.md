@@ -121,7 +121,7 @@ fn rust_ext(py: Python, m: &PyModule) -> PyResult<()> {
         let np = PyArrayModule::import(py)?;
         let x = x.as_array().into_pyresult("x must be f64 array")?;
         let y = y.as_array().into_pyresult("y must be f64 array")?;
-        Ok(axpy(a, x, y).into_pyarray(py, &np))
+        Ok(axpy(a, x, y).into_pyarray(&np))
     }
 
     // wrapper of `mult`
