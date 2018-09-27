@@ -21,7 +21,7 @@
 //!     let gil = Python::acquire_gil();
 //!     let py = gil.python();
 //!     let np = PyArrayModule::import(py).unwrap();
-//!     let py_array = array![[1i64, 2], [3, 4]].into_pyarray(py, &np);
+//!     let py_array = array![[1i64, 2], [3, 4]].into_pyarray(&np);
 //!     assert_eq!(
 //!         py_array.as_array().unwrap(),
 //!         array![[1i64, 2], [3, 4]].into_dyn(),
