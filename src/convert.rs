@@ -24,12 +24,12 @@ use super::*;
 /// ```
 pub trait IntoPyArray {
     type Item: TypeNum;
-    fn into_pyarray(self, Python) -> PyArray<Self::Item>;
+    fn into_pyarray(self, Python) -> &PyArray<Self::Item>;
 }
 
 impl<T: TypeNum> IntoPyArray for Box<[T]> {
     type Item = T;
-    fn into_pyarray(self, py: Python) -> PyArray<Self::Item> {
+    fn into_pyarray(self, py: Python) -> &PyArray<Self::Item> {
         let dims = [self.len()];
         let ptr = Box::into_raw(self);
         unsafe { PyArray::new_(py, &dims, null_mut(), ptr as *mut c_void) }
@@ -38,7 +38,7 @@ impl<T: TypeNum> IntoPyArray for Box<[T]> {
 
 impl<T: TypeNum> IntoPyArray for Vec<T> {
     type Item = T;
-    fn into_pyarray(self, py: Python) -> PyArray<Self::Item> {
+    fn into_pyarray(self, py: Python) -> &PyArray<Self::Item> {
         let dims = [self.len()];
         unsafe { PyArray::new_(py, &dims, null_mut(), into_raw(self)) }
     }
@@ -46,7 +46,7 @@ impl<T: TypeNum> IntoPyArray for Vec<T> {
 
 impl<A: TypeNum, D: Dimension> IntoPyArray for Array<A, D> {
     type Item = A;
-    fn into_pyarray(self, py: Python) -> PyArray<Self::Item> {
+    fn into_pyarray(self, py: Python) -> &PyArray<Self::Item> {
         let dims: Vec<_> = self.shape().iter().cloned().collect();
         let mut strides: Vec<_> = self
             .strides()
@@ -65,7 +65,7 @@ macro_rules! array_impls {
         $(
             impl<T: TypeNum> IntoPyArray for [T; $N] {
                 type Item = T;
-                fn into_pyarray(self, py: Python) -> PyArray<T> {
+                fn into_pyarray(self, py: Python) -> &PyArray<T> {
                     let dims = [$N];
                     let ptr = Box::into_raw(Box::new(self));
                     unsafe {
