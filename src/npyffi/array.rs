@@ -4,11 +4,10 @@ use pyo3::ffi::{self, PyObject, PyTypeObject};
 use std::ops::Deref;
 use std::os::raw::*;
 use std::ptr;
-use std::sync::{Once, ONCE_INIT};
 
 use npyffi::*;
 
-const MOD_NAME: &str = "numpy.core.multiarray";
+pub(crate) const MOD_NAME: &str = "numpy.core.multiarray";
 const CAPSULE_NAME: &str = "_ARRAY_API";
 
 pub static PY_ARRAY_API: PyArrayAPI = PyArrayAPI {
@@ -22,14 +21,14 @@ pub struct PyArrayAPI {
 impl Deref for PyArrayAPI {
     type Target = PyArrayAPI_Inner;
     fn deref(&self) -> &Self::Target {
-        static INIT_API: Once = ONCE_INIT;
         static mut ARRAY_API_CACHE: PyArrayAPI_Inner = PyArrayAPI_Inner(ptr::null());
-        INIT_API.call_once(|| {
-            unsafe {
+        unsafe {
+            // TODO: this operation is 'mostly safe' because of GIL, but not completely thread safe
+            if ARRAY_API_CACHE.0.is_null() {
                 ARRAY_API_CACHE = PyArrayAPI_Inner(get_numpy_api(MOD_NAME, CAPSULE_NAME));
-            };
-        });
-        unsafe { &ARRAY_API_CACHE }
+            }
+            &ARRAY_API_CACHE
+        }
     }
 }
 
@@ -367,6 +366,8 @@ pub unsafe fn PyArray_CheckExact(op: *mut PyObject) -> c_int {
 
 #[test]
 fn call_api() {
+    use pyo3::Python;
+    let _gil = Python::acquire_gil();
     unsafe {
         assert_eq!(
             PY_ARRAY_API.PyArray_MultiplyIntList([1, 2, 3].as_mut_ptr(), 3),

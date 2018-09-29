@@ -15,10 +15,9 @@ use super::*;
 /// # Example
 /// ```
 /// # extern crate pyo3; extern crate numpy; fn main() {
-/// use numpy::{PyArray, PyArrayModule, IntoPyArray};
+/// use numpy::{PyArray, IntoPyArray};
 /// let gil = pyo3::Python::acquire_gil();
-/// let np = PyArrayModule::import(gil.python()).unwrap();
-/// let py_array = vec![1, 2, 3].into_pyarray(gil.python(), &np);
+/// let py_array = vec![1, 2, 3].into_pyarray(gil.python());
 /// assert_eq!(py_array.as_slice().unwrap(), &[1, 2, 3]);
 /// # }
 /// ```
