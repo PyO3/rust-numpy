@@ -28,7 +28,6 @@
 //!     );
 //! }
 //! ```
-
 #![feature(specialization)]
 
 #[macro_use]
@@ -48,5 +47,5 @@ pub mod types;
 pub use array::PyArray;
 pub use convert::IntoPyArray;
 pub use error::*;
-pub use npyffi::{PyArrayModule, PyUFuncModule};
+pub use npyffi::{PyArrayAPI, PyUFuncModule};
 pub use types::*;
