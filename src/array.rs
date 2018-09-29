@@ -1,7 +1,7 @@
 //! Safe interface for NumPy ndarray
 
 use ndarray::*;
-use npyffi::{self, PyArrayAPI};
+use npyffi::{self, PY_ARRAY_API};
 use pyo3::*;
 use std::marker::PhantomData;
 use std::os::raw::c_void;
@@ -15,7 +15,7 @@ pub struct PyArray<T>(PyObject, PhantomData<T>);
 
 pyobject_native_type_convert!(
     PyArray<T>,
-    *npyffi::PyArrayAPI.get_type_object(npyffi::ArrayType::PyArray_Type),
+    *npyffi::PY_ARRAY_API.get_type_object(npyffi::ArrayType::PyArray_Type),
     npyffi::PyArray_Check,
     T
 );
@@ -364,8 +364,8 @@ impl<T: TypeNum> PyArray<T> {
         data: *mut c_void,
     ) -> &'py Self {
         let dims: Vec<_> = dims.iter().map(|d| *d as npy_intp).collect();
-        let ptr = PyArrayAPI.PyArray_New(
-            PyArrayAPI.get_type_object(npyffi::ArrayType::PyArray_Type),
+        let ptr = PY_ARRAY_API.PyArray_New(
+            PY_ARRAY_API.get_type_object(npyffi::ArrayType::PyArray_Type),
             dims.len() as i32,
             dims.as_ptr() as *mut npy_intp,
             T::typenum_default(),
@@ -414,8 +414,8 @@ impl<T: TypeNum> PyArray<T> {
     pub fn zeros<'py>(py: Python<'py>, dims: &[usize], is_fortran: bool) -> &'py Self {
         let dims: Vec<npy_intp> = dims.iter().map(|d| *d as npy_intp).collect();
         unsafe {
-            let descr = PyArrayAPI.PyArray_DescrFromType(T::typenum_default());
-            let ptr = PyArrayAPI.PyArray_Zeros(
+            let descr = PY_ARRAY_API.PyArray_DescrFromType(T::typenum_default());
+            let ptr = PY_ARRAY_API.PyArray_Zeros(
                 dims.len() as i32,
                 dims.as_ptr() as *mut npy_intp,
                 descr,
@@ -443,7 +443,7 @@ impl<T: TypeNum> PyArray<T> {
     /// # }
     pub fn arange<'py>(py: Python<'py>, start: f64, stop: f64, step: f64) -> &'py Self {
         unsafe {
-            let ptr = PyArrayAPI.PyArray_Arange(start, stop, step, T::typenum_default());
+            let ptr = PY_ARRAY_API.PyArray_Arange(start, stop, step, T::typenum_default());
             Self::from_owned_ptr(py, ptr)
         }
     }
@@ -463,7 +463,7 @@ impl<T: TypeNum> PyArray<T> {
     pub fn copy_to<U: TypeNum>(&self, other: &mut PyArray<U>) -> Result<(), ArrayCastError> {
         let self_ptr = self.as_array_ptr();
         let other_ptr = other.as_array_ptr();
-        let result = unsafe { PyArrayAPI.PyArray_CopyInto(other_ptr, self_ptr) };
+        let result = unsafe { PY_ARRAY_API.PyArray_CopyInto(other_ptr, self_ptr) };
         if result == -1 {
             Err(ArrayCastError::Numpy {
                 from: T::npy_data_type(),
@@ -489,7 +489,7 @@ impl<T: TypeNum> PyArray<T> {
     pub fn move_to<U: TypeNum>(&self, other: &mut PyArray<U>) -> Result<(), ArrayCastError> {
         let self_ptr = self.as_array_ptr();
         let other_ptr = other.as_array_ptr();
-        let result = unsafe { PyArrayAPI.PyArray_MoveInto(other_ptr, self_ptr) };
+        let result = unsafe { PY_ARRAY_API.PyArray_MoveInto(other_ptr, self_ptr) };
         if result == -1 {
             Err(ArrayCastError::Numpy {
                 from: T::npy_data_type(),
@@ -517,8 +517,8 @@ impl<T: TypeNum> PyArray<T> {
         is_fortran: bool,
     ) -> Result<&'py PyArray<U>, ArrayCastError> {
         let ptr = unsafe {
-            let descr = PyArrayAPI.PyArray_DescrFromType(U::typenum_default());
-            PyArrayAPI.PyArray_CastToType(
+            let descr = PY_ARRAY_API.PyArray_DescrFromType(U::typenum_default());
+            PY_ARRAY_API.PyArray_CastToType(
                 self.as_array_ptr(),
                 descr,
                 if is_fortran { -1 } else { 0 },

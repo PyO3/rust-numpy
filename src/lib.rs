@@ -47,5 +47,5 @@ pub mod types;
 pub use array::PyArray;
 pub use convert::IntoPyArray;
 pub use error::*;
-pub use npyffi::{PyArrayAPI, PyUFuncModule};
+pub use npyffi::{PY_ARRAY_API, PY_UFUNC_API};
 pub use types::*;
