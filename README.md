@@ -45,7 +45,7 @@ numpy = "0.3"
 ``` rust
 extern crate numpy;
 extern crate pyo3;
-use numpy::{IntoPyResult, PyArray, PyArrayModule};
+use numpy::{IntoPyResult, PyArray, get_array_module};
 use pyo3::prelude::{ObjectProtocol, PyDict, PyResult, Python};
 
 fn main() -> Result<(), ()> {
@@ -59,9 +59,9 @@ fn main() -> Result<(), ()> {
 }
 
 fn main_<'py>(py: Python<'py>) -> PyResult<()> {
-    let np = PyArrayModule::import(py)?;
+    let np = get_array_module(py)?;
     let dict = PyDict::new(py);
-    dict.set_item("np", np.as_pymodule())?;
+    dict.set_item("np", np)?;
     let pyarray: &PyArray<i32> = py
         .eval("np.array([1, 2, 3], dtype='int32')", Some(&dict), None)?
         .extract()?;
@@ -95,16 +95,11 @@ extern crate numpy;
 extern crate pyo3;
 
 use ndarray::{ArrayD, ArrayViewD, ArrayViewMutD};
-use numpy::{IntoPyArray, IntoPyResult, PyArray, PyArrayModule};
+use numpy::{IntoPyArray, IntoPyResult, PyArray};
 use pyo3::prelude::{pymodinit, PyModule, PyResult, Python};
 
 #[pymodinit]
-fn rust_ext(py: Python, m: &PyModule) -> PyResult<()> {
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // You **must** write this statement for the PyArray type checker to work correctly
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    let _np = PyArrayModule::import(py)?;
-
+fn rust_ext(_py: Python, m: &PyModule) -> PyResult<()> {
     // immutable example
     fn axpy(a: f64, x: ArrayViewD<f64>, y: ArrayViewD<f64>) -> ArrayD<f64> {
         a * &x + &y
@@ -118,10 +113,9 @@ fn rust_ext(py: Python, m: &PyModule) -> PyResult<()> {
     // wrapper of `axpy`
     #[pyfn(m, "axpy")]
     fn axpy_py(py: Python, a: f64, x: &PyArray<f64>, y: &PyArray<f64>) -> PyResult<PyArray<f64>> {
-        let np = PyArrayModule::import(py)?;
         let x = x.as_array().into_pyresult("x must be f64 array")?;
         let y = y.as_array().into_pyresult("y must be f64 array")?;
-        Ok(axpy(a, x, y).into_pyarray(py, &np))
+        Ok(axpy(a, x, y).into_pyarray(py).to_owned(py))
     }
 
     // wrapper of `mult`

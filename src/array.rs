@@ -62,6 +62,11 @@ impl<T> PyArray<T> {
         self.as_ptr() as _
     }
 
+    pub fn to_owned(&self, py: Python) -> Self {
+        let obj = unsafe { PyObject::from_borrowed_ptr(py, self.as_ptr()) };
+        PyArray(obj, PhantomData)
+    }
+
     /// Constructs `PyArray` from raw python object without incrementing reference counts.
     pub unsafe fn from_owned_ptr(py: Python, ptr: *mut pyo3::ffi::PyObject) -> &Self {
         py.from_owned_ptr(ptr)
