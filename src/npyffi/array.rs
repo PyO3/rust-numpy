@@ -10,10 +10,33 @@ use npyffi::*;
 pub(crate) const MOD_NAME: &str = "numpy.core.multiarray";
 const CAPSULE_NAME: &str = "_ARRAY_API";
 
+/// A global variable which stores a ['capsule'](https://docs.python.org/3/c-api/capsule.html)
+/// pointer to [Numpy Array API](https://docs.scipy.org/doc/numpy/reference/c-api.array.html).
+///
+/// You can acceess raw c APIs via this variable and its Deref implementation.
+///
+/// See [PyArrayAPI](struct.PyArrayAPI.html) for what methods you can use via this variable.
+///
+/// # Example
+/// ```
+/// # extern crate pyo3; extern crate numpy; fn main() {
+/// use numpy::{PyArray, npyffi::types::NPY_SORTKIND, PY_ARRAY_API};
+/// use pyo3::Python;
+/// let gil = Python::acquire_gil();
+/// let array: &PyArray<i32> = PyArray::arange(gil.python(), 2.0, 5.0, 1.0);
+/// array.as_slice_mut().unwrap().swap(0, 1);
+/// assert_eq!(array.as_slice().unwrap(), &[3, 2, 4]);
+/// unsafe {
+///     PY_ARRAY_API.PyArray_Sort(array.as_array_ptr(), 0, NPY_SORTKIND::NPY_QUICKSORT);
+/// }
+/// assert_eq!(array.as_slice().unwrap(), &[2, 3, 4])
+/// # }
+/// ```
 pub static PY_ARRAY_API: PyArrayAPI = PyArrayAPI {
     __private_field: (),
 };
 
+///
 pub struct PyArrayAPI {
     __private_field: (),
 }
@@ -33,7 +56,6 @@ impl Deref for PyArrayAPI {
 }
 
 #[allow(non_camel_case_types)]
-#[doc(hidden)]
 pub struct PyArrayAPI_Inner(*const *const c_void);
 
 impl PyArrayAPI_Inner {

@@ -137,6 +137,12 @@ We need your feedback. Don't hesitate to open [issues](https://github.com/termos
 
 Version
 --------
+- v0.4.0(Coming soon)
+  - Duplicate `PyArrayModule` and import Numpy API automatically
+
+- v0.3.1, v0.3.2
+  - Just update dependencies
+
 - v0.3.0
   - Breaking Change: Migrated to pyo3 from rust-cpython
   - Some api addition

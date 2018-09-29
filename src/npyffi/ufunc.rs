@@ -36,7 +36,6 @@ impl Deref for PyUFuncAPI {
 }
 
 #[allow(non_camel_case_types)]
-#[doc(hidden)]
 pub struct PyUFuncAPI_Inner(*const *const c_void);
 
 impl PyUFuncAPI_Inner {
