@@ -9,6 +9,40 @@
 //! - http://docs.python.jp/3/c-api/
 //! - http://dgrunwald.github.io/rust-pyo3/doc/pyo3/
 
+use pyo3::ffi;
+use std::ffi::CString;
+use std::os::raw::c_void;
+use std::ptr::null_mut;
+
+fn get_numpy_api(module: &str, capsule: &str) -> *const *const c_void {
+    let module = CString::new(module).unwrap();
+    let capsule = CString::new(capsule).unwrap();
+    unsafe {
+        assert_ne!(
+            ffi::Py_IsInitialized(),
+            0,
+            r"Numpy API is called before initializing Python!
+Please make sure that you get gil, by `let gil = Python::acquire_gil();`"
+        );
+        let numpy = ffi::PyImport_ImportModule(module.as_ptr());
+        assert!(!numpy.is_null(), "Failed to import numpy module");
+        let capsule = ffi::PyObject_GetAttrString(numpy as *mut ffi::PyObject, capsule.as_ptr());
+        ffi::PyCapsule_GetPointer(capsule, null_mut()) as *const *const c_void
+    }
+}
+
+// Define Array&UFunc APIs
+macro_rules! impl_api {
+    [ $offset:expr; $fname:ident ( $($arg:ident : $t:ty),* ) $( -> $ret:ty )* ] => {
+        #[allow(non_snake_case)]
+        pub unsafe fn $fname(&self, $($arg : $t), *) $( -> $ret )* {
+            let fptr = self.0.offset($offset)
+                               as (*const extern fn ($($arg : $t), *) $( -> $ret )* );
+            (*fptr)($($arg), *)
+        }
+    }
+}
+
 pub mod array;
 pub mod objects;
 pub mod types;

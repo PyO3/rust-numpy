@@ -16,19 +16,17 @@
 //! extern crate numpy;
 //! extern crate pyo3;
 //! use pyo3::prelude::Python;
-//! use numpy::{IntoPyArray, PyArray, PyArrayModule};
+//! use numpy::{IntoPyArray, PyArray};
 //! fn main() {
 //!     let gil = Python::acquire_gil();
 //!     let py = gil.python();
-//!     let np = PyArrayModule::import(py).unwrap();
-//!     let py_array = array![[1i64, 2], [3, 4]].into_pyarray(py, &np);
+//!     let py_array = array![[1i64, 2], [3, 4]].into_pyarray(py);
 //!     assert_eq!(
 //!         py_array.as_array().unwrap(),
 //!         array![[1i64, 2], [3, 4]].into_dyn(),
 //!     );
 //! }
 //! ```
-
 #![feature(specialization)]
 
 #[macro_use]
@@ -45,8 +43,8 @@ pub mod error;
 pub mod npyffi;
 pub mod types;
 
-pub use array::PyArray;
+pub use array::{get_array_module, PyArray};
 pub use convert::IntoPyArray;
 pub use error::*;
-pub use npyffi::{PyArrayModule, PyUFuncModule};
+pub use npyffi::{PY_ARRAY_API, PY_UFUNC_API};
 pub use types::*;
