@@ -4,6 +4,7 @@ use pyo3::ffi::{self, PyObject, PyTypeObject};
 use std::ops::Deref;
 use std::os::raw::*;
 use std::ptr;
+use std::sync::{Once, ONCE_INIT};
 
 use npyffi::*;
 
@@ -36,7 +37,6 @@ pub static PY_ARRAY_API: PyArrayAPI = PyArrayAPI {
     __private_field: (),
 };
 
-///
 pub struct PyArrayAPI {
     __private_field: (),
 }
@@ -44,11 +44,14 @@ pub struct PyArrayAPI {
 impl Deref for PyArrayAPI {
     type Target = PyArrayAPI_Inner;
     fn deref(&self) -> &Self::Target {
+        static INIT_API: Once = ONCE_INIT;
         static mut ARRAY_API_CACHE: PyArrayAPI_Inner = PyArrayAPI_Inner(ptr::null());
         unsafe {
-            // TODO: this operation is 'mostly safe' because of GIL, but not completely thread safe
             if ARRAY_API_CACHE.0.is_null() {
-                ARRAY_API_CACHE = PyArrayAPI_Inner(get_numpy_api(MOD_NAME, CAPSULE_NAME));
+                let api = get_numpy_api(MOD_NAME, CAPSULE_NAME);
+                INIT_API.call_once(move || {
+                    ARRAY_API_CACHE = PyArrayAPI_Inner(api);
+                });
             }
             &ARRAY_API_CACHE
         }
