@@ -62,6 +62,28 @@ impl<T> PyArray<T> {
         self.as_ptr() as _
     }
 
+    /// Get `PyArray` from `&PyArray`, by increasing ref counts.
+    ///
+    /// You can use this method when you have to avoid lifetime annotation to your function args
+    /// or return types, like used with pyo3's `pymethod`.
+    ///
+    /// Since this method increases refcount, you can use `PyArray` even after `pyo3::GILGuard`
+    /// dropped, in most cases.
+    ///
+    /// # Example
+    /// ```
+    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// use pyo3::{GILGuard, Python};
+    /// use numpy::PyArray;
+    /// fn return_py_array() -> PyArray<i32> {
+    ///    let gil = Python::acquire_gil();
+    ///    let array = PyArray::zeros(gil.python(), &[5], false);
+    ///    array.to_owned(gil.python())
+    /// }
+    /// let array = return_py_array();
+    /// assert_eq!(array.as_slice().unwrap(), &[0, 0, 0, 0, 0]);
+    /// # }
+    /// ```
     pub fn to_owned(&self, py: Python) -> Self {
         let obj = unsafe { PyObject::from_borrowed_ptr(py, self.as_ptr()) };
         PyArray(obj, PhantomData)
