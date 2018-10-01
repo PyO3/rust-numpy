@@ -174,10 +174,9 @@ small_array_test!(i8 u8 i16 u16 i32 u32 i64 u64);
 #[test]
 fn array_cast() {
     let gil = pyo3::Python::acquire_gil();
-    let py = gil.python();
     let vec2 = vec![vec![1.0, 2.0, 3.0]; 2];
     let arr_f64 = PyArray::from_vec2(gil.python(), &vec2).unwrap();
-    let arr_i32: &PyArray<i32> = arr_f64.cast(py, false).unwrap();
+    let arr_i32: &PyArray<i32> = arr_f64.cast(false).unwrap();
     assert_eq!(
         arr_i32.as_array().unwrap(),
         array![[1, 2, 3], [1, 2, 3]].into_dyn()
