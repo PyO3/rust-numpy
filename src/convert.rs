@@ -92,6 +92,7 @@ pub(crate) unsafe fn into_raw<T>(x: Vec<T>) -> *mut c_void {
 pub trait ToNpyDims {
     fn dims_len(&self) -> c_int;
     fn dims_ptr(&self) -> *mut npy_intp;
+    fn dims_ref(&self) -> &[usize];
     fn to_npy_dims(&self) -> npyffi::PyArray_Dims {
         npyffi::PyArray_Dims {
             ptr: self.dims_ptr(),
@@ -110,6 +111,9 @@ macro_rules! array_dim_impls {
                 fn dims_ptr(&self) -> *mut npy_intp {
                     self.as_ptr() as *mut npy_intp
                 }
+                fn dims_ref(&self) -> &[usize] {
+                    self
+                }
             }
             impl<'a> ToNpyDims for &'a [usize; $N] {
                 fn dims_len(&self) -> c_int {
@@ -117,6 +121,9 @@ macro_rules! array_dim_impls {
                 }
                 fn dims_ptr(&self) -> *mut npy_intp {
                     self.as_ptr() as *mut npy_intp
+                }
+                fn dims_ref(&self) -> &[usize] {
+                    *self
                 }
             }
         )+
@@ -137,6 +144,9 @@ impl<'a> ToNpyDims for &'a [usize] {
     fn dims_ptr(&self) -> *mut npy_intp {
         self.as_ptr() as *mut npy_intp
     }
+    fn dims_ref(&self) -> &[usize] {
+        *self
+    }
 }
 
 impl ToNpyDims for Vec<usize> {
@@ -146,6 +156,9 @@ impl ToNpyDims for Vec<usize> {
     fn dims_ptr(&self) -> *mut npy_intp {
         self.as_ptr() as *mut npy_intp
     }
+    fn dims_ref(&self) -> &[usize] {
+        &*self
+    }
 }
 
 impl ToNpyDims for Box<[usize]> {
@@ -154,5 +167,8 @@ impl ToNpyDims for Box<[usize]> {
     }
     fn dims_ptr(&self) -> *mut npy_intp {
         self.as_ptr() as *mut npy_intp
+    }
+    fn dims_ref(&self) -> &[usize] {
+        &*self
     }
 }

@@ -481,10 +481,7 @@ impl<T: TypeNum> PyArray<T> {
         let other_ptr = other.as_array_ptr();
         let result = unsafe { PY_ARRAY_API.PyArray_CopyInto(other_ptr, self_ptr) };
         if result == -1 {
-            Err(ArrayCastError::Numpy {
-                from: T::npy_data_type(),
-                to: U::npy_data_type(),
-            })
+            Err(ArrayCastError::dtype_cast(self, U::npy_data_type()))
         } else {
             Ok(())
         }
@@ -506,10 +503,7 @@ impl<T: TypeNum> PyArray<T> {
         let other_ptr = other.as_array_ptr();
         let result = unsafe { PY_ARRAY_API.PyArray_MoveInto(other_ptr, self_ptr) };
         if result == -1 {
-            Err(ArrayCastError::Numpy {
-                from: T::npy_data_type(),
-                to: U::npy_data_type(),
-            })
+            Err(ArrayCastError::dtype_cast(self, U::npy_data_type()))
         } else {
             Ok(())
         }
@@ -522,12 +516,11 @@ impl<T: TypeNum> PyArray<T> {
     /// use numpy::{PyArray, IntoPyArray};
     /// let gil = pyo3::Python::acquire_gil();
     /// let pyarray_f = PyArray::<f64>::arange(gil.python(), 2.0, 5.0, 1.0);
-    /// let pyarray_i = pyarray_f.cast::<i32>(gil.python(), false).unwrap();
+    /// let pyarray_i = pyarray_f.cast::<i32>(false).unwrap();
     /// assert_eq!(pyarray_i.as_slice().unwrap(), &[2, 3, 4]);
     /// # }
     pub fn cast<'py, U: TypeNum>(
-        &self,
-        py: Python<'py>,
+        &'py self,
         is_fortran: bool,
     ) -> Result<&'py PyArray<U>, ArrayCastError> {
         let ptr = unsafe {
@@ -539,12 +532,53 @@ impl<T: TypeNum> PyArray<T> {
             )
         };
         if ptr.is_null() {
-            Err(ArrayCastError::Numpy {
-                from: T::npy_data_type(),
-                to: U::npy_data_type(),
-            })
+            Err(ArrayCastError::dtype_cast(self, U::npy_data_type()))
         } else {
-            unsafe { Ok(PyArray::<U>::from_owned_ptr(py, ptr)) }
+            Ok(unsafe { PyArray::<U>::from_owned_ptr(self.py(), ptr) })
+        }
+    }
+
+    /// Construct a new array which has same values as self, same matrix order, but has different
+    /// dimensions specified by `dims`.
+    ///
+    /// Since a returned array can contain a same pointer as self, we highly recommend to drop an
+    /// old array, if this method returns `Ok`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # #[macro_use] extern crate ndarray; extern crate pyo3; extern crate numpy; fn main() {
+    /// use numpy::PyArray;
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let array = PyArray::from_vec(gil.python(), (0..9).collect());
+    /// let array = array.reshape([3, 3]).unwrap();
+    /// assert_eq!(array.as_array().unwrap(), array![[0, 1, 2], [3, 4, 5], [6, 7, 8]].into_dyn());
+    /// assert!(array.reshape([5]).is_err());
+    /// # }
+    /// ```
+    #[inline(always)]
+    pub fn reshape<'py, D: ToNpyDims>(&'py self, dims: D) -> Result<&Self, ArrayCastError> {
+        self.reshape_with_order(dims, NPY_ORDER::NPY_ANYORDER)
+    }
+
+    /// Same as [reshape](method.reshape.html), but you can change the order of returned matrix.
+    pub fn reshape_with_order<'py, D: ToNpyDims>(
+        &'py self,
+        dims: D,
+        order: NPY_ORDER,
+    ) -> Result<&Self, ArrayCastError> {
+        let mut np_dims = dims.to_npy_dims();
+        let ptr = unsafe {
+            PY_ARRAY_API.PyArray_Newshape(
+                self.as_array_ptr(),
+                &mut np_dims as *mut npyffi::PyArray_Dims,
+                order,
+            )
+        };
+        if ptr.is_null() {
+            Err(ArrayCastError::dims_cast(self, dims))
+        } else {
+            Ok(unsafe { PyArray::<T>::from_owned_ptr(self.py(), ptr) })
         }
     }
 }
