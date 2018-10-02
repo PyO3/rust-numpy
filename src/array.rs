@@ -7,7 +7,7 @@ use std::marker::PhantomData;
 use std::os::raw::c_void;
 use std::ptr::null_mut;
 
-use super::error::ArrayCastError;
+use super::error::ErrorKind;
 use super::*;
 
 /// Interface for [NumPy ndarray](https://docs.scipy.org/doc/numpy/reference/arrays.ndarray.html).
@@ -239,10 +239,13 @@ impl<T: TypeNum> PyArray<T> {
     /// assert!(PyArray::from_vec2(gil.python(), &vec![vec![1], vec![2, 3]]).is_err());
     /// # }
     /// ```
-    pub fn from_vec2<'py>(py: Python<'py>, v: &Vec<Vec<T>>) -> Result<&'py Self, ArrayCastError> {
+    pub fn from_vec2<'py>(py: Python<'py>, v: &Vec<Vec<T>>) -> Result<&'py Self, ErrorKind> {
         let last_len = v.last().map_or(0, |v| v.len());
         if v.iter().any(|v| v.len() != last_len) {
-            return Err(ArrayCastError::FromVec);
+            return Err(ErrorKind::FromVec {
+                dim1: v.len(),
+                dim2: last_len,
+            });
         }
         let dims = [v.len(), last_len];
         let flattend: Vec<_> = v.iter().cloned().flatten().collect();
@@ -274,14 +277,20 @@ impl<T: TypeNum> PyArray<T> {
     pub fn from_vec3<'py>(
         py: Python<'py>,
         v: &Vec<Vec<Vec<T>>>,
-    ) -> Result<&'py PyArray<T>, ArrayCastError> {
+    ) -> Result<&'py PyArray<T>, ErrorKind> {
         let dim2 = v.last().map_or(0, |v| v.len());
         if v.iter().any(|v| v.len() != dim2) {
-            return Err(ArrayCastError::FromVec);
+            return Err(ErrorKind::FromVec {
+                dim1: v.len(),
+                dim2,
+            });
         }
         let dim3 = v.last().map_or(0, |v| v.last().map_or(0, |v| v.len()));
         if v.iter().any(|v| v.iter().any(|v| v.len() != dim3)) {
-            return Err(ArrayCastError::FromVec);
+            return Err(ErrorKind::FromVec {
+                dim1: v.len(),
+                dim2: dim3,
+            });
         }
         let dims = [v.len(), dim2, dim3];
         let flattend: Vec<_> = v.iter().flat_map(|v| v.iter().cloned().flatten()).collect();
@@ -338,23 +347,23 @@ impl<T: TypeNum> PyArray<T> {
         NpyDataType::from_i32(self.typenum())
     }
 
-    fn type_check(&self) -> Result<(), ArrayCastError> {
+    fn type_check(&self) -> Result<(), ErrorKind> {
         let truth = self.typenum();
         if T::is_same_type(truth) {
             Ok(())
         } else {
-            Err(ArrayCastError::to_rust(truth, T::npy_data_type()))
+            Err(ErrorKind::to_rust(truth, T::npy_data_type()))
         }
     }
 
     /// Get data as a ndarray::ArrayView
-    pub fn as_array(&self) -> Result<ArrayViewD<T>, ArrayCastError> {
+    pub fn as_array(&self) -> Result<ArrayViewD<T>, ErrorKind> {
         self.type_check()?;
         unsafe { Ok(ArrayView::from_shape_ptr(self.ndarray_shape(), self.data())) }
     }
 
     /// Get data as a ndarray::ArrayViewMut
-    pub fn as_array_mut(&self) -> Result<ArrayViewMutD<T>, ArrayCastError> {
+    pub fn as_array_mut(&self) -> Result<ArrayViewMutD<T>, ErrorKind> {
         self.type_check()?;
         unsafe {
             Ok(ArrayViewMut::from_shape_ptr(
@@ -365,13 +374,13 @@ impl<T: TypeNum> PyArray<T> {
     }
 
     /// Get data as a Rust immutable slice
-    pub fn as_slice(&self) -> Result<&[T], ArrayCastError> {
+    pub fn as_slice(&self) -> Result<&[T], ErrorKind> {
         self.type_check()?;
         unsafe { Ok(::std::slice::from_raw_parts(self.data(), self.len())) }
     }
 
     /// Get data as a Rust mutable slice
-    pub fn as_slice_mut(&self) -> Result<&mut [T], ArrayCastError> {
+    pub fn as_slice_mut(&self) -> Result<&mut [T], ErrorKind> {
         self.type_check()?;
         unsafe { Ok(::std::slice::from_raw_parts_mut(self.data(), self.len())) }
     }
@@ -476,12 +485,12 @@ impl<T: TypeNum> PyArray<T> {
     /// assert!(pyarray_f.copy_to(pyarray_i).is_ok());
     /// assert_eq!(pyarray_i.as_slice().unwrap(), &[2, 3, 4]);
     /// # }
-    pub fn copy_to<U: TypeNum>(&self, other: &PyArray<U>) -> Result<(), ArrayCastError> {
+    pub fn copy_to<U: TypeNum>(&self, other: &PyArray<U>) -> Result<(), ErrorKind> {
         let self_ptr = self.as_array_ptr();
         let other_ptr = other.as_array_ptr();
         let result = unsafe { PY_ARRAY_API.PyArray_CopyInto(other_ptr, self_ptr) };
         if result == -1 {
-            Err(ArrayCastError::dtype_cast(self, U::npy_data_type()))
+            Err(ErrorKind::dtype_cast(self, U::npy_data_type()))
         } else {
             Ok(())
         }
@@ -498,12 +507,12 @@ impl<T: TypeNum> PyArray<T> {
     /// assert!(pyarray_f.move_to(pyarray_i).is_ok());
     /// assert_eq!(pyarray_i.as_slice().unwrap(), &[2, 3, 4]);
     /// # }
-    pub fn move_to<U: TypeNum>(&self, other: &PyArray<U>) -> Result<(), ArrayCastError> {
+    pub fn move_to<U: TypeNum>(&self, other: &PyArray<U>) -> Result<(), ErrorKind> {
         let self_ptr = self.as_array_ptr();
         let other_ptr = other.as_array_ptr();
         let result = unsafe { PY_ARRAY_API.PyArray_MoveInto(other_ptr, self_ptr) };
         if result == -1 {
-            Err(ArrayCastError::dtype_cast(self, U::npy_data_type()))
+            Err(ErrorKind::dtype_cast(self, U::npy_data_type()))
         } else {
             Ok(())
         }
@@ -522,7 +531,7 @@ impl<T: TypeNum> PyArray<T> {
     pub fn cast<'py, U: TypeNum>(
         &'py self,
         is_fortran: bool,
-    ) -> Result<&'py PyArray<U>, ArrayCastError> {
+    ) -> Result<&'py PyArray<U>, ErrorKind> {
         let ptr = unsafe {
             let descr = PY_ARRAY_API.PyArray_DescrFromType(U::typenum_default());
             PY_ARRAY_API.PyArray_CastToType(
@@ -532,7 +541,7 @@ impl<T: TypeNum> PyArray<T> {
             )
         };
         if ptr.is_null() {
-            Err(ArrayCastError::dtype_cast(self, U::npy_data_type()))
+            Err(ErrorKind::dtype_cast(self, U::npy_data_type()))
         } else {
             Ok(unsafe { PyArray::<U>::from_owned_ptr(self.py(), ptr) })
         }
@@ -557,7 +566,7 @@ impl<T: TypeNum> PyArray<T> {
     /// # }
     /// ```
     #[inline(always)]
-    pub fn reshape<'py, D: ToNpyDims>(&'py self, dims: D) -> Result<&Self, ArrayCastError> {
+    pub fn reshape<'py, D: ToNpyDims>(&'py self, dims: D) -> Result<&Self, ErrorKind> {
         self.reshape_with_order(dims, NPY_ORDER::NPY_ANYORDER)
     }
 
@@ -566,7 +575,7 @@ impl<T: TypeNum> PyArray<T> {
         &'py self,
         dims: D,
         order: NPY_ORDER,
-    ) -> Result<&Self, ArrayCastError> {
+    ) -> Result<&Self, ErrorKind> {
         let mut np_dims = dims.to_npy_dims();
         let ptr = unsafe {
             PY_ARRAY_API.PyArray_Newshape(
@@ -576,7 +585,7 @@ impl<T: TypeNum> PyArray<T> {
             )
         };
         if ptr.is_null() {
-            Err(ArrayCastError::dims_cast(self, dims))
+            Err(ErrorKind::dims_cast(self, dims))
         } else {
             Ok(unsafe { PyArray::<T>::from_owned_ptr(self.py(), ptr) })
         }
