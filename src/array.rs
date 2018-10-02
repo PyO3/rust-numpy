@@ -126,7 +126,7 @@ impl<T> PyArray<T> {
     /// # extern crate pyo3; extern crate numpy; fn main() {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
-    /// let arr = PyArray::<f64>::new(gil.python(), &[4, 5, 6]);
+    /// let arr = PyArray::<f64>::new(gil.python(), [4, 5, 6]);
     /// assert_eq!(arr.strides(), &[240, 48, 8]);
     /// # }
     /// ```
@@ -472,7 +472,7 @@ impl<T: TypeNum> PyArray<T> {
     /// use numpy::{PyArray, IntoPyArray};
     /// let gil = pyo3::Python::acquire_gil();
     /// let pyarray_f = PyArray::<f64>::arange(gil.python(), 2.0, 5.0, 1.0);
-    /// let pyarray_i = PyArray::<i64>::new(gil.python(), &[3]);
+    /// let pyarray_i = PyArray::<i64>::new(gil.python(), [3]);
     /// assert!(pyarray_f.copy_to(pyarray_i).is_ok());
     /// assert_eq!(pyarray_i.as_slice().unwrap(), &[2, 3, 4]);
     /// # }
