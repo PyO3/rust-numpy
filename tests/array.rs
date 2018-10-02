@@ -11,7 +11,8 @@ fn new() {
     let gil = pyo3::Python::acquire_gil();
     let n = 3;
     let m = 5;
-    let arr = PyArray::<f64>::new(gil.python(), &[n, m]);
+    let dim = [n, m];
+    let arr = PyArray::<f64>::new(gil.python(), dim);
     assert!(arr.ndim() == 2);
     assert!(arr.dims() == [n, m]);
     assert!(arr.strides() == [m as isize * 8, 8]);
@@ -22,12 +23,12 @@ fn zeros() {
     let gil = pyo3::Python::acquire_gil();
     let n = 3;
     let m = 5;
-    let arr = PyArray::<f64>::zeros(gil.python(), &[n, m], false);
+    let arr = PyArray::<f64>::zeros(gil.python(), [n, m], false);
     assert!(arr.ndim() == 2);
     assert!(arr.dims() == [n, m]);
     assert!(arr.strides() == [m as isize * 8, 8]);
 
-    let arr = PyArray::<f64>::zeros(gil.python(), &[n, m], true);
+    let arr = PyArray::<f64>::zeros(gil.python(), [n, m], true);
     assert!(arr.ndim() == 2);
     assert!(arr.dims() == [n, m]);
     assert!(arr.strides() == [8, n as isize * 8]);
@@ -45,7 +46,7 @@ fn arange() {
 #[test]
 fn as_array() {
     let gil = pyo3::Python::acquire_gil();
-    let arr = PyArray::<f64>::zeros(gil.python(), &[3, 2, 4], false);
+    let arr = PyArray::<f64>::zeros(gil.python(), [3, 2, 4], false);
     let a = arr.as_array().unwrap();
     assert_eq!(arr.shape(), a.shape());
     assert_eq!(
@@ -95,7 +96,7 @@ fn iter_to_pyarray() {
 fn is_instance() {
     let gil = pyo3::Python::acquire_gil();
     let py = gil.python();
-    let arr = PyArray::<f64>::new(gil.python(), &[3, 5]);
+    let arr = PyArray::<f64>::new(gil.python(), [3, 5]);
     assert!(py.is_instance::<PyArray<f64>, _>(arr).unwrap());
     assert!(!py.is_instance::<pyo3::PyList, _>(arr).unwrap());
 }
