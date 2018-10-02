@@ -34,7 +34,6 @@ extern crate cfg_if;
 extern crate libc;
 extern crate ndarray;
 extern crate num_complex;
-#[macro_use]
 extern crate pyo3;
 
 pub mod array;
