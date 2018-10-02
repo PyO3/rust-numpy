@@ -24,6 +24,8 @@ impl<T, E: IntoPyErr> IntoPyResult for Result<T, E> {
 }
 
 /// Represents a shape and format of numpy array.
+///
+/// Only for error formatting.
 #[derive(Debug)]
 pub struct ArrayFormat {
     pub dims: Box<[usize]>,
@@ -38,18 +40,18 @@ impl fmt::Display for ArrayFormat {
 
 /// Represents a casting error between rust types and numpy array.
 #[derive(Debug)]
-pub enum ArrayCastError {
+pub enum ErrorKind {
     /// Error for casting `PyArray` into `ArrayView` or `ArrayViewMut`
-    ToRust { from: NpyDataType, to: NpyDataType },
+    PyToRust { from: NpyDataType, to: NpyDataType },
     /// Error for casting rust's `Vec` into numpy array.
-    FromVec,
+    FromVec { dim1: usize, dim2: usize },
     /// Error in numpy -> numpy data conversion
-    Numpy(Box<(ArrayFormat, ArrayFormat)>),
+    PyToPy(Box<(ArrayFormat, ArrayFormat)>),
 }
 
-impl ArrayCastError {
+impl ErrorKind {
     pub(crate) fn to_rust(from: i32, to: NpyDataType) -> Self {
-        ArrayCastError::ToRust {
+        ErrorKind::PyToRust {
             from: NpyDataType::from_i32(from),
             to,
         }
@@ -66,7 +68,7 @@ impl ArrayCastError {
             dtype: T::npy_data_type(),
         };
         let to = ArrayFormat { dims, dtype: to };
-        ArrayCastError::Numpy(Box::new((from, to)))
+        ErrorKind::PyToPy(Box::new((from, to)))
     }
     pub(crate) fn dims_cast<T: TypeNum>(from: &PyArray<T>, to_dim: impl ToNpyDims) -> Self {
         let dims_from = from
@@ -89,18 +91,22 @@ impl ArrayCastError {
             dims: dims_to,
             dtype: T::npy_data_type(),
         };
-        ArrayCastError::Numpy(Box::new((from, to)))
+        ErrorKind::PyToPy(Box::new((from, to)))
     }
 }
 
-impl fmt::Display for ArrayCastError {
+impl fmt::Display for ErrorKind {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            ArrayCastError::ToRust { from, to } => {
+            ErrorKind::PyToRust { from, to } => {
                 write!(f, "Cast failed: from={:?}, to={:?}", from, to)
             }
-            ArrayCastError::FromVec => write!(f, "Cast failed: FromVec (maybe invalid dimension)"),
-            ArrayCastError::Numpy(e) => write!(
+            ErrorKind::FromVec { dim1, dim2 } => write!(
+                f,
+                "Cast failed: Vec To PyArray: expect all dim {} but {} was found",
+                dim1, dim2
+            ),
+            ErrorKind::PyToPy(e) => write!(
                 f,
                 "Cast failed: from=ndarray({:?}), to=ndarray(dtype={:?})",
                 e.0, e.1,
@@ -109,21 +115,14 @@ impl fmt::Display for ArrayCastError {
     }
 }
 
-impl error::Error for ArrayCastError {}
+impl error::Error for ErrorKind {}
 
-impl IntoPyErr for ArrayCastError {
+impl IntoPyErr for ErrorKind {
     fn into_pyerr(self, msg: &str) -> PyErr {
-        let msg = match self {
-            ArrayCastError::ToRust { from, to } => format!(
-                "ArrayCastError::ToRust: from: {:?}, to: {:?}, msg: {}",
-                from, to, msg
-            ),
-            ArrayCastError::FromVec => format!("ArrayCastError::FromVec: {}", msg),
-            ArrayCastError::Numpy(e) => format!(
-                "ArrayCastError::Numpy: from: {:?}, to: {:?}, msg: {}",
-                e.0, e.1, msg
-            ),
-        };
-        PyErr::new::<exc::TypeError, _>(msg)
+        match self {
+            ErrorKind::PyToRust { .. } | ErrorKind::FromVec { .. } | ErrorKind::PyToPy(_) => {
+                PyErr::new::<exc::TypeError, _>(format!("{}, msg: {}", self, msg))
+            }
+        }
     }
 }
