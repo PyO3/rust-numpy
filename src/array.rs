@@ -62,41 +62,16 @@ impl<T> PyArray<T> {
         self.as_ptr() as _
     }
 
-    /// Get `PyArray` from `&PyArray`, by increasing ref counts.
-    ///
-    /// You can use this method when you have to avoid lifetime annotation to your function args
-    /// or return types, like used with pyo3's `pymethod`.
-    ///
-    /// Since this method increases refcount, you can use `PyArray` even after `pyo3::GILGuard`
-    /// dropped, in most cases.
-    ///
-    /// # Example
-    /// ```
-    /// # extern crate pyo3; extern crate numpy; fn main() {
-    /// use pyo3::{GILGuard, Python};
-    /// use numpy::PyArray;
-    /// fn return_py_array() -> PyArray<i32> {
-    ///    let gil = Python::acquire_gil();
-    ///    let array = PyArray::zeros(gil.python(), [5], false);
-    ///    array.to_owned(gil.python())
-    /// }
-    /// let array = return_py_array();
-    /// assert_eq!(array.as_slice().unwrap(), &[0, 0, 0, 0, 0]);
-    /// # }
-    /// ```
-    pub fn to_owned(&self, py: Python) -> Self {
-        let obj = unsafe { PyObject::from_borrowed_ptr(py, self.as_ptr()) };
+    /// Constructs `PyArray` from raw python object without incrementing reference counts.
+    pub unsafe fn from_owned_ptr(py: Python, ptr: *mut pyo3::ffi::PyObject) -> Self {
+        let obj = PyObject::from_owned_ptr(py, ptr);
         PyArray(obj, PhantomData)
     }
 
-    /// Constructs `PyArray` from raw python object without incrementing reference counts.
-    pub unsafe fn from_owned_ptr(py: Python, ptr: *mut pyo3::ffi::PyObject) -> &Self {
-        py.from_owned_ptr(ptr)
-    }
-
     /// Constructs PyArray from raw python object and increments reference counts.
-    pub unsafe fn from_borrowed_ptr(py: Python, ptr: *mut pyo3::ffi::PyObject) -> &Self {
-        py.from_owned_ptr(ptr)
+    pub unsafe fn from_borrowed_ptr(py: Python, ptr: *mut pyo3::ffi::PyObject) -> Self {
+        let obj = PyObject::from_borrowed_ptr(py, ptr);
+        PyArray(obj, PhantomData)
     }
 
     /// Returns the number of dimensions in the array.
@@ -187,7 +162,7 @@ impl<T: TypeNum> PyArray<T> {
     /// assert_eq!(pyarray.as_slice().unwrap(), &[1, 2, 3, 4, 5]);
     /// # }
     /// ```
-    pub fn from_boxed_slice(py: Python, v: Box<[T]>) -> &Self {
+    pub fn from_boxed_slice(py: Python, v: Box<[T]>) -> Self {
         IntoPyArray::into_pyarray(v, py)
     }
 
@@ -204,7 +179,7 @@ impl<T: TypeNum> PyArray<T> {
     /// assert_eq!(pyarray.as_slice().unwrap(), &[1, 2, 3, 4, 5]);
     /// # }
     /// ```
-    pub fn from_iter(py: Python, i: impl IntoIterator<Item = T>) -> &Self {
+    pub fn from_iter(py: Python, i: impl IntoIterator<Item = T>) -> Self {
         i.into_iter().collect::<Vec<_>>().into_pyarray(py)
     }
 
@@ -219,7 +194,7 @@ impl<T: TypeNum> PyArray<T> {
     /// assert_eq!(pyarray.as_slice().unwrap(), &[1, 2, 3, 4, 5]);
     /// # }
     /// ```
-    pub fn from_vec(py: Python, v: Vec<T>) -> &Self {
+    pub fn from_vec(py: Python, v: Vec<T>) -> Self {
         IntoPyArray::into_pyarray(v, py)
     }
 
@@ -239,7 +214,7 @@ impl<T: TypeNum> PyArray<T> {
     /// assert!(PyArray::from_vec2(gil.python(), &vec![vec![1], vec![2, 3]]).is_err());
     /// # }
     /// ```
-    pub fn from_vec2<'py>(py: Python<'py>, v: &Vec<Vec<T>>) -> Result<&'py Self, ErrorKind> {
+    pub fn from_vec2(py: Python, v: &Vec<Vec<T>>) -> Result<Self, ErrorKind> {
         let last_len = v.last().map_or(0, |v| v.len());
         if v.iter().any(|v| v.len() != last_len) {
             return Err(ErrorKind::FromVec {
@@ -274,10 +249,7 @@ impl<T: TypeNum> PyArray<T> {
     /// assert!(PyArray::from_vec3(gil.python(), &vec![vec![vec![1], vec![]]]).is_err());
     /// # }
     /// ```
-    pub fn from_vec3<'py>(
-        py: Python<'py>,
-        v: &Vec<Vec<Vec<T>>>,
-    ) -> Result<&'py PyArray<T>, ErrorKind> {
+    pub fn from_vec3(py: Python, v: &Vec<Vec<Vec<T>>>) -> Result<PyArray<T>, ErrorKind> {
         let dim2 = v.last().map_or(0, |v| v.len());
         if v.iter().any(|v| v.len() != dim2) {
             return Err(ErrorKind::FromVec {
@@ -311,7 +283,7 @@ impl<T: TypeNum> PyArray<T> {
     /// assert_eq!(pyarray.as_array().unwrap(), array![[1, 2], [3, 4]].into_dyn());
     /// # }
     /// ```
-    pub fn from_ndarray<D>(py: Python, arr: Array<T, D>) -> &Self
+    pub fn from_ndarray<D>(py: Python, arr: Array<T, D>) -> Self
     where
         D: Dimension,
     {
@@ -393,7 +365,7 @@ impl<T: TypeNum> PyArray<T> {
         dims: D,
         strides: *mut npy_intp,
         data: *mut c_void,
-    ) -> &'py Self {
+    ) -> Self {
         let ptr = PY_ARRAY_API.PyArray_New(
             PY_ARRAY_API.get_type_object(npyffi::ArrayType::PyArray_Type),
             dims.dims_len(),
@@ -421,7 +393,7 @@ impl<T: TypeNum> PyArray<T> {
     /// assert_eq!(pyarray.shape(), &[4, 5, 6]);
     /// # }
     /// ```
-    pub fn new<'py, D: ToNpyDims>(py: Python<'py>, dims: D) -> &'py Self {
+    pub fn new<'py, D: ToNpyDims>(py: Python<'py>, dims: D) -> Self {
         unsafe { Self::new_(py, dims, null_mut(), null_mut()) }
     }
 
@@ -439,7 +411,7 @@ impl<T: TypeNum> PyArray<T> {
     /// assert_eq!(pyarray.as_array().unwrap(), array![[0, 0], [0, 0]].into_dyn());
     /// # }
     /// ```
-    pub fn zeros<'py, D: ToNpyDims>(py: Python<'py>, dims: D, is_fortran: bool) -> &'py Self {
+    pub fn zeros<'py, D: ToNpyDims>(py: Python<'py>, dims: D, is_fortran: bool) -> Self {
         unsafe {
             let descr = PY_ARRAY_API.PyArray_DescrFromType(T::typenum_default());
             let ptr = PY_ARRAY_API.PyArray_Zeros(
@@ -467,7 +439,7 @@ impl<T: TypeNum> PyArray<T> {
     /// let pyarray = PyArray::<i32>::arange(gil.python(), -2.0, 4.0, 3.0);
     /// assert_eq!(pyarray.as_slice().unwrap(), &[-2, 1]);
     /// # }
-    pub fn arange<'py>(py: Python<'py>, start: f64, stop: f64, step: f64) -> &'py Self {
+    pub fn arange<'py>(py: Python<'py>, start: f64, stop: f64, step: f64) -> Self {
         unsafe {
             let ptr = PY_ARRAY_API.PyArray_Arange(start, stop, step, T::typenum_default());
             Self::from_owned_ptr(py, ptr)
@@ -528,10 +500,7 @@ impl<T: TypeNum> PyArray<T> {
     /// let pyarray_i = pyarray_f.cast::<i32>(false).unwrap();
     /// assert_eq!(pyarray_i.as_slice().unwrap(), &[2, 3, 4]);
     /// # }
-    pub fn cast<'py, U: TypeNum>(
-        &'py self,
-        is_fortran: bool,
-    ) -> Result<&'py PyArray<U>, ErrorKind> {
+    pub fn cast<U: TypeNum>(&self, is_fortran: bool) -> Result<PyArray<U>, ErrorKind> {
         let ptr = unsafe {
             let descr = PY_ARRAY_API.PyArray_DescrFromType(U::typenum_default());
             PY_ARRAY_API.PyArray_CastToType(
@@ -566,16 +535,16 @@ impl<T: TypeNum> PyArray<T> {
     /// # }
     /// ```
     #[inline(always)]
-    pub fn reshape<'py, D: ToNpyDims>(&'py self, dims: D) -> Result<&Self, ErrorKind> {
+    pub fn reshape<D: ToNpyDims>(&self, dims: D) -> Result<Self, ErrorKind> {
         self.reshape_with_order(dims, NPY_ORDER::NPY_ANYORDER)
     }
 
     /// Same as [reshape](method.reshape.html), but you can change the order of returned matrix.
-    pub fn reshape_with_order<'py, D: ToNpyDims>(
-        &'py self,
+    pub fn reshape_with_order<D: ToNpyDims>(
+        &self,
         dims: D,
         order: NPY_ORDER,
-    ) -> Result<&Self, ErrorKind> {
+    ) -> Result<Self, ErrorKind> {
         let mut np_dims = dims.to_npy_dims();
         let ptr = unsafe {
             PY_ARRAY_API.PyArray_Newshape(
