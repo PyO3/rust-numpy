@@ -78,7 +78,7 @@ impl ErrorKind {
             .collect::<Vec<_>>()
             .into_boxed_slice();
         let dims_to = to_dim
-            .dims_ref()
+            .slice()
             .into_iter()
             .map(|&x| x)
             .collect::<Vec<_>>()

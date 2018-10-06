@@ -415,15 +415,14 @@ impl<T: TypeNum> PyArray<T> {
         S: Data<Elem = T>,
         D: Dimension,
     {
-        let dims: Vec<_> = arr.shape().iter().cloned().collect();
-        let len = dims.iter().fold(1, |prod, d| prod * d);
+        let len = arr.len();
         let mut strides: Vec<_> = arr
             .strides()
             .into_iter()
             .map(|n| n * mem::size_of::<T>() as npy_intp)
             .collect();
         unsafe {
-            let array = PyArray::new_(py, &*dims, strides.as_mut_ptr() as *mut npy_intp, 0);
+            let array = PyArray::new_(py, arr.shape(), strides.as_mut_ptr() as *mut npy_intp, 0);
             ptr::copy_nonoverlapping(arr.as_ptr(), array.data(), len);
             array
         }
@@ -507,21 +506,22 @@ impl<T: TypeNum> PyArray<T> {
     /// assert_eq!(pyarray.shape(), &[4, 5, 6]);
     /// # }
     /// ```
-    pub fn new<'py, D: ToNpyDims>(py: Python<'py>, dims: D, is_fortran: bool) -> &'py Self {
+    pub fn new<'py, D: IntoDimension>(py: Python<'py>, dims: D, is_fortran: bool) -> &'py Self {
         let flags = if is_fortran { 1 } else { 0 };
         unsafe { PyArray::new_(py, dims, ptr::null_mut(), flags) }
     }
 
-    unsafe fn new_<'py, D: ToNpyDims>(
+    unsafe fn new_<'py, D: IntoDimension>(
         py: Python<'py>,
         dims: D,
         strides: *mut npy_intp,
         flag: c_int,
     ) -> &'py Self {
+        let dims = dims.into_dimension();
         let ptr = PY_ARRAY_API.PyArray_New(
             PY_ARRAY_API.get_type_object(npyffi::ArrayType::PyArray_Type),
-            dims.dims_len(),
-            dims.dims_ptr(),
+            dims.ndim_cint(),
+            dims.as_dims_ptr(),
             T::typenum_default(),
             strides,                // strides
             ptr::null_mut(),        // data
@@ -548,12 +548,13 @@ impl<T: TypeNum> PyArray<T> {
     /// assert_eq!(pyarray.as_array().unwrap(), array![[0, 0], [0, 0]].into_dyn());
     /// # }
     /// ```
-    pub fn zeros<'py, D: ToNpyDims>(py: Python<'py>, dims: D, is_fortran: bool) -> &'py Self {
+    pub fn zeros<'py, D: IntoDimension>(py: Python<'py>, dims: D, is_fortran: bool) -> &'py Self {
+        let dims = dims.into_dimension();
         unsafe {
             let descr = PY_ARRAY_API.PyArray_DescrFromType(T::typenum_default());
             let ptr = PY_ARRAY_API.PyArray_Zeros(
-                dims.dims_len(),
-                dims.dims_ptr(),
+                dims.ndim_cint(),
+                dims.as_dims_ptr(),
                 descr,
                 if is_fortran { -1 } else { 0 },
             );
@@ -653,16 +654,17 @@ impl<T: TypeNum> PyArray<T> {
     /// # }
     /// ```
     #[inline(always)]
-    pub fn reshape<'py, D: ToNpyDims>(&'py self, dims: D) -> Result<&Self, ErrorKind> {
+    pub fn reshape<'py, D: IntoDimension>(&'py self, dims: D) -> Result<&Self, ErrorKind> {
         self.reshape_with_order(dims, NPY_ORDER::NPY_ANYORDER)
     }
 
     /// Same as [reshape](method.reshape.html), but you can change the order of returned matrix.
-    pub fn reshape_with_order<'py, D: ToNpyDims>(
+    pub fn reshape_with_order<'py, D: IntoDimension>(
         &'py self,
         dims: D,
         order: NPY_ORDER,
     ) -> Result<&Self, ErrorKind> {
+        let dims = dims.into_dimension();
         let mut np_dims = dims.to_npy_dims();
         let ptr = unsafe {
             PY_ARRAY_API.PyArray_Newshape(
@@ -679,12 +681,13 @@ impl<T: TypeNum> PyArray<T> {
     }
 
     // TODO: expose?
-    fn resize_<'py, D: ToNpyDims>(
+    fn resize_<'py, D: IntoDimension>(
         &'py self,
         dims: D,
         check_ref: c_int,
         order: NPY_ORDER,
     ) -> Result<(), ErrorKind> {
+        let dims = dims.into_dimension();
         let mut np_dims = dims.to_npy_dims();
         let res = unsafe {
             PY_ARRAY_API.PyArray_Resize(

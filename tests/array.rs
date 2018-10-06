@@ -29,6 +29,15 @@ fn new_fortran_order() {
 }
 
 #[test]
+fn tuple_as_dim() {
+    let gil = pyo3::Python::acquire_gil();
+    let dim = (3, 5);
+    let arr = PyArray::<f64>::zeros(gil.python(), dim, false);
+    assert!(arr.ndim() == 2);
+    assert!(arr.dims() == [3, 5]);
+}
+
+#[test]
 fn zeros() {
     let gil = pyo3::Python::acquire_gil();
     let n = 3;

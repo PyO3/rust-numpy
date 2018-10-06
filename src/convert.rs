@@ -45,49 +45,27 @@ where
 }
 
 /// Utility trait to specify the dimention of array
-pub trait ToNpyDims {
-    fn dims_len(&self) -> c_int;
-    fn dims_ptr(&self) -> *mut npy_intp;
-    fn dims_ref(&self) -> &[usize];
+pub trait ToNpyDims: Dimension {
+    fn ndim_cint(&self) -> c_int {
+        self.ndim() as c_int
+    }
+    fn as_dims_ptr(&self) -> *mut npy_intp {
+        self.slice().as_ptr() as *mut npy_intp
+    }
     fn to_npy_dims(&self) -> npyffi::PyArray_Dims {
         npyffi::PyArray_Dims {
-            ptr: self.dims_ptr(),
-            len: self.dims_len(),
+            ptr: self.as_dims_ptr(),
+            len: self.ndim_cint(),
         }
     }
+    fn __private__(&self) -> PrivateMarker;
 }
 
-macro_rules! array_dim_impls {
-    ($($N: expr)+) => {
-        $(
-            impl ToNpyDims for [usize; $N] {
-                fn dims_len(&self) -> c_int {
-                    $N as c_int
-                }
-                fn dims_ptr(&self) -> *mut npy_intp {
-                    self.as_ptr() as *mut npy_intp
-                }
-                fn dims_ref(&self) -> &[usize] {
-                    self
-                }
-            }
-        )+
+impl<T: Dimension> ToNpyDims for T {
+    fn __private__(&self) -> PrivateMarker {
+        PrivateMarker
     }
 }
 
-array_dim_impls! {
-     0  1  2  3  4  5  6  7  8  9
-    10 11 12 13 14 15 16
-}
-
-impl<'a> ToNpyDims for &'a [usize] {
-    fn dims_len(&self) -> c_int {
-        self.len() as c_int
-    }
-    fn dims_ptr(&self) -> *mut npy_intp {
-        self.as_ptr() as *mut npy_intp
-    }
-    fn dims_ref(&self) -> &[usize] {
-        *self
-    }
-}
+#[doc(hidden)]
+pub struct PrivateMarker;
