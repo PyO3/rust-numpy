@@ -45,28 +45,37 @@ numpy = "0.3"
 ``` rust
 extern crate numpy;
 extern crate pyo3;
-use numpy::{IntoPyResult, PyArray, get_array_module};
-use pyo3::prelude::{ObjectProtocol, PyDict, PyResult, Python};
+use numpy::{IntoPyResult, PyArray, ToPyArray};
+use pyo3::prelude::{pymodinit, PyModule, PyResult, Python};
 
-fn main() -> Result<(), ()> {
-    let gil = Python::acquire_gil();
-    main_(gil.python()).map_err(|e| {
-        eprintln!("error! :{:?}", e);
-        // we can't display python error type via ::std::fmt::Display
-        // so print error here manually
-        e.print_and_set_sys_last_vars(gil.python());
-    })
-}
+#[pymodinit]
+fn rust_ext(_py: Python, m: &PyModule) -> PyResult<()> {
+    // immutable example
+    fn axpy(a: f64, x: ArrayViewD<f64>, y: ArrayViewD<f64>) -> ArrayD<f64> {
+        a * &x + &y
+    }
 
-fn main_<'py>(py: Python<'py>) -> PyResult<()> {
-    let np = get_array_module(py)?;
-    let dict = PyDict::new(py);
-    dict.set_item("np", np)?;
-    let pyarray: &PyArray<i32> = py
-        .eval("np.array([1, 2, 3], dtype='int32')", Some(&dict), None)?
-        .extract()?;
-    let slice = pyarray.as_slice().into_pyresult("Array Cast failed")?;
-    assert_eq!(slice, &[1, 2, 3]);
+    // mutable example (no return)
+    fn mult(a: f64, mut x: ArrayViewMutD<f64>) {
+        x *= a;
+    }
+
+    // wrapper of `axpy`
+    #[pyfn(m, "axpy")]
+    fn axpy_py(py: Python, a: f64, x: &PyArray<f64>, y: &PyArray<f64>) -> PyResult<PyArray<f64>> {
+        let x = x.as_array().into_pyresult("x must be f64 array")?;
+        let y = y.as_array().into_pyresult("y must be f64 array")?;
+        Ok(axpy(a, x, y).to_pyarray(py).to_owned(py))
+    }
+
+    // wrapper of `mult`
+    #[pyfn(m, "mult")]
+    fn mult_py(_py: Python, a: f64, x: &PyArray<f64>) -> PyResult<()> {
+        let x = x.as_array_mut().into_pyresult("x must be f64 array")?;
+        mult(a, x);
+        Ok(())
+    }
+
     Ok(())
 }
 ```

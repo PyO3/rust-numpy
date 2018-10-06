@@ -401,7 +401,7 @@ impl<T: TypeNum> PyArray<T> {
     /// # extern crate pyo3; extern crate numpy; #[macro_use] extern crate ndarray; fn main() {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
-    /// let pyarray = PyArray::from_ndarray(gil.python(), array![[1, 2], [3, 4]]);
+    /// let pyarray = PyArray::from_ndarray(gil.python(), &array![[1, 2], [3, 4]]);
     /// assert_eq!(pyarray.as_array().unwrap(), array![[1, 2], [3, 4]].into_dyn());
     /// # }
     /// ```
@@ -476,7 +476,7 @@ impl<T: TypeNum> PyArray<T> {
     /// # extern crate pyo3; extern crate numpy; #[macro_use] extern crate ndarray; fn main() {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
-    /// let pyarray = PyArray::<i32>::new(gil.python(), [4, 5, 6]);
+    /// let pyarray = PyArray::<i32>::new(gil.python(), [4, 5, 6], false);
     /// assert_eq!(pyarray.shape(), &[4, 5, 6]);
     /// # }
     /// ```
@@ -540,7 +540,7 @@ impl<T: TypeNum> PyArray<T> {
     /// # Example
     /// ```
     /// # extern crate pyo3; extern crate numpy; fn main() {
-    /// use numpy::{PyArray, IntoPyArray};
+    /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let pyarray = PyArray::<f64>::arange(gil.python(), 2.0, 4.0, 0.5);
     /// assert_eq!(pyarray.as_slice().unwrap(), &[2.0, 2.5, 3.0, 3.5]);
@@ -558,10 +558,10 @@ impl<T: TypeNum> PyArray<T> {
     /// # Example
     /// ```
     /// # extern crate pyo3; extern crate numpy; fn main() {
-    /// use numpy::{PyArray, IntoPyArray};
+    /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let pyarray_f = PyArray::<f64>::arange(gil.python(), 2.0, 5.0, 1.0);
-    /// let pyarray_i = PyArray::<i64>::new(gil.python(), [3]);
+    /// let pyarray_i = PyArray::<i64>::new(gil.python(), [3], false);
     /// assert!(pyarray_f.copy_to(pyarray_i).is_ok());
     /// assert_eq!(pyarray_i.as_slice().unwrap(), &[2, 3, 4]);
     /// # }
@@ -580,10 +580,10 @@ impl<T: TypeNum> PyArray<T> {
     /// # Example
     /// ```
     /// # extern crate pyo3; extern crate numpy; fn main() {
-    /// use numpy::{PyArray, IntoPyArray};
+    /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let pyarray_f = PyArray::<f64>::arange(gil.python(), 2.0, 5.0, 1.0);
-    /// let pyarray_i = PyArray::<i64>::new(gil.python(), [3]);
+    /// let pyarray_i = PyArray::<i64>::new(gil.python(), [3], false);
     /// assert!(pyarray_f.move_to(pyarray_i).is_ok());
     /// assert_eq!(pyarray_i.as_slice().unwrap(), &[2, 3, 4]);
     /// # }
@@ -602,7 +602,7 @@ impl<T: TypeNum> PyArray<T> {
     /// # Example
     /// ```
     /// # extern crate pyo3; extern crate numpy; fn main() {
-    /// use numpy::{PyArray, IntoPyArray};
+    /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let pyarray_f = PyArray::<f64>::arange(gil.python(), 2.0, 5.0, 1.0);
     /// let pyarray_i = pyarray_f.cast::<i32>(false).unwrap();
@@ -639,7 +639,7 @@ impl<T: TypeNum> PyArray<T> {
     /// # #[macro_use] extern crate ndarray; extern crate pyo3; extern crate numpy; fn main() {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
-    /// let array = PyArray::from_vec(gil.python(), (0..9).collect());
+    /// let array = PyArray::from_exact_iter(gil.python(), 0..9);
     /// let array = array.reshape([3, 3]).unwrap();
     /// assert_eq!(array.as_array().unwrap(), array![[0, 1, 2], [3, 4, 5], [6, 7, 8]].into_dyn());
     /// assert!(array.reshape([5]).is_err());

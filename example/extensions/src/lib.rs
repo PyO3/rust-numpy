@@ -3,7 +3,7 @@ extern crate numpy;
 extern crate pyo3;
 
 use ndarray::{ArrayD, ArrayViewD, ArrayViewMutD};
-use numpy::{IntoPyArray, IntoPyResult, PyArray};
+use numpy::{IntoPyResult, PyArray, ToPyArray};
 use pyo3::prelude::{pymodinit, PyModule, PyResult, Python};
 
 #[pymodinit]
@@ -23,7 +23,7 @@ fn rust_ext(_py: Python, m: &PyModule) -> PyResult<()> {
     fn axpy_py(py: Python, a: f64, x: &PyArray<f64>, y: &PyArray<f64>) -> PyResult<PyArray<f64>> {
         let x = x.as_array().into_pyresult("x must be f64 array")?;
         let y = y.as_array().into_pyresult("y must be f64 array")?;
-        Ok(axpy(a, x, y).into_pyarray(py).to_owned(py))
+        Ok(axpy(a, x, y).to_pyarray(py).to_owned(py))
     }
 
     // wrapper of `mult`

@@ -12,9 +12,9 @@ use super::*;
 /// # Example
 /// ```
 /// # extern crate pyo3; extern crate numpy; fn main() {
-/// use numpy::{PyArray, IntoPyArray};
+/// use numpy::{PyArray, ToPyArray};
 /// let gil = pyo3::Python::acquire_gil();
-/// let py_array = vec![1, 2, 3].into_pyarray(gil.python());
+/// let py_array = vec![1, 2, 3].to_pyarray(gil.python());
 /// assert_eq!(py_array.as_slice().unwrap(), &[1, 2, 3]);
 /// # }
 /// ```
