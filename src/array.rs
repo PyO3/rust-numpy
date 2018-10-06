@@ -1,6 +1,7 @@
 //! Safe interface for NumPy ndarray
 use ndarray::*;
 use npyffi::{self, npy_intp, PY_ARRAY_API};
+use num_traits::AsPrimitive;
 use pyo3::*;
 use std::iter::ExactSizeIterator;
 use std::marker::PhantomData;
@@ -64,6 +65,7 @@ impl<T> PyArray<T> {
         self.as_ptr() as _
     }
 
+    // TODO: 'increasing ref counts' is really collect approach for extension?
     /// Get `PyArray` from `&PyArray`, by increasing ref counts.
     ///
     /// You can use this method when you have to avoid lifetime annotation to your function args
@@ -396,6 +398,9 @@ impl<T: TypeNum> PyArray<T> {
 
     /// Construct PyArray from ndarray::Array.
     ///
+    /// This method allocates memory in Python's heap via numpy api, and then copies all elements
+    /// of the array there.
+    ///
     /// # Example
     /// ```
     /// # extern crate pyo3; extern crate numpy; #[macro_use] extern crate ndarray; fn main() {
@@ -455,7 +460,17 @@ impl<T: TypeNum> PyArray<T> {
         }
     }
 
-    /// Get data as a Rust immutable slice
+    /// Get the immutable view of the internal data of numpy, as slice.
+    ///
+    /// # Example
+    /// ```
+    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// use numpy::PyArray;
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let py_array = PyArray::arange()
+    /// assert_eq!(py_array.as_slice().unwrap(), &[1, 2, 3]);
+    /// # }
+    /// ```
     pub fn as_slice(&self) -> Result<&[T], ErrorKind> {
         self.type_check()?;
         unsafe { Ok(::std::slice::from_raw_parts(self.data(), self.len())) }
@@ -469,7 +484,7 @@ impl<T: TypeNum> PyArray<T> {
 
     /// Creates a new uninitialized PyArray in python heap.
     ///
-    /// See also [PyArray_SimpleNew](https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_SimpleNew).
+    /// If `is_fortran == true`, returns Fortran-order array. Else, returns C-order array.
     ///
     /// # Example
     /// ```
@@ -505,7 +520,9 @@ impl<T: TypeNum> PyArray<T> {
         Self::from_owned_ptr(py, ptr)
     }
 
-    /// Construct a new nd-dimensional array filled with 0. If `is_fortran` is true, then
+    /// Construct a new nd-dimensional array filled with 0.
+    ///
+    /// If `is_fortran` is true, then
     /// a fortran order array is created, otherwise a C-order array is created.
     ///
     /// See also [PyArray_Zeros](https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_Zeros)
@@ -528,28 +545,6 @@ impl<T: TypeNum> PyArray<T> {
                 descr,
                 if is_fortran { -1 } else { 0 },
             );
-            Self::from_owned_ptr(py, ptr)
-        }
-    }
-
-    /// Return evenly spaced values within a given interval.
-    /// Same as [numpy.arange](https://docs.scipy.org/doc/numpy/reference/generated/numpy.arange.html).
-    ///
-    /// See also [PyArray_Arange](https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_Arange).
-    ///
-    /// # Example
-    /// ```
-    /// # extern crate pyo3; extern crate numpy; fn main() {
-    /// use numpy::PyArray;
-    /// let gil = pyo3::Python::acquire_gil();
-    /// let pyarray = PyArray::<f64>::arange(gil.python(), 2.0, 4.0, 0.5);
-    /// assert_eq!(pyarray.as_slice().unwrap(), &[2.0, 2.5, 3.0, 3.5]);
-    /// let pyarray = PyArray::<i32>::arange(gil.python(), -2.0, 4.0, 3.0);
-    /// assert_eq!(pyarray.as_slice().unwrap(), &[-2, 1]);
-    /// # }
-    pub fn arange<'py>(py: Python<'py>, start: f64, stop: f64, step: f64) -> &'py Self {
-        unsafe {
-            let ptr = PY_ARRAY_API.PyArray_Arange(start, stop, step, T::typenum_default());
             Self::from_owned_ptr(py, ptr)
         }
     }
@@ -691,6 +686,35 @@ impl<T: TypeNum> PyArray<T> {
             Err(ErrorKind::dims_cast(self, dims))
         } else {
             Ok(())
+        }
+    }
+}
+
+impl<T: TypeNum + AsPrimitive<f64>> PyArray<T> {
+    /// Return evenly spaced values within a given interval.
+    /// Same as [numpy.arange](https://docs.scipy.org/doc/numpy/reference/generated/numpy.arange.html).
+    ///
+    /// See also [PyArray_Arange](https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_Arange).
+    ///
+    /// # Example
+    /// ```
+    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// use numpy::PyArray;
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let pyarray = PyArray::<f64>::arange(gil.python(), 2.0, 4.0, 0.5);
+    /// assert_eq!(pyarray.as_slice().unwrap(), &[2.0, 2.5, 3.0, 3.5]);
+    /// let pyarray = PyArray::<i32>::arange(gil.python(), -2, 4, 3);
+    /// assert_eq!(pyarray.as_slice().unwrap(), &[-2, 1]);
+    /// # }
+    pub fn arange<'py>(py: Python<'py>, start: T, stop: T, step: T) -> &'py Self {
+        unsafe {
+            let ptr = PY_ARRAY_API.PyArray_Arange(
+                start.as_(),
+                stop.as_(),
+                step.as_(),
+                T::typenum_default(),
+            );
+            Self::from_owned_ptr(py, ptr)
         }
     }
 }
