@@ -1,4 +1,4 @@
-//! Defines conversion trait between rust types and numpy data types.
+//! Defines conversion traits between rust types and numpy data types.
 
 use ndarray::{ArrayBase, Data, Dimension};
 use pyo3::Python;
@@ -9,6 +9,8 @@ use super::*;
 
 /// Covversion trait from rust types to `PyArray`.
 ///
+/// This trait takes `&self`, which means **it alocates in Python heap and then copies
+/// elements there**.
 /// # Example
 /// ```
 /// # extern crate pyo3; extern crate numpy; fn main() {

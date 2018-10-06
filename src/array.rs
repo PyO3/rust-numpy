@@ -443,13 +443,26 @@ impl<T: TypeNum> PyArray<T> {
         }
     }
 
-    /// Get data as a ndarray::ArrayView
+    /// Get the immutable view of the internal data of `PyArray`, as `ndarray::ArrayView`.
+    ///
+    /// # Example
+    /// ```
+    /// # #[macro_use] extern crate ndarray; extern crate pyo3; extern crate numpy; fn main() {
+    /// use numpy::PyArray;
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let py_array = PyArray::arange(gil.python(), 0, 4, 1).reshape([2, 2]).unwrap();
+    /// assert_eq!(
+    ///     py_array.as_array().unwrap(),
+    ///     array![[0, 1], [2, 3]].into_dyn()
+    /// )
+    /// # }
+    /// ```
     pub fn as_array(&self) -> Result<ArrayViewD<T>, ErrorKind> {
         self.type_check()?;
         unsafe { Ok(ArrayView::from_shape_ptr(self.ndarray_shape(), self.data())) }
     }
 
-    /// Get data as a ndarray::ArrayViewMut
+    /// Get the mmutable view of the internal data of `PyArray`, as `ndarray::ArrayViewMut`.
     pub fn as_array_mut(&self) -> Result<ArrayViewMutD<T>, ErrorKind> {
         self.type_check()?;
         unsafe {
@@ -460,15 +473,14 @@ impl<T: TypeNum> PyArray<T> {
         }
     }
 
-    /// Get the immutable view of the internal data of numpy, as slice.
-    ///
+    /// Get the immutable view of the internal data of `PyArray`, as slice.
     /// # Example
     /// ```
     /// # extern crate pyo3; extern crate numpy; fn main() {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
-    /// let py_array = PyArray::arange()
-    /// assert_eq!(py_array.as_slice().unwrap(), &[1, 2, 3]);
+    /// let py_array = PyArray::arange(gil.python(), 0, 4, 1).reshape([2, 2]).unwrap();
+    /// assert_eq!(py_array.as_slice().unwrap(), &[0, 1, 2, 3]);
     /// # }
     /// ```
     pub fn as_slice(&self) -> Result<&[T], ErrorKind> {
@@ -476,7 +488,7 @@ impl<T: TypeNum> PyArray<T> {
         unsafe { Ok(::std::slice::from_raw_parts(self.data(), self.len())) }
     }
 
-    /// Get data as a Rust mutable slice
+    /// Get the mmutable view of the internal data of `PyArray`, as slice.
     pub fn as_slice_mut(&self) -> Result<&mut [T], ErrorKind> {
         self.type_check()?;
         unsafe { Ok(::std::slice::from_raw_parts_mut(self.data(), self.len())) }
