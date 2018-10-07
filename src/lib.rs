@@ -44,7 +44,7 @@ pub mod npyffi;
 pub mod types;
 
 pub use array::{get_array_module, PyArray};
-pub use convert::{ToNpyDims, ToPyArray};
+pub use convert::{NpyIndex, ToNpyDims, ToPyArray};
 pub use error::*;
 pub use npyffi::{PY_ARRAY_API, PY_UFUNC_API};
 pub use types::*;

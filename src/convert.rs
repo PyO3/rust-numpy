@@ -1,8 +1,9 @@
 //! Defines conversion traits between rust types and numpy data types.
 
-use ndarray::{ArrayBase, Data, Dimension};
+use ndarray::{ArrayBase, Data, Dimension, IntoDimension};
 use pyo3::Python;
 
+use std::mem;
 use std::os::raw::c_int;
 
 use super::*;
@@ -61,10 +62,60 @@ pub trait ToNpyDims: Dimension {
     fn __private__(&self) -> PrivateMarker;
 }
 
-impl<T: Dimension> ToNpyDims for T {
+impl<D: Dimension> ToNpyDims for D {
     fn __private__(&self) -> PrivateMarker {
         PrivateMarker
     }
+}
+
+/// Types that can be used to index an array.
+///
+/// See[IntoDimension](https://docs.rs/ndarray/0.12/ndarray/dimension/conversion/trait.IntoDimension.html)
+/// for what types you can use as `NpyIndex`.
+///
+/// But basically, you can use
+/// - Tuple
+/// - Fixed sized array
+/// - Slice
+// Since Numpy's strides is byte offset, we can't use ndarray::NdIndex directly here.
+pub trait NpyIndex {
+    fn get_checked<T>(self, dims: &[usize], strides: &[isize]) -> Option<isize>;
+    fn get_unchecked<T>(self, strides: &[isize]) -> isize;
+    fn __private__(self) -> PrivateMarker;
+}
+
+impl<D: IntoDimension> NpyIndex for D {
+    fn get_checked<T>(self, dims: &[usize], strides: &[isize]) -> Option<isize> {
+        let indices_ = self.into_dimension();
+        let indices = indices_.slice();
+        if indices.len() != dims.len() {
+            return None;
+        }
+        if indices.into_iter().zip(dims).any(|(i, d)| i >= d) {
+            return None;
+        }
+        Some(get_unchecked_impl(
+            indices,
+            strides,
+            mem::size_of::<T>() as isize,
+        ))
+    }
+    fn get_unchecked<T>(self, strides: &[isize]) -> isize {
+        let indices_ = self.into_dimension();
+        let indices = indices_.slice();
+        get_unchecked_impl(indices, strides, mem::size_of::<T>() as isize)
+    }
+    fn __private__(self) -> PrivateMarker {
+        PrivateMarker
+    }
+}
+
+fn get_unchecked_impl(indices: &[usize], strides: &[isize], size: isize) -> isize {
+    indices
+        .iter()
+        .zip(strides)
+        .map(|(&i, stride)| stride * i as isize / size)
+        .sum()
 }
 
 #[doc(hidden)]

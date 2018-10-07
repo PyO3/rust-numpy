@@ -9,7 +9,7 @@ use std::mem;
 use std::os::raw::c_int;
 use std::ptr;
 
-use convert::ToNpyDims;
+use convert::{NpyIndex, ToNpyDims};
 use error::{ErrorKind, IntoPyErr};
 use types::{NpyDataType, TypeNum, NPY_ORDER};
 
@@ -166,8 +166,8 @@ impl<T> PyArray<T> {
         }
     }
 
-    /// Same as [shape](./struct.PyArray.html#method.shape)
-    #[inline]
+    /// Same as [shape](#method.shape)
+    #[inline(always)]
     pub fn dims(&self) -> &[usize] {
         self.shape()
     }
@@ -201,21 +201,65 @@ impl<T> PyArray<T> {
         (*ptr).data as *mut T
     }
 
-    // TODO: we should provide safe access API
-    unsafe fn get_unchecked(&self, index: &[isize]) -> *const T {
-        let size = mem::size_of::<T>() as isize;
-        index
-            .iter()
-            .zip(self.strides())
-            .fold(self.data(), |pointer, (idx, stride)| {
-                pointer.offset(stride * idx / size)
-            })
+    /// Get an immutable reference of a specified element, without checking the
+    /// passed index is valid.
+    ///
+    /// See [NpyIndex](../convert/trait.NpyIndex.html) for what types you can use as index.
+    ///
+    /// Passing an invalid index can cause undefined behavior(mostly SIGSEGV).
+    ///
+    /// # Example
+    /// ```
+    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// use numpy::PyArray;
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let arr = PyArray::arange(gil.python(), 0, 16, 1).reshape([2, 2, 4]).unwrap();
+    /// assert_eq!(*arr.get([1, 0, 3]).unwrap(), 11);
+    /// assert!(arr.get([2, 0, 3]).is_none());
+    /// assert!(arr.get([1, 0, 3, 4]).is_none());
+    /// assert!(arr.get([1, 0]).is_none());
+    /// # }
+    /// ```
+    #[inline(always)]
+    pub fn get<Idx: NpyIndex>(&self, index: Idx) -> Option<&T> {
+        let offset = index.get_checked::<T>(self.shape(), self.strides())?;
+        unsafe { Some(&*self.data().offset(offset)) }
     }
 
-    // TODO: we should provide safe access API
+    /// Same as [get](#method.get), but returns `&mut T`.
     #[inline(always)]
-    unsafe fn get_unchecked_mut(&self, index: &[isize]) -> *mut T {
-        self.get_unchecked(index) as *mut T
+    pub fn get_mut<Idx: NpyIndex>(&self, index: Idx) -> Option<&mut T> {
+        let offset = index.get_checked::<T>(self.shape(), self.strides())?;
+        unsafe { Some(&mut *(self.data().offset(offset) as *mut T)) }
+    }
+
+    /// Get an immutable reference of a specified element, without checking the
+    /// passed index is valid.
+    ///
+    /// See [NpyIndex](../convert/trait.NpyIndex.html) for what types you can use as index.
+    ///
+    /// Passing an invalid index can cause undefined behavior(mostly SIGSEGV).
+    ///
+    /// # Example
+    /// ```
+    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// use numpy::PyArray;
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let arr = PyArray::arange(gil.python(), 0, 16, 1).reshape([2, 2, 4]).unwrap();
+    /// assert_eq!(unsafe { *arr.uget([1, 0, 3]) }, 11);
+    /// # }
+    /// ```
+    #[inline(always)]
+    pub unsafe fn uget<Idx: NpyIndex>(&self, index: Idx) -> &T {
+        let offset = index.get_unchecked::<T>(self.strides());
+        &*self.data().offset(offset)
+    }
+
+    /// Same as [uget](#method.uget), but returns `&mut T`.
+    #[inline(always)]
+    pub unsafe fn uget_mut<Idx: NpyIndex>(&self, index: Idx) -> &mut T {
+        let offset = index.get_unchecked::<T>(self.strides());
+        &mut *(self.data().offset(offset) as *mut T)
     }
 }
 
@@ -258,7 +302,7 @@ impl<T: TypeNum> PyArray<T> {
         let array = Self::new(py, [iter.len()], false);
         unsafe {
             for (i, item) in iter.enumerate() {
-                *array.get_unchecked_mut(&[i as isize]) = item;
+                *array.uget_mut([i]) = item;
             }
         }
         array
@@ -293,7 +337,7 @@ impl<T: TypeNum> PyArray<T> {
                         .resize_([capacity], 0, NPY_ORDER::NPY_ANYORDER)
                         .expect("PyArray::from_iter: Failed to allocate memory");
                 }
-                *array.get_unchecked_mut(&[i as isize]) = item;
+                *array.uget_mut([i]) = item;
             }
         }
         if capacity > length {
@@ -334,7 +378,7 @@ impl<T: TypeNum> PyArray<T> {
         unsafe {
             for y in 0..v.len() {
                 for x in 0..last_len {
-                    *array.get_unchecked_mut(&[y as isize, x as isize]) = v[y][x].clone();
+                    *array.uget_mut([y, x]) = v[y][x].clone();
                 }
             }
         }
@@ -387,8 +431,7 @@ impl<T: TypeNum> PyArray<T> {
             for z in 0..v.len() {
                 for y in 0..dim2 {
                     for x in 0..dim3 {
-                        *array.get_unchecked_mut(&[z as isize, y as isize, x as isize]) =
-                            v[z][y][x].clone();
+                        *array.uget_mut([z, y, x]) = v[z][y][x].clone();
                     }
                 }
             }
@@ -739,6 +782,6 @@ fn test_get_unchecked() {
     let gil = pyo3::Python::acquire_gil();
     let array = PyArray::from_slice(gil.python(), &[1i32, 2, 3]);
     unsafe {
-        assert_eq!(*array.get_unchecked(&[1]), 2);
+        assert_eq!(*array.uget([1]), 2);
     }
 }
