@@ -1,6 +1,6 @@
 //! Safe interface for NumPy ndarray
 use ndarray::*;
-use npyffi::{self, npy_intp, PY_ARRAY_API};
+use npyffi::{self, npy_intp, PY_ARRAY_API, NPY_ORDER};
 use num_traits::AsPrimitive;
 use pyo3::*;
 use std::iter::ExactSizeIterator;
@@ -11,18 +11,82 @@ use std::ptr;
 
 use convert::{NpyIndex, ToNpyDims};
 use error::{ErrorKind, IntoPyErr};
-use types::{NpyDataType, TypeNum, NPY_ORDER};
+use types::{NpyDataType, TypeNum};
 
-/// Interface for [NumPy ndarray](https://docs.scipy.org/doc/numpy/reference/arrays.ndarray.html).
+/// A safe, static-typed interface for
+/// [NumPy ndarray](https://docs.scipy.org/doc/numpy/reference/arrays.ndarray.html).
+///
+/// # Memory location
+/// Numpy api allows to use a memory area allocated outside Pyhton.
+///
+/// However, we designed `PyArray` to always **owns a memory area allocated in Python's private
+/// heap**, where all memories are managed by GC.
+///
+/// This means you always need to pay allocation cost when you create a `PyArray`, but don't need
+/// to fear memory leak.
+///
+/// # Reference
+///
+/// Like [`new`](#method.new), most constractor methods of this type returns `&PyArray`.
+///
+/// See [pyo3's document](https://pyo3.rs/master/doc/pyo3/index.html#ownership-and-lifetimes)
+/// for the reason.
+///
+/// # Mutation
+/// You can do destructive changes to `PyArray` via &self methods like [`move_to`](#method.move_to).
+///
+/// About this design, see
+/// [pyo3's document](https://pyo3.rs/master/doc/pyo3/index.html#ownership-and-lifetimes), too.
+///
+/// # Dimension
+/// `PyArray` has 2 type parametes `T` and `D`. `T` represents its data type like `f32`, and `D`
+/// represents its dimension.
+///
+/// To specify the dimension, you can use types which implements
+/// [Dimension](https://docs.rs/ndarray/0.12/ndarray/trait.Dimension.html).
+///
+/// Typically, you can use `Ix1, Ix2, ..` for fixed size arrays, and use `IxDyn` for dynamic
+/// dimensioned arrays. They're re-exported from `ndarray` crate.
+///
+/// You can also use various type aliases we provide, like [`PyArray1`](./type.PyArray1.html)
+/// or [`PyArrayDyn`](./type.PyArrayDyn.html).
+///
+/// Many constructor methods takes a type which implements
+/// [`IntoDimension`](https://docs.rs/ndarray/0.12/ndarray/dimension/conversion/trait.IntoDimension.html)
+/// trait. Typically, you can use array(e.g. `[3, 4, 5]`) or tuple(e.g. `(3, 4, 5)`) as a dimension.
+/// # Example
+/// ```
+/// # #[macro_use] extern crate ndarray; extern crate pyo3; extern crate numpy; fn main() {
+/// use pyo3::{GILGuard, Python};
+/// use numpy::PyArray;
+/// use ndarray::Array;
+/// let gil = Python::acquire_gil();
+/// let pyarray = PyArray::arange(gil.python(), 0., 4., 1.).reshape([2, 2]).unwrap();
+/// let array = array![[3., 4.], [5., 6.]];
+/// assert_eq!(
+///     array.dot(&pyarray.as_array().unwrap()),
+///     array![[8., 15.], [12., 23.]]
+/// );
+/// # }
+/// ```
 pub struct PyArray<T, D>(PyObject, PhantomData<T>, PhantomData<D>);
+
+/// one-dimensional array
 pub type PyArray1<T> = PyArray<T, Ix1>;
+/// two-dimensional array
 pub type PyArray2<T> = PyArray<T, Ix2>;
+/// three-dimensional array
 pub type PyArray3<T> = PyArray<T, Ix3>;
+/// four-dimensional array
 pub type PyArray4<T> = PyArray<T, Ix4>;
+/// five-dimensional array
 pub type PyArray5<T> = PyArray<T, Ix5>;
+/// six-dimensional array
 pub type PyArray6<T> = PyArray<T, Ix6>;
+/// dynamic-dimensional array
 pub type PyArrayDyn<T> = PyArray<T, IxDyn>;
 
+/// Returns a array module.
 pub fn get_array_module(py: Python) -> PyResult<&PyModule> {
     PyModule::import(py, npyffi::array::MOD_NAME)
 }
@@ -348,7 +412,7 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
         unsafe { Ok(ArrayView::from_shape_ptr(self.ndarray_shape(), self.data())) }
     }
 
-    /// Get the mmutable view of the internal data of `PyArray`, as `ndarray::ArrayViewMut`.
+    /// Almost same as [`as_array`](#method.as_array), but returns `ArrayViewMut`.
     pub fn as_array_mut(&self) -> Result<ArrayViewMut<T, D>, ErrorKind> {
         self.type_check()?;
         unsafe {
@@ -387,13 +451,13 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     /// # }
     /// ```
     /// But, for dinamic errors too long/short index returns `None`.
-    /// ```compile_fail
+    /// ```
     /// # extern crate pyo3; extern crate numpy; fn main() {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let arr = PyArray::arange(gil.python(), 0, 16, 1).reshape([2, 2, 4]).unwrap();
     /// let arr = arr.into_dyn();
-    /// assert!(arr.get([1, 2]).is_none());
+    /// assert!(arr.get([1, 2].as_ref()).is_none());
     /// # }
     /// ```
     #[inline(always)]

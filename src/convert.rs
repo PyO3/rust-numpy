@@ -53,8 +53,8 @@ pub trait ToNpyDims: Dimension {
     fn ndim_cint(&self) -> c_int {
         self.ndim() as c_int
     }
-    fn as_dims_ptr(&self) -> *mut npy_intp {
-        self.slice().as_ptr() as *mut npy_intp
+    fn as_dims_ptr(&self) -> *mut npyffi::npy_intp {
+        self.slice().as_ptr() as *mut npyffi::npy_intp
     }
     fn to_npy_dims(&self) -> npyffi::PyArray_Dims {
         npyffi::PyArray_Dims {
@@ -73,7 +73,8 @@ impl<D: Dimension> ToNpyDims for D {
 
 /// Types that can be used to index an array.
 ///
-/// See[IntoDimension](https://docs.rs/ndarray/0.12/ndarray/dimension/conversion/trait.IntoDimension.html)
+/// See
+/// [IntoDimension](https://docs.rs/ndarray/0.12/ndarray/dimension/conversion/trait.IntoDimension.html)
 /// for what types you can use as `NpyIndex`.
 ///
 /// But basically, you can use

@@ -1,11 +1,8 @@
 //! Implements conversion utitlities.
-
+/// alias of Complex32
 pub use num_complex::Complex32 as c32;
+/// alias of Complex64
 pub use num_complex::Complex64 as c64;
-
-pub use super::npyffi::npy_intp;
-pub use super::npyffi::NPY_ORDER;
-pub use super::npyffi::NPY_ORDER::{NPY_CORDER, NPY_FORTRANORDER};
 
 use super::npyffi::NPY_TYPES;
 
