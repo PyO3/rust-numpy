@@ -530,19 +530,35 @@ impl<T: TypeNum> PyArray<T, Ix1> {
                 if length >= capacity {
                     capacity *= 2;
                     array
-                        .resize_([capacity], 0, NPY_ORDER::NPY_ANYORDER)
+                        .resize(capacity)
                         .expect("PyArray::from_iter: Failed to allocate memory");
                 }
                 *array.uget_mut([i]) = item;
             }
         }
         if capacity > length {
-            array.resize_([length], 0, NPY_ORDER::NPY_ANYORDER).unwrap()
+            array.resize(length).unwrap()
         }
         array
     }
 
-    // TODO: expose?
+    /// Extends or trancates the length of 1 dimension PyArray.
+    ///
+    /// # Example
+    /// ```
+    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// use numpy::PyArray;
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let pyarray = PyArray::arange(gil.python(), 0, 10, 1);
+    /// assert_eq!(pyarray.len(), 10);
+    /// pyarray.resize(100).unwrap();
+    /// assert_eq!(pyarray.len(), 100);
+    /// # }
+    /// ```
+    pub fn resize(&self, new_elems: usize) -> Result<(), ErrorKind> {
+        self.resize_([new_elems], 1, NPY_ORDER::NPY_ANYORDER)
+    }
+
     fn resize_<'py, D: IntoDimension>(
         &'py self,
         dims: D,
