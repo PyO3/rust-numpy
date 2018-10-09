@@ -23,7 +23,7 @@
 //!     let py_array = array![[1i64, 2], [3, 4]].to_pyarray(py);
 //!     assert_eq!(
 //!         py_array.as_array().unwrap(),
-//!         array![[1i64, 2], [3, 4]].into_dyn(),
+//!         array![[1i64, 2], [3, 4]]
 //!     );
 //! }
 //! ```
@@ -43,7 +43,10 @@ pub mod error;
 pub mod npyffi;
 pub mod types;
 
-pub use array::{get_array_module, PyArray};
+pub use array::{
+    get_array_module, PyArray, PyArray1, PyArray2, PyArray3, PyArray4, PyArray5, PyArray6,
+    PyArrayDyn,
+};
 pub use convert::{NpyIndex, ToNpyDims, ToPyArray};
 pub use error::*;
 pub use npyffi::{PY_ARRAY_API, PY_UFUNC_API};

@@ -1,6 +1,6 @@
 //! Defines conversion traits between rust types and numpy data types.
 
-use ndarray::{ArrayBase, Data, Dimension, IntoDimension};
+use ndarray::{ArrayBase, Data, Dimension, IntoDimension, Ix1};
 use pyo3::Python;
 
 use std::mem;
@@ -23,12 +23,14 @@ use super::*;
 /// ```
 pub trait ToPyArray {
     type Item: TypeNum;
-    fn to_pyarray<'py>(&self, Python<'py>) -> &'py PyArray<Self::Item>;
+    type Dim: Dimension;
+    fn to_pyarray<'py>(&self, Python<'py>) -> &'py PyArray<Self::Item, Self::Dim>;
 }
 
 impl<T: TypeNum> ToPyArray for [T] {
     type Item = T;
-    fn to_pyarray<'py>(&self, py: Python<'py>) -> &'py PyArray<Self::Item> {
+    type Dim = Ix1;
+    fn to_pyarray<'py>(&self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
         PyArray::from_slice(py, self)
     }
 }
@@ -40,7 +42,8 @@ where
     A: TypeNum,
 {
     type Item = A;
-    fn to_pyarray<'py>(&self, py: Python<'py>) -> &'py PyArray<Self::Item> {
+    type Dim = D;
+    fn to_pyarray<'py>(&self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
         PyArray::from_ndarray(py, self)
     }
 }
@@ -78,7 +81,7 @@ impl<D: Dimension> ToNpyDims for D {
 /// - Fixed sized array
 /// - Slice
 // Since Numpy's strides is byte offset, we can't use ndarray::NdIndex directly here.
-pub trait NpyIndex {
+pub trait NpyIndex: IntoDimension {
     fn get_checked<T>(self, dims: &[usize], strides: &[isize]) -> Option<isize>;
     fn get_unchecked<T>(self, strides: &[isize]) -> isize;
     fn __private__(self) -> PrivateMarker;
