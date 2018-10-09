@@ -16,11 +16,11 @@
 //! extern crate numpy;
 //! extern crate pyo3;
 //! use pyo3::prelude::Python;
-//! use numpy::{IntoPyArray, PyArray};
+//! use numpy::{ToPyArray, PyArray};
 //! fn main() {
 //!     let gil = Python::acquire_gil();
 //!     let py = gil.python();
-//!     let py_array = array![[1i64, 2], [3, 4]].into_pyarray(py);
+//!     let py_array = array![[1i64, 2], [3, 4]].to_pyarray(py);
 //!     assert_eq!(
 //!         py_array.as_array().unwrap(),
 //!         array![[1i64, 2], [3, 4]].into_dyn(),
@@ -34,6 +34,7 @@ extern crate cfg_if;
 extern crate libc;
 extern crate ndarray;
 extern crate num_complex;
+extern crate num_traits;
 extern crate pyo3;
 
 pub mod array;
@@ -43,7 +44,7 @@ pub mod npyffi;
 pub mod types;
 
 pub use array::{get_array_module, PyArray};
-pub use convert::{IntoPyArray, ToNpyDims};
+pub use convert::{NpyIndex, ToNpyDims, ToPyArray};
 pub use error::*;
 pub use npyffi::{PY_ARRAY_API, PY_UFUNC_API};
 pub use types::*;

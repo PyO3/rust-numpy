@@ -24,7 +24,7 @@ const CAPSULE_NAME: &str = "_ARRAY_API";
 /// use numpy::{PyArray, npyffi::types::NPY_SORTKIND, PY_ARRAY_API};
 /// use pyo3::Python;
 /// let gil = Python::acquire_gil();
-/// let array: &PyArray<i32> = PyArray::arange(gil.python(), 2.0, 5.0, 1.0);
+/// let array: &PyArray<i32> = PyArray::arange(gil.python(), 2, 5, 1);
 /// array.as_slice_mut().unwrap().swap(0, 1);
 /// assert_eq!(array.as_slice().unwrap(), &[3, 2, 4]);
 /// unsafe {

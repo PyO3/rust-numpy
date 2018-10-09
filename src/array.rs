@@ -1,14 +1,17 @@
 //! Safe interface for NumPy ndarray
-
 use ndarray::*;
-use npyffi::{self, PY_ARRAY_API};
+use npyffi::{self, npy_intp, PY_ARRAY_API};
+use num_traits::AsPrimitive;
 use pyo3::*;
+use std::iter::ExactSizeIterator;
 use std::marker::PhantomData;
-use std::os::raw::c_void;
-use std::ptr::null_mut;
+use std::mem;
+use std::os::raw::c_int;
+use std::ptr;
 
-use super::error::ErrorKind;
-use super::*;
+use convert::{NpyIndex, ToNpyDims};
+use error::{ErrorKind, IntoPyErr};
+use types::{NpyDataType, TypeNum, NPY_ORDER};
 
 /// Interface for [NumPy ndarray](https://docs.scipy.org/doc/numpy/reference/arrays.ndarray.html).
 pub struct PyArray<T>(PyObject, PhantomData<T>);
@@ -62,6 +65,7 @@ impl<T> PyArray<T> {
         self.as_ptr() as _
     }
 
+    // TODO: 'increasing ref counts' is really collect approach for extension?
     /// Get `PyArray` from `&PyArray`, by increasing ref counts.
     ///
     /// You can use this method when you have to avoid lifetime annotation to your function args
@@ -108,7 +112,7 @@ impl<T> PyArray<T> {
     /// # extern crate pyo3; extern crate numpy; fn main() {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
-    /// let arr = PyArray::<f64>::new(gil.python(), [4, 5, 6]);
+    /// let arr = PyArray::<f64>::new(gil.python(), [4, 5, 6], false);
     /// assert_eq!(arr.ndim(), 3);
     /// # }
     /// ```
@@ -126,7 +130,7 @@ impl<T> PyArray<T> {
     /// # extern crate pyo3; extern crate numpy; fn main() {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
-    /// let arr = PyArray::<f64>::new(gil.python(), [4, 5, 6]);
+    /// let arr = PyArray::<f64>::new(gil.python(), [4, 5, 6], false);
     /// assert_eq!(arr.strides(), &[240, 48, 8]);
     /// # }
     /// ```
@@ -148,7 +152,7 @@ impl<T> PyArray<T> {
     /// # extern crate pyo3; extern crate numpy; fn main() {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
-    /// let arr = PyArray::<f64>::new(gil.python(), [4, 5, 6]);
+    /// let arr = PyArray::<f64>::new(gil.python(), [4, 5, 6], false);
     /// assert_eq!(arr.shape(), &[4, 5, 6]);
     /// # }
     /// ```
@@ -162,8 +166,8 @@ impl<T> PyArray<T> {
         }
     }
 
-    /// Same as [shape](./struct.PyArray.html#method.shape)
-    #[inline]
+    /// Same as [shape](#method.shape)
+    #[inline(always)]
     pub fn dims(&self) -> &[usize] {
         self.shape()
     }
@@ -172,27 +176,142 @@ impl<T> PyArray<T> {
     pub fn len(&self) -> usize {
         self.shape().iter().fold(1, |a, b| a * b)
     }
-}
 
-impl<T: TypeNum> PyArray<T> {
-    /// Construct one-dimension PyArray from boxed slice.
+    fn ndarray_shape(&self) -> StrideShape<IxDyn> {
+        // FIXME may be done more simply
+        let shape: Shape<_> = Dim(self.shape()).into();
+        let st: Vec<usize> = self
+            .strides()
+            .iter()
+            .map(|&x| x as usize / ::std::mem::size_of::<T>())
+            .collect();
+        shape.strides(Dim(st))
+    }
+
+    fn typenum(&self) -> i32 {
+        unsafe {
+            let descr = (*self.as_array_ptr()).descr;
+            (*descr).type_num
+        }
+    }
+
+    /// Returns the pointer to the first element of the inner array.
+    unsafe fn data(&self) -> *mut T {
+        let ptr = self.as_array_ptr();
+        (*ptr).data as *mut T
+    }
+
+    /// Get an immutable reference of a specified element, without checking the
+    /// passed index is valid.
+    ///
+    /// See [NpyIndex](../convert/trait.NpyIndex.html) for what types you can use as index.
+    ///
+    /// Passing an invalid index can cause undefined behavior(mostly SIGSEGV).
     ///
     /// # Example
     /// ```
     /// # extern crate pyo3; extern crate numpy; fn main() {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
-    /// let slice = vec![1, 2, 3, 4, 5].into_boxed_slice();
-    /// let pyarray = PyArray::from_boxed_slice(gil.python(), slice);
+    /// let arr = PyArray::arange(gil.python(), 0, 16, 1).reshape([2, 2, 4]).unwrap();
+    /// assert_eq!(*arr.get([1, 0, 3]).unwrap(), 11);
+    /// assert!(arr.get([2, 0, 3]).is_none());
+    /// assert!(arr.get([1, 0, 3, 4]).is_none());
+    /// assert!(arr.get([1, 0]).is_none());
+    /// # }
+    /// ```
+    #[inline(always)]
+    pub fn get<Idx: NpyIndex>(&self, index: Idx) -> Option<&T> {
+        let offset = index.get_checked::<T>(self.shape(), self.strides())?;
+        unsafe { Some(&*self.data().offset(offset)) }
+    }
+
+    /// Same as [get](#method.get), but returns `&mut T`.
+    #[inline(always)]
+    pub fn get_mut<Idx: NpyIndex>(&self, index: Idx) -> Option<&mut T> {
+        let offset = index.get_checked::<T>(self.shape(), self.strides())?;
+        unsafe { Some(&mut *(self.data().offset(offset) as *mut T)) }
+    }
+
+    /// Get an immutable reference of a specified element, without checking the
+    /// passed index is valid.
+    ///
+    /// See [NpyIndex](../convert/trait.NpyIndex.html) for what types you can use as index.
+    ///
+    /// Passing an invalid index can cause undefined behavior(mostly SIGSEGV).
+    ///
+    /// # Example
+    /// ```
+    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// use numpy::PyArray;
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let arr = PyArray::arange(gil.python(), 0, 16, 1).reshape([2, 2, 4]).unwrap();
+    /// assert_eq!(unsafe { *arr.uget([1, 0, 3]) }, 11);
+    /// # }
+    /// ```
+    #[inline(always)]
+    pub unsafe fn uget<Idx: NpyIndex>(&self, index: Idx) -> &T {
+        let offset = index.get_unchecked::<T>(self.strides());
+        &*self.data().offset(offset)
+    }
+
+    /// Same as [uget](#method.uget), but returns `&mut T`.
+    #[inline(always)]
+    pub unsafe fn uget_mut<Idx: NpyIndex>(&self, index: Idx) -> &mut T {
+        let offset = index.get_unchecked::<T>(self.strides());
+        &mut *(self.data().offset(offset) as *mut T)
+    }
+}
+
+impl<T: TypeNum> PyArray<T> {
+    /// Construct one-dimension PyArray from slice.
+    ///
+    /// # Example
+    /// ```
+    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// use numpy::PyArray;
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let array = [1, 2, 3, 4, 5];
+    /// let pyarray = PyArray::from_slice(gil.python(), &array);
     /// assert_eq!(pyarray.as_slice().unwrap(), &[1, 2, 3, 4, 5]);
     /// # }
     /// ```
-    pub fn from_boxed_slice(py: Python, v: Box<[T]>) -> &Self {
-        IntoPyArray::into_pyarray(v, py)
+    pub fn from_slice<'py>(py: Python<'py>, slice: &[T]) -> &'py Self {
+        let array = PyArray::new(py, [slice.len()], false);
+        unsafe {
+            let src = slice.as_ptr() as *mut T;
+            ptr::copy_nonoverlapping(src, array.data(), slice.len());
+        }
+        array
+    }
+
+    /// Construct one-dimension PyArray from `impl ExactSizeIterator`.
+    ///
+    /// # Example
+    /// ```
+    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// use numpy::PyArray;
+    /// use std::collections::BTreeSet;
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let vec = vec![1, 2, 3, 4, 5];
+    /// let pyarray = PyArray::from_iter(gil.python(), vec.iter().map(|&x| x));
+    /// assert_eq!(pyarray.as_slice().unwrap(), &[1, 2, 3, 4, 5]);
+    /// # }
+    /// ```
+    pub fn from_exact_iter(py: Python, iter: impl ExactSizeIterator<Item = T>) -> &Self {
+        let array = Self::new(py, [iter.len()], false);
+        unsafe {
+            for (i, item) in iter.enumerate() {
+                *array.uget_mut([i]) = item;
+            }
+        }
+        array
     }
 
     /// Construct one-dimension PyArray from `impl IntoIterator`.
     ///
+    /// This method can allocate multiple times and not fast.
+    /// When you can use [from_exact_iter](method.from_exact_iter.html), please use it.
     /// # Example
     /// ```
     /// # extern crate pyo3; extern crate numpy; fn main() {
@@ -204,23 +323,27 @@ impl<T: TypeNum> PyArray<T> {
     /// assert_eq!(pyarray.as_slice().unwrap(), &[1, 2, 3, 4, 5]);
     /// # }
     /// ```
-    pub fn from_iter(py: Python, i: impl IntoIterator<Item = T>) -> &Self {
-        i.into_iter().collect::<Vec<_>>().into_pyarray(py)
-    }
-
-    /// Construct one-dimension PyArray from Vec.
-    ///
-    /// # Example
-    /// ```
-    /// # extern crate pyo3; extern crate numpy; fn main() {
-    /// use numpy::PyArray;
-    /// let gil = pyo3::Python::acquire_gil();
-    /// let pyarray = PyArray::from_vec(gil.python(), vec![1, 2, 3, 4, 5]);
-    /// assert_eq!(pyarray.as_slice().unwrap(), &[1, 2, 3, 4, 5]);
-    /// # }
-    /// ```
-    pub fn from_vec(py: Python, v: Vec<T>) -> &Self {
-        IntoPyArray::into_pyarray(v, py)
+    pub fn from_iter(py: Python, iter: impl IntoIterator<Item = T>) -> &Self {
+        // ↓ max cached size of ndarray
+        let mut capacity = 1024 / mem::size_of::<T>();
+        let array = Self::new(py, [capacity], false);
+        let mut length = 0;
+        unsafe {
+            for (i, item) in iter.into_iter().enumerate() {
+                length += 1;
+                if length >= capacity {
+                    capacity *= 2;
+                    array
+                        .resize_([capacity], 0, NPY_ORDER::NPY_ANYORDER)
+                        .expect("PyArray::from_iter: Failed to allocate memory");
+                }
+                *array.uget_mut([i]) = item;
+            }
+        }
+        if capacity > length {
+            array.resize_([length], 0, NPY_ORDER::NPY_ANYORDER).unwrap()
+        }
+        array
     }
 
     /// Construct a two-dimension PyArray from `Vec<Vec<T>>`.
@@ -239,7 +362,10 @@ impl<T: TypeNum> PyArray<T> {
     /// assert!(PyArray::from_vec2(gil.python(), &vec![vec![1], vec![2, 3]]).is_err());
     /// # }
     /// ```
-    pub fn from_vec2<'py>(py: Python<'py>, v: &Vec<Vec<T>>) -> Result<&'py Self, ErrorKind> {
+    pub fn from_vec2<'py>(py: Python<'py>, v: &Vec<Vec<T>>) -> Result<&'py Self, ErrorKind>
+    where
+        T: Clone,
+    {
         let last_len = v.last().map_or(0, |v| v.len());
         if v.iter().any(|v| v.len() != last_len) {
             return Err(ErrorKind::FromVec {
@@ -248,11 +374,15 @@ impl<T: TypeNum> PyArray<T> {
             });
         }
         let dims = [v.len(), last_len];
-        let flattend: Vec<_> = v.iter().cloned().flatten().collect();
+        let array = Self::new(py, dims, false);
         unsafe {
-            let data = convert::into_raw(flattend);
-            Ok(PyArray::new_(py, dims, null_mut(), data))
+            for y in 0..v.len() {
+                for x in 0..last_len {
+                    *array.uget_mut([y, x]) = v[y][x].clone();
+                }
+            }
         }
+        Ok(array)
     }
 
     /// Construct a three-dimension PyArray from `Vec<Vec<Vec<T>>>`.
@@ -277,7 +407,10 @@ impl<T: TypeNum> PyArray<T> {
     pub fn from_vec3<'py>(
         py: Python<'py>,
         v: &Vec<Vec<Vec<T>>>,
-    ) -> Result<&'py PyArray<T>, ErrorKind> {
+    ) -> Result<&'py PyArray<T>, ErrorKind>
+    where
+        T: Clone,
+    {
         let dim2 = v.last().map_or(0, |v| v.len());
         if v.iter().any(|v| v.len() != dim2) {
             return Err(ErrorKind::FromVec {
@@ -293,52 +426,48 @@ impl<T: TypeNum> PyArray<T> {
             });
         }
         let dims = [v.len(), dim2, dim3];
-        let flattend: Vec<_> = v.iter().flat_map(|v| v.iter().cloned().flatten()).collect();
+        let array = Self::new(py, dims, false);
         unsafe {
-            let data = convert::into_raw(flattend);
-            Ok(PyArray::new_(py, dims, null_mut(), data))
+            for z in 0..v.len() {
+                for y in 0..dim2 {
+                    for x in 0..dim3 {
+                        *array.uget_mut([z, y, x]) = v[z][y][x].clone();
+                    }
+                }
+            }
         }
+        Ok(array)
     }
 
     /// Construct PyArray from ndarray::Array.
+    ///
+    /// This method allocates memory in Python's heap via numpy api, and then copies all elements
+    /// of the array there.
     ///
     /// # Example
     /// ```
     /// # extern crate pyo3; extern crate numpy; #[macro_use] extern crate ndarray; fn main() {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
-    /// let pyarray = PyArray::from_ndarray(gil.python(), array![[1, 2], [3, 4]]);
+    /// let pyarray = PyArray::from_ndarray(gil.python(), &array![[1, 2], [3, 4]]);
     /// assert_eq!(pyarray.as_array().unwrap(), array![[1, 2], [3, 4]].into_dyn());
     /// # }
     /// ```
-    pub fn from_ndarray<D>(py: Python, arr: Array<T, D>) -> &Self
+    pub fn from_ndarray<'py, S, D>(py: Python<'py>, arr: &ArrayBase<S, D>) -> &'py Self
     where
+        S: Data<Elem = T>,
         D: Dimension,
     {
-        IntoPyArray::into_pyarray(arr, py)
-    }
-
-    /// Returns the pointer to the first element of the inner array.
-    unsafe fn data(&self) -> *mut T {
-        let ptr = self.as_array_ptr();
-        (*ptr).data as *mut T
-    }
-
-    fn ndarray_shape(&self) -> StrideShape<IxDyn> {
-        // FIXME may be done more simply
-        let shape: Shape<_> = Dim(self.shape()).into();
-        let st: Vec<usize> = self
+        let len = arr.len();
+        let mut strides: Vec<_> = arr
             .strides()
-            .iter()
-            .map(|&x| x as usize / ::std::mem::size_of::<T>())
+            .into_iter()
+            .map(|n| n * mem::size_of::<T>() as npy_intp)
             .collect();
-        shape.strides(Dim(st))
-    }
-
-    fn typenum(&self) -> i32 {
         unsafe {
-            let descr = (*self.as_array_ptr()).descr;
-            (*descr).type_num
+            let array = PyArray::new_(py, arr.shape(), strides.as_mut_ptr() as *mut npy_intp, 0);
+            ptr::copy_nonoverlapping(arr.as_ptr(), array.data(), len);
+            array
         }
     }
 
@@ -356,13 +485,26 @@ impl<T: TypeNum> PyArray<T> {
         }
     }
 
-    /// Get data as a ndarray::ArrayView
+    /// Get the immutable view of the internal data of `PyArray`, as `ndarray::ArrayView`.
+    ///
+    /// # Example
+    /// ```
+    /// # #[macro_use] extern crate ndarray; extern crate pyo3; extern crate numpy; fn main() {
+    /// use numpy::PyArray;
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let py_array = PyArray::arange(gil.python(), 0, 4, 1).reshape([2, 2]).unwrap();
+    /// assert_eq!(
+    ///     py_array.as_array().unwrap(),
+    ///     array![[0, 1], [2, 3]].into_dyn()
+    /// )
+    /// # }
+    /// ```
     pub fn as_array(&self) -> Result<ArrayViewD<T>, ErrorKind> {
         self.type_check()?;
         unsafe { Ok(ArrayView::from_shape_ptr(self.ndarray_shape(), self.data())) }
     }
 
-    /// Get data as a ndarray::ArrayViewMut
+    /// Get the mmutable view of the internal data of `PyArray`, as `ndarray::ArrayViewMut`.
     pub fn as_array_mut(&self) -> Result<ArrayViewMutD<T>, ErrorKind> {
         self.type_check()?;
         unsafe {
@@ -373,59 +515,69 @@ impl<T: TypeNum> PyArray<T> {
         }
     }
 
-    /// Get data as a Rust immutable slice
+    /// Get the immutable view of the internal data of `PyArray`, as slice.
+    /// # Example
+    /// ```
+    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// use numpy::PyArray;
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let py_array = PyArray::arange(gil.python(), 0, 4, 1).reshape([2, 2]).unwrap();
+    /// assert_eq!(py_array.as_slice().unwrap(), &[0, 1, 2, 3]);
+    /// # }
+    /// ```
     pub fn as_slice(&self) -> Result<&[T], ErrorKind> {
         self.type_check()?;
         unsafe { Ok(::std::slice::from_raw_parts(self.data(), self.len())) }
     }
 
-    /// Get data as a Rust mutable slice
+    /// Get the mmutable view of the internal data of `PyArray`, as slice.
     pub fn as_slice_mut(&self) -> Result<&mut [T], ErrorKind> {
         self.type_check()?;
         unsafe { Ok(::std::slice::from_raw_parts_mut(self.data(), self.len())) }
     }
 
-    /// Construct a new PyArray given a raw pointer and dimensions.
+    /// Creates a new uninitialized PyArray in python heap.
     ///
-    /// Please use `new` or from methods instead.
-    pub unsafe fn new_<'py, D: ToNpyDims>(
-        py: Python<'py>,
-        dims: D,
-        strides: *mut npy_intp,
-        data: *mut c_void,
-    ) -> &'py Self {
-        let ptr = PY_ARRAY_API.PyArray_New(
-            PY_ARRAY_API.get_type_object(npyffi::ArrayType::PyArray_Type),
-            dims.dims_len(),
-            dims.dims_ptr(),
-            T::typenum_default(),
-            strides,
-            data,
-            0,                      // itemsize
-            0,                      // flag
-            ::std::ptr::null_mut(), //obj
-        );
-        Self::from_owned_ptr(py, ptr)
-    }
-
-    /// Creates a new uninitialized array.
-    ///
-    /// See also [PyArray_SimpleNew](https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_SimpleNew).
+    /// If `is_fortran == true`, returns Fortran-order array. Else, returns C-order array.
     ///
     /// # Example
     /// ```
     /// # extern crate pyo3; extern crate numpy; #[macro_use] extern crate ndarray; fn main() {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
-    /// let pyarray = PyArray::<i32>::new(gil.python(), [4, 5, 6]);
+    /// let pyarray = PyArray::<i32>::new(gil.python(), [4, 5, 6], false);
     /// assert_eq!(pyarray.shape(), &[4, 5, 6]);
     /// # }
     /// ```
-    pub fn new<'py, D: ToNpyDims>(py: Python<'py>, dims: D) -> &'py Self {
-        unsafe { Self::new_(py, dims, null_mut(), null_mut()) }
+    pub fn new<'py, D: IntoDimension>(py: Python<'py>, dims: D, is_fortran: bool) -> &'py Self {
+        let flags = if is_fortran { 1 } else { 0 };
+        unsafe { PyArray::new_(py, dims, ptr::null_mut(), flags) }
     }
 
-    /// Construct a new nd-dimensional array filled with 0. If `is_fortran` is true, then
+    unsafe fn new_<'py, D: IntoDimension>(
+        py: Python<'py>,
+        dims: D,
+        strides: *mut npy_intp,
+        flag: c_int,
+    ) -> &'py Self {
+        let dims = dims.into_dimension();
+        let ptr = PY_ARRAY_API.PyArray_New(
+            PY_ARRAY_API.get_type_object(npyffi::ArrayType::PyArray_Type),
+            dims.ndim_cint(),
+            dims.as_dims_ptr(),
+            T::typenum_default(),
+            strides,                // strides
+            ptr::null_mut(),        // data
+            0,                      // itemsize
+            flag,                   // flag
+            ::std::ptr::null_mut(), //obj
+        );
+        Self::from_owned_ptr(py, ptr)
+    }
+
+    /// Construct a new nd-dimensional array filled with 0.
+    ///
+    /// If `is_fortran` is true, then
     /// a fortran order array is created, otherwise a C-order array is created.
     ///
     /// See also [PyArray_Zeros](https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_Zeros)
@@ -439,37 +591,16 @@ impl<T: TypeNum> PyArray<T> {
     /// assert_eq!(pyarray.as_array().unwrap(), array![[0, 0], [0, 0]].into_dyn());
     /// # }
     /// ```
-    pub fn zeros<'py, D: ToNpyDims>(py: Python<'py>, dims: D, is_fortran: bool) -> &'py Self {
+    pub fn zeros<'py, D: IntoDimension>(py: Python<'py>, dims: D, is_fortran: bool) -> &'py Self {
+        let dims = dims.into_dimension();
         unsafe {
             let descr = PY_ARRAY_API.PyArray_DescrFromType(T::typenum_default());
             let ptr = PY_ARRAY_API.PyArray_Zeros(
-                dims.dims_len(),
-                dims.dims_ptr(),
+                dims.ndim_cint(),
+                dims.as_dims_ptr(),
                 descr,
                 if is_fortran { -1 } else { 0 },
             );
-            Self::from_owned_ptr(py, ptr)
-        }
-    }
-
-    /// Return evenly spaced values within a given interval.
-    /// Same as [numpy.arange](https://docs.scipy.org/doc/numpy/reference/generated/numpy.arange.html).
-    ///
-    /// See also [PyArray_Arange](https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_Arange).
-    ///
-    /// # Example
-    /// ```
-    /// # extern crate pyo3; extern crate numpy; fn main() {
-    /// use numpy::{PyArray, IntoPyArray};
-    /// let gil = pyo3::Python::acquire_gil();
-    /// let pyarray = PyArray::<f64>::arange(gil.python(), 2.0, 4.0, 0.5);
-    /// assert_eq!(pyarray.as_slice().unwrap(), &[2.0, 2.5, 3.0, 3.5]);
-    /// let pyarray = PyArray::<i32>::arange(gil.python(), -2.0, 4.0, 3.0);
-    /// assert_eq!(pyarray.as_slice().unwrap(), &[-2, 1]);
-    /// # }
-    pub fn arange<'py>(py: Python<'py>, start: f64, stop: f64, step: f64) -> &'py Self {
-        unsafe {
-            let ptr = PY_ARRAY_API.PyArray_Arange(start, stop, step, T::typenum_default());
             Self::from_owned_ptr(py, ptr)
         }
     }
@@ -478,10 +609,10 @@ impl<T: TypeNum> PyArray<T> {
     /// # Example
     /// ```
     /// # extern crate pyo3; extern crate numpy; fn main() {
-    /// use numpy::{PyArray, IntoPyArray};
+    /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let pyarray_f = PyArray::<f64>::arange(gil.python(), 2.0, 5.0, 1.0);
-    /// let pyarray_i = PyArray::<i64>::new(gil.python(), [3]);
+    /// let pyarray_i = PyArray::<i64>::new(gil.python(), [3], false);
     /// assert!(pyarray_f.copy_to(pyarray_i).is_ok());
     /// assert_eq!(pyarray_i.as_slice().unwrap(), &[2, 3, 4]);
     /// # }
@@ -500,10 +631,10 @@ impl<T: TypeNum> PyArray<T> {
     /// # Example
     /// ```
     /// # extern crate pyo3; extern crate numpy; fn main() {
-    /// use numpy::{PyArray, IntoPyArray};
+    /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let pyarray_f = PyArray::<f64>::arange(gil.python(), 2.0, 5.0, 1.0);
-    /// let pyarray_i = PyArray::<i64>::new(gil.python(), [3]);
+    /// let pyarray_i = PyArray::<i64>::new(gil.python(), [3], false);
     /// assert!(pyarray_f.move_to(pyarray_i).is_ok());
     /// assert_eq!(pyarray_i.as_slice().unwrap(), &[2, 3, 4]);
     /// # }
@@ -522,7 +653,7 @@ impl<T: TypeNum> PyArray<T> {
     /// # Example
     /// ```
     /// # extern crate pyo3; extern crate numpy; fn main() {
-    /// use numpy::{PyArray, IntoPyArray};
+    /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let pyarray_f = PyArray::<f64>::arange(gil.python(), 2.0, 5.0, 1.0);
     /// let pyarray_i = pyarray_f.cast::<i32>(false).unwrap();
@@ -559,23 +690,24 @@ impl<T: TypeNum> PyArray<T> {
     /// # #[macro_use] extern crate ndarray; extern crate pyo3; extern crate numpy; fn main() {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
-    /// let array = PyArray::from_vec(gil.python(), (0..9).collect());
+    /// let array = PyArray::from_exact_iter(gil.python(), 0..9);
     /// let array = array.reshape([3, 3]).unwrap();
     /// assert_eq!(array.as_array().unwrap(), array![[0, 1, 2], [3, 4, 5], [6, 7, 8]].into_dyn());
     /// assert!(array.reshape([5]).is_err());
     /// # }
     /// ```
     #[inline(always)]
-    pub fn reshape<'py, D: ToNpyDims>(&'py self, dims: D) -> Result<&Self, ErrorKind> {
+    pub fn reshape<'py, D: IntoDimension>(&'py self, dims: D) -> Result<&Self, ErrorKind> {
         self.reshape_with_order(dims, NPY_ORDER::NPY_ANYORDER)
     }
 
     /// Same as [reshape](method.reshape.html), but you can change the order of returned matrix.
-    pub fn reshape_with_order<'py, D: ToNpyDims>(
+    pub fn reshape_with_order<'py, D: IntoDimension>(
         &'py self,
         dims: D,
         order: NPY_ORDER,
     ) -> Result<&Self, ErrorKind> {
+        let dims = dims.into_dimension();
         let mut np_dims = dims.to_npy_dims();
         let ptr = unsafe {
             PY_ARRAY_API.PyArray_Newshape(
@@ -589,5 +721,67 @@ impl<T: TypeNum> PyArray<T> {
         } else {
             Ok(unsafe { PyArray::<T>::from_owned_ptr(self.py(), ptr) })
         }
+    }
+
+    // TODO: expose?
+    fn resize_<'py, D: IntoDimension>(
+        &'py self,
+        dims: D,
+        check_ref: c_int,
+        order: NPY_ORDER,
+    ) -> Result<(), ErrorKind> {
+        let dims = dims.into_dimension();
+        let mut np_dims = dims.to_npy_dims();
+        let res = unsafe {
+            PY_ARRAY_API.PyArray_Resize(
+                self.as_array_ptr(),
+                &mut np_dims as *mut npyffi::PyArray_Dims,
+                check_ref,
+                order,
+            )
+        };
+        if res.is_null() {
+            Err(ErrorKind::dims_cast(self, dims))
+        } else {
+            Ok(())
+        }
+    }
+}
+
+impl<T: TypeNum + AsPrimitive<f64>> PyArray<T> {
+    /// Return evenly spaced values within a given interval.
+    /// Same as [numpy.arange](https://docs.scipy.org/doc/numpy/reference/generated/numpy.arange.html).
+    ///
+    /// See also [PyArray_Arange](https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_Arange).
+    ///
+    /// # Example
+    /// ```
+    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// use numpy::PyArray;
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let pyarray = PyArray::<f64>::arange(gil.python(), 2.0, 4.0, 0.5);
+    /// assert_eq!(pyarray.as_slice().unwrap(), &[2.0, 2.5, 3.0, 3.5]);
+    /// let pyarray = PyArray::<i32>::arange(gil.python(), -2, 4, 3);
+    /// assert_eq!(pyarray.as_slice().unwrap(), &[-2, 1]);
+    /// # }
+    pub fn arange<'py>(py: Python<'py>, start: T, stop: T, step: T) -> &'py Self {
+        unsafe {
+            let ptr = PY_ARRAY_API.PyArray_Arange(
+                start.as_(),
+                stop.as_(),
+                step.as_(),
+                T::typenum_default(),
+            );
+            Self::from_owned_ptr(py, ptr)
+        }
+    }
+}
+
+#[test]
+fn test_get_unchecked() {
+    let gil = pyo3::Python::acquire_gil();
+    let array = PyArray::from_slice(gil.python(), &[1i32, 2, 3]);
+    unsafe {
+        assert_eq!(*array.uget([1]), 2);
     }
 }

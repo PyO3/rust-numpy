@@ -7,15 +7,34 @@ use numpy::*;
 use pyo3::prelude::*;
 
 #[test]
-fn new() {
+fn new_c_order() {
     let gil = pyo3::Python::acquire_gil();
-    let n = 3;
-    let m = 5;
-    let dim = [n, m];
-    let arr = PyArray::<f64>::new(gil.python(), dim);
+    let dim = [3, 5];
+    let arr = PyArray::<f64>::new(gil.python(), dim, false);
     assert!(arr.ndim() == 2);
-    assert!(arr.dims() == [n, m]);
-    assert!(arr.strides() == [m as isize * 8, 8]);
+    assert!(arr.dims() == dim);
+    let size = std::mem::size_of::<f64>() as isize;
+    assert!(arr.strides() == [dim[1] as isize * size, size]);
+}
+
+#[test]
+fn new_fortran_order() {
+    let gil = pyo3::Python::acquire_gil();
+    let dim = [3, 5];
+    let arr = PyArray::<f64>::new(gil.python(), dim, true);
+    assert!(arr.ndim() == 2);
+    assert!(arr.dims() == dim);
+    let size = std::mem::size_of::<f64>() as isize;
+    assert!(arr.strides() == [size, dim[0] as isize * size],);
+}
+
+#[test]
+fn tuple_as_dim() {
+    let gil = pyo3::Python::acquire_gil();
+    let dim = (3, 5);
+    let arr = PyArray::<f64>::zeros(gil.python(), dim, false);
+    assert!(arr.ndim() == 2);
+    assert!(arr.dims() == [3, 5]);
 }
 
 #[test]
@@ -60,7 +79,7 @@ fn into_pyarray_vec() {
     let gil = pyo3::Python::acquire_gil();
 
     let a = vec![1, 2, 3];
-    let arr = a.into_pyarray(gil.python());
+    let arr = a.to_pyarray(gil.python());
     println!("arr.shape = {:?}", arr.shape());
     println!("arr = {:?}", arr.as_slice().unwrap());
     assert_eq!(arr.shape(), [3]);
@@ -75,7 +94,7 @@ fn into_pyarray_array() {
     let strides = a.strides().iter().map(|d| d * 8).collect::<Vec<_>>();
     println!("a.shape   = {:?}", a.shape());
     println!("a.strides = {:?}", a.strides());
-    let pa = a.into_pyarray(gil.python());
+    let pa = a.to_pyarray(gil.python());
     println!("pa.shape   = {:?}", pa.shape());
     println!("pa.strides = {:?}", pa.strides());
     assert_eq!(pa.shape(), shape.as_slice());
@@ -93,10 +112,20 @@ fn iter_to_pyarray() {
 }
 
 #[test]
+fn long_iter_to_pyarray() {
+    let gil = pyo3::Python::acquire_gil();
+    let arr = PyArray::from_iter(gil.python(), (0u32..512).map(|x| x));
+    let slice = arr.as_slice().unwrap();
+    for (i, &elem) in slice.iter().enumerate() {
+        assert_eq!(i as u32, elem);
+    }
+}
+
+#[test]
 fn is_instance() {
     let gil = pyo3::Python::acquire_gil();
     let py = gil.python();
-    let arr = PyArray::<f64>::new(gil.python(), [3, 5]);
+    let arr = PyArray::<f64>::new(gil.python(), [3, 5], false);
     assert!(py.is_instance::<PyArray<f64>, _>(arr).unwrap());
     assert!(!py.is_instance::<pyo3::PyList, _>(arr).unwrap());
 }
@@ -160,7 +189,7 @@ macro_rules! small_array_test {
             let gil = pyo3::Python::acquire_gil();
             $({
                 let array: [$t; 2] = [$t::min_value(), $t::max_value()];
-                let pyarray = array.into_pyarray(gil.python());
+                let pyarray = array.to_pyarray(gil.python());
                 assert_eq!(
                     pyarray.as_slice().unwrap(),
                     &[$t::min_value(), $t::max_value()]
