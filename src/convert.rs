@@ -1,6 +1,6 @@
 //! Defines conversion traits between rust types and numpy data types.
 
-use ndarray::{ArrayBase, Data, Dimension, IntoDimension};
+use ndarray::{ArrayBase, Data, Dimension, IntoDimension, Ix1};
 use pyo3::Python;
 
 use std::mem;
@@ -23,12 +23,14 @@ use super::*;
 /// ```
 pub trait ToPyArray {
     type Item: TypeNum;
-    fn to_pyarray<'py>(&self, Python<'py>) -> &'py PyArray<Self::Item>;
+    type Dim: Dimension;
+    fn to_pyarray<'py>(&self, Python<'py>) -> &'py PyArray<Self::Item, Self::Dim>;
 }
 
 impl<T: TypeNum> ToPyArray for [T] {
     type Item = T;
-    fn to_pyarray<'py>(&self, py: Python<'py>) -> &'py PyArray<Self::Item> {
+    type Dim = Ix1;
+    fn to_pyarray<'py>(&self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
         PyArray::from_slice(py, self)
     }
 }
@@ -40,7 +42,8 @@ where
     A: TypeNum,
 {
     type Item = A;
-    fn to_pyarray<'py>(&self, py: Python<'py>) -> &'py PyArray<Self::Item> {
+    type Dim = D;
+    fn to_pyarray<'py>(&self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
         PyArray::from_ndarray(py, self)
     }
 }
@@ -50,8 +53,8 @@ pub trait ToNpyDims: Dimension {
     fn ndim_cint(&self) -> c_int {
         self.ndim() as c_int
     }
-    fn as_dims_ptr(&self) -> *mut npy_intp {
-        self.slice().as_ptr() as *mut npy_intp
+    fn as_dims_ptr(&self) -> *mut npyffi::npy_intp {
+        self.slice().as_ptr() as *mut npyffi::npy_intp
     }
     fn to_npy_dims(&self) -> npyffi::PyArray_Dims {
         npyffi::PyArray_Dims {
@@ -70,7 +73,8 @@ impl<D: Dimension> ToNpyDims for D {
 
 /// Types that can be used to index an array.
 ///
-/// See[IntoDimension](https://docs.rs/ndarray/0.12/ndarray/dimension/conversion/trait.IntoDimension.html)
+/// See
+/// [IntoDimension](https://docs.rs/ndarray/0.12/ndarray/dimension/conversion/trait.IntoDimension.html)
 /// for what types you can use as `NpyIndex`.
 ///
 /// But basically, you can use
@@ -78,7 +82,7 @@ impl<D: Dimension> ToNpyDims for D {
 /// - Fixed sized array
 /// - Slice
 // Since Numpy's strides is byte offset, we can't use ndarray::NdIndex directly here.
-pub trait NpyIndex {
+pub trait NpyIndex: IntoDimension {
     fn get_checked<T>(self, dims: &[usize], strides: &[isize]) -> Option<isize>;
     fn get_unchecked<T>(self, strides: &[isize]) -> isize;
     fn __private__(self) -> PrivateMarker;

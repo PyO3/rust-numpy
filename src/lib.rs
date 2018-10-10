@@ -8,6 +8,9 @@
 //! installed by `pip install numpy` or other ways in your python environment.
 //! You can use both system environment and `virtualenv`.
 //!
+//! This library loads numpy module automatically. So if numpy is not installed, it simply panics,
+//! instead of returing a result.
+//!
 //! # Example
 //!
 //! ```
@@ -23,7 +26,7 @@
 //!     let py_array = array![[1i64, 2], [3, 4]].to_pyarray(py);
 //!     assert_eq!(
 //!         py_array.as_array().unwrap(),
-//!         array![[1i64, 2], [3, 4]].into_dyn(),
+//!         array![[1i64, 2], [3, 4]]
 //!     );
 //! }
 //! ```
@@ -43,8 +46,12 @@ pub mod error;
 pub mod npyffi;
 pub mod types;
 
-pub use array::{get_array_module, PyArray};
+pub use array::{
+    get_array_module, PyArray, PyArray1, PyArray2, PyArray3, PyArray4, PyArray5, PyArray6,
+    PyArrayDyn,
+};
 pub use convert::{NpyIndex, ToNpyDims, ToPyArray};
-pub use error::*;
+pub use error::{IntoPyErr, IntoPyResult, ArrayFormat, ErrorKind};
 pub use npyffi::{PY_ARRAY_API, PY_UFUNC_API};
-pub use types::*;
+pub use types::{c32, c64, NpyDataType, TypeNum};
+pub use ndarray::{Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};

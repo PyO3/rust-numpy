@@ -56,7 +56,7 @@ impl ErrorKind {
             to,
         }
     }
-    pub(crate) fn dtype_cast<T: TypeNum>(from: &PyArray<T>, to: NpyDataType) -> Self {
+    pub(crate) fn dtype_cast<T: TypeNum, D>(from: &PyArray<T, D>, to: NpyDataType) -> Self {
         let dims = from
             .shape()
             .into_iter()
@@ -70,7 +70,7 @@ impl ErrorKind {
         let to = ArrayFormat { dims, dtype: to };
         ErrorKind::PyToPy(Box::new((from, to)))
     }
-    pub(crate) fn dims_cast<T: TypeNum>(from: &PyArray<T>, to_dim: impl ToNpyDims) -> Self {
+    pub(crate) fn dims_cast<T: TypeNum, D>(from: &PyArray<T, D>, to_dim: impl ToNpyDims) -> Self {
         let dims_from = from
             .shape()
             .into_iter()
