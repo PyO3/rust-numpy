@@ -45,7 +45,7 @@ numpy = "0.3"
 ``` rust
 extern crate numpy;
 extern crate pyo3;
-use numpy::{IntoPyResult, PyArray1, get_array_module};
+use numpy::{PyArray1, get_array_module};
 use pyo3::prelude::{ObjectProtocol, PyDict, PyResult, Python};
 
 fn main() -> Result<(), ()> {
@@ -95,7 +95,7 @@ extern crate numpy;
 extern crate pyo3;
 
 use ndarray::{ArrayD, ArrayViewD, ArrayViewMutD};
-use numpy::{PyArrayDyn, ToPyArray};
+use numpy::{IntoPyResult, PyArrayDyn, ToPyArray};
 use pyo3::prelude::{pymodinit, PyModule, PyResult, Python};
 
 #[pymodinit]
