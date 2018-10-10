@@ -7,19 +7,27 @@ use std::error;
 use std::fmt;
 use types::{NpyDataType, TypeNum};
 
-pub trait IntoPyErr {
-    fn into_pyerr(self, msg: &str) -> PyErr;
+pub trait IntoPyErr: Into<PyErr> {
+    fn into_pyerr(self) -> PyErr;
+    fn into_pyerr_with<D: fmt::Display>(self, impl FnOnce() -> D) -> PyErr;
 }
 
 pub trait IntoPyResult {
     type ValueType;
-    fn into_pyresult(self, msg: &str) -> PyResult<Self::ValueType>;
+    fn into_pyresult(self) -> PyResult<Self::ValueType>;
+    fn into_pyresult_with<D: fmt::Display>(self, impl FnOnce() -> D) -> PyResult<Self::ValueType>;
 }
 
 impl<T, E: IntoPyErr> IntoPyResult for Result<T, E> {
     type ValueType = T;
-    fn into_pyresult(self, msg: &str) -> PyResult<T> {
-        self.map_err(|e| e.into_pyerr(msg))
+    fn into_pyresult(self) -> PyResult<Self::ValueType> {
+        self.map_err(|e| e.into())
+    }
+    fn into_pyresult_with<D: fmt::Display>(
+        self,
+        msg: impl FnOnce() -> D,
+    ) -> PyResult<Self::ValueType> {
+        self.map_err(|e| e.into_pyerr_with(msg))
     }
 }
 
@@ -117,11 +125,24 @@ impl fmt::Display for ErrorKind {
 
 impl error::Error for ErrorKind {}
 
+impl From<ErrorKind> for PyErr {
+    fn from(err: ErrorKind) -> PyErr {
+        match err {
+            ErrorKind::PyToRust { .. } | ErrorKind::FromVec { .. } | ErrorKind::PyToPy(_) => {
+                PyErr::new::<exc::TypeError, _>(format!("{}", err))
+            }
+        }
+    }
+}
+
 impl IntoPyErr for ErrorKind {
-    fn into_pyerr(self, msg: &str) -> PyErr {
+    fn into_pyerr(self) -> PyErr {
+        Into::into(self)
+    }
+    fn into_pyerr_with<D: fmt::Display>(self, msg: impl FnOnce() -> D) -> PyErr {
         match self {
             ErrorKind::PyToRust { .. } | ErrorKind::FromVec { .. } | ErrorKind::PyToPy(_) => {
-                PyErr::new::<exc::TypeError, _>(format!("{}, msg: {}", self, msg))
+                PyErr::new::<exc::TypeError, _>(format!("{} msg: {}", self, msg()))
             }
         }
     }

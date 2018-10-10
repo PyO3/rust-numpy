@@ -10,7 +10,7 @@ use std::os::raw::c_int;
 use std::ptr;
 
 use convert::{NpyIndex, ToNpyDims};
-use error::{ErrorKind, IntoPyErr};
+use error::{ErrorKind, IntoPyResult};
 use types::{NpyDataType, TypeNum};
 
 /// A safe, static-typed interface for
@@ -130,7 +130,7 @@ impl<'a, T: TypeNum, D: Dimension> FromPyObject<'a> for &'a PyArray<T, D> {
         array
             .type_check()
             .map(|_| array)
-            .map_err(|err| err.into_pyerr("FromPyObject::extract typecheck failed"))
+            .into_pyresult_with(|| "FromPyObject::extract typecheck failed")
     }
 }
 

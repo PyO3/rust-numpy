@@ -51,7 +51,7 @@ pub use array::{
     PyArrayDyn,
 };
 pub use convert::{NpyIndex, ToNpyDims, ToPyArray};
-pub use error::{IntoPyErr, IntoPyResult, ArrayFormat, ErrorKind};
+pub use error::{ArrayFormat, ErrorKind, IntoPyErr, IntoPyResult};
+pub use ndarray::{Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};
 pub use npyffi::{PY_ARRAY_API, PY_UFUNC_API};
 pub use types::{c32, c64, NpyDataType, TypeNum};
-pub use ndarray::{Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};
