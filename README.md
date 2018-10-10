@@ -118,8 +118,10 @@ fn rust_ext(_py: Python, m: &PyModule) -> PyResult<()> {
         x: &PyArrayDyn<f64>,
         y: &PyArrayDyn<f64>,
     ) -> PyResult<PyArrayDyn<f64>> {
+        // you can convert numpy error into PyErr via ?
         let x = x.as_array()?;
-        let y = y.as_array()?;
+        // you can also specify your error context, via closure
+        let y = y.as_array().into_pyresult_with(|| "y must be f64 array")?;
         Ok(axpy(a, x, y).to_pyarray(py).to_owned(py))
     }
 
