@@ -1,6 +1,6 @@
 //! Safe interface for NumPy ndarray
 use ndarray::*;
-use npyffi::{self, npy_intp, PY_ARRAY_API, NPY_ORDER};
+use npyffi::{self, npy_intp, NPY_ORDER, PY_ARRAY_API};
 use num_traits::AsPrimitive;
 use pyo3::*;
 use std::iter::ExactSizeIterator;
@@ -799,28 +799,6 @@ impl<T: TypeNum, D> PyArray<T, D> {
         }
     }
 
-    /// Move the data of self into `other`, performing a data-type conversion if necessary.
-    /// # Example
-    /// ```
-    /// # extern crate pyo3; extern crate numpy; fn main() {
-    /// use numpy::PyArray;
-    /// let gil = pyo3::Python::acquire_gil();
-    /// let pyarray_f = PyArray::arange(gil.python(), 2.0, 5.0, 1.0);
-    /// let pyarray_i = PyArray::<i64, _>::new(gil.python(), [3], false);
-    /// assert!(pyarray_f.move_to(pyarray_i).is_ok());
-    /// assert_eq!(pyarray_i.as_slice().unwrap(), &[2, 3, 4]);
-    /// # }
-    pub fn move_to<U: TypeNum>(&self, other: &PyArray<U, D>) -> Result<(), ErrorKind> {
-        let self_ptr = self.as_array_ptr();
-        let other_ptr = other.as_array_ptr();
-        let result = unsafe { PY_ARRAY_API.PyArray_MoveInto(other_ptr, self_ptr) };
-        if result == -1 {
-            Err(ErrorKind::dtype_cast(self, U::npy_data_type()))
-        } else {
-            Ok(())
-        }
-    }
-
     /// Cast the `PyArray<T>` to `PyArray<U>`, by allocating a new array.
     /// # Example
     /// ```
@@ -900,6 +878,35 @@ impl<T: TypeNum, D> PyArray<T, D> {
             Err(ErrorKind::dims_cast(self, dims))
         } else {
             Ok(unsafe { PyArray::<T, D2>::from_owned_ptr(self.py(), ptr) })
+        }
+    }
+}
+
+impl<T: TypeNum> PyArray<T, IxDyn> {
+    /// Move the data of self into `other`, performing a data-type conversion if necessary.
+    ///
+    /// For type safety, you have to convert `PyArray` to `PyArrayDyn` before using this method.
+    /// # Example
+    /// ```
+    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// use numpy::PyArray;
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let pyarray_f = PyArray::arange(gil.python(), 2.0, 5.0, 1.0).into_dyn();
+    /// let pyarray_i = PyArray::<i64, _>::new(gil.python(), [3], false);
+    /// assert!(pyarray_f.move_to(pyarray_i).is_ok());
+    /// assert_eq!(pyarray_i.as_slice().unwrap(), &[2, 3, 4]);
+    /// # }
+    pub fn move_to<U: TypeNum, D2: Dimension>(
+        &self,
+        other: &PyArray<U, D2>,
+    ) -> Result<(), ErrorKind> {
+        let self_ptr = self.as_array_ptr();
+        let other_ptr = other.as_array_ptr();
+        let result = unsafe { PY_ARRAY_API.PyArray_MoveInto(other_ptr, self_ptr) };
+        if result == -1 {
+            Err(ErrorKind::dtype_cast(self, U::npy_data_type()))
+        } else {
+            Ok(())
         }
     }
 }
