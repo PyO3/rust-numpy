@@ -45,7 +45,7 @@ numpy = "0.3"
 ``` rust
 extern crate numpy;
 extern crate pyo3;
-use numpy::{IntoPyResult, PyArray1, get_array_module};
+use numpy::{PyArray1, get_array_module};
 use pyo3::prelude::{ObjectProtocol, PyDict, PyResult, Python};
 
 fn main() -> Result<(), ()> {
@@ -65,7 +65,7 @@ fn main_<'py>(py: Python<'py>) -> PyResult<()> {
     let pyarray: &PyArray1<i32> = py
         .eval("np.array([1, 2, 3], dtype='int32')", Some(&dict), None)?
         .extract()?;
-    let slice = pyarray.as_slice().into_pyresult("Array Cast failed")?;
+    let slice = pyarray.as_slice()?;
     assert_eq!(slice, &[1, 2, 3]);
     Ok(())
 }
@@ -118,21 +118,24 @@ fn rust_ext(_py: Python, m: &PyModule) -> PyResult<()> {
         x: &PyArrayDyn<f64>,
         y: &PyArrayDyn<f64>,
     ) -> PyResult<PyArrayDyn<f64>> {
-        let x = x.as_array().into_pyresult("x must be f64 array")?;
-        let y = y.as_array().into_pyresult("y must be f64 array")?;
+        // you can convert numpy error into PyErr via ?
+        let x = x.as_array()?;
+        // you can also specify your error context, via closure
+        let y = y.as_array().into_pyresult_with(|| "y must be f64 array")?;
         Ok(axpy(a, x, y).to_pyarray(py).to_owned(py))
     }
 
     // wrapper of `mult`
     #[pyfn(m, "mult")]
     fn mult_py(_py: Python, a: f64, x: &PyArrayDyn<f64>) -> PyResult<()> {
-        let x = x.as_array_mut().into_pyresult("x must be f64 array")?;
+        let x = x.as_array_mut()?;
         mult(a, x);
         Ok(())
     }
 
     Ok(())
 }
+
 ```
 
 Contribution
