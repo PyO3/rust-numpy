@@ -175,12 +175,12 @@ impl<T, D> PyArray<T, D> {
     }
 
     /// Constructs `PyArray` from raw python object without incrementing reference counts.
-    pub unsafe fn from_owned_ptr(py: Python, ptr: *mut pyo3::ffi::PyObject) -> &Self {
+    pub unsafe fn from_owned_ptr(py: Python, ptr: *mut ffi::PyObject) -> &Self {
         py.from_owned_ptr(ptr)
     }
 
     /// Constructs PyArray from raw python object and increments reference counts.
-    pub unsafe fn from_borrowed_ptr(py: Python, ptr: *mut pyo3::ffi::PyObject) -> &Self {
+    pub unsafe fn from_borrowed_ptr(py: Python, ptr: *mut ffi::PyObject) -> &Self {
         py.from_borrowed_ptr(ptr)
     }
 
