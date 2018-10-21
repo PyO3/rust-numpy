@@ -1,6 +1,7 @@
 import numpy as np
-from rust_ext import axpy, mult, get_vec
+from rust_ext import axpy, mult
 import unittest
+
 
 class TestExt(unittest.TestCase):
     """Test class for rust functions
@@ -11,18 +12,16 @@ class TestExt(unittest.TestCase):
         y = np.array([3.0, 3.0, 3.0])
         z = axpy(3.0, x, y)
         np.testing.assert_array_almost_equal(z, np.array([6.0, 9.0, 12.0]))
+        x = np.array([*x, 4.0])
+        y = np.array([*y, 3.0])
+        z = axpy(3.0, x, y)
+        np.testing.assert_array_almost_equal(z, np.array([6.0, 9.0, 12.0, 15.0]))
 
     def test_mult(self):
         x = np.array([1.0, 2.0, 3.0])
         mult(3.0, x)
         np.testing.assert_array_almost_equal(x, np.array([3.0, 6.0, 9.0]))
 
-    def test_into_pyarray(self):
-        x = get_vec(1000)
-        np.testing.assert_array_almost_equal(x, np.zeros(1000))
-
 
 if __name__ == "__main__":
     unittest.main()
-
-

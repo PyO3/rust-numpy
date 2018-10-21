@@ -3,7 +3,7 @@ extern crate numpy;
 extern crate pyo3;
 
 use ndarray::{ArrayD, ArrayViewD, ArrayViewMutD};
-use numpy::{IntoPyArray, IntoPyResult, PyArray1, PyArrayDyn, ToPyArray};
+use numpy::{IntoPyArray, IntoPyResult, PyArrayDyn};
 use pyo3::prelude::{pymodinit, PyModule, PyResult, Python};
 
 #[pymodinit]
@@ -30,7 +30,7 @@ fn rust_ext(_py: Python, m: &PyModule) -> PyResult<()> {
         let x = x.as_array()?;
         // you can also specify your error context, via closure
         let y = y.as_array().into_pyresult_with(|| "y must be f64 array")?;
-        Ok(axpy(a, x, y).to_pyarray(py).to_owned(py))
+        Ok(axpy(a, x, y).into_pyarray(py).to_owned(py))
     }
 
     // wrapper of `mult`
@@ -41,15 +41,5 @@ fn rust_ext(_py: Python, m: &PyModule) -> PyResult<()> {
         Ok(())
     }
 
-    #[pyfn(m, "get_vec")]
-    fn get_vec(py: Python, size: usize) -> PyResult<&PyArray1<f32>> {
-        Ok(vec![0.0; size].into_pyarray(py))
-    }
-    // use numpy::slice_box::SliceBox;
-    // #[pyfn(m, "get_slice")]
-    // fn get_slice(py: Python, size: usize) -> PyResult<SliceBox<f32>> {
-    //     let sbox = numpy::slice_box::SliceBox::new(vec![0.0; size].into_boxed_slice());
-    //     Ok(sbox)
-    // }
     Ok(())
 }
