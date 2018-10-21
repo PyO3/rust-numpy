@@ -2,13 +2,54 @@
 
 use ndarray::{ArrayBase, Data, Dimension, IntoDimension, Ix1};
 use pyo3::Python;
+use slice_box::SliceBox;
 
 use std::mem;
 use std::os::raw::c_int;
+use std::ptr;
 
 use super::*;
 
-/// Covversion trait from rust types to `PyArray`.
+/// Covnersion trait from some rust types to `PyArray`.
+///
+/// This trait takes `self`, which means **it holds a pointer to Rust heap, until `resize` or other
+/// destructive method is called**.
+/// # Example
+/// ```
+/// # extern crate pyo3; extern crate numpy; fn main() {
+/// use numpy::{PyArray, ToPyArray};
+/// let gil = pyo3::Python::acquire_gil();
+/// let py_array = vec![1, 2, 3].to_pyarray(gil.python());
+/// assert_eq!(py_array.as_slice().unwrap(), &[1, 2, 3]);
+/// # }
+/// ```
+pub trait IntoPyArray {
+    type Item: TypeNum;
+    type Dim: Dimension;
+    fn into_pyarray<'py>(self, Python<'py>) -> &'py PyArray<Self::Item, Self::Dim>;
+}
+
+impl<T: TypeNum> IntoPyArray for Box<[T]> {
+    type Item = T;
+    type Dim = Ix1;
+    fn into_pyarray<'py>(self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
+        let len = self.len();
+        unsafe {
+            let slice = SliceBox::new(self);
+            PyArray::new_with_data(py, [len], ptr::null_mut(), slice)
+        }
+    }
+}
+
+impl<T: TypeNum> IntoPyArray for Vec<T> {
+    type Item = T;
+    type Dim = Ix1;
+    fn into_pyarray<'py>(self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
+        self.into_boxed_slice().into_pyarray(py)
+    }
+}
+
+/// Conversion trait from rust types to `PyArray`.
 ///
 /// This trait takes `&self`, which means **it alocates in Python heap and then copies
 /// elements there**.

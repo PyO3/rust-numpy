@@ -1,5 +1,5 @@
 import numpy as np
-from rust_ext import axpy, mult
+from rust_ext import axpy, mult, get_vec
 import unittest
 
 class TestExt(unittest.TestCase):
@@ -17,6 +17,12 @@ class TestExt(unittest.TestCase):
         mult(3.0, x)
         np.testing.assert_array_almost_equal(x, np.array([3.0, 6.0, 9.0]))
 
+    def test_into_pyarray(self):
+        x = get_vec(1000)
+        np.testing.assert_array_almost_equal(x, np.zeros(1000))
+
 
 if __name__ == "__main__":
     unittest.main()
+
+

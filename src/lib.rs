@@ -44,13 +44,14 @@ pub mod array;
 pub mod convert;
 pub mod error;
 pub mod npyffi;
+mod slice_box;
 pub mod types;
 
 pub use array::{
     get_array_module, PyArray, PyArray1, PyArray2, PyArray3, PyArray4, PyArray5, PyArray6,
     PyArrayDyn,
 };
-pub use convert::{NpyIndex, ToNpyDims, ToPyArray};
+pub use convert::{IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
 pub use error::{ArrayFormat, ErrorKind, IntoPyErr, IntoPyResult};
 pub use ndarray::{Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};
 pub use npyffi::{PY_ARRAY_API, PY_UFUNC_API};

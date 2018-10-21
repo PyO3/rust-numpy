@@ -11,6 +11,7 @@ use std::ptr;
 
 use convert::{NpyIndex, ToNpyDims};
 use error::{ErrorKind, IntoPyResult};
+use slice_box::SliceBox;
 use types::{NpyDataType, TypeNum};
 
 /// A safe, static-typed interface for
@@ -326,6 +327,31 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
             flag,                   // flag
             ::std::ptr::null_mut(), //obj
         );
+        Self::from_owned_ptr(py, ptr)
+    }
+
+    pub(crate) unsafe fn new_with_data<'py, ID>(
+        py: Python<'py>,
+        dims: ID,
+        strides: *mut npy_intp,
+        slice: &SliceBox<T>,
+    ) -> &'py Self
+    where
+        ID: IntoDimension<Dim = D>,
+    {
+        let dims = dims.into_dimension();
+        let ptr = PY_ARRAY_API.PyArray_New(
+            PY_ARRAY_API.get_type_object(npyffi::ArrayType::PyArray_Type),
+            dims.ndim_cint(),
+            dims.as_dims_ptr(),
+            T::typenum_default(),
+            strides,                // strides
+            slice.data(),           // data
+            0,                      // itemsize
+            0,                      // flag
+            ::std::ptr::null_mut(), //obj
+        );
+        PY_ARRAY_API.PyArray_SetBaseObject(ptr as *mut npyffi::PyArrayObject, slice.as_ptr());
         Self::from_owned_ptr(py, ptr)
     }
 
