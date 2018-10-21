@@ -18,13 +18,21 @@ use types::{NpyDataType, TypeNum};
 /// [NumPy ndarray](https://docs.scipy.org/doc/numpy/reference/arrays.ndarray.html).
 ///
 /// # Memory location
-/// Numpy api allows to use a memory area allocated outside Pyhton.
 ///
-/// However, we designed `PyArray` to always **owns a memory area allocated in Python's private
-/// heap**, where all memories are managed by GC.
+/// 1.`PyArray` constructed via `IntoPyArray::into_pyarray` or `PyArray::from_vec`
+/// or `PyArray::from_owned_array`
 ///
-/// This means you always need to pay allocation cost when you create a `PyArray`, but don't need
-/// to fear memory leak.
+/// These methods don't allocate and use `Box<[T]>` as container.
+///
+/// Please take care that **you cannot use some destructive methods like `resize`,
+/// for this kind of array**.
+///
+/// 2.`PyArray` constructed via other methods, like `ToPyArray::to_pyarray` or `PyArray::from_slice`
+/// or `PyArray::from_array`.
+///
+/// These methods allocate a memory area in Python's private heap.
+///
+/// In this case, you have no restriction.
 ///
 /// # Reference
 ///
@@ -33,11 +41,6 @@ use types::{NpyDataType, TypeNum};
 /// See [pyo3's document](https://pyo3.rs/master/doc/pyo3/index.html#ownership-and-lifetimes)
 /// for the reason.
 ///
-/// # Mutation
-/// You can do destructive changes to `PyArray` via &self methods like [`move_to`](#method.move_to).
-///
-/// About this design, see
-/// [pyo3's document](https://pyo3.rs/master/doc/pyo3/index.html#ownership-and-lifetimes), too.
 ///
 /// # Dimension
 /// `PyArray` has 2 type parametes `T` and `D`. `T` represents its data type like `f32`, and `D`
@@ -582,6 +585,22 @@ impl<T: TypeNum> PyArray<T, Ix1> {
         array
     }
 
+    /// Construct one-dimension PyArray from `Vec`.
+    ///
+    /// # Example
+    /// ```
+    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// use numpy::PyArray;
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let vec = vec![1, 2, 3, 4, 5];
+    /// let pyarray = PyArray::from_vec(gil.python(), vec);
+    /// assert_eq!(pyarray.as_slice().unwrap(), &[1, 2, 3, 4, 5]);
+    /// # }
+    /// ```
+    pub fn from_vec<'py>(py: Python<'py>, vec: Vec<T>) -> &'py Self {
+        IntoPyArray::into_pyarray(vec, py)
+    }
+
     /// Construct one-dimension PyArray from `impl ExactSizeIterator`.
     ///
     /// # Example
@@ -621,8 +640,7 @@ impl<T: TypeNum> PyArray<T, Ix1> {
     /// # }
     /// ```
     pub fn from_iter(py: Python, iter: impl IntoIterator<Item = T>) -> &Self {
-        // ↓ max cached size of ndarray
-        let mut capacity = 1024 / mem::size_of::<T>();
+        let mut capacity = 512 / mem::size_of::<T>();
         let array = Self::new(py, [capacity], false);
         let mut length = 0;
         unsafe {
@@ -915,35 +933,6 @@ impl<T: TypeNum, D> PyArray<T, D> {
             Err(ErrorKind::dims_cast(self, dims))
         } else {
             Ok(unsafe { PyArray::<T, D2>::from_owned_ptr(self.py(), ptr) })
-        }
-    }
-}
-
-impl<T: TypeNum> PyArray<T, IxDyn> {
-    /// Move the data of self into `other`, performing a data-type conversion if necessary.
-    ///
-    /// For type safety, you have to convert `PyArray` to `PyArrayDyn` before using this method.
-    /// # Example
-    /// ```
-    /// # extern crate pyo3; extern crate numpy; fn main() {
-    /// use numpy::PyArray;
-    /// let gil = pyo3::Python::acquire_gil();
-    /// let pyarray_f = PyArray::arange(gil.python(), 2.0, 5.0, 1.0).into_dyn();
-    /// let pyarray_i = PyArray::<i64, _>::new(gil.python(), [3], false);
-    /// assert!(pyarray_f.move_to(pyarray_i).is_ok());
-    /// assert_eq!(pyarray_i.as_slice().unwrap(), &[2, 3, 4]);
-    /// # }
-    pub fn move_to<U: TypeNum, D2: Dimension>(
-        &self,
-        other: &PyArray<U, D2>,
-    ) -> Result<(), ErrorKind> {
-        let self_ptr = self.as_array_ptr();
-        let other_ptr = other.as_array_ptr();
-        let result = unsafe { PY_ARRAY_API.PyArray_MoveInto(other_ptr, self_ptr) };
-        if result == -1 {
-            Err(ErrorKind::dtype_cast(self, U::npy_data_type()))
-        } else {
-            Ok(())
         }
     }
 }

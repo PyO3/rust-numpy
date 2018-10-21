@@ -225,3 +225,11 @@ fn into_pyarray_array() {
     assert_eq!(py_arr.shape(), shape.as_slice());
     assert_eq!(py_arr.strides(), strides.as_slice());
 }
+
+#[test]
+fn into_pyarray_cant_resize() {
+    let gil = pyo3::Python::acquire_gil();
+    let a = vec![1, 2, 3];
+    let arr = a.into_pyarray(gil.python());
+    assert!(arr.resize(100).is_err())
+}

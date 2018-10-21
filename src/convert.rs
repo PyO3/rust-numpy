@@ -14,13 +14,17 @@ use npyffi::npy_intp;
 ///
 /// This trait takes `self`, which means **it holds a pointer to Rust heap, until `resize` or other
 /// destructive method is called**.
+///
+/// In addition, if you construct `PyArray` via this method,
+/// **you cannot use some destructive methods like `resize`.**
 /// # Example
 /// ```
 /// # extern crate pyo3; extern crate numpy; fn main() {
-/// use numpy::{PyArray, ToPyArray};
+/// use numpy::{PyArray, IntoPyArray};
 /// let gil = pyo3::Python::acquire_gil();
-/// let py_array = vec![1, 2, 3].to_pyarray(gil.python());
+/// let py_array = vec![1, 2, 3].into_pyarray(gil.python());
 /// assert_eq!(py_array.as_slice().unwrap(), &[1, 2, 3]);
+/// assert!(py_array.resize(100).is_err()); // You can't resize owned-by-rust array.
 /// # }
 /// ```
 pub trait IntoPyArray {
