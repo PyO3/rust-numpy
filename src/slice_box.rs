@@ -68,8 +68,8 @@ impl<T> PyObjectAlloc<SliceBox<T>> for SliceBox<T> {
     /// Calls the rust destructor for the object.
     unsafe fn drop(py: Python, obj: *mut ffi::PyObject) {
         let data = (*(obj as *mut SliceBox<T>)).inner;
-        let box_ = Box::from_raw(data);
-        drop(box_);
+        let boxed_slice = Box::from_raw(data);
+        drop(boxed_slice);
         <Self as typeob::PyTypeInfo>::BaseType::drop(py, obj);
     }
     unsafe fn dealloc(py: Python, obj: *mut ffi::PyObject) {

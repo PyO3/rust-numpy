@@ -1,14 +1,14 @@
 //! Defines conversion traits between rust types and numpy data types.
 
-use ndarray::{ArrayBase, Data, Dimension, IntoDimension, Ix1};
+use ndarray::{ArrayBase, Data, Dimension, IntoDimension, Ix1, OwnedRepr};
 use pyo3::Python;
-use slice_box::SliceBox;
 
 use std::mem;
 use std::os::raw::c_int;
 use std::ptr;
 
 use super::*;
+use npyffi::npy_intp;
 
 /// Covnersion trait from some rust types to `PyArray`.
 ///
@@ -34,10 +34,7 @@ impl<T: TypeNum> IntoPyArray for Box<[T]> {
     type Dim = Ix1;
     fn into_pyarray<'py>(self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
         let len = self.len();
-        unsafe {
-            let slice = SliceBox::new(self);
-            PyArray::new_with_data(py, [len], ptr::null_mut(), slice)
-        }
+        unsafe { PyArray::from_boxed_slice(py, [len], ptr::null_mut(), self) }
     }
 }
 
@@ -46,6 +43,21 @@ impl<T: TypeNum> IntoPyArray for Vec<T> {
     type Dim = Ix1;
     fn into_pyarray<'py>(self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
         self.into_boxed_slice().into_pyarray(py)
+    }
+}
+
+impl<A, D> IntoPyArray for ArrayBase<OwnedRepr<A>, D>
+where
+    A: TypeNum,
+    D: Dimension,
+{
+    type Item = A;
+    type Dim = D;
+    fn into_pyarray<'py>(self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
+        let mut strides = npy_strides(&self);
+        let dim = self.raw_dim();
+        let boxed = self.into_raw_vec().into_boxed_slice();
+        unsafe { PyArray::from_boxed_slice(py, dim, strides.as_mut_ptr() as *mut npy_intp, boxed) }
     }
 }
 
@@ -85,8 +97,27 @@ where
     type Item = A;
     type Dim = D;
     fn to_pyarray<'py>(&self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
-        PyArray::from_ndarray(py, self)
+        let len = self.len();
+        let mut strides = npy_strides(self);
+        unsafe {
+            let array = PyArray::new_(py, self.raw_dim(), strides.as_mut_ptr() as *mut npy_intp, 0);
+            array.copy_ptr(self.as_ptr(), len);
+            array
+        }
     }
+}
+
+fn npy_strides<S, D, A>(array: &ArrayBase<S, D>) -> Vec<npyffi::npy_intp>
+where
+    S: Data<Elem = A>,
+    D: Dimension,
+    A: TypeNum,
+{
+    array
+        .strides()
+        .into_iter()
+        .map(|n| n * mem::size_of::<A>() as npyffi::npy_intp)
+        .collect()
 }
 
 /// Utility trait to specify the dimention of array

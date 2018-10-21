@@ -9,7 +9,7 @@ use std::mem;
 use std::os::raw::c_int;
 use std::ptr;
 
-use convert::{NpyIndex, ToNpyDims};
+use convert::{IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
 use error::{ErrorKind, IntoPyResult};
 use slice_box::SliceBox;
 use types::{NpyDataType, TypeNum};
@@ -265,6 +265,10 @@ impl<T, D> PyArray<T, D> {
         let ptr = self.as_array_ptr();
         (*ptr).data as *mut T
     }
+
+    pub(crate) unsafe fn copy_ptr(&self, other: *const T, len: usize) {
+        ptr::copy_nonoverlapping(other, self.data(), len)
+    }
 }
 
 impl<T: TypeNum, D: Dimension> PyArray<T, D> {
@@ -306,7 +310,7 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
         unsafe { PyArray::new_(py, dims, ptr::null_mut(), flags) }
     }
 
-    unsafe fn new_<'py, ID>(
+    pub(crate) unsafe fn new_<'py, ID>(
         py: Python<'py>,
         dims: ID,
         strides: *mut npy_intp,
@@ -330,16 +334,17 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
         Self::from_owned_ptr(py, ptr)
     }
 
-    pub(crate) unsafe fn new_with_data<'py, ID>(
+    pub(crate) unsafe fn from_boxed_slice<'py, ID>(
         py: Python<'py>,
         dims: ID,
         strides: *mut npy_intp,
-        slice: &SliceBox<T>,
+        slice: Box<[T]>,
     ) -> &'py Self
     where
         ID: IntoDimension<Dim = D>,
     {
         let dims = dims.into_dimension();
+        let slice = SliceBox::new(slice);
         let ptr = PY_ARRAY_API.PyArray_New(
             PY_ARRAY_API.get_type_object(npyffi::ArrayType::PyArray_Type),
             dims.ndim_cint(),
@@ -388,7 +393,7 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
         }
     }
 
-    /// Construct PyArray from ndarray::Array.
+    /// Construct PyArray from `ndarray::ArrayBase`.
     ///
     /// This method allocates memory in Python's heap via numpy api, and then copies all elements
     /// of the array there.
@@ -398,25 +403,32 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     /// # extern crate pyo3; extern crate numpy; #[macro_use] extern crate ndarray; fn main() {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
-    /// let pyarray = PyArray::from_ndarray(gil.python(), &array![[1, 2], [3, 4]]);
+    /// let pyarray = PyArray::from_array(gil.python(), &array![[1, 2], [3, 4]]);
     /// assert_eq!(pyarray.as_array().unwrap(), array![[1, 2], [3, 4]]);
     /// # }
     /// ```
-    pub fn from_ndarray<'py, S>(py: Python<'py>, arr: &ArrayBase<S, D>) -> &'py Self
+    pub fn from_array<'py, S>(py: Python<'py>, arr: &ArrayBase<S, D>) -> &'py Self
     where
         S: Data<Elem = T>,
     {
-        let len = arr.len();
-        let mut strides: Vec<_> = arr
-            .strides()
-            .into_iter()
-            .map(|n| n * mem::size_of::<T>() as npy_intp)
-            .collect();
-        unsafe {
-            let array = PyArray::new_(py, arr.raw_dim(), strides.as_mut_ptr() as *mut npy_intp, 0);
-            ptr::copy_nonoverlapping(arr.as_ptr(), array.data(), len);
-            array
-        }
+        ToPyArray::to_pyarray(arr, py)
+    }
+
+    /// Construct PyArray from `ndarray::Array`.
+    ///
+    /// This method uses internal `Vec` of `ndarray::Array` as numpy array.
+    ///
+    /// # Example
+    /// ```
+    /// # extern crate pyo3; extern crate numpy; #[macro_use] extern crate ndarray; fn main() {
+    /// use numpy::PyArray;
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let pyarray = PyArray::from_owned_array(gil.python(), array![[1, 2], [3, 4]]);
+    /// assert_eq!(pyarray.as_array().unwrap(), array![[1, 2], [3, 4]]);
+    /// # }
+    /// ```
+    pub fn from_owned_array<'py>(py: Python<'py>, arr: Array<T, D>) -> &'py Self {
+        IntoPyArray::into_pyarray(arr, py)
     }
 
     /// Get the immutable view of the internal data of `PyArray`, as `ndarray::ArrayView`.
@@ -565,8 +577,7 @@ impl<T: TypeNum> PyArray<T, Ix1> {
     pub fn from_slice<'py>(py: Python<'py>, slice: &[T]) -> &'py Self {
         let array = PyArray::new(py, [slice.len()], false);
         unsafe {
-            let src = slice.as_ptr() as *mut T;
-            ptr::copy_nonoverlapping(src, array.data(), slice.len());
+            array.copy_ptr(slice.as_ptr(), slice.len());
         }
         array
     }
