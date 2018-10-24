@@ -1,14 +1,71 @@
 //! Defines conversion traits between rust types and numpy data types.
 
-use ndarray::{ArrayBase, Data, Dimension, IntoDimension, Ix1};
+use ndarray::{ArrayBase, Data, Dimension, IntoDimension, Ix1, OwnedRepr};
 use pyo3::Python;
 
 use std::mem;
 use std::os::raw::c_int;
+use std::ptr;
 
 use super::*;
+use npyffi::npy_intp;
 
-/// Covversion trait from rust types to `PyArray`.
+/// Covnersion trait from some rust types to `PyArray`.
+///
+/// This trait takes `self`, which means **it holds a pointer to Rust heap, until `resize` or other
+/// destructive method is called**.
+///
+/// In addition, if you construct `PyArray` via this method,
+/// **you cannot use some destructive methods like `resize`.**
+/// # Example
+/// ```
+/// # extern crate pyo3; extern crate numpy; fn main() {
+/// use numpy::{PyArray, IntoPyArray};
+/// let gil = pyo3::Python::acquire_gil();
+/// let py_array = vec![1, 2, 3].into_pyarray(gil.python());
+/// assert_eq!(py_array.as_slice().unwrap(), &[1, 2, 3]);
+/// assert!(py_array.resize(100).is_err()); // You can't resize owned-by-rust array.
+/// # }
+/// ```
+pub trait IntoPyArray {
+    type Item: TypeNum;
+    type Dim: Dimension;
+    fn into_pyarray<'py>(self, Python<'py>) -> &'py PyArray<Self::Item, Self::Dim>;
+}
+
+impl<T: TypeNum> IntoPyArray for Box<[T]> {
+    type Item = T;
+    type Dim = Ix1;
+    fn into_pyarray<'py>(self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
+        let len = self.len();
+        unsafe { PyArray::from_boxed_slice(py, [len], ptr::null_mut(), self) }
+    }
+}
+
+impl<T: TypeNum> IntoPyArray for Vec<T> {
+    type Item = T;
+    type Dim = Ix1;
+    fn into_pyarray<'py>(self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
+        self.into_boxed_slice().into_pyarray(py)
+    }
+}
+
+impl<A, D> IntoPyArray for ArrayBase<OwnedRepr<A>, D>
+where
+    A: TypeNum,
+    D: Dimension,
+{
+    type Item = A;
+    type Dim = D;
+    fn into_pyarray<'py>(self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
+        let mut strides = npy_strides(&self);
+        let dim = self.raw_dim();
+        let boxed = self.into_raw_vec().into_boxed_slice();
+        unsafe { PyArray::from_boxed_slice(py, dim, strides.as_mut_ptr() as *mut npy_intp, boxed) }
+    }
+}
+
+/// Conversion trait from rust types to `PyArray`.
 ///
 /// This trait takes `&self`, which means **it alocates in Python heap and then copies
 /// elements there**.
@@ -44,8 +101,27 @@ where
     type Item = A;
     type Dim = D;
     fn to_pyarray<'py>(&self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
-        PyArray::from_ndarray(py, self)
+        let len = self.len();
+        let mut strides = npy_strides(self);
+        unsafe {
+            let array = PyArray::new_(py, self.raw_dim(), strides.as_mut_ptr() as *mut npy_intp, 0);
+            array.copy_ptr(self.as_ptr(), len);
+            array
+        }
     }
+}
+
+fn npy_strides<S, D, A>(array: &ArrayBase<S, D>) -> Vec<npyffi::npy_intp>
+where
+    S: Data<Elem = A>,
+    D: Dimension,
+    A: TypeNum,
+{
+    array
+        .strides()
+        .into_iter()
+        .map(|n| n * mem::size_of::<A>() as npyffi::npy_intp)
+        .collect()
 }
 
 /// Utility trait to specify the dimention of array

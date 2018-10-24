@@ -9,21 +9,30 @@ use std::mem;
 use std::os::raw::c_int;
 use std::ptr;
 
-use convert::{NpyIndex, ToNpyDims};
+use convert::{IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
 use error::{ErrorKind, IntoPyResult};
+use slice_box::SliceBox;
 use types::{NpyDataType, TypeNum};
 
 /// A safe, static-typed interface for
 /// [NumPy ndarray](https://docs.scipy.org/doc/numpy/reference/arrays.ndarray.html).
 ///
 /// # Memory location
-/// Numpy api allows to use a memory area allocated outside Pyhton.
 ///
-/// However, we designed `PyArray` to always **owns a memory area allocated in Python's private
-/// heap**, where all memories are managed by GC.
+/// 1.`PyArray` constructed via `IntoPyArray::into_pyarray` or `PyArray::from_vec`
+/// or `PyArray::from_owned_array`
 ///
-/// This means you always need to pay allocation cost when you create a `PyArray`, but don't need
-/// to fear memory leak.
+/// These methods don't allocate and use `Box<[T]>` as container.
+///
+/// Please take care that **you cannot use some destructive methods like `resize`,
+/// for this kind of array**.
+///
+/// 2.`PyArray` constructed via other methods, like `ToPyArray::to_pyarray` or `PyArray::from_slice`
+/// or `PyArray::from_array`.
+///
+/// These methods allocate a memory area in Python's private heap.
+///
+/// In this case, you have no restriction.
 ///
 /// # Reference
 ///
@@ -32,11 +41,6 @@ use types::{NpyDataType, TypeNum};
 /// See [pyo3's document](https://pyo3.rs/master/doc/pyo3/index.html#ownership-and-lifetimes)
 /// for the reason.
 ///
-/// # Mutation
-/// You can do destructive changes to `PyArray` via &self methods like [`move_to`](#method.move_to).
-///
-/// About this design, see
-/// [pyo3's document](https://pyo3.rs/master/doc/pyo3/index.html#ownership-and-lifetimes), too.
 ///
 /// # Dimension
 /// `PyArray` has 2 type parametes `T` and `D`. `T` represents its data type like `f32`, and `D`
@@ -264,6 +268,10 @@ impl<T, D> PyArray<T, D> {
         let ptr = self.as_array_ptr();
         (*ptr).data as *mut T
     }
+
+    pub(crate) unsafe fn copy_ptr(&self, other: *const T, len: usize) {
+        ptr::copy_nonoverlapping(other, self.data(), len)
+    }
 }
 
 impl<T: TypeNum, D: Dimension> PyArray<T, D> {
@@ -305,7 +313,7 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
         unsafe { PyArray::new_(py, dims, ptr::null_mut(), flags) }
     }
 
-    unsafe fn new_<'py, ID>(
+    pub(crate) unsafe fn new_<'py, ID>(
         py: Python<'py>,
         dims: ID,
         strides: *mut npy_intp,
@@ -326,6 +334,32 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
             flag,                   // flag
             ::std::ptr::null_mut(), //obj
         );
+        Self::from_owned_ptr(py, ptr)
+    }
+
+    pub(crate) unsafe fn from_boxed_slice<'py, ID>(
+        py: Python<'py>,
+        dims: ID,
+        strides: *mut npy_intp,
+        slice: Box<[T]>,
+    ) -> &'py Self
+    where
+        ID: IntoDimension<Dim = D>,
+    {
+        let dims = dims.into_dimension();
+        let slice = SliceBox::new(slice);
+        let ptr = PY_ARRAY_API.PyArray_New(
+            PY_ARRAY_API.get_type_object(npyffi::ArrayType::PyArray_Type),
+            dims.ndim_cint(),
+            dims.as_dims_ptr(),
+            T::typenum_default(),
+            strides,                // strides
+            slice.data(),           // data
+            0,                      // itemsize
+            0,                      // flag
+            ::std::ptr::null_mut(), //obj
+        );
+        PY_ARRAY_API.PyArray_SetBaseObject(ptr as *mut npyffi::PyArrayObject, slice.as_ptr());
         Self::from_owned_ptr(py, ptr)
     }
 
@@ -362,7 +396,7 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
         }
     }
 
-    /// Construct PyArray from ndarray::Array.
+    /// Construct PyArray from `ndarray::ArrayBase`.
     ///
     /// This method allocates memory in Python's heap via numpy api, and then copies all elements
     /// of the array there.
@@ -372,25 +406,32 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     /// # extern crate pyo3; extern crate numpy; #[macro_use] extern crate ndarray; fn main() {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
-    /// let pyarray = PyArray::from_ndarray(gil.python(), &array![[1, 2], [3, 4]]);
+    /// let pyarray = PyArray::from_array(gil.python(), &array![[1, 2], [3, 4]]);
     /// assert_eq!(pyarray.as_array().unwrap(), array![[1, 2], [3, 4]]);
     /// # }
     /// ```
-    pub fn from_ndarray<'py, S>(py: Python<'py>, arr: &ArrayBase<S, D>) -> &'py Self
+    pub fn from_array<'py, S>(py: Python<'py>, arr: &ArrayBase<S, D>) -> &'py Self
     where
         S: Data<Elem = T>,
     {
-        let len = arr.len();
-        let mut strides: Vec<_> = arr
-            .strides()
-            .into_iter()
-            .map(|n| n * mem::size_of::<T>() as npy_intp)
-            .collect();
-        unsafe {
-            let array = PyArray::new_(py, arr.raw_dim(), strides.as_mut_ptr() as *mut npy_intp, 0);
-            ptr::copy_nonoverlapping(arr.as_ptr(), array.data(), len);
-            array
-        }
+        ToPyArray::to_pyarray(arr, py)
+    }
+
+    /// Construct PyArray from `ndarray::Array`.
+    ///
+    /// This method uses internal `Vec` of `ndarray::Array` as numpy array.
+    ///
+    /// # Example
+    /// ```
+    /// # extern crate pyo3; extern crate numpy; #[macro_use] extern crate ndarray; fn main() {
+    /// use numpy::PyArray;
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let pyarray = PyArray::from_owned_array(gil.python(), array![[1, 2], [3, 4]]);
+    /// assert_eq!(pyarray.as_array().unwrap(), array![[1, 2], [3, 4]]);
+    /// # }
+    /// ```
+    pub fn from_owned_array<'py>(py: Python<'py>, arr: Array<T, D>) -> &'py Self {
+        IntoPyArray::into_pyarray(arr, py)
     }
 
     /// Get the immutable view of the internal data of `PyArray`, as `ndarray::ArrayView`.
@@ -539,10 +580,25 @@ impl<T: TypeNum> PyArray<T, Ix1> {
     pub fn from_slice<'py>(py: Python<'py>, slice: &[T]) -> &'py Self {
         let array = PyArray::new(py, [slice.len()], false);
         unsafe {
-            let src = slice.as_ptr() as *mut T;
-            ptr::copy_nonoverlapping(src, array.data(), slice.len());
+            array.copy_ptr(slice.as_ptr(), slice.len());
         }
         array
+    }
+
+    /// Construct one-dimension PyArray from `Vec`.
+    ///
+    /// # Example
+    /// ```
+    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// use numpy::PyArray;
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let vec = vec![1, 2, 3, 4, 5];
+    /// let pyarray = PyArray::from_vec(gil.python(), vec);
+    /// assert_eq!(pyarray.as_slice().unwrap(), &[1, 2, 3, 4, 5]);
+    /// # }
+    /// ```
+    pub fn from_vec<'py>(py: Python<'py>, vec: Vec<T>) -> &'py Self {
+        IntoPyArray::into_pyarray(vec, py)
     }
 
     /// Construct one-dimension PyArray from `impl ExactSizeIterator`.
@@ -584,8 +640,7 @@ impl<T: TypeNum> PyArray<T, Ix1> {
     /// # }
     /// ```
     pub fn from_iter(py: Python, iter: impl IntoIterator<Item = T>) -> &Self {
-        // ↓ max cached size of ndarray
-        let mut capacity = 1024 / mem::size_of::<T>();
+        let mut capacity = 512 / mem::size_of::<T>();
         let array = Self::new(py, [capacity], false);
         let mut length = 0;
         unsafe {
@@ -878,35 +933,6 @@ impl<T: TypeNum, D> PyArray<T, D> {
             Err(ErrorKind::dims_cast(self, dims))
         } else {
             Ok(unsafe { PyArray::<T, D2>::from_owned_ptr(self.py(), ptr) })
-        }
-    }
-}
-
-impl<T: TypeNum> PyArray<T, IxDyn> {
-    /// Move the data of self into `other`, performing a data-type conversion if necessary.
-    ///
-    /// For type safety, you have to convert `PyArray` to `PyArrayDyn` before using this method.
-    /// # Example
-    /// ```
-    /// # extern crate pyo3; extern crate numpy; fn main() {
-    /// use numpy::PyArray;
-    /// let gil = pyo3::Python::acquire_gil();
-    /// let pyarray_f = PyArray::arange(gil.python(), 2.0, 5.0, 1.0).into_dyn();
-    /// let pyarray_i = PyArray::<i64, _>::new(gil.python(), [3], false);
-    /// assert!(pyarray_f.move_to(pyarray_i).is_ok());
-    /// assert_eq!(pyarray_i.as_slice().unwrap(), &[2, 3, 4]);
-    /// # }
-    pub fn move_to<U: TypeNum, D2: Dimension>(
-        &self,
-        other: &PyArray<U, D2>,
-    ) -> Result<(), ErrorKind> {
-        let self_ptr = self.as_array_ptr();
-        let other_ptr = other.as_array_ptr();
-        let result = unsafe { PY_ARRAY_API.PyArray_MoveInto(other_ptr, self_ptr) };
-        if result == -1 {
-            Err(ErrorKind::dtype_cast(self, U::npy_data_type()))
-        } else {
-            Ok(())
         }
     }
 }

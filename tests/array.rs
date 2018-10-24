@@ -75,7 +75,7 @@ fn as_array() {
 }
 
 #[test]
-fn into_pyarray_vec() {
+fn to_pyarray_vec() {
     let gil = pyo3::Python::acquire_gil();
 
     let a = vec![1, 2, 3];
@@ -86,7 +86,7 @@ fn into_pyarray_vec() {
 }
 
 #[test]
-fn into_pyarray_array() {
+fn to_pyarray_array() {
     let gil = pyo3::Python::acquire_gil();
 
     let a = Array3::<f64>::zeros((3, 4, 2));
@@ -205,4 +205,31 @@ fn array_cast() {
     let arr_f64 = PyArray::from_vec2(gil.python(), &vec2).unwrap();
     let arr_i32: &PyArray2<i32> = arr_f64.cast(false).unwrap();
     assert_eq!(arr_i32.as_array().unwrap(), array![[1, 2, 3], [1, 2, 3]]);
+}
+
+#[test]
+fn into_pyarray_vec() {
+    let gil = pyo3::Python::acquire_gil();
+    let a = vec![1, 2, 3];
+    let arr = a.into_pyarray(gil.python());
+    assert_eq!(arr.as_slice().unwrap(), &[1, 2, 3])
+}
+
+#[test]
+fn into_pyarray_array() {
+    let gil = pyo3::Python::acquire_gil();
+    let arr = Array3::<f64>::zeros((3, 4, 2));
+    let shape = arr.shape().iter().cloned().collect::<Vec<_>>();
+    let strides = arr.strides().iter().map(|d| d * 8).collect::<Vec<_>>();
+    let py_arr = arr.into_pyarray(gil.python());
+    assert_eq!(py_arr.shape(), shape.as_slice());
+    assert_eq!(py_arr.strides(), strides.as_slice());
+}
+
+#[test]
+fn into_pyarray_cant_resize() {
+    let gil = pyo3::Python::acquire_gil();
+    let a = vec![1, 2, 3];
+    let arr = a.into_pyarray(gil.python());
+    assert!(arr.resize(100).is_err())
 }

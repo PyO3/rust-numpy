@@ -10,14 +10,7 @@ from setuptools_rust import RustExtension
 class CmdTest(TestCommand):
     def run(self):
         self.run_command("test_rust")
-        test_files = os.listdir('./tests')
-        ok = 0
-        for f in test_files:
-            _, ext = os.path.splitext(f)
-            if ext == '.py':
-                res = subprocess.call([sys.executable, f], cwd='./tests')
-                ok = ok | res
-        sys.exit(res)
+        subprocess.check_call([sys.executable, 'test_ext.py'], cwd='./tests')
 
 
 setup_requires = ['setuptools-rust>=0.6.0']

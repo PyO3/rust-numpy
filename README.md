@@ -95,7 +95,7 @@ extern crate numpy;
 extern crate pyo3;
 
 use ndarray::{ArrayD, ArrayViewD, ArrayViewMutD};
-use numpy::{IntoPyResult, PyArrayDyn, ToPyArray};
+use numpy::{IntoPyArray, IntoPyResult, PyArrayDyn};
 use pyo3::prelude::{pymodinit, PyModule, PyResult, Python};
 
 #[pymodinit]
@@ -122,7 +122,7 @@ fn rust_ext(_py: Python, m: &PyModule) -> PyResult<()> {
         let x = x.as_array()?;
         // you can also specify your error context, via closure
         let y = y.as_array().into_pyresult_with(|| "y must be f64 array")?;
-        Ok(axpy(a, x, y).to_pyarray(py).to_owned(py))
+        Ok(axpy(a, x, y).into_pyarray(py).to_owned(py))
     }
 
     // wrapper of `mult`
@@ -135,7 +135,6 @@ fn rust_ext(_py: Python, m: &PyModule) -> PyResult<()> {
 
     Ok(())
 }
-
 ```
 
 Contribution
