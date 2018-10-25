@@ -24,13 +24,11 @@ const CAPSULE_NAME: &str = "_ARRAY_API";
 /// use numpy::{PyArray, npyffi::types::NPY_SORTKIND, PY_ARRAY_API};
 /// use pyo3::Python;
 /// let gil = Python::acquire_gil();
-/// let array = PyArray::arange(gil.python(), 2, 5, 1);
-/// array.as_slice_mut().unwrap().swap(0, 1);
-/// assert_eq!(array.as_slice().unwrap(), &[3, 2, 4]);
+/// let array = PyArray::from_slice(gil.python(), &[3, 2, 4]);
 /// unsafe {
 ///     PY_ARRAY_API.PyArray_Sort(array.as_array_ptr(), 0, NPY_SORTKIND::NPY_QUICKSORT);
 /// }
-/// assert_eq!(array.as_slice().unwrap(), &[2, 3, 4])
+/// assert_eq!(array.as_slice(), &[2, 3, 4])
 /// # }
 /// ```
 pub static PY_ARRAY_API: PyArrayAPI = PyArrayAPI {

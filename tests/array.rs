@@ -59,14 +59,14 @@ fn arange() {
     let arr = PyArray::<f64, _>::arange(gil.python(), 0.0, 1.0, 0.1);
     println!("ndim = {:?}", arr.ndim());
     println!("dims = {:?}", arr.dims());
-    println!("array = {:?}", arr.as_slice().unwrap());
+    println!("array = {:?}", arr.as_slice());
 }
 
 #[test]
 fn as_array() {
     let gil = pyo3::Python::acquire_gil();
     let arr = PyArray::<f64, _>::zeros(gil.python(), [3, 2, 4], false);
-    let a = arr.as_array().unwrap();
+    let a = arr.as_array();
     assert_eq!(arr.shape(), a.shape());
     assert_eq!(
         arr.strides().iter().map(|x| x / 8).collect::<Vec<_>>(),
@@ -81,7 +81,7 @@ fn to_pyarray_vec() {
     let a = vec![1, 2, 3];
     let arr = a.to_pyarray(gil.python());
     println!("arr.shape = {:?}", arr.shape());
-    println!("arr = {:?}", arr.as_slice().unwrap());
+    println!("arr = {:?}", arr.as_slice());
     assert_eq!(arr.shape(), [3]);
 }
 
@@ -105,17 +105,14 @@ fn to_pyarray_array() {
 fn iter_to_pyarray() {
     let gil = pyo3::Python::acquire_gil();
     let arr = PyArray::from_iter(gil.python(), (0..10).map(|x| x * x));
-    assert_eq!(
-        arr.as_slice().unwrap(),
-        &[0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
-    );
+    assert_eq!(arr.as_slice(), &[0, 1, 4, 9, 16, 25, 36, 49, 64, 81]);
 }
 
 #[test]
 fn long_iter_to_pyarray() {
     let gil = pyo3::Python::acquire_gil();
     let arr = PyArray::from_iter(gil.python(), (0u32..512).map(|x| x));
-    let slice = arr.as_slice().unwrap();
+    let slice = arr.as_slice();
     for (i, &elem) in slice.iter().enumerate() {
         assert_eq!(i as u32, elem);
     }
@@ -135,7 +132,7 @@ fn from_vec2() {
     let vec2 = vec![vec![1, 2, 3]; 2];
     let gil = pyo3::Python::acquire_gil();
     let pyarray = PyArray::from_vec2(gil.python(), &vec2).unwrap();
-    assert_eq!(pyarray.as_array().unwrap(), array![[1, 2, 3], [1, 2, 3]]);
+    assert_eq!(pyarray.as_array(), array![[1, 2, 3], [1, 2, 3]]);
     assert!(PyArray::from_vec2(gil.python(), &vec![vec![1], vec![2, 3]]).is_err());
 }
 
@@ -145,7 +142,7 @@ fn from_vec3() {
     let vec3 = vec![vec![vec![1, 2]; 2]; 2];
     let pyarray = PyArray::from_vec3(gil.python(), &vec3).unwrap();
     assert_eq!(
-        pyarray.as_array().unwrap(),
+        pyarray.as_array(),
         array![[[1, 2], [1, 2]], [[1, 2], [1, 2]]]
     );
 }
@@ -162,7 +159,7 @@ fn from_eval() {
         .unwrap()
         .extract()
         .unwrap();
-    assert_eq!(pyarray.as_slice().unwrap(), &[1, 2, 3]);
+    assert_eq!(pyarray.as_slice(), &[1, 2, 3]);
 }
 
 #[test]
@@ -188,7 +185,7 @@ macro_rules! small_array_test {
                 let array: [$t; 2] = [$t::min_value(), $t::max_value()];
                 let pyarray = array.to_pyarray(gil.python());
                 assert_eq!(
-                    pyarray.as_slice().unwrap(),
+                    pyarray.as_slice(),
                     &[$t::min_value(), $t::max_value()]
                 );
             })+
@@ -204,7 +201,7 @@ fn array_cast() {
     let vec2 = vec![vec![1.0, 2.0, 3.0]; 2];
     let arr_f64 = PyArray::from_vec2(gil.python(), &vec2).unwrap();
     let arr_i32: &PyArray2<i32> = arr_f64.cast(false).unwrap();
-    assert_eq!(arr_i32.as_array().unwrap(), array![[1, 2, 3], [1, 2, 3]]);
+    assert_eq!(arr_i32.as_array(), array![[1, 2, 3], [1, 2, 3]]);
 }
 
 #[test]
@@ -212,7 +209,7 @@ fn into_pyarray_vec() {
     let gil = pyo3::Python::acquire_gil();
     let a = vec![1, 2, 3];
     let arr = a.into_pyarray(gil.python());
-    assert_eq!(arr.as_slice().unwrap(), &[1, 2, 3])
+    assert_eq!(arr.as_slice(), &[1, 2, 3])
 }
 
 #[test]
