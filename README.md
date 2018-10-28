@@ -65,7 +65,7 @@ fn main_<'py>(py: Python<'py>) -> PyResult<()> {
     let pyarray: &PyArray1<i32> = py
         .eval("np.array([1, 2, 3], dtype='int32')", Some(&dict), None)?
         .extract()?;
-    let slice = pyarray.as_slice()?;
+    let slice = pyarray.as_slice();
     assert_eq!(slice, &[1, 2, 3]);
     Ok(())
 }
@@ -95,7 +95,7 @@ extern crate numpy;
 extern crate pyo3;
 
 use ndarray::{ArrayD, ArrayViewD, ArrayViewMutD};
-use numpy::{IntoPyArray, IntoPyResult, PyArrayDyn};
+use numpy::{IntoPyArray, PyArrayDyn};
 use pyo3::prelude::{pymodinit, PyModule, PyResult, Python};
 
 #[pymodinit]
@@ -119,16 +119,16 @@ fn rust_ext(_py: Python, m: &PyModule) -> PyResult<()> {
         y: &PyArrayDyn<f64>,
     ) -> PyResult<PyArrayDyn<f64>> {
         // you can convert numpy error into PyErr via ?
-        let x = x.as_array()?;
+        let x = x.as_array();
         // you can also specify your error context, via closure
-        let y = y.as_array().into_pyresult_with(|| "y must be f64 array")?;
+        let y = y.as_array();
         Ok(axpy(a, x, y).into_pyarray(py).to_owned(py))
     }
 
     // wrapper of `mult`
     #[pyfn(m, "mult")]
     fn mult_py(_py: Python, a: f64, x: &PyArrayDyn<f64>) -> PyResult<()> {
-        let x = x.as_array_mut()?;
+        let x = x.as_array_mut();
         mult(a, x);
         Ok(())
     }

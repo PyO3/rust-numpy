@@ -25,7 +25,7 @@
 //!     let py = gil.python();
 //!     let py_array = array![[1i64, 2], [3, 4]].to_pyarray(py);
 //!     assert_eq!(
-//!         py_array.as_array().unwrap(),
+//!         py_array.as_array(),
 //!         array![[1i64, 2], [3, 4]]
 //!     );
 //! }
