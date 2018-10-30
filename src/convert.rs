@@ -154,9 +154,9 @@ impl<D: Dimension> ToNpyDims for D {
 /// for what types you can use as `NpyIndex`.
 ///
 /// But basically, you can use
-/// - Tuple
-/// - Fixed sized array
-/// - Slice
+/// - [tuple](https://doc.rust-lang.org/nightly/std/primitive.tuple.html)
+/// - [array](https://doc.rust-lang.org/nightly/std/primitive.array.html)
+/// - [slice](https://doc.rust-lang.org/nightly/std/primitive.slice.html)
 // Since Numpy's strides is byte offset, we can't use ndarray::NdIndex directly here.
 pub trait NpyIndex: IntoDimension {
     fn get_checked<T>(self, dims: &[usize], strides: &[isize]) -> Option<isize>;

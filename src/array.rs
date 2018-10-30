@@ -23,7 +23,7 @@ use types::{NpyDataType, TypeNum};
 /// - Case1: Constructed via [`IntoPyArray`](../convert/trait.IntoPyArray.html) or
 /// [`from_vec`](#method.from_vec) or [`from_owned_array`](#method.from_owned_vec).
 ///
-/// These methods don't allocate and use `Box<[T]>` as a internal buffer.
+/// These methods don't allocate memory and use `Box<[T]>` as a internal buffer.
 ///
 /// Please take care that **you cannot use some destructive methods like `resize`,
 /// for this kind of array**.
@@ -31,25 +31,27 @@ use types::{NpyDataType, TypeNum};
 /// - Case2: Constructed via other methods, like [`ToPyArray`](../convert/trait.ToPyArray.html) or
 /// [`from_slice`](#method.from_slice) or [`from_array`](#from_array).
 ///
-/// These methods allocate a memory area in Python's private heap.
+/// These methods allocate memory in Python's private heap.
 ///
-/// In both cases, **an internal buffer of `PyArray` is managed by Python GC.**
+/// In both cases, **PyArray is managed by Python GC.**
 /// So you can neither retrieve it nor deallocate it manually.
 ///
 /// # Reference
 ///
-/// Like [`new`](#method.new), most constractor methods of this type returns `&PyArray`.
+/// Like [`new`](#method.new), all constractor methods of `PyArray` returns `&PyArray`.
 ///
-/// See [pyo3's document](https://pyo3.rs/master/doc/pyo3/index.html#ownership-and-lifetimes)
-/// for the reason.
+/// This design follows
+/// [pyo3's ownership concept](https://pyo3.rs/master/doc/pyo3/index.html#ownership-and-lifetimes).
 ///
 ///
-/// # Dimension
-/// `PyArray` has 2 type parametes `T` and `D`. `T` represents its data type like `f32`, and `D`
-/// represents its dimension.
+/// # Data type and Dimension
+/// `PyArray` has 2 type parametes `T` and `D`. `T` represents its data type like
+/// [`f32`](https://doc.rust-lang.org/std/primitive.f32.html), and `D` represents its dimension.
 ///
-/// To specify the dimension, you can use types which implements
-/// [Dimension](https://docs.rs/ndarray/0.12/ndarray/trait.Dimension.html).
+/// All data types you can use implements [TypeNum](../types/trait.TypeNum.html).
+///
+/// Dimensions are represented by ndarray's
+/// [Dimension](https://docs.rs/ndarray/0.12/ndarray/trait.Dimension.html) trait.
 ///
 /// Typically, you can use `Ix1, Ix2, ..` for fixed size arrays, and use `IxDyn` for dynamic
 /// dimensioned arrays. They're re-exported from `ndarray` crate.
@@ -57,9 +59,10 @@ use types::{NpyDataType, TypeNum};
 /// You can also use various type aliases we provide, like [`PyArray1`](./type.PyArray1.html)
 /// or [`PyArrayDyn`](./type.PyArrayDyn.html).
 ///
-/// Many constructor methods takes a type which implements
+/// To specify concrete dimension like `3×4×5`, you can use types which implements ndarray's
 /// [`IntoDimension`](https://docs.rs/ndarray/0.12/ndarray/dimension/conversion/trait.IntoDimension.html)
 /// trait. Typically, you can use array(e.g. `[3, 4, 5]`) or tuple(e.g. `(3, 4, 5)`) as a dimension.
+///
 /// # Example
 /// ```
 /// # #[macro_use] extern crate ndarray; extern crate pyo3; extern crate numpy; fn main() {
@@ -147,7 +150,7 @@ impl<T, D> IntoPyObject for PyArray<T, D> {
 }
 
 impl<T, D> PyArray<T, D> {
-    /// Gets a raw `PyArrayObject` pointer.
+    /// Gets a raw [`PyArrayObject`](../npyffi/objects/struct.PyArrayObject.html) pointer.
     pub fn as_array_ptr(&self) -> *mut npyffi::PyArrayObject {
         self.as_ptr() as _
     }
@@ -416,9 +419,11 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
         ToPyArray::to_pyarray(arr, py)
     }
 
-    /// Construct PyArray from `ndarray::Array`.
+    /// Construct PyArray from
+    /// [`ndarray::Array`](https://docs.rs/ndarray/0.12/ndarray/type.Array.html).
     ///
-    /// This method uses internal `Vec` of `ndarray::Array` as numpy array.
+    /// This method uses internal [`Vec`](https://doc.rust-lang.org/std/vec/struct.Vec.html)
+    /// of `ndarray::Array` as numpy array.
     ///
     /// # Example
     /// ```
@@ -433,7 +438,8 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
         IntoPyArray::into_pyarray(arr, py)
     }
 
-    /// Get the immutable view of the internal data of `PyArray`, as `ndarray::ArrayView`.
+    /// Get the immutable view of the internal data of `PyArray`, as
+    /// [`ndarray::ArrayView`](https://docs.rs/ndarray/0.12/ndarray/type.ArrayView.html).
     ///
     /// # Example
     /// ```
@@ -579,7 +585,8 @@ impl<T: TypeNum> PyArray<T, Ix1> {
         array
     }
 
-    /// Construct one-dimension PyArray from `Vec`.
+    /// Construct one-dimension PyArray
+    /// from [`Vec`](https://doc.rust-lang.org/std/vec/struct.Vec.html).
     ///
     /// # Example
     /// ```
@@ -595,7 +602,8 @@ impl<T: TypeNum> PyArray<T, Ix1> {
         IntoPyArray::into_pyarray(vec, py)
     }
 
-    /// Construct one-dimension PyArray from `impl ExactSizeIterator`.
+    /// Construct one-dimension PyArray from a type which implements
+    /// [`ExactSizeIterator`](https://doc.rust-lang.org/std/iter/trait.ExactSizeIterator.html).
     ///
     /// # Example
     /// ```
@@ -618,10 +626,12 @@ impl<T: TypeNum> PyArray<T, Ix1> {
         array
     }
 
-    /// Construct one-dimension PyArray from `impl IntoIterator`.
+    /// Construct one-dimension PyArray from a type which implements
+    /// [`IntoIterator`](https://doc.rust-lang.org/std/iter/trait.IntoIterator.html).
     ///
-    /// This method can allocate multiple times and not fast.
-    /// When you can use [from_exact_iter](method.from_exact_iter.html), please use it.
+    /// This method can allocate memory multiple times and not fast.
+    /// When you can use [from_exact_iter](method.from_exact_iter.html), we recommend to use it.
+    ///
     /// # Example
     /// ```
     /// # extern crate pyo3; extern crate numpy; fn main() {
@@ -741,7 +751,7 @@ impl<T: TypeNum> PyArray<T, Ix3> {
     /// Construct a three-dimension PyArray from `Vec<Vec<Vec<T>>>`.
     ///
     /// This function checks all dimension of inner vec, and if there's any vec
-    /// where its dimension differs from others, it returns `ArrayCastError`.
+    /// where its dimension differs from others, it returns error.
     ///
     /// # Example
     /// ```
