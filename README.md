@@ -39,7 +39,7 @@ name = "numpy-test"
 
 [dependencies]
 pyo3 = "^0.5.0-alpha.2"
-numpy = "0.3"
+numpy = "0.4.0-alpha.1"
 ```
 
 ``` rust
@@ -82,7 +82,7 @@ name = "rust_ext"
 crate-type = ["cdylib"]
 
 [dependencies]
-numpy = "0.3"
+numpy = "0.4.0-alpha.1"
 ndarray = "0.12"
 
 [dependencies.pyo3]
@@ -145,8 +145,11 @@ We need your feedback. Don't hesitate to open [issues](https://github.com/termos
 
 Version
 --------
-- v0.4.0(Coming soon)
+- v0.4.0(coming soon)
   - Duplicate `PyArrayModule` and import Numpy API automatically
+  - Fix memory leak of `IntoPyArray` and add `ToPyArray` crate
+  - PyArray has dimension as type parameter. Now it looks like `PyArray<T, D>`
+  - Use `ndarray::IntoDimension` to specify dimension
 
 - v0.3.1, v0.3.2
   - Just update dependencies
