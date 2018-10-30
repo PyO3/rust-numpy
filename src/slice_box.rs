@@ -1,5 +1,5 @@
 use crate::types::TypeNum;
-use pyo3::{self, ffi, typeob, PyObjectAlloc, Python, ToPyPointer};
+use pyo3::{ffi, typeob, types::PyObjectRef, PyObjectAlloc, Python, ToPyPointer};
 use std::os::raw::c_void;
 
 #[repr(C)]
@@ -26,7 +26,7 @@ impl<T> SliceBox<T> {
 
 impl<T> typeob::PyTypeInfo for SliceBox<T> {
     type Type = ();
-    type BaseType = pyo3::PyObjectRef;
+    type BaseType = PyObjectRef;
     const NAME: &'static str = "SliceBox";
     const DESCRIPTION: &'static str = "Memory store for PyArray made by IntoPyArray.";
     const FLAGS: usize = 0;
@@ -39,7 +39,7 @@ impl<T> typeob::PyTypeInfo for SliceBox<T> {
     }
 }
 
-impl<T: TypeNum> typeob::PyTypeObject for SliceBox<T> {
+impl<T: TypeNum> typeob::PyTypeCreate for SliceBox<T> {
     #[inline(always)]
     fn init_type() {
         static START: std::sync::Once = std::sync::ONCE_INIT;

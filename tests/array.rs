@@ -4,7 +4,7 @@ extern crate pyo3;
 
 use ndarray::*;
 use numpy::*;
-use pyo3::prelude::*;
+use pyo3::{prelude::*, types::PyDict, types::PyList};
 
 #[test]
 fn new_c_order() {
@@ -124,7 +124,7 @@ fn is_instance() {
     let py = gil.python();
     let arr = PyArray2::<f64>::new(gil.python(), [3, 5], false);
     assert!(py.is_instance::<PyArray2<f64>, _>(arr).unwrap());
-    assert!(!py.is_instance::<pyo3::PyList, _>(arr).unwrap());
+    assert!(!py.is_instance::<PyList, _>(arr).unwrap());
 }
 
 #[test]

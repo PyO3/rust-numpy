@@ -2,7 +2,8 @@
 use ndarray::*;
 use npyffi::{self, npy_intp, NPY_ORDER, PY_ARRAY_API};
 use num_traits::AsPrimitive;
-use pyo3::*;
+use pyo3::{exceptions::TypeError, ffi, prelude::*, types::PyObjectRef};
+use pyo3::{PyDowncastError, PyObjectWithToken, ToPyPointer};
 use std::iter::ExactSizeIterator;
 use std::marker::PhantomData;
 use std::mem;
@@ -123,7 +124,7 @@ impl<'a, T: TypeNum, D: Dimension> FromPyObject<'a> for &'a PyArray<T, D> {
             if let Some(ndim) = D::NDIM {
                 let ptr = ob.as_ptr() as *mut npyffi::PyArrayObject;
                 if (*ptr).nd as usize != ndim {
-                    return Err(PyErr::new::<exc::TypeError, _>(format!(
+                    return Err(PyErr::new::<TypeError, _>(format!(
                         "specified dim was {}, but actual dim was {}",
                         ndim,
                         (*ptr).nd

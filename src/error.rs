@@ -2,7 +2,7 @@
 
 use array::PyArray;
 use convert::ToNpyDims;
-use pyo3::*;
+use pyo3::{exceptions as exc, PyErr, PyResult};
 use std::error;
 use std::fmt;
 use types::{NpyDataType, TypeNum};

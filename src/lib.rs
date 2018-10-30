@@ -38,6 +38,7 @@ extern crate libc;
 extern crate ndarray;
 extern crate num_complex;
 extern crate num_traits;
+#[macro_use]
 extern crate pyo3;
 
 pub mod array;

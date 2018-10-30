@@ -38,7 +38,7 @@ Example
 name = "numpy-test"
 
 [dependencies]
-pyo3 = "^0.4.1"
+pyo3 = "^0.5.0-alpha.2"
 numpy = "0.3"
 ```
 
@@ -46,7 +46,8 @@ numpy = "0.3"
 extern crate numpy;
 extern crate pyo3;
 use numpy::{PyArray1, get_array_module};
-use pyo3::prelude::{ObjectProtocol, PyDict, PyResult, Python};
+use pyo3::prelude::{ObjectProtocol, PyResult, Python};
+use pyo3::types::PyDict;
 
 fn main() -> Result<(), ()> {
     let gil = Python::acquire_gil();
@@ -85,7 +86,7 @@ numpy = "0.3"
 ndarray = "0.12"
 
 [dependencies.pyo3]
-version = "^0.4.1"
+version = "^0.5.0-alpha.2"
 features = ["extension-module"]
 ```
 
