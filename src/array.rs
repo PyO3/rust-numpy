@@ -464,6 +464,28 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
         unsafe { ArrayViewMut::from_shape_ptr(self.ndarray_shape(), self.data()) }
     }
 
+    /// Get a copy of `PyArray` as
+    /// [`ndarray::Array`](https://docs.rs/ndarray/0.12/ndarray/type.Array.html).
+    ///
+    /// # Example
+    /// ```
+    /// # #[macro_use] extern crate ndarray; extern crate pyo3; extern crate numpy; fn main() {
+    /// use numpy::PyArray;
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let py_array = PyArray::arange(gil.python(), 0, 4, 1).reshape([2, 2]).unwrap();
+    /// assert_eq!(
+    ///     py_array.to_owned_array(),
+    ///     array![[0, 1], [2, 3]]
+    /// )
+    /// # }
+    /// ```
+    pub fn to_owned_array(&self) -> Array<T, D> {
+        unsafe {
+            let vec = self.as_slice().to_owned();
+            Array::from_shape_vec_unchecked(self.ndarray_shape(), vec)
+        }
+    }
+
     /// Get an immutable reference of a specified element, without checking the
     /// passed index is valid.
     ///
