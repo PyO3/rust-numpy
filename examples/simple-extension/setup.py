@@ -14,6 +14,13 @@ class PyTest(TestCommand):
         raise SystemExit(errno)
 
 
+def get_cfg_flags():
+    version = sys.version_info[0:2]
+    if version[0] == 2:
+        return ['--cfg=Py_2']
+    else:
+        return ['--cfg=Py_3']
+
 setup_requires = ['setuptools-rust>=0.6.0']
 install_requires = ['numpy']
 test_requires = install_requires + ['pytest']
@@ -22,7 +29,9 @@ setup(
     name='rust_ext',
     version='0.1.0',
     description='Example of python-extension using rust-numpy',
-    rust_extensions=[RustExtension('rust_ext.rust_ext', './Cargo.toml')],
+    rust_extensions=[RustExtension(
+        'rust_ext.rust_ext', './Cargo.toml', rustc_flags=get_cfg_flags()
+    )],
     install_requires=install_requires,
     setup_requires=setup_requires,
     test_requires=test_requires,

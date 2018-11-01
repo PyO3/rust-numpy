@@ -12,11 +12,19 @@
 use pyo3::ffi;
 use std::ffi::CString;
 use std::os::raw::c_void;
-use std::ptr::null_mut;
 
 fn get_numpy_api(module: &str, capsule: &str) -> *const *const c_void {
     let module = CString::new(module).unwrap();
     let capsule = CString::new(capsule).unwrap();
+    #[cfg(not(Py_3))]
+    unsafe fn get_capsule(capsule: *mut ffi::PyObject) -> *const *const c_void {
+        ffi::PyCObject_AsVoidPtr(capsule) as *const *const c_void
+    }
+    #[cfg(Py_3)]
+    unsafe fn get_capsule(capsule: *mut ffi::PyObject) -> *const *const c_void {
+        use std::ptr::null_mut;
+        ffi::PyCapsule_GetPointer(capsule, null_mut()) as *const *const c_void
+    }
     unsafe {
         assert_ne!(
             ffi::Py_IsInitialized(),
@@ -27,7 +35,8 @@ Please make sure that you get gil, by `let gil = Python::acquire_gil();`"
         let numpy = ffi::PyImport_ImportModule(module.as_ptr());
         assert!(!numpy.is_null(), "Failed to import numpy module");
         let capsule = ffi::PyObject_GetAttrString(numpy as *mut ffi::PyObject, capsule.as_ptr());
-        ffi::PyCapsule_GetPointer(capsule, null_mut()) as *const *const c_void
+        assert!(!capsule.is_null(), "Failed to import numpy module");
+        get_capsule(capsule)
     }
 }
 
