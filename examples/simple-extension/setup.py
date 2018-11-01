@@ -1,4 +1,3 @@
-
 import os
 import subprocess
 import sys
@@ -6,16 +5,18 @@ from setuptools import find_packages, setup
 from setuptools.command.test import test as TestCommand
 from setuptools_rust import RustExtension
 
-
-class CmdTest(TestCommand):
+class PyTest(TestCommand):
+    user_options = []
     def run(self):
         self.run_command("test_rust")
-        subprocess.check_call([sys.executable, 'test_ext.py'], cwd='./tests')
+        import subprocess
+        errno = subprocess.call(['pytest', 'tests'])
+        raise SystemExit(errno)
 
 
 setup_requires = ['setuptools-rust>=0.6.0']
 install_requires = ['numpy']
-test_requires = install_requires
+test_requires = install_requires + ['pytest']
 
 setup(
     name='rust_ext',
@@ -27,5 +28,5 @@ setup(
     test_requires=test_requires,
     packages=find_packages(),
     zip_safe=False,
-    cmdclass=dict(test=CmdTest)
+    cmdclass=dict(test=PyTest)
 )

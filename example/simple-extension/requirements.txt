@@ -1,3 +1,0 @@
-numpy
-setuptools
-setuptools-rust
