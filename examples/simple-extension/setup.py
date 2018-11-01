@@ -21,6 +21,13 @@ def get_cfg_flags():
     else:
         return ['--cfg=Py_3']
 
+def get_features():
+    version = sys.version_info[0:2]
+    if version[0] == 2:
+        return ['numpy/python2']
+    else:
+        return ['numpy/python3']
+
 setup_requires = ['setuptools-rust>=0.6.0']
 install_requires = ['numpy']
 test_requires = install_requires + ['pytest']
@@ -30,7 +37,10 @@ setup(
     version='0.1.0',
     description='Example of python-extension using rust-numpy',
     rust_extensions=[RustExtension(
-        'rust_ext.rust_ext', './Cargo.toml', rustc_flags=get_cfg_flags()
+        'rust_ext.rust_ext',
+        './Cargo.toml',
+        rustc_flags=get_cfg_flags(),
+        features=get_features(),
     )],
     install_requires=install_requires,
     setup_requires=setup_requires,
