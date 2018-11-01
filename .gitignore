@@ -10,4 +10,4 @@ Cargo.lock
 
 # cargo fmt
 *.bk
-.tox/*
+.tox/

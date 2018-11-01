@@ -23,4 +23,4 @@ test_script:
   - cargo build --verbose --all
   - cargo test --verbose --all
   - rustdoc --test README.md -L native="%PYTHON%\\libs" -L target/debug/deps/
-  - cd examples/simple-extension && tox -e py
+  - cd examples/simple-extension && python -m tox
