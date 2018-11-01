@@ -21,7 +21,7 @@ setup(
     name='rust_ext',
     version='0.1.0',
     description='Example of python-extension using rust-numpy',
-    rust_extensions=[RustExtension('rust_ext.rust_ext', 'extensions/Cargo.toml')],
+    rust_extensions=[RustExtension('rust_ext.rust_ext', './Cargo.toml')],
     install_requires=install_requires,
     setup_requires=setup_requires,
     test_requires=test_requires,
