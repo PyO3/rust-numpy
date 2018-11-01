@@ -2,8 +2,8 @@
 
 set -ex
 
-cargo build --verbose --all
-cargo test --verbose --all
+cargo build --verbose --features $FEATURES
+cargo test --verbose --features $FEATURES
 rustdoc -L target/debug/deps/ --test README.md
 
 for example in examples/*; do
