@@ -26,6 +26,23 @@ https://github.com/PyO3/pyo3/blob/master/build.rs for minimum required version)
 Starting from 0.3, rust-numpy migrated from rust-cpython to pyo3.
 If you want to use rust-cpython, use version 0.2.1 from crates.io.
 
+Supported python version
+-------------
+Currently 2.7, 3.5, 3.6, 3.7 are supported.
+
+By default, python version is automatically by execute `python`.
+
+If you need to use python version, please add a feature flag like
+
+``` toml
+[dependencies.numpy]
+version = "0.4.0-alpha.1"
+features = ["python3"]
+```
+.
+
+You can also specify version in [setup.py](examples/simple-extension/setup.py)
+
 
 Example
 ---------
