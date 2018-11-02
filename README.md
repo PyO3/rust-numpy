@@ -30,9 +30,9 @@ Supported python version
 -------------
 Currently 2.7, 3.5, 3.6, 3.7 are supported.
 
-By default, python version is automatically by execute `python`.
+By default, rust-numpy is built for Python3.
 
-You cal also specify python version manually, by adding a feature flag like
+If you want to compile for Python2, please specify
 
 ``` toml
 [dependencies.numpy]
@@ -41,7 +41,8 @@ features = ["python3"]
 ```
 .
 
-You can also specify python version in [setup.py](examples/simple-extension/setup.py).
+You can also automatically specify python version in [setup.py](examples/simple-extension/setup.py)
+, using [setuptools-rust](https://github.com/PyO3/setuptools-rust).
 
 
 Example
