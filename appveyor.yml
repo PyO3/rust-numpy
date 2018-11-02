@@ -1,8 +1,12 @@
 environment:
   TARGET: x86_64-pc-windows-msvc
   matrix:
+    - PYTHON: "C:/Python27-x64"
+      FEATURES: python2
     - PYTHON: "C:/Python35-x64"
+      FEATURES: python3
     - PYTHON: "C:/Python36-x64"
+      FEATURES: python3
 
 install:
   - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
@@ -17,10 +21,9 @@ install:
   - pip install setuptools-rust pytest pytest-benchmark tox numpy
 
 build_script:
-  - cargo build --verbose
+  - cargo build --verbose --features %FEATURES%
 
 test_script:
-  - cargo build --verbose --all
-  - cargo test --verbose --all
+  - cargo test --verbose --features %FEATURES%
   - rustdoc --test README.md -L native="%PYTHON%\\libs" -L target/debug/deps/
   - cd examples/simple-extension && python setup.py install && python setup.py test
