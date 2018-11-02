@@ -32,7 +32,7 @@ Currently 2.7, 3.5, 3.6, 3.7 are supported.
 
 By default, python version is automatically by execute `python`.
 
-If you need to use python version, please add a feature flag like
+You cal also specify python version manually, by adding a feature flag like
 
 ``` toml
 [dependencies.numpy]
@@ -41,7 +41,7 @@ features = ["python3"]
 ```
 .
 
-You can also specify version in [setup.py](examples/simple-extension/setup.py)
+You can also specify python version in [setup.py](examples/simple-extension/setup.py).
 
 
 Example
@@ -167,6 +167,7 @@ Version
   - Fix memory leak of `IntoPyArray` and add `ToPyArray` crate
   - PyArray has dimension as type parameter. Now it looks like `PyArray<T, D>`
   - Use `ndarray::IntoDimension` to specify dimension
+  - Python2 support
 
 - v0.3.1, v0.3.2
   - Just update dependencies
