@@ -32,12 +32,12 @@ Currently 2.7, 3.5, 3.6, 3.7 are supported.
 
 By default, rust-numpy is built for Python3.
 
-If you want to compile for Python2, please specify
+If you want to compile for Python2, please add a feature flag in `Cargo.toml` like
 
 ``` toml
 [dependencies.numpy]
 version = "0.4.0-alpha.1"
-features = ["python3"]
+features = ["python2"]
 ```
 .
 
