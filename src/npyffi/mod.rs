@@ -16,11 +16,11 @@ use std::os::raw::c_void;
 fn get_numpy_api(module: &str, capsule: &str) -> *const *const c_void {
     let module = CString::new(module).unwrap();
     let capsule = CString::new(capsule).unwrap();
-    #[cfg(not(Py_3))]
+    #[cfg(feature = "python2")]
     unsafe fn get_capsule(capsule: *mut ffi::PyObject) -> *const *const c_void {
         ffi::PyCObject_AsVoidPtr(capsule) as *const *const c_void
     }
-    #[cfg(Py_3)]
+    #[cfg(not(feature = "python2"))]
     unsafe fn get_capsule(capsule: *mut ffi::PyObject) -> *const *const c_void {
         use std::ptr::null_mut;
         ffi::PyCapsule_GetPointer(capsule, null_mut()) as *const *const c_void
