@@ -148,7 +148,7 @@ fn from_vec3() {
 }
 
 #[test]
-fn from_eval() {
+fn from_eval_to_fixed() {
     let gil = pyo3::Python::acquire_gil();
     let np = get_array_module(gil.python()).unwrap();
     let dict = PyDict::new(gil.python());
@@ -163,7 +163,26 @@ fn from_eval() {
 }
 
 #[test]
-fn from_eval_fail() {
+fn from_eval_to_dyn() {
+    let gil = pyo3::Python::acquire_gil();
+    let np = get_array_module(gil.python()).unwrap();
+    let dict = PyDict::new(gil.python());
+    dict.set_item("np", np).unwrap();
+    let pyarray: &PyArrayDyn<i32> = gil
+        .python()
+        .eval(
+            "np.array([[1, 2], [3, 4]], dtype='int32')",
+            Some(&dict),
+            None,
+        )
+        .unwrap()
+        .extract()
+        .unwrap();
+    assert_eq!(pyarray.as_slice(), &[1, 2, 3, 4]);
+}
+
+#[test]
+fn from_eval_fail_by_dtype() {
     let gil = pyo3::Python::acquire_gil();
     let np = get_array_module(gil.python()).unwrap();
     let dict = PyDict::new(gil.python());
@@ -173,7 +192,25 @@ fn from_eval_fail() {
         .eval("np.array([1, 2, 3], dtype='float64')", Some(&dict), None)
         .unwrap()
         .extract();
-    assert!(converted.is_err());
+    converted
+        .unwrap_err()
+        .print_and_set_sys_last_vars(gil.python());
+}
+
+#[test]
+fn from_eval_fail_by_dim() {
+    let gil = pyo3::Python::acquire_gil();
+    let np = get_array_module(gil.python()).unwrap();
+    let dict = PyDict::new(gil.python());
+    dict.set_item("np", np).unwrap();
+    let converted: Result<&PyArray2<i32>, _> = gil
+        .python()
+        .eval("np.array([1, 2, 3], dtype='int32')", Some(&dict), None)
+        .unwrap()
+        .extract();
+    converted
+        .unwrap_err()
+        .print_and_set_sys_last_vars(gil.python());
 }
 
 macro_rules! small_array_test {

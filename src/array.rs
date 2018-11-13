@@ -2,7 +2,7 @@
 use ndarray::*;
 use npyffi::{self, npy_intp, NPY_ORDER, PY_ARRAY_API};
 use num_traits::AsPrimitive;
-use pyo3::{exceptions::TypeError, ffi, prelude::*, types::PyObjectRef};
+use pyo3::{ffi, prelude::*, types::PyObjectRef};
 use pyo3::{PyDowncastError, PyObjectWithToken, ToPyPointer};
 use std::iter::ExactSizeIterator;
 use std::marker::PhantomData;
@@ -116,30 +116,21 @@ impl<'a, T, D> ::std::convert::From<&'a PyArray<T, D>> for &'a PyObjectRef {
 }
 
 impl<'a, T: TypeNum, D: Dimension> FromPyObject<'a> for &'a PyArray<T, D> {
-    // here we do type-check twice
+    // here we do type-check three times
     // 1. Checks if the object is PyArray
     // 2. Checks if the data type of the array is T
+    // 3. Checks if the dimension is same as D
     fn extract(ob: &'a PyObjectRef) -> PyResult<Self> {
         let array = unsafe {
             if npyffi::PyArray_Check(ob.as_ptr()) == 0 {
                 return Err(PyDowncastError.into());
-            }
-            if let Some(ndim) = D::NDIM {
-                let ptr = ob.as_ptr() as *mut npyffi::PyArrayObject;
-                if (*ptr).nd as usize != ndim {
-                    return Err(PyErr::new::<TypeError, _>(format!(
-                        "specified dim was {}, but actual dim was {}",
-                        ndim,
-                        (*ptr).nd
-                    )));
-                }
             }
             &*(ob as *const PyObjectRef as *const PyArray<T, D>)
         };
         array
             .type_check()
             .map(|_| array)
-            .into_pyresult_with(|| "FromPyObject::extract typecheck failed")
+            .into_pyresult_with(|| "[FromPyObject::extract] typecheck failed")
     }
 }
 
@@ -398,6 +389,27 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
         }
     }
 
+    /// Get the immutable view of the internal data of `PyArray`, as slice.
+    /// # Example
+    /// ```
+    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// use numpy::PyArray;
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let py_array = PyArray::arange(gil.python(), 0, 4, 1).reshape([2, 2]).unwrap();
+    /// assert_eq!(py_array.as_slice(), &[0, 1, 2, 3]);
+    /// # }
+    /// ```
+    pub fn as_slice(&self) -> &[T] {
+        self.type_check_assert();
+        unsafe { ::std::slice::from_raw_parts(self.data(), self.len()) }
+    }
+
+    /// Get the mmutable view of the internal data of `PyArray`, as slice.
+    pub fn as_slice_mut(&self) -> &mut [T] {
+        self.type_check_assert();
+        unsafe { ::std::slice::from_raw_parts_mut(self.data(), self.len()) }
+    }
+
     /// Construct PyArray from `ndarray::ArrayBase`.
     ///
     /// This method allocates memory in Python's heap via numpy api, and then copies all elements
@@ -583,6 +595,22 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     pub fn into_dyn(&self) -> &PyArray<T, IxDyn> {
         let python = self.py();
         unsafe { PyArray::from_borrowed_ptr(python, self.as_ptr()) }
+    }
+
+    fn type_check_assert(&self) {
+        let type_check = self.type_check();
+        assert!(type_check.is_ok(), "{:?}", type_check);
+    }
+
+    fn type_check(&self) -> Result<(), ErrorKind> {
+        let truth = self.typenum();
+        let dim = self.shape().len();
+        let dim_ok = D::NDIM.map(|n| n == dim).unwrap_or(true);
+        if T::is_same_type(truth) && dim_ok {
+            Ok(())
+        } else {
+            Err(ErrorKind::to_rust(truth, dim, T::npy_data_type(), D::NDIM))
+        }
     }
 }
 
@@ -826,41 +854,6 @@ impl<T: TypeNum, D> PyArray<T, D> {
     /// Returns the scalar type of the array.
     pub fn data_type(&self) -> NpyDataType {
         NpyDataType::from_i32(self.typenum())
-    }
-
-    fn type_check_assert(&self) {
-        let type_check = self.type_check();
-        assert!(type_check.is_ok(), "{:?}", type_check);
-    }
-
-    fn type_check(&self) -> Result<(), ErrorKind> {
-        let truth = self.typenum();
-        if T::is_same_type(truth) {
-            Ok(())
-        } else {
-            Err(ErrorKind::to_rust(truth, T::npy_data_type()))
-        }
-    }
-
-    /// Get the immutable view of the internal data of `PyArray`, as slice.
-    /// # Example
-    /// ```
-    /// # extern crate pyo3; extern crate numpy; fn main() {
-    /// use numpy::PyArray;
-    /// let gil = pyo3::Python::acquire_gil();
-    /// let py_array = PyArray::arange(gil.python(), 0, 4, 1).reshape([2, 2]).unwrap();
-    /// assert_eq!(py_array.as_slice(), &[0, 1, 2, 3]);
-    /// # }
-    /// ```
-    pub fn as_slice(&self) -> &[T] {
-        self.type_check_assert();
-        unsafe { ::std::slice::from_raw_parts(self.data(), self.len()) }
-    }
-
-    /// Get the mmutable view of the internal data of `PyArray`, as slice.
-    pub fn as_slice_mut(&self) -> &mut [T] {
-        self.type_check_assert();
-        unsafe { ::std::slice::from_raw_parts_mut(self.data(), self.len()) }
     }
 
     /// Copies self into `other`, performing a data-type conversion if necessary.

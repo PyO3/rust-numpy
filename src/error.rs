@@ -31,18 +31,58 @@ impl<T, E: IntoPyErr> IntoPyResult for Result<T, E> {
     }
 }
 
-/// Represents a shape and format of numpy array.
+/// Represents a shape and dtype of numpy array.
 ///
 /// Only for error formatting.
 #[derive(Debug)]
-pub struct ArrayFormat {
+pub struct ArrayShape {
     pub dims: Box<[usize]>,
     pub dtype: NpyDataType,
 }
 
-impl fmt::Display for ArrayFormat {
+impl ArrayShape {
+    fn boxed_dims(dims: &[usize]) -> Box<[usize]> {
+        dims.into_iter()
+            .map(|&x| x)
+            .collect::<Vec<_>>()
+            .into_boxed_slice()
+    }
+    fn from_array<T: TypeNum, D>(array: &PyArray<T, D>) -> Self {
+        ArrayShape {
+            dims: Self::boxed_dims(array.shape()),
+            dtype: T::npy_data_type(),
+        }
+    }
+    fn from_dims<T: TypeNum, D: ToNpyDims>(dims: D) -> Self {
+        ArrayShape {
+            dims: Self::boxed_dims(dims.slice()),
+            dtype: T::npy_data_type(),
+        }
+    }
+}
+
+impl fmt::Display for ArrayShape {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "dims={:?}, dtype={:?}", self.dims, self.dtype)
+    }
+}
+
+/// Represents a dimension and dtype of numpy array.
+///
+/// Only for error formatting.
+#[derive(Debug)]
+pub struct ArrayDim {
+    pub dim: Option<usize>,
+    pub dtype: NpyDataType,
+}
+
+impl fmt::Display for ArrayDim {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        if let Some(d) = self.dim {
+            write!(f, "dim={:?}, dtype={:?}", d, self.dtype)
+        } else {
+            write!(f, "dim=_, dtype={:?}", self.dtype)
+        }
     }
 }
 
@@ -50,55 +90,42 @@ impl fmt::Display for ArrayFormat {
 #[derive(Debug)]
 pub enum ErrorKind {
     /// Error for casting `PyArray` into `ArrayView` or `ArrayViewMut`
-    PyToRust { from: NpyDataType, to: NpyDataType },
+    PyToRust { from: ArrayDim, to: ArrayDim },
     /// Error for casting rust's `Vec` into numpy array.
     FromVec { dim1: usize, dim2: usize },
     /// Error in numpy -> numpy data conversion
-    PyToPy(Box<(ArrayFormat, ArrayFormat)>),
+    PyToPy(Box<(ArrayShape, ArrayShape)>),
 }
 
 impl ErrorKind {
-    pub(crate) fn to_rust(from: i32, to: NpyDataType) -> Self {
+    pub(crate) fn to_rust(
+        from_t: i32,
+        from_d: usize,
+        to_t: NpyDataType,
+        to_d: Option<usize>,
+    ) -> Self {
         ErrorKind::PyToRust {
-            from: NpyDataType::from_i32(from),
-            to,
+            from: ArrayDim {
+                dim: Some(from_d),
+                dtype: NpyDataType::from_i32(from_t),
+            },
+            to: ArrayDim {
+                dim: to_d,
+                dtype: to_t,
+            },
         }
     }
     pub(crate) fn dtype_cast<T: TypeNum, D>(from: &PyArray<T, D>, to: NpyDataType) -> Self {
-        let dims = from
-            .shape()
-            .into_iter()
-            .map(|&x| x)
-            .collect::<Vec<_>>()
-            .into_boxed_slice();
-        let from = ArrayFormat {
-            dims: dims.clone(),
-            dtype: T::npy_data_type(),
+        let from = ArrayShape::from_array(from);
+        let to = ArrayShape {
+            dims: from.dims.clone(),
+            dtype: to,
         };
-        let to = ArrayFormat { dims, dtype: to };
         ErrorKind::PyToPy(Box::new((from, to)))
     }
     pub(crate) fn dims_cast<T: TypeNum, D>(from: &PyArray<T, D>, to_dim: impl ToNpyDims) -> Self {
-        let dims_from = from
-            .shape()
-            .into_iter()
-            .map(|&x| x)
-            .collect::<Vec<_>>()
-            .into_boxed_slice();
-        let dims_to = to_dim
-            .slice()
-            .into_iter()
-            .map(|&x| x)
-            .collect::<Vec<_>>()
-            .into_boxed_slice();
-        let from = ArrayFormat {
-            dims: dims_from,
-            dtype: T::npy_data_type(),
-        };
-        let to = ArrayFormat {
-            dims: dims_to,
-            dtype: T::npy_data_type(),
-        };
+        let from = ArrayShape::from_array(from);
+        let to = ArrayShape::from_dims::<T, _>(to_dim);
         ErrorKind::PyToPy(Box::new((from, to)))
     }
 }
@@ -107,16 +134,16 @@ impl fmt::Display for ErrorKind {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             ErrorKind::PyToRust { from, to } => {
-                write!(f, "Cast failed: from={:?}, to={:?}", from, to)
+                write!(f, "Extraction failed:\n from=({}), to=({})", from, to)
             }
             ErrorKind::FromVec { dim1, dim2 } => write!(
                 f,
-                "Cast failed: Vec To PyArray: expect all dim {} but {} was found",
+                "Cast failed: Vec To PyArray:\n expect all dim {} but {} was found",
                 dim1, dim2
             ),
             ErrorKind::PyToPy(e) => write!(
                 f,
-                "Cast failed: from=ndarray({:?}), to=ndarray(dtype={:?})",
+                "Cast failed: from=ndarray({}), to=ndarray(dtype={})",
                 e.0, e.1,
             ),
         }
@@ -142,7 +169,7 @@ impl IntoPyErr for ErrorKind {
     fn into_pyerr_with<D: fmt::Display>(self, msg: impl FnOnce() -> D) -> PyErr {
         match self {
             ErrorKind::PyToRust { .. } | ErrorKind::FromVec { .. } | ErrorKind::PyToPy(_) => {
-                PyErr::new::<exc::TypeError, _>(format!("{} msg: {}", self, msg()))
+                PyErr::new::<exc::TypeError, _>(format!("{}\n context: {}", self, msg()))
             }
         }
     }

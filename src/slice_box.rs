@@ -2,6 +2,8 @@ use crate::types::TypeNum;
 use pyo3::{ffi, typeob, types::PyObjectRef, PyObjectAlloc, Python, ToPyPointer};
 use std::os::raw::c_void;
 
+/// It's a memory store for IntoPyArray.
+/// See IntoPyArray's doc for what concretely this type is for.
 #[repr(C)]
 pub(crate) struct SliceBox<T> {
     ob_base: ffi::PyObject,
@@ -14,7 +16,7 @@ impl<T> SliceBox<T> {
         let type_ob = <Self as typeob::PyTypeInfo>::type_object() as *mut _;
         let base = ffi::_PyObject_New(type_ob);
         *base = ffi::PyObject_HEAD_INIT;
-        (*base).ob_type = <Self as typeob::PyTypeInfo>::type_object() as *mut _;
+        (*base).ob_type = type_ob;
         let self_ = base as *mut SliceBox<T>;
         (*self_).inner = Box::into_raw(box_);
         &*self_
@@ -28,12 +30,12 @@ impl<T> typeob::PyTypeInfo for SliceBox<T> {
     type Type = ();
     type BaseType = PyObjectRef;
     const NAME: &'static str = "SliceBox";
-    const DESCRIPTION: &'static str = "Memory store for PyArray made by IntoPyArray.";
+    const DESCRIPTION: &'static str = "Memory store for PyArray using rust's Box<[T]>.";
     const FLAGS: usize = 0;
-    const SIZE: usize = { Self::OFFSET as usize + std::mem::size_of::<Self>() + 0 + 0 };
+    const SIZE: usize = std::mem::size_of::<Self>();
     const OFFSET: isize = 0;
     #[inline]
-    unsafe fn type_object() -> &'static mut ::pyo3::ffi::PyTypeObject {
+    unsafe fn type_object() -> &'static mut ffi::PyTypeObject {
         static mut TYPE_OBJECT: ::pyo3::ffi::PyTypeObject = ::pyo3::ffi::PyTypeObject_INIT;
         &mut TYPE_OBJECT
     }
