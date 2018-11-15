@@ -115,7 +115,7 @@ extern crate pyo3;
 
 use ndarray::{ArrayD, ArrayViewD, ArrayViewMutD};
 use numpy::{IntoPyArray, PyArrayDyn};
-use pyo3::prelude::{pymodinit, PyModule, PyResult, Python};
+use pyo3::prelude::{pymodinit, Py, PyModule, PyResult, Python};
 
 #[pymodinit]
 fn rust_ext(_py: Python, m: &PyModule) -> PyResult<()> {
@@ -136,12 +136,10 @@ fn rust_ext(_py: Python, m: &PyModule) -> PyResult<()> {
         a: f64,
         x: &PyArrayDyn<f64>,
         y: &PyArrayDyn<f64>,
-    ) -> PyResult<PyArrayDyn<f64>> {
-        // you can convert numpy error into PyErr via ?
+    ) -> Py<PyArrayDyn<f64>> {
         let x = x.as_array();
-        // you can also specify your error context, via closure
         let y = y.as_array();
-        Ok(axpy(a, x, y).into_pyarray(py).to_owned(py))
+        axpy(a, x, y).into_pyarray(py).to_owned()
     }
 
     // wrapper of `mult`
