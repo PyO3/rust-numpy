@@ -146,8 +146,7 @@ impl<T, D> PyArray<T, D> {
         self.as_ptr() as _
     }
 
-    // TODO: 'increasing ref counts' is really collect approach for extension?
-    /// Get `PyArray` from `&PyArray`, by increasing ref counts.
+    /// Get `Py<PyArray>` from `&PyArray`, which is the owned wrapper of PyObject.
     ///
     /// You can use this method when you have to avoid lifetime annotation to your function args
     /// or return types, like used with pyo3's `pymethod`.
@@ -155,20 +154,20 @@ impl<T, D> PyArray<T, D> {
     /// # Example
     /// ```
     /// # extern crate pyo3; extern crate numpy; fn main() {
-    /// use pyo3::{GILGuard, Python};
+    /// use pyo3::{GILGuard, Python, Py, AsPyRef};
     /// use numpy::PyArray1;
-    /// fn return_py_array() -> PyArray1<i32> {
+    /// fn return_py_array() -> Py<PyArray1<i32>> {
     ///    let gil = Python::acquire_gil();
     ///    let array = PyArray1::zeros(gil.python(), [5], false);
-    ///    array.to_owned(gil.python())
+    ///    array.to_owned()
     /// }
+    /// let gil = Python::acquire_gil();
     /// let array = return_py_array();
-    /// assert_eq!(array.as_slice(), &[0, 0, 0, 0, 0]);
+    /// assert_eq!(array.as_ref(gil.python()).as_slice(), &[0, 0, 0, 0, 0]);
     /// # }
     /// ```
-    pub fn to_owned(&self, py: Python) -> Self {
-        let obj = unsafe { PyObject::from_borrowed_ptr(py, self.as_ptr()) };
-        PyArray(obj, PhantomData, PhantomData)
+    pub fn to_owned(&self) -> Py<Self> {
+        unsafe { Py::from_borrowed_ptr(self.as_ptr()) }
     }
 
     /// Constructs `PyArray` from raw python object without incrementing reference counts.
