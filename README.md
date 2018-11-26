@@ -36,13 +36,13 @@ If you want to compile for Python2, please add a feature flag in `Cargo.toml` li
 
 ``` toml
 [dependencies.numpy]
-version = "0.4.0-alpha.1"
+version = "0.4.0"
 features = ["python2"]
 ```
 .
 
-You can also automatically specify python version in [setup.py](examples/simple-extension/setup.py)
-, using [setuptools-rust](https://github.com/PyO3/setuptools-rust).
+You can also automatically specify python version in [setup.py](examples/simple-extension/setup.py), 
+using [setuptools-rust](https://github.com/PyO3/setuptools-rust).
 
 
 Example
@@ -56,8 +56,8 @@ Example
 name = "numpy-test"
 
 [dependencies]
-pyo3 = "^0.5.0-alpha.2"
-numpy = "0.4.0-alpha.1"
+pyo3 = "0.5.2"
+numpy = "0.4.0"
 ```
 
 ``` rust
@@ -100,11 +100,11 @@ name = "rust_ext"
 crate-type = ["cdylib"]
 
 [dependencies]
-numpy = "0.4.0-alpha.1"
+numpy = "0.4.0"
 ndarray = "0.12"
 
 [dependencies.pyo3]
-version = "^0.5.0-alpha.2"
+version = "0.5.2"
 features = ["extension-module"]
 ```
 
@@ -157,11 +157,13 @@ fn rust_ext(_py: Python, m: &PyModule) -> PyResult<()> {
 Contribution
 -------------
 This project is still in pre-alpha.
-We need your feedback. Don't hesitate to open [issues](https://github.com/termoshtt/rust-numpy/issues)!
+
+We need your feedback. 
+Don't hesitate to open [issues](https://github.com/termoshtt/rust-numpy/issues)!
 
 Version
 --------
-- v0.4.0(coming soon)
+- v0.4.0
   - Duplicate `PyArrayModule` and import Numpy API automatically
   - Fix memory leak of `IntoPyArray` and add `ToPyArray` crate
   - PyArray has dimension as type parameter. Now it looks like `PyArray<T, D>`
