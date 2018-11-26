@@ -21,5 +21,6 @@ import rust_ext
 
 a = np.array([0.0, 1.0])
 b = np.array([2.0, 3.0])
-rust_ext(2.0, a, b)
+rust_ext.axpy(2.0, a, b)
 ```
+which returns `array([2., 5.])`.
