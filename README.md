@@ -78,11 +78,11 @@ fn main() -> Result<(), ()> {
 }
 
 fn main_<'py>(py: Python<'py>) -> PyResult<()> {
-    let np = get_array_module(py)?;
+    let np = py.import("numpy")?;
     let dict = PyDict::new(py);
     dict.set_item("np", np)?;
     let pyarray: &PyArray1<i32> = py
-        .eval("np.array([1, 2, 3], dtype='int32')", Some(&dict), None)?
+        .eval("np.absolute(np.array([-1, -2, -3], dtype='int32'))", Some(&dict), None)?
         .extract()?;
     let slice = pyarray.as_slice();
     assert_eq!(slice, &[1, 2, 3]);
