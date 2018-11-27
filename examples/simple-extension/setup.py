@@ -1,12 +1,12 @@
-import os
-import subprocess
 import sys
 from setuptools import find_packages, setup
 from setuptools.command.test import test as TestCommand
 from setuptools_rust import RustExtension
 
+
 class PyTest(TestCommand):
     user_options = []
+
     def run(self):
         self.run_command("test_rust")
         import subprocess
@@ -21,12 +21,14 @@ def get_cfg_flags():
     else:
         return ['--cfg=Py_3']
 
+
 def get_features():
     version = sys.version_info[0:2]
     if version[0] == 2:
         return ['numpy/python2']
     else:
         return ['numpy/python3']
+
 
 setup_requires = ['setuptools-rust>=0.6.0']
 install_requires = ['numpy']

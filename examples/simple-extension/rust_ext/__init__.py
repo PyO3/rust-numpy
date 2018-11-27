@@ -1,1 +1,1 @@
-from .rust_ext import *
+from .rust_ext import *  # noqa
