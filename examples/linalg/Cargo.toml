@@ -1,0 +1,18 @@
+[package]
+name = "numpy-linalg-example"
+version = "0.1.0"
+authors = ["kngwyu <yuji.kngw.80s.revive@gmail.com>"]
+edition = "2018"
+
+[lib]
+name = "rust_linalg"
+crate-type = ["cdylib"]
+
+[dependencies]
+numpy = { path = "../.." }
+ndarray = "0.12"
+ndarray-linalg = { version = "0.10", features = ["openblas"] }
+
+[dependencies.pyo3]
+version = "0.5.2"
+features = ["extension-module"]
