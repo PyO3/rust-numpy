@@ -274,13 +274,13 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     }
 
     fn ndarray_shape(&self) -> StrideShape<D> {
-        // FIXME may be done more simply
         let shape: Shape<_> = Dim(self.dims()).into();
-        let mut st = D::default();
         let size = mem::size_of::<T>();
-        for (i, &s) in self.strides().iter().enumerate() {
-            st[i] = s as usize / size;
-        }
+        let st = D::from_dimension(&Dim(
+                self.strides().iter()
+                    .map(|&s| s as usize / size)
+                    .collect::<Vec<_>>()
+            )).unwrap();
         shape.strides(st)
     }
 
