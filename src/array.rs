@@ -274,13 +274,13 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     }
 
     fn ndarray_shape(&self) -> StrideShape<D> {
-        // FIXME may be done more simply
         let shape: Shape<_> = Dim(self.dims()).into();
-        let mut st = D::default();
         let size = mem::size_of::<T>();
-        for (i, &s) in self.strides().iter().enumerate() {
-            st[i] = s as usize / size;
-        }
+        let st = D::from_dimension(&Dim(
+                self.strides().iter()
+                    .map(|&s| s as usize / size)
+                    .collect::<Vec<_>>()
+            )).unwrap();
         shape.strides(st)
     }
 
@@ -996,4 +996,11 @@ fn test_get_unchecked() {
     unsafe {
         assert_eq!(*array.uget([1]), 2);
     }
+}
+
+#[test]
+fn test_dyn_to_owned_array() {
+    let gil = pyo3::Python::acquire_gil();
+    let array = PyArray::from_vec2(gil.python(), &vec![vec![1,2], vec![3,4]]).unwrap();
+    array.into_dyn().to_owned_array();
 }
