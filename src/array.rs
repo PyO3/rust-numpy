@@ -997,3 +997,10 @@ fn test_get_unchecked() {
         assert_eq!(*array.uget([1]), 2);
     }
 }
+
+#[test]
+fn test_dyn_to_owned_array() {
+    let gil = pyo3::Python::acquire_gil();
+    let array = PyArray::from_vec2(gil.python(), &vec![vec![1,2], vec![3,4]]).unwrap();
+    array.into_dyn().to_owned_array();
+}
