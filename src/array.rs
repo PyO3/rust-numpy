@@ -264,6 +264,15 @@ impl<T, D> PyArray<T, D> {
     pub(crate) unsafe fn copy_ptr(&self, other: *const T, len: usize) {
         ptr::copy_nonoverlapping(other, self.data(), len)
     }
+
+    fn strides_usize(&self) -> &[usize] {
+        let n = self.ndim();
+        let ptr = self.as_array_ptr();
+        unsafe {
+            let p = (*ptr).strides;
+            ::std::slice::from_raw_parts(p as *const _, n)
+        }
+    }
 }
 
 impl<T: TypeNum, D: Dimension> PyArray<T, D> {
@@ -276,11 +285,9 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     fn ndarray_shape(&self) -> StrideShape<D> {
         let shape: Shape<_> = Dim(self.dims()).into();
         let size = mem::size_of::<T>();
-        let st = D::from_dimension(&Dim(
-                self.strides().iter()
-                    .map(|&s| s as usize / size)
-                    .collect::<Vec<_>>()
-            )).unwrap();
+        let mut st = D::from_dimension(&Dim(self.strides_usize()))
+            .expect("PyArray::ndarray_shape: dimension mismatching");
+        st.slice_mut().iter_mut().for_each(|e| *e /= size);
         shape.strides(st)
     }
 
@@ -1001,6 +1008,6 @@ fn test_get_unchecked() {
 #[test]
 fn test_dyn_to_owned_array() {
     let gil = pyo3::Python::acquire_gil();
-    let array = PyArray::from_vec2(gil.python(), &vec![vec![1,2], vec![3,4]]).unwrap();
+    let array = PyArray::from_vec2(gil.python(), &vec![vec![1, 2], vec![3, 4]]).unwrap();
     array.into_dyn().to_owned_array();
 }
