@@ -5,6 +5,7 @@ pub use num_complex::Complex32 as c32;
 pub use num_complex::Complex64 as c64;
 
 use super::npyffi::NPY_TYPES;
+use pyo3::PyObject;
 
 /// An enum type represents numpy data type.
 ///
@@ -24,6 +25,7 @@ pub enum NpyDataType {
     Float64,
     Complex32,
     Complex64,
+    PyObject,
     Unsupported,
 }
 
@@ -45,6 +47,7 @@ impl NpyDataType {
             x if x == NPY_TYPES::NPY_DOUBLE as i32 => NpyDataType::Float64,
             x if x == NPY_TYPES::NPY_CFLOAT as i32 => NpyDataType::Complex32,
             x if x == NPY_TYPES::NPY_CDOUBLE as i32 => NpyDataType::Complex64,
+            x if x == NPY_TYPES::NPY_OBJECT as i32 => NpyDataType::PyObject,
             _ => NpyDataType::Unsupported,
         }
     }
@@ -68,7 +71,7 @@ impl NpyDataType {
     }
 }
 
-pub trait TypeNum: Clone {
+pub trait TypeNum {
     fn is_same_type(other: i32) -> bool;
     fn npy_data_type() -> NpyDataType;
     fn typenum_default() -> i32;
@@ -100,6 +103,7 @@ impl_type_num!(f32, Float32, NPY_FLOAT);
 impl_type_num!(f64, Float64, NPY_DOUBLE);
 impl_type_num!(c32, Complex32, NPY_CFLOAT);
 impl_type_num!(c64, Complex64, NPY_CDOUBLE);
+impl_type_num!(PyObject, PyObject, NPY_OBJECT);
 
 cfg_if! {
     if #[cfg(any(target_pointer_width = "32", windows))] {

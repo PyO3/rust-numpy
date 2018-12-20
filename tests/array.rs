@@ -267,3 +267,36 @@ fn into_pyarray_cant_resize() {
     let arr = a.into_pyarray(gil.python());
     assert!(arr.resize(100).is_err())
 }
+
+// from pyo3, but modified for ease
+macro_rules! py_run {
+    ($py:expr, $val:expr, $code:expr) => {{
+        let d = pyo3::types::PyDict::new($py);
+        d.set_item(stringify!($val), &$val).unwrap();
+        $py.run($code, None, Some(d))
+            .map_err(|e| {
+                e.print($py);
+                $py.run("import sys; sys.stderr.flush()", None, None)
+                    .unwrap();
+            })
+            .expect($code)
+    }};
+}
+
+macro_rules! py_assert {
+    ($py:expr, $val:ident, $assertion:expr) => {
+        py_run!($py, $val, concat!("assert ", $assertion))
+    };
+}
+
+#[test]
+fn into_pyarray_obj_vec() {
+    let gil = pyo3::Python::acquire_gil();
+    let py = gil.python();
+    let dict = PyDict::new(gil.python());
+    let string = pyo3::types::PyString::new(gil.python(), "Hello python :)");
+    let a = vec![dict.to_object(py), string.to_object(py)];
+    let arr = a.into_pyarray(py);
+    py_assert!(py, arr, "arr[0] == {}");
+    py_assert!(py, arr, "arr[1] == 'Hello python :)'");
+}
