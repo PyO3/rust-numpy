@@ -34,6 +34,7 @@ addons:
       - gcc
       - binutils-dev
       - libiberty-dev
+      - gfortran
 
 before_install:
   - source ./ci/travis/setup.sh
@@ -44,7 +45,7 @@ install:
 
 script:
   - flake8 examples/
-  - ./ci/travis/test.sh
+  - travis_wait ./ci/travis/test.sh
 
 deploy:
   - provider: script
