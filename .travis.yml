@@ -34,6 +34,7 @@ addons:
       - gcc
       - binutils-dev
       - libiberty-dev
+      - gfortran
 
 before_install:
   - source ./ci/travis/setup.sh
