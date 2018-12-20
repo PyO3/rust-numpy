@@ -12,7 +12,7 @@ test_requires = install_requires + ['pytest']
 setup(
     name='rust_linalg',
     version='0.1.0',
-    description='Example of python-extension using rust-numpy and ndarray-linalg',
+    description='Example of python extension with ndarray-linalg',
     rust_extensions=[RustExtension(
         'rust_linalg.rust_linalg',
         './Cargo.toml',
