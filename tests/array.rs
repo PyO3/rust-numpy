@@ -290,11 +290,11 @@ macro_rules! py_assert {
 }
 
 #[test]
-fn into_pyarray_obj_vec() {
+fn into_obj_vec_to_pyarray() {
     let gil = pyo3::Python::acquire_gil();
     let py = gil.python();
-    let dict = PyDict::new(gil.python());
-    let string = pyo3::types::PyString::new(gil.python(), "Hello python :)");
+    let dict = PyDict::new(py);
+    let string = pyo3::types::PyString::new(py, "Hello python :)");
     let a = vec![dict.to_object(py), string.to_object(py)];
     let arr = a.into_pyarray(py);
     py_assert!(py, arr, "arr[0] == {}");
