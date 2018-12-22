@@ -4,7 +4,7 @@ extern crate pyo3;
 
 use ndarray::*;
 use numpy::*;
-use pyo3::{prelude::*, types::PyDict, types::PyList};
+use pyo3::{prelude::*, types::PyDict, types::PyList, ToPyPointer};
 
 #[test]
 fn new_c_order() {
@@ -295,7 +295,7 @@ fn into_obj_vec_to_pyarray() {
     let py = gil.python();
     let dict = PyDict::new(py);
     let string = pyo3::types::PyString::new(py, "Hello python :)");
-    let a = vec![dict.to_object(py), string.to_object(py)];
+    let a = vec![dict.as_ptr(), string.as_ptr()];
     let arr = a.into_pyarray(py);
     py_assert!(py, arr, "arr[0] == {}");
     py_assert!(py, arr, "arr[1] == 'Hello python :)'");

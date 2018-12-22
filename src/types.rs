@@ -5,7 +5,7 @@ pub use num_complex::Complex32 as c32;
 pub use num_complex::Complex64 as c64;
 
 use super::npyffi::NPY_TYPES;
-use pyo3::PyObject;
+use pyo3::ffi::PyObject;
 
 /// An enum type represents numpy data type.
 ///
@@ -103,7 +103,7 @@ impl_type_num!(f32, Float32, NPY_FLOAT);
 impl_type_num!(f64, Float64, NPY_DOUBLE);
 impl_type_num!(c32, Complex32, NPY_CFLOAT);
 impl_type_num!(c64, Complex64, NPY_CDOUBLE);
-impl_type_num!(PyObject, PyObject, NPY_OBJECT);
+impl_type_num!(*mut PyObject, PyObject, NPY_OBJECT);
 
 cfg_if! {
     if #[cfg(any(target_pointer_width = "32", windows))] {
