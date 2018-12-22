@@ -4,7 +4,7 @@ extern crate pyo3;
 
 use ndarray::*;
 use numpy::*;
-use pyo3::{prelude::*, types::PyDict, types::PyList};
+use pyo3::{prelude::*, types::PyDict, types::PyList, ToPyPointer};
 
 #[test]
 fn new_c_order() {
@@ -266,4 +266,37 @@ fn into_pyarray_cant_resize() {
     let a = vec![1, 2, 3];
     let arr = a.into_pyarray(gil.python());
     assert!(arr.resize(100).is_err())
+}
+
+// from pyo3, but modified for ease
+macro_rules! py_run {
+    ($py:expr, $val:expr, $code:expr) => {{
+        let d = pyo3::types::PyDict::new($py);
+        d.set_item(stringify!($val), &$val).unwrap();
+        $py.run($code, None, Some(d))
+            .map_err(|e| {
+                e.print($py);
+                $py.run("import sys; sys.stderr.flush()", None, None)
+                    .unwrap();
+            })
+            .expect($code)
+    }};
+}
+
+macro_rules! py_assert {
+    ($py:expr, $val:ident, $assertion:expr) => {
+        py_run!($py, $val, concat!("assert ", $assertion))
+    };
+}
+
+#[test]
+fn into_obj_vec_to_pyarray() {
+    let gil = pyo3::Python::acquire_gil();
+    let py = gil.python();
+    let dict = PyDict::new(py);
+    let string = pyo3::types::PyString::new(py, "Hello python :)");
+    let a = vec![dict.as_ptr(), string.as_ptr()];
+    let arr = a.into_pyarray(py);
+    py_assert!(py, arr, "arr[0] == {}");
+    py_assert!(py, arr, "arr[1] == 'Hello python :)'");
 }

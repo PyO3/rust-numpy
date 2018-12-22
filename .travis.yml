@@ -45,7 +45,7 @@ install:
 
 script:
   - flake8 examples/
-  - travis_wait ./ci/travis/test.sh
+  - ./ci/travis/test.sh
 
 deploy:
   - provider: script
