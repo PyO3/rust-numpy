@@ -115,6 +115,6 @@ cfg_if! {
         impl_type_num!(i32, Int32, NPY_INT);
         impl_type_num!(u32, Uint32, NPY_UINT);
         impl_type_num!(i64, Int64, NPY_LONG, NPY_LONGLONG);
-        impl_type_num!(u64, Uint64, NPY_LONG, NPY_ULONGLONG);
+        impl_type_num!(u64, Uint64, NPY_ULONG, NPY_ULONGLONG);
     }
 }
