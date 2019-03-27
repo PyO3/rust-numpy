@@ -182,6 +182,25 @@ fn from_eval_to_dyn() {
 }
 
 #[test]
+fn from_eval_to_dyn_u64() {
+    let gil = pyo3::Python::acquire_gil();
+    let np = get_array_module(gil.python()).unwrap();
+    let dict = PyDict::new(gil.python());
+    dict.set_item("np", np).unwrap();
+    let pyarray: &PyArrayDyn<u64> = gil
+        .python()
+        .eval(
+            "np.array([[1, 2], [3, 4]], dtype='uint64')",
+            Some(&dict),
+            None,
+        )
+        .unwrap()
+        .extract()
+        .unwrap();
+    assert_eq!(pyarray.as_slice(), &[1, 2, 3, 4]);
+}
+
+#[test]
 fn from_eval_fail_by_dtype() {
     let gil = pyo3::Python::acquire_gil();
     let np = get_array_module(gil.python()).unwrap();
