@@ -2,8 +2,8 @@
 use ndarray::*;
 use npyffi::{self, npy_intp, NPY_ORDER, PY_ARRAY_API};
 use num_traits::AsPrimitive;
-use pyo3::{ffi, prelude::*, types::PyObjectRef};
-use pyo3::{PyDowncastError, PyObjectWithToken, ToPyPointer};
+use pyo3::{ffi, prelude::*, types::PyAny};
+use pyo3::{AsPyPointer, PyDowncastError, PyNativeType};
 use std::iter::ExactSizeIterator;
 use std::marker::PhantomData;
 use std::mem;
@@ -37,7 +37,7 @@ use types::{NpyDataType, TypeNum};
 /// So you can neither retrieve it nor deallocate it manually.
 ///
 /// # Reference
-///
+///Object
 /// Like [`new`](#method.new), all constractor methods of `PyArray` returns `&PyArray`.
 ///
 /// This design follows
@@ -109,9 +109,9 @@ pyobject_native_type_convert!(
 
 pyobject_native_type_named!(PyArray<T, D>, T, D);
 
-impl<'a, T, D> ::std::convert::From<&'a PyArray<T, D>> for &'a PyObjectRef {
+impl<'a, T, D> ::std::convert::From<&'a PyArray<T, D>> for &'a PyAny {
     fn from(ob: &'a PyArray<T, D>) -> Self {
-        unsafe { &*(ob as *const PyArray<T, D> as *const PyObjectRef) }
+        unsafe { &*(ob as *const PyArray<T, D> as *const PyAny) }
     }
 }
 
@@ -120,12 +120,12 @@ impl<'a, T: TypeNum, D: Dimension> FromPyObject<'a> for &'a PyArray<T, D> {
     // 1. Checks if the object is PyArray
     // 2. Checks if the data type of the array is T
     // 3. Checks if the dimension is same as D
-    fn extract(ob: &'a PyObjectRef) -> PyResult<Self> {
+    fn extract(ob: &'a PyAny) -> PyResult<Self> {
         let array = unsafe {
             if npyffi::PyArray_Check(ob.as_ptr()) == 0 {
                 return Err(PyDowncastError.into());
             }
-            &*(ob as *const PyObjectRef as *const PyArray<T, D>)
+            &*(ob as *const PyAny as *const PyArray<T, D>)
         };
         array
             .type_check()
