@@ -14,7 +14,7 @@ libc = "0.2.44"
 num-complex = "0.2.1"
 num-traits = "0.2.6"
 ndarray = "0.12"
-pyo3 = "0.5.3"
+pyo3 = "0.6.0"
 
 [features]
 # In default setting, python version is automatically detected

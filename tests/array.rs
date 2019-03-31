@@ -4,7 +4,7 @@ extern crate pyo3;
 
 use ndarray::*;
 use numpy::*;
-use pyo3::{prelude::*, types::PyDict, types::PyList, ToPyPointer};
+use pyo3::{prelude::*, types::PyDict, types::PyList, AsPyPointer};
 
 #[test]
 fn new_c_order() {
