@@ -1,8 +1,6 @@
-use crate::types::TypeNum;
-use pyo3::class::methods::PyMethodsProtocol;
+use pyo3::class::methods::{PyMethodDefType, PyMethodsProtocol};
 use pyo3::{ffi, type_object, types::PyAny, AsPyPointer, PyObjectAlloc, Python};
 use std::os::raw::c_void;
-use std::ptr::NonNull;
 
 /// It's a memory store for IntoPyArray.
 /// See IntoPyArray's doc for what concretely this type is for.
@@ -14,8 +12,7 @@ pub(crate) struct SliceBox<T> {
 
 impl<T> SliceBox<T> {
     pub(crate) unsafe fn new<'a>(box_: Box<[T]>) -> &'a Self {
-        // <Self as type_object::PyTypeObject>::init_type();
-        let type_ob = <Self as type_object::PyTypeInfo>::type_object() as *mut _;
+        let type_ob = <Self as type_object::PyTypeObject>::init_type().as_ptr();
         let base = ffi::_PyObject_New(type_ob);
         *base = ffi::PyObject_HEAD_INIT;
         (*base).ob_type = type_ob;
@@ -43,25 +40,9 @@ impl<T> type_object::PyTypeInfo for SliceBox<T> {
     }
 }
 
-impl<T: TypeNum> type_object::PyTypeObject for SliceBox<T>
-where
-    SliceBox<T>: PyMethodsProtocol,
-{
-    #[inline(always)]
-    fn init_type() -> NonNull<ffi::PyTypeObject> {
-        // static START: std::sync::Once = std::sync::ONCE_INIT;
-        // START.call_once(|| -> NonNull<ffi::PyTypeObject> {
-        let ty = unsafe { <Self as type_object::PyTypeInfo>::type_object() };
-        if (ty.tp_flags & ffi::Py_TPFLAGS_READY) == 0 {
-            let gil = Python::acquire_gil();
-            let py = gil.python();
-            // let mod_name = format!("rust_numpy.{:?}", T::npy_data_type());
-            type_object::initialize_type::<Self>(py)
-                .map_err(|e| e.print(py))
-                .expect("Failed to initialize SliceBox");
-        }
-        unsafe { NonNull::new_unchecked(ty) }
-        // })
+impl<T> PyMethodsProtocol for SliceBox<T> {
+    fn py_methods() -> Vec<&'static PyMethodDefType> {
+        Vec::new()
     }
 }
 

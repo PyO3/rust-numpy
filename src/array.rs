@@ -37,7 +37,6 @@ use types::{NpyDataType, TypeNum};
 /// So you can neither retrieve it nor deallocate it manually.
 ///
 /// # Reference
-///Object
 /// Like [`new`](#method.new), all constractor methods of `PyArray` returns `&PyArray`.
 ///
 /// This design follows
