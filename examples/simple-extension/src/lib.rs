@@ -4,9 +4,9 @@ extern crate pyo3;
 
 use ndarray::{ArrayD, ArrayViewD, ArrayViewMutD};
 use numpy::{IntoPyArray, PyArrayDyn};
-use pyo3::prelude::{pymodinit, Py, PyModule, PyResult, Python};
+use pyo3::prelude::{pymodule, Py, PyModule, PyResult, Python};
 
-#[pymodinit]
+#[pymodule]
 fn rust_ext(_py: Python, m: &PyModule) -> PyResult<()> {
     // immutable example
     fn axpy(a: f64, x: ArrayViewD<f64>, y: ArrayViewD<f64>) -> ArrayD<f64> {
