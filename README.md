@@ -6,14 +6,12 @@ rust-numpy
 
 Rust bindings for the NumPy C-API
 
-API documentation
--------------
+## API documentation
 - [Latest release (possibly broken)](https://docs.rs/numpy)
 - [Current Master](https://rust-numpy.github.io/rust-numpy)
 
 
-Requirements
--------------
+## Requirements
 - current nightly rust (see https://github.com/PyO3/pyo3/issues/5 for nightly features, and
 https://github.com/PyO3/pyo3/blob/master/build.rs for minimum required version)
 - some rust libraries
@@ -26,17 +24,20 @@ https://github.com/PyO3/pyo3/blob/master/build.rs for minimum required version)
 Starting from 0.3, rust-numpy migrated from rust-cpython to pyo3.
 If you want to use rust-cpython, use version 0.2.1 from crates.io.
 
-Supported python version
--------------
-Currently 2.7, 3.5, 3.6, 3.7 are supported.
+## Supported Python version
 
-By default, rust-numpy is built for Python3.
+Currently 3.5, 3.6, 3.7 are supported.
 
-If you want to compile for Python2, please add a feature flag in `Cargo.toml` like
 
+## Python2 Support
+Version 0.5.0 is the last version that supports Python2.
+
+If you want to compile this library with Python2, please use 0.5.0 from crates.io.
+
+In addition, you have to add a feature flag in `Cargo.toml` like
 ``` toml
 [dependencies.numpy]
-version = "0.4.0"
+version = "0.5.0"
 features = ["python2"]
 ```
 .
@@ -45,19 +46,18 @@ You can also automatically specify python version in [setup.py](examples/simple-
 using [setuptools-rust](https://github.com/PyO3/setuptools-rust).
 
 
-Example
----------
+## Example
 
 
-## Execute a Python program from Rust and get results
+### Execute a Python program from Rust and get results
 
 ``` toml
 [package]
 name = "numpy-test"
 
 [dependencies]
-pyo3 = "0.5.2"
-numpy = "0.4.0"
+pyo3 = "0.6.0"
+numpy = "0.5.0"
 ```
 
 ``` rust
@@ -90,7 +90,7 @@ fn main_<'py>(py: Python<'py>) -> PyResult<()> {
 }
 ```
 
-## Write a Python module in Rust
+### Write a Python module in Rust
 
 Please see the [example](example) directory for a complete example
 
@@ -100,11 +100,11 @@ name = "rust_ext"
 crate-type = ["cdylib"]
 
 [dependencies]
-numpy = "0.4.0"
+numpy = "0.5.0"
 ndarray = "0.12"
 
 [dependencies.pyo3]
-version = "0.5.2"
+version = "0.6.0"
 features = ["extension-module"]
 ```
 
@@ -154,15 +154,15 @@ fn rust_ext(_py: Python, m: &PyModule) -> PyResult<()> {
 }
 ```
 
-Contribution
--------------
-This project is still in pre-alpha.
+## Contribution
+We need your feedback.
 
-We need your feedback. 
-Don't hesitate to open [issues](https://github.com/termoshtt/rust-numpy/issues)!
+Don't hesitate to open [issues](https://github.com/rust-numpy/rust-numpy/issues)!
 
-Version
---------
+## Version
+- v0.5.0
+  - Update PyO3 to 0.6
+
 - v0.4.0
   - Duplicate `PyArrayModule` and import Numpy API automatically
   - Fix memory leak of `IntoPyArray` and add `ToPyArray` crate
@@ -190,4 +190,4 @@ Version
 
 - v0.1.0
   - First Release
-  - Expose unsafe interfase of Array and UFunc API
+  - Expose unsafe interface of Array and UFunc API
