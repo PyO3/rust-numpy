@@ -1,8 +1,6 @@
 environment:
   TARGET: x86_64-pc-windows-msvc
   matrix:
-    - PYTHON: "C:/Python27-x64"
-      FEATURES: python2
     - PYTHON: "C:/Python35-x64"
       FEATURES: python3
     - PYTHON: "C:/Python36-x64"
