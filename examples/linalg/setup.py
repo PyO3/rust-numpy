@@ -16,8 +16,6 @@ setup(
     rust_extensions=[RustExtension(
         'rust_linalg.rust_linalg',
         './Cargo.toml',
-        rustc_flags=['--cfg=Py_{}'.format(PYTHON_MAJOR_VERSION)],
-        features=['numpy/python{}'.format(PYTHON_MAJOR_VERSION)],
     )],
     install_requires=install_requires,
     setup_requires=setup_requires,
