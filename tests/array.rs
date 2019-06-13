@@ -251,7 +251,6 @@ macro_rules! small_array_test {
 
 small_array_test!(i8 u8 i16 u16 i32 u32 i64 u64 usize);
 
-
 #[test]
 fn array_usize_dtype() {
     let gil = pyo3::Python::acquire_gil();
@@ -261,13 +260,12 @@ fn array_usize_dtype() {
     let a: Vec<usize> = vec![1, 2, 3];
     let x = a.into_pyarray(py);
     let x_repr = format!("{:?}", x);
-    
+
     let x_repr_expected = if cfg!(target_pointer_width = "64") {
         "array([1, 2, 3], dtype=uint64)"
     } else {
         "array([1, 2, 3], dtype=uint32)"
     };
-
     assert_eq!(x_repr, x_repr_expected);
 }
 

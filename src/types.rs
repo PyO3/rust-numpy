@@ -108,11 +108,11 @@ impl_type_num!(*mut PyObject, PyObject, NPY_OBJECT);
 cfg_if! {
     if #[cfg(all(target_pointer_width = "64", windows))] {
             impl_type_num!(usize, Uint64, NPY_ULONGLONG);
-    } else if #[cfg(all(target_pointer_width = "64", not (windows)))] {
+    } else if #[cfg(all(target_pointer_width = "64", not(windows)))] {
             impl_type_num!(usize, Uint64, NPY_ULONG, NPY_ULONGLONG);
     } else if #[cfg(all(target_pointer_width = "32", windows))] {
             impl_type_num!(usize, Uint32, NPY_UINT, NPY_ULONG);
-    } else if #[cfg(all(target_pointer_width = "32",  not (windows)))] {
+    } else if #[cfg(all(target_pointer_width = "32", not(windows)))] {
             impl_type_num!(usize, Uint32, NPY_UINT);
     }
 }
