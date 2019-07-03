@@ -481,12 +481,11 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
         unsafe { ArrayViewMut::from_shape_ptr(self.ndarray_shape(), self.data()) }
     }
 
-    /// Get an immutable reference of a specified element, without checking the
-    /// passed index is valid.
+    /// Get an immutable reference of a specified element, with checking the passed index is valid.
     ///
     /// See [NpyIndex](../convert/trait.NpyIndex.html) for what types you can use as index.
     ///
-    /// Passing an invalid index can cause undefined behavior(mostly SIGSEGV).
+    /// If you pass an invalid index to this function, it returns `None`.
     ///
     /// # Example
     /// ```
@@ -499,7 +498,7 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     /// # }
     /// ```
     ///
-    /// For fixed dimension arrays, too long/short index causes compile error.
+    /// For fixed dimension arrays, passing an index with invalid dimension causes compile error.
     /// ```compile_fail
     /// # extern crate pyo3; extern crate numpy; fn main() {
     /// use numpy::PyArray;
@@ -508,7 +507,8 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     /// let a = arr.get([1, 2]); // Compile Error!
     /// # }
     /// ```
-    /// But, for dinamic errors too long/short index returns `None`.
+    ///
+    /// However, for dinamic arrays, we cannot raise a compile error and just returns `None`.
     /// ```
     /// # extern crate pyo3; extern crate numpy; fn main() {
     /// use numpy::PyArray;
@@ -527,7 +527,7 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
         unsafe { Some(&*self.data().offset(offset)) }
     }
 
-    /// Same as [get](#method.get), but returns `&mut T`.
+    /// Same as [get](#method.get), but returns `Option<&mut T>`.
     #[inline(always)]
     pub fn get_mut<Idx>(&self, index: Idx) -> Option<&mut T>
     where
