@@ -23,7 +23,7 @@ use npyffi::npy_intp;
 /// use numpy::{PyArray, IntoPyArray};
 /// let gil = pyo3::Python::acquire_gil();
 /// let py_array = vec![1, 2, 3].into_pyarray(gil.python());
-/// assert_eq!(py_array.as_slice(), &[1, 2, 3]);
+/// assert_eq!(py_array.as_slice().unwrap(), &[1, 2, 3]);
 /// assert!(py_array.resize(100).is_err()); // You can't resize owned-by-rust array.
 /// # }
 /// ```
@@ -75,7 +75,7 @@ where
 /// use numpy::{PyArray, ToPyArray};
 /// let gil = pyo3::Python::acquire_gil();
 /// let py_array = vec![1, 2, 3].to_pyarray(gil.python());
-/// assert_eq!(py_array.as_slice(), &[1, 2, 3]);
+/// assert_eq!(py_array.as_slice().unwrap(), &[1, 2, 3]);
 /// # }
 /// ```
 pub trait ToPyArray {
