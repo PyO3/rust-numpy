@@ -150,15 +150,37 @@ impl<T, D> PyArray<T, D> {
         unsafe { (*self.as_array_ptr()).flags & flag == flag }
     }
 
+    /// Returns `true` if the internal data of the array is C-style contiguous
+    /// (default of numpy and ndarray) or Fortran-style contiguous.
+    ///
+    /// # Example
+    /// ```
+    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// use pyo3::types::IntoPyDict;
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let py = gil.python();
+    /// let array = numpy::PyArray::arange(py, 0, 1, 10);
+    /// assert!(array.is_contiguous());
+    /// let locals = [("np", numpy::get_array_module(py).unwrap())].into_py_dict(py);
+    /// let not_contiguous: &numpy::PyArray1<f32> = py
+    ///     .eval("np.zeros((3, 5))[::2, 4]", Some(locals), None)
+    ///     .unwrap()
+    ///     .downcast_ref()
+    ///     .unwrap();
+    /// assert!(!not_contiguous.is_contiguous());
+    /// # }
+    /// ```
     pub fn is_contiguous(&self) -> bool {
         self.check_flag(npyffi::NPY_ARRAY_C_CONTIGUOUS)
             | self.check_flag(npyffi::NPY_ARRAY_F_CONTIGUOUS)
     }
 
+    /// Returns `true` if the internal data of the array is Fortran-style contiguous.
     pub fn is_fotran_contiguous(&self) -> bool {
         self.check_flag(npyffi::NPY_ARRAY_F_CONTIGUOUS)
     }
 
+    /// Returns `true` if the internal data of the array is C-style contiguous.
     pub fn is_c_contiguous(&self) -> bool {
         self.check_flag(npyffi::NPY_ARRAY_C_CONTIGUOUS)
     }
@@ -426,7 +448,7 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     /// assert_eq!(py_array.as_slice().unwrap(), &[0, 1, 2, 3]);
     /// let locals = [("np", numpy::get_array_module(py).unwrap())].into_py_dict(py);
     /// let not_contiguous: &PyArray1<f32> = py
-    ///     .eval("np.zeros(10)[::2]", Some(locals), None)
+    ///     .eval("np.zeros((3, 5))[[0, 2], [3, 4]]", Some(locals), None)
     ///     .unwrap()
     ///     .downcast_ref()
     ///     .unwrap();
