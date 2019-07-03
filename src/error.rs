@@ -95,6 +95,8 @@ pub enum ErrorKind {
     FromVec { dim1: usize, dim2: usize },
     /// Error in numpy -> numpy data conversion
     PyToPy(Box<(ArrayShape, ArrayShape)>),
+    /// The array need to be contiguous to finish the opretion
+    NotContiguous,
 }
 
 impl ErrorKind {
@@ -146,6 +148,7 @@ impl fmt::Display for ErrorKind {
                 "Cast failed: from=ndarray({}), to=ndarray(dtype={})",
                 e.0, e.1,
             ),
+            ErrorKind::NotContiguous => write!(f, "This array is not contiguous!"),
         }
     }
 }
@@ -154,11 +157,7 @@ impl error::Error for ErrorKind {}
 
 impl From<ErrorKind> for PyErr {
     fn from(err: ErrorKind) -> PyErr {
-        match err {
-            ErrorKind::PyToRust { .. } | ErrorKind::FromVec { .. } | ErrorKind::PyToPy(_) => {
-                PyErr::new::<exc::TypeError, _>(format!("{}", err))
-            }
-        }
+        PyErr::new::<exc::TypeError, _>(format!("{}", err))
     }
 }
 
@@ -167,10 +166,6 @@ impl IntoPyErr for ErrorKind {
         Into::into(self)
     }
     fn into_pyerr_with<D: fmt::Display>(self, msg: impl FnOnce() -> D) -> PyErr {
-        match self {
-            ErrorKind::PyToRust { .. } | ErrorKind::FromVec { .. } | ErrorKind::PyToPy(_) => {
-                PyErr::new::<exc::TypeError, _>(format!("{}\n context: {}", self, msg()))
-            }
-        }
+        PyErr::new::<exc::TypeError, _>(format!("{}\n context: {}", self, msg()))
     }
 }

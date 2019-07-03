@@ -145,6 +145,24 @@ impl<T, D> PyArray<T, D> {
         self.as_ptr() as _
     }
 
+    #[inline(always)]
+    fn check_flag(&self, flag: c_int) -> bool {
+        unsafe { (*self.as_array_ptr()).flags & flag == flag }
+    }
+
+    pub fn is_contiguous(&self) -> bool {
+        self.check_flag(npyffi::NPY_ARRAY_C_CONTIGUOUS)
+            | self.check_flag(npyffi::NPY_ARRAY_F_CONTIGUOUS)
+    }
+
+    pub fn is_forran_contiguous(&self) -> bool {
+        self.check_flag(npyffi::NPY_ARRAY_F_CONTIGUOUS)
+    }
+
+    pub fn is_c_contiguous(&self) -> bool {
+        self.check_flag(npyffi::NPY_ARRAY_C_CONTIGUOUS)
+    }
+
     /// Get `Py<PyArray>` from `&PyArray`, which is the owned wrapper of PyObject.
     ///
     /// You can use this method when you have to avoid lifetime annotation to your function args
@@ -404,15 +422,23 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     /// assert_eq!(py_array.as_slice(), &[0, 1, 2, 3]);
     /// # }
     /// ```
-    pub fn as_slice(&self) -> &[T] {
-        self.type_check_assert();
-        unsafe { ::std::slice::from_raw_parts(self.data(), self.len()) }
+    pub fn as_slice(&self) -> Result<&[T], ErrorKind> {
+        self.type_check()?;
+        if !self.is_contiguous() {
+            Err(ErrorKind::NotContiguous)
+        } else {
+            Ok(unsafe { ::std::slice::from_raw_parts(self.data(), self.len()) })
+        }
     }
 
     /// Get the mmutable view of the internal data of `PyArray`, as slice.
-    pub fn as_slice_mut(&self) -> &mut [T] {
-        self.type_check_assert();
-        unsafe { ::std::slice::from_raw_parts_mut(self.data(), self.len()) }
+    pub fn as_slice_mut(&self) -> Result<&mut [T], ErrorKind> {
+        self.type_check()?;
+        if !self.is_contiguous() {
+            Err(ErrorKind::NotContiguous)
+        } else {
+            Ok(unsafe { ::std::slice::from_raw_parts_mut(self.data(), self.len()) })
+        }
     }
 
     /// Construct PyArray from `ndarray::ArrayBase`.
@@ -614,10 +640,7 @@ impl<T: TypeNum + Clone, D: Dimension> PyArray<T, D> {
     /// # }
     /// ```
     pub fn to_owned_array(&self) -> Array<T, D> {
-        unsafe {
-            let vec = self.as_slice().to_vec();
-            Array::from_shape_vec_unchecked(self.ndarray_shape(), vec)
-        }
+        self.as_array().to_owned()
     }
 }
 

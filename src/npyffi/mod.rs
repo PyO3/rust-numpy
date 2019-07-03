@@ -48,11 +48,13 @@ macro_rules! impl_api {
 }
 
 pub mod array;
+pub mod flags;
 pub mod objects;
 pub mod types;
 pub mod ufunc;
 
 pub use self::array::*;
+pub use self::flags::*;
 pub use self::objects::*;
 pub use self::types::*;
 pub use self::ufunc::*;
