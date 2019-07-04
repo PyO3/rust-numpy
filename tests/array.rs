@@ -4,7 +4,27 @@ extern crate pyo3;
 
 use ndarray::*;
 use numpy::*;
-use pyo3::{prelude::*, types::PyDict, types::PyList, AsPyPointer};
+use pyo3::{
+    prelude::*,
+    types::PyList,
+    types::{IntoPyDict, PyDict},
+    AsPyPointer,
+};
+
+fn get_np_locals(py: Python<'_>) -> &'_ PyDict {
+    [("np", get_array_module(py).unwrap())].into_py_dict(py)
+}
+
+fn not_contiguous_array<'py>(py: Python<'py>) -> &'py PyArray1<i32> {
+    py.eval(
+        "np.array([1, 2, 3, 4], dtype='int32')[::2]",
+        Some(get_np_locals(py)),
+        None,
+    )
+    .unwrap()
+    .downcast_ref()
+    .unwrap()
+}
 
 #[test]
 fn new_c_order() {
@@ -57,21 +77,33 @@ fn zeros() {
 fn arange() {
     let gil = pyo3::Python::acquire_gil();
     let arr = PyArray::<f64, _>::arange(gil.python(), 0.0, 1.0, 0.1);
-    println!("ndim = {:?}", arr.ndim());
-    println!("dims = {:?}", arr.dims());
-    println!("array = {:?}", arr.as_slice());
+    assert_eq!(arr.ndim(), 1);
+    assert_eq!(arr.dims(), ndarray::Dim([10]));
 }
 
 #[test]
 fn as_array() {
     let gil = pyo3::Python::acquire_gil();
-    let arr = PyArray::<f64, _>::zeros(gil.python(), [3, 2, 4], false);
+    let py = gil.python();
+    let arr = PyArray::<f64, _>::zeros(py, [3, 2, 4], false);
     let a = arr.as_array();
     assert_eq!(arr.shape(), a.shape());
     assert_eq!(
         arr.strides().iter().map(|x| x / 8).collect::<Vec<_>>(),
         a.strides()
     );
+    let not_contiguous = not_contiguous_array(py);
+    assert_eq!(not_contiguous.as_array(), array![1, 3])
+}
+
+#[test]
+fn as_slice() {
+    let gil = pyo3::Python::acquire_gil();
+    let py = gil.python();
+    let arr = PyArray::<i32, _>::zeros(py, [3, 2, 4], false);
+    assert_eq!(arr.as_slice().unwrap().len(), 3 * 2 * 4);
+    let not_contiguous = not_contiguous_array(py);
+    assert!(not_contiguous.as_slice().is_err())
 }
 
 #[test]
@@ -81,8 +113,8 @@ fn to_pyarray_vec() {
     let a = vec![1, 2, 3];
     let arr = a.to_pyarray(gil.python());
     println!("arr.shape = {:?}", arr.shape());
-    println!("arr = {:?}", arr.as_slice());
     assert_eq!(arr.shape(), [3]);
+    assert_eq!(arr.as_slice().unwrap(), &[1, 2, 3])
 }
 
 #[test]
@@ -105,14 +137,17 @@ fn to_pyarray_array() {
 fn iter_to_pyarray() {
     let gil = pyo3::Python::acquire_gil();
     let arr = PyArray::from_iter(gil.python(), (0..10).map(|x| x * x));
-    assert_eq!(arr.as_slice(), &[0, 1, 4, 9, 16, 25, 36, 49, 64, 81]);
+    assert_eq!(
+        arr.as_slice().unwrap(),
+        &[0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
+    );
 }
 
 #[test]
 fn long_iter_to_pyarray() {
     let gil = pyo3::Python::acquire_gil();
     let arr = PyArray::from_iter(gil.python(), (0u32..512).map(|x| x));
-    let slice = arr.as_slice();
+    let slice = arr.as_slice().unwrap();
     for (i, &elem) in slice.iter().enumerate() {
         assert_eq!(i as u32, elem);
     }
@@ -150,65 +185,57 @@ fn from_vec3() {
 #[test]
 fn from_eval_to_fixed() {
     let gil = pyo3::Python::acquire_gil();
-    let np = get_array_module(gil.python()).unwrap();
-    let dict = PyDict::new(gil.python());
-    dict.set_item("np", np).unwrap();
-    let pyarray: &PyArray1<i32> = gil
-        .python()
-        .eval("np.array([1, 2, 3], dtype='int32')", Some(&dict), None)
+    let py = gil.python();
+    let locals = get_np_locals(py);
+    let pyarray: &PyArray1<i32> = py
+        .eval("np.array([1, 2, 3], dtype='int32')", Some(locals), None)
         .unwrap()
         .extract()
         .unwrap();
-    assert_eq!(pyarray.as_slice(), &[1, 2, 3]);
+    assert_eq!(pyarray.as_array(), array![1, 2, 3]);
 }
 
 #[test]
 fn from_eval_to_dyn() {
     let gil = pyo3::Python::acquire_gil();
-    let np = get_array_module(gil.python()).unwrap();
-    let dict = PyDict::new(gil.python());
-    dict.set_item("np", np).unwrap();
-    let pyarray: &PyArrayDyn<i32> = gil
-        .python()
+    let py = gil.python();
+    let locals = get_np_locals(py);
+    let pyarray: &PyArrayDyn<i32> = py
         .eval(
             "np.array([[1, 2], [3, 4]], dtype='int32')",
-            Some(&dict),
+            Some(locals),
             None,
         )
         .unwrap()
         .extract()
         .unwrap();
-    assert_eq!(pyarray.as_slice(), &[1, 2, 3, 4]);
+    assert_eq!(pyarray.as_array(), array![[1, 2], [3, 4]].into_dyn());
 }
 
 #[test]
 fn from_eval_to_dyn_u64() {
     let gil = pyo3::Python::acquire_gil();
-    let np = get_array_module(gil.python()).unwrap();
-    let dict = PyDict::new(gil.python());
-    dict.set_item("np", np).unwrap();
-    let pyarray: &PyArrayDyn<u64> = gil
-        .python()
+    let py = gil.python();
+    let locals = get_np_locals(py);
+    let pyarray: &PyArrayDyn<u64> = py
         .eval(
             "np.array([[1, 2], [3, 4]], dtype='uint64')",
-            Some(&dict),
+            Some(locals),
             None,
         )
         .unwrap()
         .extract()
         .unwrap();
-    assert_eq!(pyarray.as_slice(), &[1, 2, 3, 4]);
+    assert_eq!(pyarray.as_array(), array![[1, 2], [3, 4]].into_dyn());
 }
 
 #[test]
 fn from_eval_fail_by_dtype() {
     let gil = pyo3::Python::acquire_gil();
-    let np = get_array_module(gil.python()).unwrap();
-    let dict = PyDict::new(gil.python());
-    dict.set_item("np", np).unwrap();
-    let converted: Result<&PyArray1<i32>, _> = gil
-        .python()
-        .eval("np.array([1, 2, 3], dtype='float64')", Some(&dict), None)
+    let py = gil.python();
+    let locals = get_np_locals(py);
+    let converted: Result<&PyArray1<i32>, _> = py
+        .eval("np.array([1, 2, 3], dtype='float64')", Some(locals), None)
         .unwrap()
         .extract();
     converted
@@ -219,12 +246,10 @@ fn from_eval_fail_by_dtype() {
 #[test]
 fn from_eval_fail_by_dim() {
     let gil = pyo3::Python::acquire_gil();
-    let np = get_array_module(gil.python()).unwrap();
-    let dict = PyDict::new(gil.python());
-    dict.set_item("np", np).unwrap();
-    let converted: Result<&PyArray2<i32>, _> = gil
-        .python()
-        .eval("np.array([1, 2, 3], dtype='int32')", Some(&dict), None)
+    let py = gil.python();
+    let locals = get_np_locals(py);
+    let converted: Result<&PyArray2<i32>, _> = py
+        .eval("np.array([1, 2, 3], dtype='int32')", Some(locals), None)
         .unwrap()
         .extract();
     converted
@@ -241,7 +266,7 @@ macro_rules! small_array_test {
                 let array: [$t; 2] = [$t::min_value(), $t::max_value()];
                 let pyarray = array.to_pyarray(gil.python());
                 assert_eq!(
-                    pyarray.as_slice(),
+                    pyarray.as_slice().unwrap(),
                     &[$t::min_value(), $t::max_value()]
                 );
             })+
@@ -255,7 +280,6 @@ small_array_test!(i8 u8 i16 u16 i32 u32 i64 u64 usize);
 fn array_usize_dtype() {
     let gil = pyo3::Python::acquire_gil();
     let py = gil.python();
-    let locals = PyDict::new(py);
 
     let a: Vec<usize> = vec![1, 2, 3];
     let x = a.into_pyarray(py);
@@ -283,7 +307,7 @@ fn into_pyarray_vec() {
     let gil = pyo3::Python::acquire_gil();
     let a = vec![1, 2, 3];
     let arr = a.into_pyarray(gil.python());
-    assert_eq!(arr.as_slice(), &[1, 2, 3])
+    assert_eq!(arr.as_slice().unwrap(), &[1, 2, 3])
 }
 
 #[test]
@@ -305,7 +329,7 @@ fn into_pyarray_cant_resize() {
     assert!(arr.resize(100).is_err())
 }
 
-// from pyo3, but modified for ease
+// TODO: Replace it by pyo3::py_run when https://github.com/PyO3/pyo3/pull/512 is released.
 macro_rules! py_run {
     ($py:expr, $val:expr, $code:expr) => {{
         let d = pyo3::types::PyDict::new($py);
@@ -320,12 +344,6 @@ macro_rules! py_run {
     }};
 }
 
-macro_rules! py_assert {
-    ($py:expr, $val:ident, $assertion:expr) => {
-        py_run!($py, $val, concat!("assert ", $assertion))
-    };
-}
-
 #[test]
 fn into_obj_vec_to_pyarray() {
     let gil = pyo3::Python::acquire_gil();
@@ -334,6 +352,6 @@ fn into_obj_vec_to_pyarray() {
     let string = pyo3::types::PyString::new(py, "Hello python :)");
     let a = vec![dict.as_ptr(), string.as_ptr()];
     let arr = a.into_pyarray(py);
-    py_assert!(py, arr, "arr[0] == {}");
-    py_assert!(py, arr, "arr[1] == 'Hello python :)'");
+    py_run!(py, arr, "assert arr[0] == {}");
+    py_run!(py, arr, "assert arr[1] == 'Hello python :)'");
 }
