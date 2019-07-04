@@ -84,7 +84,7 @@ fn main_<'py>(py: Python<'py>) -> PyResult<()> {
     let pyarray: &PyArray1<i32> = py
         .eval("np.absolute(np.array([-1, -2, -3], dtype='int32'))", Some(&dict), None)?
         .extract()?;
-    let slice = pyarray.as_slice();
+    let slice = pyarray.as_slice()?;
     assert_eq!(slice, &[1, 2, 3]);
     Ok(())
 }
