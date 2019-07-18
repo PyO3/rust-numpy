@@ -1,9 +1,6 @@
-import sys
 from setuptools import find_packages, setup
 from setuptools_rust import RustExtension
 
-
-PYTHON_MAJOR_VERSION = sys.version_info[0]
 
 setup_requires = ['setuptools-rust>=0.6.0']
 install_requires = ['numpy']
