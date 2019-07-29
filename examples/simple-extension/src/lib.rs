@@ -1,10 +1,13 @@
 extern crate ndarray;
+extern crate ndarray_parallel;
 extern crate numpy;
 extern crate pyo3;
 
 use ndarray::{ArrayD, ArrayViewD, ArrayViewMutD};
-use numpy::{IntoPyArray, PyArrayDyn};
+use numpy::{IntoPyArray, PyArrayDyn, PyArray2};
 use pyo3::prelude::{pymodule, Py, PyModule, PyResult, Python};
+use ndarray::Zip;
+use ndarray_parallel::prelude::*;
 
 #[pymodule]
 fn rust_ext(_py: Python, m: &PyModule) -> PyResult<()> {
@@ -17,6 +20,7 @@ fn rust_ext(_py: Python, m: &PyModule) -> PyResult<()> {
     fn mult(a: f64, mut x: ArrayViewMutD<f64>) {
         x *= a;
     }
+
 
     // wrapper of `axpy`
     #[pyfn(m, "axpy")]
@@ -39,5 +43,15 @@ fn rust_ext(_py: Python, m: &PyModule) -> PyResult<()> {
         Ok(())
     }
 
+    #[pyfn(m, "padd")]
+    fn parallel_elementwise_add(py: Python, slf: &PyArray2<f64>, other: &PyArray2<f64>) {
+        py.allow_threads(|| {
+            Zip::from(slf.as_array_mut())
+                .and(other.as_array())
+                .par_apply(|s, &o| {
+                    *s += o;
+                });
+        })
+    }
     Ok(())
 }

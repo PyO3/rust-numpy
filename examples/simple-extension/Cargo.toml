@@ -10,6 +10,7 @@ crate-type = ["cdylib"]
 [dependencies]
 numpy = { path = "../.." }
 ndarray = "0.12"
+ndarray-parallel = "0.9"
 
 [dependencies.pyo3]
 version = "0.7"
