@@ -3,7 +3,7 @@
 use std::ops::Deref;
 use std::os::raw::*;
 use std::ptr;
-use std::sync::{Once, ONCE_INIT};
+use std::sync::Once;
 
 use pyo3::ffi::PyObject;
 
@@ -25,7 +25,7 @@ pub struct PyUFuncAPI {
 impl Deref for PyUFuncAPI {
     type Target = PyUFuncAPI_Inner;
     fn deref(&self) -> &Self::Target {
-        static INIT_API: Once = ONCE_INIT;
+        static INIT_API: Once = Once::new();
         static mut UFUNC_API_CACHE: PyUFuncAPI_Inner = PyUFuncAPI_Inner(ptr::null());
         unsafe {
             if UFUNC_API_CACHE.0.is_null() {

@@ -4,7 +4,7 @@ use pyo3::ffi::{self, PyObject, PyTypeObject};
 use std::ops::Deref;
 use std::os::raw::*;
 use std::ptr;
-use std::sync::{Once, ONCE_INIT};
+use std::sync::Once;
 
 use npyffi::*;
 
@@ -42,7 +42,7 @@ pub struct PyArrayAPI {
 impl Deref for PyArrayAPI {
     type Target = PyArrayAPI_Inner;
     fn deref(&self) -> &Self::Target {
-        static INIT_API: Once = ONCE_INIT;
+        static INIT_API: Once = Once::new();
         static mut ARRAY_API_CACHE: PyArrayAPI_Inner = PyArrayAPI_Inner(ptr::null());
         unsafe {
             if ARRAY_API_CACHE.0.is_null() {
