@@ -55,13 +55,13 @@ impl<T> AsPyPointer for SliceBox<T> {
 
 impl<T> PyObjectAlloc for SliceBox<T> {
     /// Calls the rust destructor for the object.
-    unsafe fn drop(py: Python, obj: *mut ffi::PyObject) {
+    unsafe fn drop(py: Python<'_>, obj: *mut ffi::PyObject) {
         let data = (*(obj as *mut SliceBox<T>)).inner;
         let boxed_slice = Box::from_raw(data);
         drop(boxed_slice);
         <Self as type_object::PyTypeInfo>::BaseType::drop(py, obj);
     }
-    unsafe fn dealloc(py: Python, obj: *mut ffi::PyObject) {
+    unsafe fn dealloc(py: Python<'_>, obj: *mut ffi::PyObject) {
         Self::drop(py, obj);
         ffi::PyObject_Free(obj as *mut c_void);
     }

@@ -42,7 +42,7 @@ features = ["python2"]
 ```
 .
 
-You can also automatically specify python version in [setup.py](examples/simple-extension/setup.py), 
+You can also automatically specify python version in [setup.py](examples/simple-extension/setup.py),
 using [setuptools-rust](https://github.com/PyO3/setuptools-rust).
 
 
@@ -63,6 +63,7 @@ numpy = "0.6.0"
 ``` rust
 extern crate numpy;
 extern crate pyo3;
+
 use numpy::{PyArray1, get_array_module};
 use pyo3::prelude::{ObjectProtocol, PyResult, Python};
 use pyo3::types::PyDict;

@@ -6,7 +6,7 @@ use std::os::raw::*;
 use std::ptr;
 use std::sync::Once;
 
-use npyffi::*;
+use crate::npyffi::*;
 
 pub(crate) const MOD_NAME: &str = "numpy.core.multiarray";
 const CAPSULE_NAME: &str = "_ARRAY_API";
@@ -20,7 +20,7 @@ const CAPSULE_NAME: &str = "_ARRAY_API";
 ///
 /// # Example
 /// ```
-/// # extern crate pyo3; extern crate numpy; fn main() {
+/// # fn main() {
 /// use numpy::{PyArray, npyffi::types::NPY_SORTKIND, PY_ARRAY_API};
 /// use pyo3::Python;
 /// let gil = Python::acquire_gil();

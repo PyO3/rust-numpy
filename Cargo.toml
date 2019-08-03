@@ -4,6 +4,7 @@ version = "0.6.0"
 authors = ["Toshiki Teramura <toshiki.teramura@gmail.com>", "Yuji Kanagawa <yuji.kngw.80s.revive@gmail.com>"]
 description = "Rust binding of NumPy C-API"
 documentation = "https://rust-numpy.github.io/rust-numpy/numpy"
+edition = "2018"
 repository = "https://github.com/rust-numpy/rust-numpy"
 keywords = ["numpy", "python", "binding"]
 license-file = "LICENSE"

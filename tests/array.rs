@@ -1,7 +1,3 @@
-extern crate ndarray;
-extern crate numpy;
-extern crate pyo3;
-
 use ndarray::*;
 use numpy::*;
 use pyo3::{

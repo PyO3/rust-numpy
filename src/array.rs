@@ -1,6 +1,6 @@
 //! Safe interface for NumPy ndarray
+use crate::npyffi::{self, npy_intp, NPY_ORDER, PY_ARRAY_API};
 use ndarray::*;
-use npyffi::{self, npy_intp, NPY_ORDER, PY_ARRAY_API};
 use num_traits::AsPrimitive;
 use pyo3::{ffi, prelude::*, types::PyAny};
 use pyo3::{AsPyPointer, PyDowncastError, PyNativeType};
@@ -10,10 +10,10 @@ use std::mem;
 use std::os::raw::c_int;
 use std::ptr;
 
-use convert::{IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
-use error::{ErrorKind, IntoPyResult};
-use slice_box::SliceBox;
-use types::{NpyDataType, TypeNum};
+use crate::convert::{IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
+use crate::error::{ErrorKind, IntoPyResult};
+use crate::slice_box::SliceBox;
+use crate::types::{NpyDataType, TypeNum};
 
 /// A safe, static-typed interface for
 /// [NumPy ndarray](https://docs.scipy.org/doc/numpy/reference/arrays.ndarray.html).
@@ -64,7 +64,7 @@ use types::{NpyDataType, TypeNum};
 ///
 /// # Example
 /// ```
-/// # #[macro_use] extern crate ndarray; extern crate pyo3; extern crate numpy; fn main() {
+/// # #[macro_use] extern crate ndarray; fn main() {
 /// use pyo3::{GILGuard, Python};
 /// use numpy::PyArray;
 /// use ndarray::Array;
@@ -95,7 +95,7 @@ pub type PyArray6<T> = PyArray<T, Ix6>;
 pub type PyArrayDyn<T> = PyArray<T, IxDyn>;
 
 /// Returns a array module.
-pub fn get_array_module(py: Python) -> PyResult<&PyModule> {
+pub fn get_array_module(py: Python<'_>) -> PyResult<&PyModule> {
     PyModule::import(py, npyffi::array::MOD_NAME)
 }
 
@@ -134,7 +134,7 @@ impl<'a, T: TypeNum, D: Dimension> FromPyObject<'a> for &'a PyArray<T, D> {
 }
 
 impl<T, D> IntoPyObject for PyArray<T, D> {
-    fn into_object(self, _py: Python) -> PyObject {
+    fn into_object(self, _py: Python<'_>) -> PyObject {
         self.0
     }
 }
@@ -155,7 +155,7 @@ impl<T, D> PyArray<T, D> {
     ///
     /// # Example
     /// ```
-    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// # fn main() {
     /// use pyo3::types::IntoPyDict;
     /// let gil = pyo3::Python::acquire_gil();
     /// let py = gil.python();
@@ -192,7 +192,7 @@ impl<T, D> PyArray<T, D> {
     ///
     /// # Example
     /// ```
-    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// # fn main() {
     /// use pyo3::{GILGuard, Python, Py, AsPyRef};
     /// use numpy::PyArray1;
     /// fn return_py_array() -> Py<PyArray1<i32>> {
@@ -210,12 +210,12 @@ impl<T, D> PyArray<T, D> {
     }
 
     /// Constructs `PyArray` from raw python object without incrementing reference counts.
-    pub unsafe fn from_owned_ptr(py: Python, ptr: *mut ffi::PyObject) -> &Self {
+    pub unsafe fn from_owned_ptr(py: Python<'_>, ptr: *mut ffi::PyObject) -> &Self {
         py.from_owned_ptr(ptr)
     }
 
     /// Constructs PyArray from raw python object and increments reference counts.
-    pub unsafe fn from_borrowed_ptr(py: Python, ptr: *mut ffi::PyObject) -> &Self {
+    pub unsafe fn from_borrowed_ptr(py: Python<'_>, ptr: *mut ffi::PyObject) -> &Self {
         py.from_borrowed_ptr(ptr)
     }
 
@@ -225,7 +225,7 @@ impl<T, D> PyArray<T, D> {
     ///
     /// # Example
     /// ```
-    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// # fn main() {
     /// use numpy::PyArray3;
     /// let gil = pyo3::Python::acquire_gil();
     /// let arr = PyArray3::<f64>::new(gil.python(), [4, 5, 6], false);
@@ -243,7 +243,7 @@ impl<T, D> PyArray<T, D> {
     /// Same as [numpy.ndarray.strides](https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.strides.html)
     /// # Example
     /// ```
-    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// # fn main() {
     /// use numpy::PyArray3;
     /// let gil = pyo3::Python::acquire_gil();
     /// let arr = PyArray3::<f64>::new(gil.python(), [4, 5, 6], false);
@@ -265,7 +265,7 @@ impl<T, D> PyArray<T, D> {
     /// Same as [numpy.ndarray.shape](https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.shape.html)
     /// # Example
     /// ```
-    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// # fn main() {
     /// use numpy::PyArray3;
     /// let gil = pyo3::Python::acquire_gil();
     /// let arr = PyArray3::<f64>::new(gil.python(), [4, 5, 6], false);
@@ -336,7 +336,7 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     ///
     /// # Example
     /// ```
-    /// # extern crate pyo3; extern crate numpy; #[macro_use] extern crate ndarray; fn main() {
+    /// # #[macro_use] extern crate ndarray; fn main() {
     /// use numpy::PyArray3;
     /// let gil = pyo3::Python::acquire_gil();
     /// let pyarray = PyArray3::<i32>::new(gil.python(), [4, 5, 6], false);
@@ -410,7 +410,7 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     ///
     /// # Example
     /// ```
-    /// # extern crate pyo3; extern crate numpy; #[macro_use] extern crate ndarray; fn main() {
+    /// # #[macro_use] extern crate ndarray; fn main() {
     /// use numpy::PyArray2;
     /// let gil = pyo3::Python::acquire_gil();
     /// let pyarray = PyArray2::zeros(gil.python(), [2, 2], false);
@@ -439,7 +439,7 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     /// Returns `ErrorKind::NotContiguous` if the internal array is not contiguous.
     /// # Example
     /// ```
-    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// # fn main() {
     /// use numpy::{PyArray, PyArray1};
     /// use pyo3::types::IntoPyDict;
     /// let gil = pyo3::Python::acquire_gil();
@@ -481,7 +481,7 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     ///
     /// # Example
     /// ```
-    /// # extern crate pyo3; extern crate numpy; #[macro_use] extern crate ndarray; fn main() {
+    /// # #[macro_use] extern crate ndarray; fn main() {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let pyarray = PyArray::from_array(gil.python(), &array![[1, 2], [3, 4]]);
@@ -503,7 +503,7 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     ///
     /// # Example
     /// ```
-    /// # extern crate pyo3; extern crate numpy; #[macro_use] extern crate ndarray; fn main() {
+    /// # #[macro_use] extern crate ndarray; fn main() {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let pyarray = PyArray::from_owned_array(gil.python(), array![[1, 2], [3, 4]]);
@@ -519,7 +519,7 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     ///
     /// # Example
     /// ```
-    /// # #[macro_use] extern crate ndarray; extern crate pyo3; extern crate numpy; fn main() {
+    /// # #[macro_use] extern crate ndarray; fn main() {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let py_array = PyArray::arange(gil.python(), 0, 4, 1).reshape([2, 2]).unwrap();
@@ -529,13 +529,13 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     /// )
     /// # }
     /// ```
-    pub fn as_array(&self) -> ArrayView<T, D> {
+    pub fn as_array(&self) -> ArrayView<'_, T, D> {
         self.type_check_assert();
         unsafe { ArrayView::from_shape_ptr(self.ndarray_shape(), self.data()) }
     }
 
     /// Almost same as [`as_array`](#method.as_array), but returns `ArrayViewMut`.
-    pub fn as_array_mut(&self) -> ArrayViewMut<T, D> {
+    pub fn as_array_mut(&self) -> ArrayViewMut<'_, T, D> {
         self.type_check_assert();
         unsafe { ArrayViewMut::from_shape_ptr(self.ndarray_shape(), self.data()) }
     }
@@ -548,7 +548,7 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     ///
     /// # Example
     /// ```
-    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// # fn main() {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let arr = PyArray::arange(gil.python(), 0, 16, 1).reshape([2, 2, 4]).unwrap();
@@ -559,7 +559,7 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     ///
     /// For fixed dimension arrays, passing an index with invalid dimension causes compile error.
     /// ```compile_fail
-    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// # fn main() {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let arr = PyArray::arange(gil.python(), 0, 16, 1).reshape([2, 2, 4]).unwrap();
@@ -569,7 +569,7 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     ///
     /// However, for dinamic arrays, we cannot raise a compile error and just returns `None`.
     /// ```
-    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// # fn main() {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let arr = PyArray::arange(gil.python(), 0, 16, 1).reshape([2, 2, 4]).unwrap();
@@ -605,7 +605,7 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     ///
     /// # Example
     /// ```
-    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// # fn main() {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let arr = PyArray::arange(gil.python(), 0, 16, 1).reshape([2, 2, 4]).unwrap();
@@ -662,7 +662,7 @@ impl<T: TypeNum + Clone, D: Dimension> PyArray<T, D> {
     ///
     /// # Example
     /// ```
-    /// # #[macro_use] extern crate ndarray; extern crate pyo3; extern crate numpy; fn main() {
+    /// # #[macro_use] extern crate ndarray; fn main() {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let py_array = PyArray::arange(gil.python(), 0, 4, 1).reshape([2, 2]).unwrap();
@@ -682,7 +682,7 @@ impl<T: TypeNum> PyArray<T, Ix1> {
     ///
     /// # Example
     /// ```
-    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// # fn main() {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let array = [1, 2, 3, 4, 5];
@@ -703,7 +703,7 @@ impl<T: TypeNum> PyArray<T, Ix1> {
     ///
     /// # Example
     /// ```
-    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// # fn main() {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let vec = vec![1, 2, 3, 4, 5];
@@ -720,7 +720,7 @@ impl<T: TypeNum> PyArray<T, Ix1> {
     ///
     /// # Example
     /// ```
-    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// # fn main() {
     /// use numpy::PyArray;
     /// use std::collections::BTreeSet;
     /// let gil = pyo3::Python::acquire_gil();
@@ -729,7 +729,7 @@ impl<T: TypeNum> PyArray<T, Ix1> {
     /// assert_eq!(pyarray.as_slice().unwrap(), &[1, 2, 3, 4, 5]);
     /// # }
     /// ```
-    pub fn from_exact_iter(py: Python, iter: impl ExactSizeIterator<Item = T>) -> &Self {
+    pub fn from_exact_iter(py: Python<'_>, iter: impl ExactSizeIterator<Item = T>) -> &Self {
         let array = Self::new(py, [iter.len()], false);
         unsafe {
             for (i, item) in iter.enumerate() {
@@ -747,7 +747,7 @@ impl<T: TypeNum> PyArray<T, Ix1> {
     ///
     /// # Example
     /// ```
-    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// # fn main() {
     /// use numpy::PyArray;
     /// use std::collections::BTreeSet;
     /// let gil = pyo3::Python::acquire_gil();
@@ -756,7 +756,7 @@ impl<T: TypeNum> PyArray<T, Ix1> {
     /// assert_eq!(pyarray.as_slice().unwrap(), &[1, 2, 3, 4, 5]);
     /// # }
     /// ```
-    pub fn from_iter(py: Python, iter: impl IntoIterator<Item = T>) -> &Self {
+    pub fn from_iter(py: Python<'_>, iter: impl IntoIterator<Item = T>) -> &Self {
         let mut capacity = 512 / mem::size_of::<T>();
         let array = Self::new(py, [capacity], false);
         let mut length = 0;
@@ -782,7 +782,7 @@ impl<T: TypeNum> PyArray<T, Ix1> {
     ///
     /// # Example
     /// ```
-    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// # fn main() {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let pyarray = PyArray::arange(gil.python(), 0, 10, 1);
@@ -827,7 +827,7 @@ impl<T: TypeNum> PyArray<T, Ix2> {
     ///
     /// # Example
     /// ```
-    /// # extern crate pyo3; extern crate numpy; #[macro_use] extern crate ndarray; fn main() {
+    /// # #[macro_use] extern crate ndarray; fn main() {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let vec2 = vec![vec![1, 2, 3]; 2];
@@ -868,7 +868,7 @@ impl<T: TypeNum> PyArray<T, Ix3> {
     ///
     /// # Example
     /// ```
-    /// # extern crate pyo3; extern crate numpy; #[macro_use] extern crate ndarray; fn main() {
+    /// # #[macro_use] extern crate ndarray; fn main() {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let vec2 = vec![vec![vec![1, 2]; 2]; 2];
@@ -922,7 +922,7 @@ impl<T: TypeNum, D> PyArray<T, D> {
     /// Copies self into `other`, performing a data-type conversion if necessary.
     /// # Example
     /// ```
-    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// # fn main() {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let pyarray_f = PyArray::arange(gil.python(), 2.0, 5.0, 1.0);
@@ -944,7 +944,7 @@ impl<T: TypeNum, D> PyArray<T, D> {
     /// Cast the `PyArray<T>` to `PyArray<U>`, by allocating a new array.
     /// # Example
     /// ```
-    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// # fn main() {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let pyarray_f = PyArray::arange(gil.python(), 2.0, 5.0, 1.0);
@@ -979,7 +979,7 @@ impl<T: TypeNum, D> PyArray<T, D> {
     /// # Example
     ///
     /// ```
-    /// # #[macro_use] extern crate ndarray; extern crate pyo3; extern crate numpy; fn main() {
+    /// # #[macro_use] extern crate ndarray; fn main() {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let array = PyArray::from_exact_iter(gil.python(), 0..9);
@@ -1032,7 +1032,7 @@ impl<T: TypeNum + AsPrimitive<f64>> PyArray<T, Ix1> {
     ///
     /// # Example
     /// ```
-    /// # extern crate pyo3; extern crate numpy; fn main() {
+    /// # fn main() {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let pyarray = PyArray::arange(gil.python(), 2.0, 4.0, 0.5);

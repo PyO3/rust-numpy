@@ -1,21 +1,24 @@
 //! Defines error types.
 
-use array::PyArray;
-use convert::ToNpyDims;
+use crate::array::PyArray;
+use crate::convert::ToNpyDims;
+use crate::types::{NpyDataType, TypeNum};
 use pyo3::{exceptions as exc, PyErr, PyResult};
 use std::error;
 use std::fmt;
-use types::{NpyDataType, TypeNum};
 
 pub trait IntoPyErr: Into<PyErr> {
     fn into_pyerr(self) -> PyErr;
-    fn into_pyerr_with<D: fmt::Display>(self, impl FnOnce() -> D) -> PyErr;
+    fn into_pyerr_with<D: fmt::Display>(self, _: impl FnOnce() -> D) -> PyErr;
 }
 
 pub trait IntoPyResult {
     type ValueType;
     fn into_pyresult(self) -> PyResult<Self::ValueType>;
-    fn into_pyresult_with<D: fmt::Display>(self, impl FnOnce() -> D) -> PyResult<Self::ValueType>;
+    fn into_pyresult_with<D: fmt::Display>(
+        self,
+        _: impl FnOnce() -> D,
+    ) -> PyResult<Self::ValueType>;
 }
 
 impl<T, E: IntoPyErr> IntoPyResult for Result<T, E> {
@@ -62,7 +65,7 @@ impl ArrayShape {
 }
 
 impl fmt::Display for ArrayShape {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "dims={:?}, dtype={:?}", self.dims, self.dtype)
     }
 }
@@ -77,7 +80,7 @@ pub struct ArrayDim {
 }
 
 impl fmt::Display for ArrayDim {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if let Some(d) = self.dim {
             write!(f, "dim={:?}, dtype={:?}", d, self.dtype)
         } else {
@@ -133,7 +136,7 @@ impl ErrorKind {
 }
 
 impl fmt::Display for ErrorKind {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             ErrorKind::PyToRust { from, to } => {
                 write!(f, "Extraction failed:\n from=({}), to=({})", from, to)
