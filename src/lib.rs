@@ -52,3 +52,20 @@ pub use crate::error::{ArrayShape, ErrorKind, IntoPyErr, IntoPyResult};
 pub use crate::npyffi::{PY_ARRAY_API, PY_UFUNC_API};
 pub use crate::types::{c32, c64, NpyDataType, TypeNum};
 pub use ndarray::{Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};
+
+/// Test readme
+#[doc(hidden)]
+pub mod doc_test {
+    macro_rules! doc_comment {
+        ($x:expr, $($tt:tt)*) => {
+            #[doc = $x]
+            $($tt)*
+        };
+    }
+    macro_rules! doctest {
+        ($x: literal, $y:ident) => {
+            doc_comment!(include_str!($x), mod $y {});
+        };
+    }
+    doctest!("../README.md", readme_md);
+}

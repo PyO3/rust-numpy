@@ -60,10 +60,7 @@ pyo3 = "0.7"
 numpy = "0.6.0"
 ```
 
-``` rust
-extern crate numpy;
-extern crate pyo3;
-
+```rust
 use numpy::{PyArray1, get_array_module};
 use pyo3::prelude::{ObjectProtocol, PyResult, Python};
 use pyo3::types::PyDict;
@@ -110,10 +107,6 @@ features = ["extension-module"]
 ```
 
 ```rust
-extern crate ndarray;
-extern crate numpy;
-extern crate pyo3;
-
 use ndarray::{ArrayD, ArrayViewD, ArrayViewMutD};
 use numpy::{IntoPyArray, PyArrayDyn};
 use pyo3::prelude::{pymodule, Py, PyModule, PyResult, Python};
