@@ -8,7 +8,7 @@ use std::os::raw::c_int;
 use std::ptr;
 
 use super::*;
-use npyffi::npy_intp;
+use crate::npyffi::npy_intp;
 
 /// Covnersion trait from some rust types to `PyArray`.
 ///
@@ -19,7 +19,7 @@ use npyffi::npy_intp;
 /// **you cannot use some destructive methods like `resize`.**
 /// # Example
 /// ```
-/// # extern crate pyo3; extern crate numpy; fn main() {
+/// # fn main() {
 /// use numpy::{PyArray, IntoPyArray};
 /// let gil = pyo3::Python::acquire_gil();
 /// let py_array = vec![1, 2, 3].into_pyarray(gil.python());
@@ -30,7 +30,7 @@ use npyffi::npy_intp;
 pub trait IntoPyArray {
     type Item: TypeNum;
     type Dim: Dimension;
-    fn into_pyarray<'py>(self, Python<'py>) -> &'py PyArray<Self::Item, Self::Dim>;
+    fn into_pyarray<'py>(self, _: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim>;
 }
 
 impl<T: TypeNum> IntoPyArray for Box<[T]> {
@@ -71,7 +71,7 @@ where
 /// elements there**.
 /// # Example
 /// ```
-/// # extern crate pyo3; extern crate numpy; fn main() {
+/// # fn main() {
 /// use numpy::{PyArray, ToPyArray};
 /// let gil = pyo3::Python::acquire_gil();
 /// let py_array = vec![1, 2, 3].to_pyarray(gil.python());
@@ -81,7 +81,7 @@ where
 pub trait ToPyArray {
     type Item: TypeNum;
     type Dim: Dimension;
-    fn to_pyarray<'py>(&self, Python<'py>) -> &'py PyArray<Self::Item, Self::Dim>;
+    fn to_pyarray<'py>(&self, _: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim>;
 }
 
 impl<T: TypeNum> ToPyArray for [T] {

@@ -1,3 +1,4 @@
+#![deny(rust_2018_idioms)]
 use ndarray_linalg::solve::Inverse;
 use numpy::{IntoPyArray, PyArray2};
 use pyo3::exceptions::RuntimeError;
@@ -9,9 +10,9 @@ fn make_error<E: Display + Sized>(e: E) -> PyErr {
 }
 
 #[pymodule]
-fn rust_linalg(_py: Python, m: &PyModule) -> PyResult<()> {
+fn rust_linalg(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     #[pyfn(m, "inv")]
-    fn inv(py: Python, x: &PyArray2<f64>) -> PyResult<Py<PyArray2<f64>>> {
+    fn inv(py: Python<'_>, x: &PyArray2<f64>) -> PyResult<Py<PyArray2<f64>>> {
         let x = x.as_array().inv().map_err(make_error)?;
         Ok(x.into_pyarray(py).to_owned())
     }

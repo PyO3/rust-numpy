@@ -16,8 +16,6 @@
 //! ```
 //! #[macro_use]
 //! extern crate ndarray;
-//! extern crate numpy;
-//! extern crate pyo3;
 //! use pyo3::prelude::Python;
 //! use numpy::{ToPyArray, PyArray};
 //! fn main() {
@@ -31,13 +29,10 @@
 //! }
 //! ```
 #![feature(specialization)]
+#![deny(rust_2018_idioms)]
 
 #[macro_use]
 extern crate cfg_if;
-extern crate libc;
-extern crate ndarray;
-extern crate num_complex;
-extern crate num_traits;
 #[macro_use]
 extern crate pyo3;
 
@@ -48,12 +43,29 @@ pub mod npyffi;
 mod slice_box;
 pub mod types;
 
-pub use array::{
+pub use crate::array::{
     get_array_module, PyArray, PyArray1, PyArray2, PyArray3, PyArray4, PyArray5, PyArray6,
     PyArrayDyn,
 };
-pub use convert::{IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
-pub use error::{ArrayShape, ErrorKind, IntoPyErr, IntoPyResult};
+pub use crate::convert::{IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
+pub use crate::error::{ArrayShape, ErrorKind, IntoPyErr, IntoPyResult};
+pub use crate::npyffi::{PY_ARRAY_API, PY_UFUNC_API};
+pub use crate::types::{c32, c64, NpyDataType, TypeNum};
 pub use ndarray::{Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};
-pub use npyffi::{PY_ARRAY_API, PY_UFUNC_API};
-pub use types::{c32, c64, NpyDataType, TypeNum};
+
+/// Test readme
+#[doc(hidden)]
+pub mod doc_test {
+    macro_rules! doc_comment {
+        ($x:expr, $($tt:tt)*) => {
+            #[doc = $x]
+            $($tt)*
+        };
+    }
+    macro_rules! doctest {
+        ($x: literal, $y:ident) => {
+            doc_comment!(include_str!($x), mod $y {});
+        };
+    }
+    doctest!("../README.md", readme_md);
+}
