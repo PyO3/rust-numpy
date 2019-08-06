@@ -5,6 +5,8 @@ environment:
       FEATURES: python3
     - PYTHON: "C:/Python36-x64"
       FEATURES: python3
+    - PYTHON: "C:/Python37-x64"
+      FEATURES: python3
 
 install:
   - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
