@@ -1,11 +1,9 @@
-sudo: required
-dist: trusty
 language: python
+dist: xenial
 
 cache:
   pip: true
-  directories:
-  - "$HOME/.cargo"
+  cargo: true
 
 matrix:
   include:
@@ -13,8 +11,12 @@ matrix:
       env: FEATURES=python3
     - python: "3.6"
       env: FEATURES=python3
-    - python: "3.7-dev"
+    - python: "3.7"
       env: FEATURES=python3
+    - python: "3.8-dev"
+      env: FEATURES=python3
+  allow_failures:
+    - python: "3.8-dev"
 
 env:
   global:
