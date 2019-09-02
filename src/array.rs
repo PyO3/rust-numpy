@@ -102,6 +102,7 @@ pub fn get_array_module(py: Python<'_>) -> PyResult<&PyModule> {
 pyobject_native_type_convert!(
     PyArray<T, D>,
     *npyffi::PY_ARRAY_API.get_type_object(npyffi::ArrayType::PyArray_Type),
+    Some("numpy"),
     npyffi::PyArray_Check,
     T, D
 );
@@ -133,8 +134,8 @@ impl<'a, T: TypeNum, D: Dimension> FromPyObject<'a> for &'a PyArray<T, D> {
     }
 }
 
-impl<T, D> IntoPyObject for PyArray<T, D> {
-    fn into_object(self, _py: Python<'_>) -> PyObject {
+impl<T, D> IntoPy<PyObject> for PyArray<T, D> {
+    fn into_py(self, _py: Python<'_>) -> PyObject {
         self.0
     }
 }

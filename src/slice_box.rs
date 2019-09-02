@@ -29,6 +29,7 @@ impl<T> type_object::PyTypeInfo for SliceBox<T> {
     type Type = ();
     type BaseType = PyAny;
     const NAME: &'static str = "SliceBox";
+    const MODULE: Option<&'static str> = Some("_rust_numpy");
     const DESCRIPTION: &'static str = "Memory store for PyArray using rust's Box<[T]>.";
     const FLAGS: usize = 0;
     const SIZE: usize = std::mem::size_of::<Self>();
