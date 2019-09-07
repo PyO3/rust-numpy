@@ -414,7 +414,7 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     /// # #[macro_use] extern crate ndarray; fn main() {
     /// use numpy::PyArray2;
     /// let gil = pyo3::Python::acquire_gil();
-    /// let pyarray = PyArray2::zeros(gil.python(), [2, 2], false);
+    /// let pyarray: &PyArray2<usize> = PyArray2::zeros(gil.python(), [2, 2], false);
     /// assert_eq!(pyarray.as_array(), array![[0, 0], [0, 0]]);
     /// # }
     /// ```

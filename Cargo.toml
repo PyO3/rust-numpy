@@ -14,7 +14,7 @@ cfg-if = "0.1"
 libc = "0.2"
 num-complex = "0.2"
 num-traits = "0.2"
-ndarray = "0.12"
+ndarray = ">=0.12"
 pyo3 = "0.8"
 
 [features]
