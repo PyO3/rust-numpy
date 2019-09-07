@@ -1,4 +1,7 @@
 # Changelog
+- v0.7.0
+  - Update PyO3 to 0.8
+
 - v0.6.0
   - Update PyO3 to 0.7
   - Drop Python2 support
