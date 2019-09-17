@@ -90,7 +90,7 @@ fn main_<'py>(py: Python<'py>) -> PyResult<()> {
 
 ### Write a Python module in Rust
 
-Please see the [example](example) directory for a complete example
+Please see the [examples](examples) directory for a complete example
 
 ```toml
 [lib]
