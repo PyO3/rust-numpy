@@ -1,5 +1,3 @@
-#![allow(non_camel_case_types)]
-
 use pyo3::ffi::{Py_hash_t, Py_intptr_t, Py_uintptr_t};
 use std::os::raw::*;
 
