@@ -74,14 +74,12 @@ fn usize_dtype() {
 
     let a: Vec<usize> = vec![1, 2, 3];
     let x = a.into_pyarray(py);
-    let x_repr = format!("{:?}", x);
 
-    let x_repr_expected = if cfg!(target_pointer_width = "64") {
-        "array([1, 2, 3], dtype=uint64)"
+    if cfg!(target_pointer_width = "64") {
+        pyo3::py_run!(py, x, "assert str(x.dtype) == 'uint64'")
     } else {
-        "array([1, 2, 3], dtype=uint32)"
+        pyo3::py_run!(py, x, "assert str(x.dtype) == 'uint32'")
     };
-    assert_eq!(x_repr, x_repr_expected);
 }
 
 #[test]
