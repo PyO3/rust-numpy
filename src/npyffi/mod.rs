@@ -41,7 +41,7 @@ macro_rules! impl_api {
         #[allow(non_snake_case)]
         pub unsafe fn $fname(&self, $($arg : $t), *) $( -> $ret )* {
             let fptr = self.0.offset($offset)
-                               as (*const extern fn ($($arg : $t), *) $( -> $ret )* );
+                               as *const extern fn ($($arg : $t), *) $( -> $ret )*;
             (*fptr)($($arg), *)
         }
     }
