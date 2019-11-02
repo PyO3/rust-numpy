@@ -379,7 +379,7 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     pub(crate) unsafe fn from_boxed_slice<'py, ID>(
         py: Python<'py>,
         dims: ID,
-        strides: *mut npy_intp,
+        strides: *const npy_intp,
         slice: Box<[T]>,
     ) -> &'py Self
     where
@@ -392,11 +392,11 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
             dims.ndim_cint(),
             dims.as_dims_ptr(),
             T::typenum_default(),
-            strides,                // strides
-            slice.data(),           // data
-            0,                      // itemsize
-            0,                      // flag
-            ::std::ptr::null_mut(), //obj
+            strides as *mut _,          // strides
+            slice.data(),               // data
+            mem::size_of::<T>() as i32, // itemsize
+            0,                          // flag
+            ::std::ptr::null_mut(),     //obj
         );
         PY_ARRAY_API.PyArray_SetBaseObject(ptr as *mut npyffi::PyArrayObject, slice.as_ptr());
         Self::from_owned_ptr(py, ptr)

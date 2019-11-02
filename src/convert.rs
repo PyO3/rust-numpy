@@ -5,7 +5,6 @@ use pyo3::Python;
 
 use std::mem;
 use std::os::raw::c_int;
-use std::ptr;
 
 use super::*;
 use crate::npyffi::npy_intp;
@@ -38,7 +37,8 @@ impl<T: TypeNum> IntoPyArray for Box<[T]> {
     type Dim = Ix1;
     fn into_pyarray<'py>(self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
         let len = self.len();
-        unsafe { PyArray::from_boxed_slice(py, [len], ptr::null_mut(), self) }
+        let strides = [mem::size_of::<T>() as npy_intp];
+        unsafe { PyArray::from_boxed_slice(py, [len], strides.as_ptr(), self) }
     }
 }
 
@@ -58,10 +58,10 @@ where
     type Item = A;
     type Dim = D;
     fn into_pyarray<'py>(self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
-        let mut strides = npy_strides(&self);
+        let strides = npy_strides(&self);
         let dim = self.raw_dim();
         let boxed = self.into_raw_vec().into_boxed_slice();
-        unsafe { PyArray::from_boxed_slice(py, dim, strides.as_mut_ptr() as *mut npy_intp, boxed) }
+        unsafe { PyArray::from_boxed_slice(py, dim, strides.as_ptr(), boxed) }
     }
 }
 
