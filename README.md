@@ -99,7 +99,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 numpy = "0.7.0"
-ndarray = "0.12"
+ndarray = "0.13"
 
 [dependencies.pyo3]
 version = "0.8"

@@ -1,7 +1,7 @@
 //! Low-Lebel binding for NumPy C API C-objects
 //!
 //! https://docs.scipy.org/doc/numpy/reference/c-api.types-and-structures.html
-#![allow(non_camel_case_types, non_snake_case)]
+#![allow(non_camel_case_types)]
 
 use libc::FILE;
 use pyo3::ffi::*;

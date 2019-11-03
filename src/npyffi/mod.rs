@@ -1,13 +1,7 @@
 //! Low-Level bindings for NumPy C API.
 //!
 //! https://docs.scipy.org/doc/numpy/reference/c-api.html
-//!
-//! Most of functions in this submodule are unsafe.
-//! If you use functions in this submodule, you need to understand
-//! basic usage of Python C API, especially for the reference counting.
-//!
-//! - http://docs.python.jp/3/c-api/
-//! - http://dgrunwald.github.io/rust-pyo3/doc/pyo3/
+#![allow(non_camel_case_types)]
 
 use pyo3::ffi;
 use std::ffi::CString;
@@ -41,7 +35,7 @@ macro_rules! impl_api {
         #[allow(non_snake_case)]
         pub unsafe fn $fname(&self, $($arg : $t), *) $( -> $ret )* {
             let fptr = self.0.offset($offset)
-                               as (*const extern fn ($($arg : $t), *) $( -> $ret )* );
+                               as *const extern fn ($($arg : $t), *) $( -> $ret )*;
             (*fptr)($($arg), *)
         }
     }

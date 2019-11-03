@@ -50,7 +50,7 @@ use crate::types::{NpyDataType, TypeNum};
 /// All data types you can use implements [TypeNum](../types/trait.TypeNum.html).
 ///
 /// Dimensions are represented by ndarray's
-/// [Dimension](https://docs.rs/ndarray/0.12/ndarray/trait.Dimension.html) trait.
+/// [Dimension](https://docs.rs/ndarray/latest/ndarray/trait.Dimension.html) trait.
 ///
 /// Typically, you can use `Ix1, Ix2, ..` for fixed size arrays, and use `IxDyn` for dynamic
 /// dimensioned arrays. They're re-exported from `ndarray` crate.
@@ -59,7 +59,7 @@ use crate::types::{NpyDataType, TypeNum};
 /// or [`PyArrayDyn`](./type.PyArrayDyn.html).
 ///
 /// To specify concrete dimension like `3×4×5`, you can use types which implements ndarray's
-/// [`IntoDimension`](https://docs.rs/ndarray/0.12/ndarray/dimension/conversion/trait.IntoDimension.html)
+/// [`IntoDimension`](https://docs.rs/ndarray/latest/ndarray/dimension/conversion/trait.IntoDimension.html)
 /// trait. Typically, you can use array(e.g. `[3, 4, 5]`) or tuple(e.g. `(3, 4, 5)`) as a dimension.
 ///
 /// # Example
@@ -379,7 +379,7 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     pub(crate) unsafe fn from_boxed_slice<'py, ID>(
         py: Python<'py>,
         dims: ID,
-        strides: *mut npy_intp,
+        strides: *const npy_intp,
         slice: Box<[T]>,
     ) -> &'py Self
     where
@@ -392,11 +392,11 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
             dims.ndim_cint(),
             dims.as_dims_ptr(),
             T::typenum_default(),
-            strides,                // strides
-            slice.data(),           // data
-            0,                      // itemsize
-            0,                      // flag
-            ::std::ptr::null_mut(), //obj
+            strides as *mut _,          // strides
+            slice.data(),               // data
+            mem::size_of::<T>() as i32, // itemsize
+            0,                          // flag
+            ::std::ptr::null_mut(),     //obj
         );
         PY_ARRAY_API.PyArray_SetBaseObject(ptr as *mut npyffi::PyArrayObject, slice.as_ptr());
         Self::from_owned_ptr(py, ptr)
@@ -497,7 +497,7 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     }
 
     /// Construct PyArray from
-    /// [`ndarray::Array`](https://docs.rs/ndarray/0.12/ndarray/type.Array.html).
+    /// [`ndarray::Array`](https://docs.rs/ndarray/latest/ndarray/type.Array.html).
     ///
     /// This method uses internal [`Vec`](https://doc.rust-lang.org/std/vec/struct.Vec.html)
     /// of `ndarray::Array` as numpy array.
@@ -516,7 +516,7 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     }
 
     /// Get the immutable view of the internal data of `PyArray`, as
-    /// [`ndarray::ArrayView`](https://docs.rs/ndarray/0.12/ndarray/type.ArrayView.html).
+    /// [`ndarray::ArrayView`](https://docs.rs/ndarray/latest/ndarray/type.ArrayView.html).
     ///
     /// # Example
     /// ```
@@ -659,7 +659,7 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
 
 impl<T: TypeNum + Clone, D: Dimension> PyArray<T, D> {
     /// Get a copy of `PyArray` as
-    /// [`ndarray::Array`](https://docs.rs/ndarray/0.12/ndarray/type.Array.html).
+    /// [`ndarray::Array`](https://docs.rs/ndarray/latest/ndarray/type.Array.html).
     ///
     /// # Example
     /// ```
