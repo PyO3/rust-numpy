@@ -150,7 +150,7 @@ impl<D: Dimension> ToNpyDims for D {
 /// Types that can be used to index an array.
 ///
 /// See
-/// [IntoDimension](https://docs.rs/ndarray/0.12/ndarray/dimension/conversion/trait.IntoDimension.html)
+/// [IntoDimension](https://docs.rs/ndarray/latest/ndarray/dimension/conversion/trait.IntoDimension.html)
 /// for what types you can use as `NpyIndex`.
 ///
 /// But basically, you can use

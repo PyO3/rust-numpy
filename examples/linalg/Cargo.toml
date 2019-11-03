@@ -10,7 +10,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 numpy = { path = "../.." }
-ndarray = "0.12"
+ndarray = ">= 0.12"
 ndarray-linalg = { version = "0.10", features = ["openblas"] }
 
 [dependencies.pyo3]
