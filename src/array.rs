@@ -813,7 +813,7 @@ impl<T: TypeNum> PyArray<T, Ix1> {
             )
         };
         if res.is_null() {
-            Err(ErrorKind::dims_cast(self, dims))
+            Err(ErrorKind::py(self.py()))
         } else {
             Ok(())
         }
@@ -936,7 +936,7 @@ impl<T: TypeNum, D> PyArray<T, D> {
         let other_ptr = other.as_array_ptr();
         let result = unsafe { PY_ARRAY_API.PyArray_CopyInto(other_ptr, self_ptr) };
         if result == -1 {
-            Err(ErrorKind::dtype_cast(self, U::npy_data_type()))
+            Err(ErrorKind::py(self.py()))
         } else {
             Ok(())
         }
@@ -965,7 +965,7 @@ impl<T: TypeNum, D> PyArray<T, D> {
             )
         };
         if ptr.is_null() {
-            Err(ErrorKind::dtype_cast(self, U::npy_data_type()))
+            Err(ErrorKind::py(self.py()))
         } else {
             Ok(unsafe { PyArray::<U, D>::from_owned_ptr(self.py(), ptr) })
         }
@@ -1018,7 +1018,7 @@ impl<T: TypeNum, D> PyArray<T, D> {
             )
         };
         if ptr.is_null() {
-            Err(ErrorKind::dims_cast(self, dims))
+            Err(ErrorKind::py(self.py()))
         } else {
             Ok(unsafe { PyArray::<T, D2>::from_owned_ptr(self.py(), ptr) })
         }

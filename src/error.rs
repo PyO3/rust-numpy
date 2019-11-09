@@ -3,7 +3,7 @@
 use crate::array::PyArray;
 use crate::convert::ToNpyDims;
 use crate::types::{NpyDataType, TypeNum};
-use pyo3::{exceptions as exc, PyErr, PyResult};
+use pyo3::{exceptions as exc, PyErr, PyResult, Python};
 use std::error;
 use std::fmt;
 
@@ -34,42 +34,6 @@ impl<T, E: IntoPyErr> IntoPyResult for Result<T, E> {
     }
 }
 
-/// Represents a shape and dtype of numpy array.
-///
-/// Only for error formatting.
-#[derive(Debug)]
-pub struct ArrayShape {
-    pub dims: Box<[usize]>,
-    pub dtype: NpyDataType,
-}
-
-impl ArrayShape {
-    fn boxed_dims(dims: &[usize]) -> Box<[usize]> {
-        dims.into_iter()
-            .map(|&x| x)
-            .collect::<Vec<_>>()
-            .into_boxed_slice()
-    }
-    fn from_array<T: TypeNum, D>(array: &PyArray<T, D>) -> Self {
-        ArrayShape {
-            dims: Self::boxed_dims(array.shape()),
-            dtype: T::npy_data_type(),
-        }
-    }
-    fn from_dims<T: TypeNum, D: ToNpyDims>(dims: D) -> Self {
-        ArrayShape {
-            dims: Self::boxed_dims(dims.slice()),
-            dtype: T::npy_data_type(),
-        }
-    }
-}
-
-impl fmt::Display for ArrayShape {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "dims={:?}, dtype={:?}", self.dims, self.dtype)
-    }
-}
-
 /// Represents a dimension and dtype of numpy array.
 ///
 /// Only for error formatting.
@@ -96,8 +60,8 @@ pub enum ErrorKind {
     PyToRust { from: ArrayDim, to: ArrayDim },
     /// Error for casting rust's `Vec` into numpy array.
     FromVec { dim1: usize, dim2: usize },
-    /// Error in numpy -> numpy data conversion
-    PyToPy(Box<(ArrayShape, ArrayShape)>),
+    /// Error occured in Python iterpreter
+    Python(PyErr),
     /// The array need to be contiguous to finish the opretion
     NotContiguous,
 }
@@ -120,18 +84,8 @@ impl ErrorKind {
             },
         }
     }
-    pub(crate) fn dtype_cast<T: TypeNum, D>(from: &PyArray<T, D>, to: NpyDataType) -> Self {
-        let from = ArrayShape::from_array(from);
-        let to = ArrayShape {
-            dims: from.dims.clone(),
-            dtype: to,
-        };
-        ErrorKind::PyToPy(Box::new((from, to)))
-    }
-    pub(crate) fn dims_cast<T: TypeNum, D>(from: &PyArray<T, D>, to_dim: impl ToNpyDims) -> Self {
-        let from = ArrayShape::from_array(from);
-        let to = ArrayShape::from_dims::<T, _>(to_dim);
-        ErrorKind::PyToPy(Box::new((from, to)))
+    pub(crate) fn py(py: Python<'_>) -> Self {
+        ErrorKind::Python(PyErr::fetch(py))
     }
 }
 
@@ -146,11 +100,7 @@ impl fmt::Display for ErrorKind {
                 "Cast failed: Vec To PyArray:\n expect all dim {} but {} was found",
                 dim1, dim2
             ),
-            ErrorKind::PyToPy(e) => write!(
-                f,
-                "Cast failed: from=ndarray({}), to=ndarray(dtype={})",
-                e.0, e.1,
-            ),
+            ErrorKind::Python(e) => write!(f, "Python error: {:?}", e),
             ErrorKind::NotContiguous => write!(f, "This array is not contiguous!"),
         }
     }
@@ -160,7 +110,10 @@ impl error::Error for ErrorKind {}
 
 impl From<ErrorKind> for PyErr {
     fn from(err: ErrorKind) -> PyErr {
-        PyErr::new::<exc::TypeError, _>(format!("{}", err))
+        match err {
+            ErrorKind::Python(e) => e,
+            _ => PyErr::new::<exc::TypeError, _>(format!("{}", err)),
+        }
     }
 }
 

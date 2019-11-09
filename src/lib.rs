@@ -48,7 +48,7 @@ pub use crate::array::{
     PyArrayDyn,
 };
 pub use crate::convert::{IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
-pub use crate::error::{ArrayShape, ErrorKind, IntoPyErr, IntoPyResult};
+pub use crate::error::{ErrorKind, IntoPyErr, IntoPyResult};
 pub use crate::npyffi::{PY_ARRAY_API, PY_UFUNC_API};
 pub use crate::types::{c32, c64, NpyDataType, TypeNum};
 pub use ndarray::{Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};
