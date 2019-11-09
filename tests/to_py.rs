@@ -68,7 +68,6 @@ macro_rules! small_array_test {
 small_array_test!(i8 u8 i16 u16 i32 u32 i64 u64 usize);
 
 #[test]
-#[ignore]
 fn usize_dtype() {
     let gil = pyo3::Python::acquire_gil();
     let py = gil.python();
