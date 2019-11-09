@@ -108,3 +108,23 @@ fn into_pyarray_cant_resize() {
     let arr = a.into_pyarray(gil.python());
     assert!(arr.resize(100).is_err())
 }
+
+#[test]
+fn forder_to_pyarray() {
+    let gil = pyo3::Python::acquire_gil();
+    let py = gil.python();
+    let matrix = Array2::from_shape_vec([4, 2], vec![0, 1, 2, 3, 4, 5, 6, 7]).unwrap();
+    let fortran_matrix = matrix.reversed_axes();
+    let fmat_py = fortran_matrix.to_pyarray(py);
+    assert_eq!(fmat_py.as_array(), array![[0, 2, 4, 6], [1, 3, 5, 7]],);
+}
+
+#[test]
+fn slice_to_pyarray() {
+    let gil = pyo3::Python::acquire_gil();
+    let py = gil.python();
+    let matrix = Array2::from_shape_vec([4, 2], vec![0, 1, 2, 3, 4, 5, 6, 7]).unwrap();
+    let slice = matrix.slice(s![1..4; -1, ..]);
+    let slice_py = slice.to_pyarray(py);
+    assert_eq!(slice_py.as_array(), array![[6, 7], [4, 5], [2, 3]],);
+}

@@ -296,7 +296,7 @@ impl<T, D> PyArray<T, D> {
     }
 
     /// Returns the pointer to the first element of the inner array.
-    unsafe fn data(&self) -> *mut T {
+    pub(crate) unsafe fn data(&self) -> *mut T {
         let ptr = self.as_array_ptr();
         (*ptr).data as *mut T
     }

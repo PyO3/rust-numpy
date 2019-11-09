@@ -58,7 +58,7 @@ where
     type Item = A;
     type Dim = D;
     fn into_pyarray<'py>(self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
-        let strides = NpyStrides::from_array(&self);
+        let strides = self.npy_strides();
         let dim = self.raw_dim();
         let boxed = self.into_raw_vec().into_boxed_slice();
         unsafe { PyArray::from_boxed_slice(py, dim, strides.as_ptr(), boxed) }
@@ -102,11 +102,68 @@ where
     type Dim = D;
     fn to_pyarray<'py>(&self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
         let len = self.len();
-        let strides = NpyStrides::from_array(self);
-        unsafe {
-            let array = PyArray::new_(py, self.raw_dim(), strides.as_ptr(), 0);
-            array.copy_ptr(self.as_ptr(), len);
-            array
+        if let Some(order) = self.order() {
+            // if the array is contiguous, copy it by `copy_ptr`.
+            let strides = self.npy_strides();
+            unsafe {
+                let array = PyArray::new_(py, self.raw_dim(), strides.as_ptr(), order.to_flag());
+                array.copy_ptr(self.as_ptr(), len);
+                array
+            }
+        } else {
+            // if the array is not contiguous, copy all elements by `ArrayBase::iter`.
+            let dim = self.raw_dim();
+            let strides = NpyStrides::from_dim(&dim, mem::size_of::<A>());
+            unsafe {
+                let array = PyArray::<A, _>::new_(py, dim, strides.as_ptr(), 0);
+                let data_ptr = array.data();
+                for (i, item) in self.iter().enumerate() {
+                    data_ptr.offset(i as isize).write(*item);
+                }
+                array
+            }
+        }
+    }
+}
+
+enum Order {
+    Standard,
+    Fortran,
+}
+
+impl Order {
+    fn to_flag(&self) -> c_int {
+        match self {
+            Order::Standard => 0,
+            Order::Fortran => 1,
+        }
+    }
+}
+
+trait ArrayExt {
+    fn npy_strides(&self) -> NpyStrides;
+    fn order(&self) -> Option<Order>;
+}
+
+impl<A, S, D> ArrayExt for ArrayBase<S, D>
+where
+    S: Data<Elem = A>,
+    D: Dimension,
+{
+    fn npy_strides(&self) -> NpyStrides {
+        NpyStrides::new(
+            self.strides().into_iter().map(|&x| x as npyffi::npy_intp),
+            mem::size_of::<A>(),
+        )
+    }
+
+    fn order(&self) -> Option<Order> {
+        if self.is_standard_layout() {
+            Some(Order::Standard)
+        } else if self.ndim() > 1 && self.raw_view().reversed_axes().is_standard_layout() {
+            Some(Order::Fortran)
+        } else {
+            None
         }
     }
 }
@@ -124,31 +181,26 @@ impl NpyStrides {
             NpyStrides::Long(inner) => inner.as_ptr(),
         }
     }
-
-    fn from_array<A, S, D>(array: &ArrayBase<S, D>) -> Self
-    where
-        S: Data<Elem = A>,
-        D: Dimension,
-        A: TypeNum,
-    {
-        Self::from_strides(array.strides(), mem::size_of::<A>())
+    fn from_dim<D: Dimension>(dim: &D, type_size: usize) -> Self {
+        Self::new(
+            dim.default_strides()
+                .slice()
+                .into_iter()
+                .map(|&x| x as npyffi::npy_intp),
+            type_size,
+        )
     }
-    fn from_strides(strides: &[isize], type_size: usize) -> Self {
+    fn new(strides: impl ExactSizeIterator<Item = npyffi::npy_intp>, type_size: usize) -> Self {
         let len = strides.len();
         let type_size = type_size as npyffi::npy_intp;
         if len <= 8 {
             let mut res = [0; 8];
-            for i in 0..len {
-                res[i] = strides[i] as npyffi::npy_intp * type_size;
+            for (i, s) in strides.enumerate() {
+                res[i] = s * type_size;
             }
             NpyStrides::Short(res)
         } else {
-            NpyStrides::Long(
-                strides
-                    .into_iter()
-                    .map(|&n| n as npyffi::npy_intp * type_size)
-                    .collect(),
-            )
+            NpyStrides::Long(strides.map(|n| n as npyffi::npy_intp * type_size).collect())
         }
     }
 }
