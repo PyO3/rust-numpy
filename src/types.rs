@@ -68,7 +68,7 @@ impl NpyDataType {
     }
 }
 
-pub trait TypeNum {
+pub trait TypeNum: std::fmt::Debug + Copy {
     fn is_same_type(other: i32) -> bool;
     fn npy_data_type() -> NpyDataType;
     fn typenum_default() -> i32;

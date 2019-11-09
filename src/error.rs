@@ -1,8 +1,5 @@
 //! Defines error types.
-
-use crate::array::PyArray;
-use crate::convert::ToNpyDims;
-use crate::types::{NpyDataType, TypeNum};
+use crate::types::NpyDataType;
 use pyo3::{exceptions as exc, PyErr, PyResult, Python};
 use std::error;
 use std::fmt;

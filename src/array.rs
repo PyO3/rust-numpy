@@ -296,7 +296,7 @@ impl<T, D> PyArray<T, D> {
     }
 
     /// Returns the pointer to the first element of the inner array.
-    unsafe fn data(&self) -> *mut T {
+    pub(crate) unsafe fn data(&self) -> *mut T {
         let ptr = self.as_array_ptr();
         (*ptr).data as *mut T
     }
@@ -355,7 +355,7 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     pub(crate) unsafe fn new_<'py, ID>(
         py: Python<'py>,
         dims: ID,
-        strides: *mut npy_intp,
+        strides: *const npy_intp,
         flag: c_int,
     ) -> &'py Self
     where
@@ -367,7 +367,7 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
             dims.ndim_cint(),
             dims.as_dims_ptr(),
             T::typenum_default(),
-            strides,                // strides
+            strides as *mut _,      // strides
             ptr::null_mut(),        // data
             0,                      // itemsize
             flag,                   // flag
