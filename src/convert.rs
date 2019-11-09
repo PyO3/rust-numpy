@@ -58,7 +58,7 @@ where
     type Item = A;
     type Dim = D;
     fn into_pyarray<'py>(self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
-        let strides = npy_strides(&self);
+        let strides = NpyStrides::from_array(&self);
         let dim = self.raw_dim();
         let boxed = self.into_raw_vec().into_boxed_slice();
         unsafe { PyArray::from_boxed_slice(py, dim, strides.as_ptr(), boxed) }
@@ -102,26 +102,55 @@ where
     type Dim = D;
     fn to_pyarray<'py>(&self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
         let len = self.len();
-        let mut strides = npy_strides(self);
+        let strides = NpyStrides::from_array(self);
         unsafe {
-            let array = PyArray::new_(py, self.raw_dim(), strides.as_mut_ptr() as *mut npy_intp, 0);
+            let array = PyArray::new_(py, self.raw_dim(), strides.as_ptr(), 0);
             array.copy_ptr(self.as_ptr(), len);
             array
         }
     }
 }
 
-fn npy_strides<S, D, A>(array: &ArrayBase<S, D>) -> Vec<npyffi::npy_intp>
-where
-    S: Data<Elem = A>,
-    D: Dimension,
-    A: TypeNum,
-{
-    array
-        .strides()
-        .into_iter()
-        .map(|n| n * mem::size_of::<A>() as npyffi::npy_intp)
-        .collect()
+/// Numpy strides with short array optimization
+enum NpyStrides {
+    Short([npyffi::npy_intp; 8]),
+    Long(Vec<npyffi::npy_intp>),
+}
+
+impl NpyStrides {
+    fn as_ptr(&self) -> *const npy_intp {
+        match self {
+            NpyStrides::Short(inner) => inner.as_ptr(),
+            NpyStrides::Long(inner) => inner.as_ptr(),
+        }
+    }
+
+    fn from_array<A, S, D>(array: &ArrayBase<S, D>) -> Self
+    where
+        S: Data<Elem = A>,
+        D: Dimension,
+        A: TypeNum,
+    {
+        Self::from_strides(array.strides(), mem::size_of::<A>())
+    }
+    fn from_strides(strides: &[isize], type_size: usize) -> Self {
+        let len = strides.len();
+        let type_size = type_size as npyffi::npy_intp;
+        if len <= 8 {
+            let mut res = [0; 8];
+            for i in 0..len {
+                res[i] = strides[i] as npyffi::npy_intp * type_size;
+            }
+            NpyStrides::Short(res)
+        } else {
+            NpyStrides::Long(
+                strides
+                    .into_iter()
+                    .map(|&n| n as npyffi::npy_intp * type_size)
+                    .collect(),
+            )
+        }
+    }
 }
 
 /// Utility trait to specify the dimention of array
