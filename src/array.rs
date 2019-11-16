@@ -743,8 +743,8 @@ impl<T: TypeNum> PyArray<T, Ix1> {
     /// Construct one-dimension PyArray from a type which implements
     /// [`IntoIterator`](https://doc.rust-lang.org/std/iter/trait.IntoIterator.html).
     ///
-    /// This method can allocate memory multiple times and not fast.
-    /// When you can use [from_exact_iter](method.from_exact_iter.html), we recommend to use it.
+    /// If no reliable [`size_hint`](https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.size_hint) is available,
+    /// this method can allocate memory multiple time, which can hurt performance.
     ///
     /// # Example
     /// ```
@@ -758,13 +758,15 @@ impl<T: TypeNum> PyArray<T, Ix1> {
     /// # }
     /// ```
     pub fn from_iter(py: Python<'_>, iter: impl IntoIterator<Item = T>) -> &Self {
-        let mut capacity = 512 / mem::size_of::<T>();
+        let iter = iter.into_iter();
+        let (min_len, max_len) = iter.size_hint();
+        let mut capacity = max_len.unwrap_or(min_len.max(512 / mem::size_of::<T>()));
         let array = Self::new(py, [capacity], false);
         let mut length = 0;
         unsafe {
-            for (i, item) in iter.into_iter().enumerate() {
+            for (i, item) in iter.enumerate() {
                 length += 1;
-                if length >= capacity {
+                if length > capacity {
                     capacity *= 2;
                     array
                         .resize(capacity)
