@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["NpyDataType","An enum type represents numpy data type."]],"trait":[["TypeNum",""]],"type":[["c32","alias of Complex32"],["c64","alias of Complex64"]]});

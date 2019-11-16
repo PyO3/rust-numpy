@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["ArrayType",""]],"fn":[["PyArray_Check",""],["PyArray_CheckExact",""]],"static":[["PY_ARRAY_API","A global variable which stores a 'capsule' pointer to Numpy Array API."]],"struct":[["PyArrayAPI",""],["PyArrayAPI_Inner",""]]});
