@@ -14,5 +14,5 @@ ndarray = ">= 0.12"
 ndarray-linalg = { version = "0.10", features = ["openblas"] }
 
 [dependencies.pyo3]
-version = "0.8"
+version = "0.9.0-alpha.1"
 features = ["extension-module"]

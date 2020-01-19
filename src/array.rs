@@ -2,7 +2,7 @@
 use crate::npyffi::{self, npy_intp, NPY_ORDER, PY_ARRAY_API};
 use ndarray::*;
 use num_traits::AsPrimitive;
-use pyo3::{ffi, prelude::*, types::PyAny};
+use pyo3::{ffi, prelude::*, type_object, types::PyAny};
 use pyo3::{AsPyPointer, PyDowncastError, PyNativeType};
 use std::iter::ExactSizeIterator;
 use std::marker::PhantomData;
@@ -99,8 +99,12 @@ pub fn get_array_module(py: Python<'_>) -> PyResult<&PyModule> {
     PyModule::import(py, npyffi::array::MOD_NAME)
 }
 
+impl<T, D> type_object::PyObjectLayout<PyArray<T, D>> for npyffi::PyArrayObject {}
+impl<T, D> type_object::PyObjectSizedLayout<PyArray<T, D>> for npyffi::PyArrayObject {}
+
 pyobject_native_type_convert!(
     PyArray<T, D>,
+    npyffi::PyArrayObject,
     *npyffi::PY_ARRAY_API.get_type_object(npyffi::ArrayType::PyArray_Type),
     Some("numpy"),
     npyffi::PyArray_Check,
@@ -386,19 +390,19 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
         ID: IntoDimension<Dim = D>,
     {
         let dims = dims.into_dimension();
-        let slice = SliceBox::new(slice);
+        let container = SliceBox::new(py, slice).expect("SliceBox creation failed");
         let ptr = PY_ARRAY_API.PyArray_New(
             PY_ARRAY_API.get_type_object(npyffi::ArrayType::PyArray_Type),
             dims.ndim_cint(),
             dims.as_dims_ptr(),
             T::typenum_default(),
             strides as *mut _,          // strides
-            slice.data(),               // data
+            (*container).data as _,     // data
             mem::size_of::<T>() as i32, // itemsize
             0,                          // flag
             ::std::ptr::null_mut(),     //obj
         );
-        PY_ARRAY_API.PyArray_SetBaseObject(ptr as *mut npyffi::PyArrayObject, slice.as_ptr());
+        PY_ARRAY_API.PyArray_SetBaseObject(ptr as *mut npyffi::PyArrayObject, container as _);
         Self::from_owned_ptr(py, ptr)
     }
 
