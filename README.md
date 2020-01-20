@@ -26,7 +26,7 @@ If you want to use rust-cpython, use version 0.2.1 from crates.io.
 
 ## Supported Python version
 
-Currently 3.5, 3.6, 3.7 are supported.
+Currently 3.5, 3.6, 3.7, and 3.8 are supported.
 
 
 ## Python2 Support
