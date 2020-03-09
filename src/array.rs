@@ -99,8 +99,8 @@ pub fn get_array_module(py: Python<'_>) -> PyResult<&PyModule> {
     PyModule::import(py, npyffi::array::MOD_NAME)
 }
 
-impl<T, D> type_object::PyObjectLayout<PyArray<T, D>> for npyffi::PyArrayObject {}
-impl<T, D> type_object::PyObjectSizedLayout<PyArray<T, D>> for npyffi::PyArrayObject {}
+unsafe impl<T, D> type_object::PyLayout<PyArray<T, D>> for npyffi::PyArrayObject {}
+impl<T, D> type_object::PySizedLayout<PyArray<T, D>> for npyffi::PyArrayObject {}
 
 pyobject_native_type_convert!(
     PyArray<T, D>,
@@ -170,7 +170,7 @@ impl<T, D> PyArray<T, D> {
     /// let not_contiguous: &numpy::PyArray1<f32> = py
     ///     .eval("np.zeros((3, 5))[::2, 4]", Some(locals), None)
     ///     .unwrap()
-    ///     .downcast_ref()
+    ///     .downcast()
     ///     .unwrap();
     /// assert!(!not_contiguous.is_contiguous());
     /// # }
@@ -390,19 +390,23 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
         ID: IntoDimension<Dim = D>,
     {
         let dims = dims.into_dimension();
-        let container = SliceBox::new(py, slice).expect("SliceBox creation failed");
+        let container = SliceBox::new(slice);
+        let data_ptr = container.data;
+        let cell = pyo3::PyClassInitializer::from(container)
+            .create_cell(py)
+            .expect("Object creation failed.");
         let ptr = PY_ARRAY_API.PyArray_New(
             PY_ARRAY_API.get_type_object(npyffi::ArrayType::PyArray_Type),
             dims.ndim_cint(),
             dims.as_dims_ptr(),
             T::typenum_default(),
             strides as *mut _,          // strides
-            (*container).data as _,     // data
+            data_ptr as _,              // data
             mem::size_of::<T>() as i32, // itemsize
             0,                          // flag
             ::std::ptr::null_mut(),     //obj
         );
-        PY_ARRAY_API.PyArray_SetBaseObject(ptr as *mut npyffi::PyArrayObject, container as _);
+        PY_ARRAY_API.PyArray_SetBaseObject(ptr as *mut npyffi::PyArrayObject, cell as _);
         Self::from_owned_ptr(py, ptr)
     }
 
@@ -455,7 +459,7 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     /// let not_contiguous: &PyArray1<f32> = py
     ///     .eval("np.zeros((3, 5))[[0, 2], [3, 4]]", Some(locals), None)
     ///     .unwrap()
-    ///     .downcast_ref()
+    ///     .downcast()
     ///     .unwrap();
     /// assert!(not_contiguous.as_slice().is_err());
     /// # }

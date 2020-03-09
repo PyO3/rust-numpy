@@ -17,7 +17,7 @@ fn not_contiguous_array<'py>(py: Python<'py>) -> &'py PyArray1<i32> {
         None,
     )
     .unwrap()
-    .downcast_ref()
+    .downcast()
     .unwrap()
 }
 
