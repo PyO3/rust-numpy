@@ -181,7 +181,7 @@ impl<T, D> PyArray<T, D> {
     }
 
     /// Returns `true` if the internal data of the array is Fortran-style contiguous.
-    pub fn is_fotran_contiguous(&self) -> bool {
+    pub fn is_fortran_contiguous(&self) -> bool {
         self.check_flag(npyffi::NPY_ARRAY_F_CONTIGUOUS)
     }
 
