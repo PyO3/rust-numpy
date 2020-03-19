@@ -1,4 +1,8 @@
 # Changelog
+- v0.8.0
+  - Update PyO3 to 0.9.0
+  - Fix SliceBox initialization
+
 - v0.7.0
   - Update PyO3 to 0.8
 
