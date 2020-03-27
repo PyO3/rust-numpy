@@ -1,6 +1,6 @@
 rust-numpy
 ===========
-[![Build Status](https://travis-ci.org/rust-numpy/rust-numpy.svg?branch=master)](https://travis-ci.org/rust-numpy/rust-numpy)
+[![Build Status](https://travis-ci.org/pyo3/rust-numpy.svg?branch=master)](https://travis-ci.org/pyo3/rust-numpy)
 [![Build status](https://ci.appveyor.com/api/projects/status/bjaru43c7t1alx2x/branch/master?svg=true)](https://ci.appveyor.com/project/kngwyu/rust-numpy/branch/master)
 [![Crate](http://meritbadge.herokuapp.com/numpy)](https://crates.io/crates/numpy)
 
@@ -8,7 +8,7 @@ Rust bindings for the NumPy C-API
 
 ## API documentation
 - [Latest release (possibly broken)](https://docs.rs/numpy)
-- [Current Master](https://rust-numpy.github.io/rust-numpy)
+- [Current Master](https://pyo3.github.io/rust-numpy)
 
 
 ## Requirements
