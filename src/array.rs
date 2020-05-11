@@ -77,7 +77,7 @@ use crate::types::{NpyDataType, TypeNum};
 /// );
 /// # }
 /// ```
-pub struct PyArray<T, D>(PyObject, PhantomData<T>, PhantomData<D>);
+pub struct PyArray<T, D>(PyAny, PhantomData<T>, PhantomData<D>);
 
 /// one-dimensional array
 pub type PyArray1<T> = PyArray<T, Ix1>;
@@ -139,8 +139,8 @@ impl<'a, T: TypeNum, D: Dimension> FromPyObject<'a> for &'a PyArray<T, D> {
 }
 
 impl<T, D> IntoPy<PyObject> for PyArray<T, D> {
-    fn into_py(self, _py: Python<'_>) -> PyObject {
-        self.0
+    fn into_py(self, py: Python<'_>) -> PyObject {
+        unsafe { PyObject::from_borrowed_ptr(py, self.as_ptr()) }
     }
 }
 
