@@ -1,10 +1,9 @@
-//! Low-Level binding for [Array API](https://docs.scipy.org/doc/numpy/reference/c-api.array.html)
+//! Low-Level binding for [Array API](https://numpy.org/doc/stable/reference/c-api/array.html)
 use libc::FILE;
 use pyo3::ffi::{self, PyObject, PyTypeObject};
-use std::ops::Deref;
 use std::os::raw::*;
-use std::ptr;
 use std::sync::Once;
+use std::{cell::Cell, ptr};
 
 use crate::npyffi::*;
 
@@ -12,7 +11,7 @@ pub(crate) const MOD_NAME: &str = "numpy.core.multiarray";
 const CAPSULE_NAME: &str = "_ARRAY_API";
 
 /// A global variable which stores a ['capsule'](https://docs.python.org/3/c-api/capsule.html)
-/// pointer to [Numpy Array API](https://docs.scipy.org/doc/numpy/reference/c-api.array.html).
+/// pointer to [Numpy Array API](https://numpy.org/doc/stable/reference/c-api/array.html).
 ///
 /// You can acceess raw c APIs via this variable and its Deref implementation.
 ///
@@ -31,35 +30,33 @@ const CAPSULE_NAME: &str = "_ARRAY_API";
 /// assert_eq!(array.as_slice().unwrap(), &[2, 3, 4])
 /// # }
 /// ```
-pub static PY_ARRAY_API: PyArrayAPI = PyArrayAPI {
-    __private_field: (),
-};
+pub static PY_ARRAY_API: PyArrayAPI = PyArrayAPI::new();
 
+/// See [PY_ARRAY_API] for more.
 pub struct PyArrayAPI {
-    __private_field: (),
+    once: Once,
+    api: Cell<*const *const c_void>,
 }
 
-impl Deref for PyArrayAPI {
-    type Target = PyArrayAPI_Inner;
-    fn deref(&self) -> &Self::Target {
-        static INIT_API: Once = Once::new();
-        static mut ARRAY_API_CACHE: PyArrayAPI_Inner = PyArrayAPI_Inner(ptr::null());
-        unsafe {
-            if ARRAY_API_CACHE.0.is_null() {
-                let api = get_numpy_api(MOD_NAME, CAPSULE_NAME);
-                INIT_API.call_once(move || {
-                    ARRAY_API_CACHE = PyArrayAPI_Inner(api);
-                });
-            }
-            &ARRAY_API_CACHE
+impl PyArrayAPI {
+    const fn new() -> Self {
+        Self {
+            once: Once::new(),
+            api: Cell::new(ptr::null_mut()),
         }
+    }
+    fn get(&self, offset: isize) -> *const *const c_void {
+        if self.api.get().is_null() {
+            let api = get_numpy_api(MOD_NAME, CAPSULE_NAME);
+            self.once.call_once(|| self.api.set(api));
+        }
+        unsafe { self.api.get().offset(offset) }
     }
 }
 
-#[allow(non_camel_case_types)]
-pub struct PyArrayAPI_Inner(*const *const c_void);
+unsafe impl Sync for PyArrayAPI {}
 
-impl PyArrayAPI_Inner {
+impl PyArrayAPI {
     impl_api![0; PyArray_GetNDArrayCVersion() -> c_uint];
     impl_api![40; PyArray_SetNumericOps(dict: *mut PyObject) -> c_int];
     impl_api![41; PyArray_GetNumericOps() -> *mut PyObject];
@@ -322,13 +319,15 @@ impl PyArrayAPI_Inner {
 /// Define PyTypeObject related to Array API
 macro_rules! impl_array_type {
     ($(($offset:expr, $tname:ident)),*) => {
+        /// All type objects that numpy has.
         #[allow(non_camel_case_types)]
         #[repr(i32)]
         pub enum ArrayType { $($tname),* }
-        impl PyArrayAPI_Inner {
+        impl PyArrayAPI {
+            /// Get the pointer of the type object that `self` refers.
             pub unsafe fn get_type_object(&self, ty: ArrayType) -> *mut PyTypeObject {
                 match ty {
-                    $( ArrayType::$tname => *(self.0.offset($offset)) as *mut PyTypeObject ),*
+                    $( ArrayType::$tname => *(self.get($offset)) as *mut PyTypeObject ),*
                 }
             }
         }
@@ -377,11 +376,13 @@ impl_array_type!(
     (39, PyVoidArrType_Type)
 );
 
+/// Checks that `op` is an instance of `PyArray` or not.
 #[allow(non_snake_case)]
 pub unsafe fn PyArray_Check(op: *mut PyObject) -> c_int {
     ffi::PyObject_TypeCheck(op, PY_ARRAY_API.get_type_object(ArrayType::PyArray_Type))
 }
 
+/// Checks that `op` is an exact instance of `PyArray` or not.
 #[allow(non_snake_case)]
 pub unsafe fn PyArray_CheckExact(op: *mut PyObject) -> c_int {
     (ffi::Py_TYPE(op) == PY_ARRAY_API.get_type_object(ArrayType::PyArray_Type)) as c_int

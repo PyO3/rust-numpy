@@ -1,5 +1,5 @@
-//! `rust-numpy` provides Rust interfaces for [NumPy C APIs](https://docs.scipy.org/doc/numpy/reference/c-api.html),
-//! especially for [ndarray](https://www.numpy.org/devdocs/reference/arrays.ndarray.html) class.
+//! `rust-numpy` provides Rust interfaces for [NumPy C APIs](https://numpy.org/doc/stable/reference/c-api),
+//! especially for [ndarray](https://numpy.org/doc/stable/reference/arrays.ndarray.html) class.
 //!
 //! It uses [pyo3](https://github.com/PyO3/pyo3) for rust bindings to cpython, and uses
 //! [ndarray](https://github.com/bluss/ndarray) for rust side matrix library.
