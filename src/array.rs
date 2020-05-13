@@ -4,11 +4,8 @@ use ndarray::*;
 use num_traits::AsPrimitive;
 use pyo3::{ffi, prelude::*, type_object, types::PyAny};
 use pyo3::{AsPyPointer, PyDowncastError, PyNativeType};
-use std::iter::ExactSizeIterator;
-use std::marker::PhantomData;
-use std::mem;
-use std::os::raw::c_int;
-use std::ptr;
+use std::{iter::ExactSizeIterator, marker::PhantomData};
+use std::{mem, os::raw::c_int, ptr, slice};
 
 use crate::convert::{IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
 use crate::error::{ErrorKind, IntoPyResult};
@@ -113,7 +110,7 @@ pyobject_native_type_convert!(
 
 pyobject_native_type_named!(PyArray<T, D>, T, D);
 
-impl<'a, T, D> ::std::convert::From<&'a PyArray<T, D>> for &'a PyAny {
+impl<'a, T, D> std::convert::From<&'a PyArray<T, D>> for &'a PyAny {
     fn from(ob: &'a PyArray<T, D>) -> Self {
         unsafe { &*(ob as *const PyArray<T, D> as *const PyAny) }
     }
@@ -261,7 +258,7 @@ impl<T, D> PyArray<T, D> {
         let ptr = self.as_array_ptr();
         unsafe {
             let p = (*ptr).strides;
-            ::std::slice::from_raw_parts(p, n)
+            slice::from_raw_parts(p, n)
         }
     }
 
@@ -283,7 +280,7 @@ impl<T, D> PyArray<T, D> {
         let ptr = self.as_array_ptr();
         unsafe {
             let p = (*ptr).dimensions as *mut usize;
-            ::std::slice::from_raw_parts(p, n)
+            slice::from_raw_parts(p, n)
         }
     }
 
@@ -314,7 +311,7 @@ impl<T, D> PyArray<T, D> {
         let ptr = self.as_array_ptr();
         unsafe {
             let p = (*ptr).strides;
-            ::std::slice::from_raw_parts(p as *const _, n)
+            slice::from_raw_parts(p as *const _, n)
         }
     }
 }
@@ -371,11 +368,11 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
             dims.ndim_cint(),
             dims.as_dims_ptr(),
             T::typenum_default(),
-            strides as *mut _,      // strides
-            ptr::null_mut(),        // data
-            0,                      // itemsize
-            flag,                   // flag
-            ::std::ptr::null_mut(), //obj
+            strides as *mut _, // strides
+            ptr::null_mut(),   // data
+            0,                 // itemsize
+            flag,              // flag
+            ptr::null_mut(),   //obj
         );
         Self::from_owned_ptr(py, ptr)
     }
@@ -404,7 +401,7 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
             data_ptr as _,              // data
             mem::size_of::<T>() as i32, // itemsize
             0,                          // flag
-            ::std::ptr::null_mut(),     //obj
+            ptr::null_mut(),            //obj
         );
         PY_ARRAY_API.PyArray_SetBaseObject(ptr as *mut npyffi::PyArrayObject, cell as _);
         Self::from_owned_ptr(py, ptr)
@@ -469,7 +466,7 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
         if !self.is_contiguous() {
             Err(ErrorKind::NotContiguous)
         } else {
-            Ok(unsafe { ::std::slice::from_raw_parts(self.data(), self.len()) })
+            Ok(unsafe { slice::from_raw_parts(self.data(), self.len()) })
         }
     }
 
@@ -479,7 +476,7 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
         if !self.is_contiguous() {
             Err(ErrorKind::NotContiguous)
         } else {
-            Ok(unsafe { ::std::slice::from_raw_parts_mut(self.data(), self.len()) })
+            Ok(unsafe { slice::from_raw_parts_mut(self.data(), self.len()) })
         }
     }
 

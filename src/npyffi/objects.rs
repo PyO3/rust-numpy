@@ -5,7 +5,6 @@
 
 use libc::FILE;
 use pyo3::ffi::*;
-use std::option::Option;
 use std::os::raw::*;
 
 use super::types::*;

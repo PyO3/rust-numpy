@@ -2,8 +2,7 @@
 use libc::FILE;
 use pyo3::ffi::{self, PyObject, PyTypeObject};
 use std::os::raw::*;
-use std::sync::Once;
-use std::{cell::Cell, ptr};
+use std::{cell::Cell, ptr, sync::Once};
 
 use crate::npyffi::*;
 

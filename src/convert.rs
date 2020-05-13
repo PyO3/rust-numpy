@@ -3,8 +3,7 @@
 use ndarray::{ArrayBase, Data, Dimension, IntoDimension, Ix1, OwnedRepr};
 use pyo3::Python;
 
-use std::mem;
-use std::os::raw::c_int;
+use std::{mem, os::raw::c_int};
 
 use super::*;
 use crate::npyffi::npy_intp;
