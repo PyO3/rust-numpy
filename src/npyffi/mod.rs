@@ -1,6 +1,6 @@
 //! Low-Level bindings for NumPy C API.
 //!
-//! https://docs.scipy.org/doc/numpy/reference/c-api.html
+//! https://numpy.org/doc/stable/reference/c-api
 #![allow(non_camel_case_types)]
 
 use pyo3::ffi;
@@ -11,9 +11,6 @@ use std::ptr::null_mut;
 fn get_numpy_api(module: &str, capsule: &str) -> *const *const c_void {
     let module = CString::new(module).unwrap();
     let capsule = CString::new(capsule).unwrap();
-    unsafe fn get_capsule(capsule: *mut ffi::PyObject) -> *const *const c_void {
-        ffi::PyCapsule_GetPointer(capsule, null_mut()) as *const *const c_void
-    }
     unsafe {
         assert_ne!(
             ffi::Py_IsInitialized(),
@@ -23,9 +20,9 @@ Please make sure that you get gil, by `let gil = Python::acquire_gil();`"
         );
         let numpy = ffi::PyImport_ImportModule(module.as_ptr());
         assert!(!numpy.is_null(), "Failed to import numpy module");
-        let capsule = ffi::PyObject_GetAttrString(numpy as *mut ffi::PyObject, capsule.as_ptr());
+        let capsule = ffi::PyObject_GetAttrString(numpy as _, capsule.as_ptr());
         assert!(!capsule.is_null(), "Failed to import numpy module");
-        get_capsule(capsule)
+        ffi::PyCapsule_GetPointer(capsule, null_mut()) as _
     }
 }
 
@@ -34,8 +31,8 @@ macro_rules! impl_api {
     [ $offset:expr; $fname:ident ( $($arg:ident : $t:ty),* ) $( -> $ret:ty )* ] => {
         #[allow(non_snake_case)]
         pub unsafe fn $fname(&self, $($arg : $t), *) $( -> $ret )* {
-            let fptr = self.0.offset($offset)
-                               as *const extern fn ($($arg : $t), *) $( -> $ret )*;
+            let fptr = self.get($offset)
+                           as *const extern fn ($($arg : $t), *) $( -> $ret )*;
             (*fptr)($($arg), *)
         }
     }

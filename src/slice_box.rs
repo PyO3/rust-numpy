@@ -1,4 +1,4 @@
-use pyo3::class::methods::{PyMethodDefType, PyMethodsProtocol};
+use pyo3::class::methods::PyMethodsImpl;
 use pyo3::pyclass::{PyClass, PyClassAlloc};
 use pyo3::pyclass_slots::PyClassDummySlot;
 use pyo3::{ffi, type_object, types::PyAny, PyCell, PyClassInitializer};
@@ -49,8 +49,4 @@ unsafe impl<T> type_object::PyTypeInfo for SliceBox<T> {
     }
 }
 
-impl<T> PyMethodsProtocol for SliceBox<T> {
-    fn py_methods() -> Vec<&'static PyMethodDefType> {
-        Vec::new()
-    }
-}
+impl<T> PyMethodsImpl for SliceBox<T> {}

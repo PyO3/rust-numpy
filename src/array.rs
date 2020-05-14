@@ -4,11 +4,8 @@ use ndarray::*;
 use num_traits::AsPrimitive;
 use pyo3::{ffi, prelude::*, type_object, types::PyAny};
 use pyo3::{AsPyPointer, PyDowncastError, PyNativeType};
-use std::iter::ExactSizeIterator;
-use std::marker::PhantomData;
-use std::mem;
-use std::os::raw::c_int;
-use std::ptr;
+use std::{iter::ExactSizeIterator, marker::PhantomData};
+use std::{mem, os::raw::c_int, ptr, slice};
 
 use crate::convert::{IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
 use crate::error::{ErrorKind, IntoPyResult};
@@ -16,7 +13,7 @@ use crate::slice_box::SliceBox;
 use crate::types::{NpyDataType, TypeNum};
 
 /// A safe, static-typed interface for
-/// [NumPy ndarray](https://docs.scipy.org/doc/numpy/reference/arrays.ndarray.html).
+/// [NumPy ndarray](https://numpy.org/doc/stable/reference/arrays.ndarray.html).
 ///
 /// # Memory location
 ///
@@ -77,7 +74,7 @@ use crate::types::{NpyDataType, TypeNum};
 /// );
 /// # }
 /// ```
-pub struct PyArray<T, D>(PyObject, PhantomData<T>, PhantomData<D>);
+pub struct PyArray<T, D>(PyAny, PhantomData<T>, PhantomData<D>);
 
 /// one-dimensional array
 pub type PyArray1<T> = PyArray<T, Ix1>;
@@ -113,7 +110,7 @@ pyobject_native_type_convert!(
 
 pyobject_native_type_named!(PyArray<T, D>, T, D);
 
-impl<'a, T, D> ::std::convert::From<&'a PyArray<T, D>> for &'a PyAny {
+impl<'a, T, D> std::convert::From<&'a PyArray<T, D>> for &'a PyAny {
     fn from(ob: &'a PyArray<T, D>) -> Self {
         unsafe { &*(ob as *const PyArray<T, D> as *const PyAny) }
     }
@@ -139,8 +136,8 @@ impl<'a, T: TypeNum, D: Dimension> FromPyObject<'a> for &'a PyArray<T, D> {
 }
 
 impl<T, D> IntoPy<PyObject> for PyArray<T, D> {
-    fn into_py(self, _py: Python<'_>) -> PyObject {
-        self.0
+    fn into_py(self, py: Python<'_>) -> PyObject {
+        unsafe { PyObject::from_borrowed_ptr(py, self.as_ptr()) }
     }
 }
 
@@ -226,7 +223,7 @@ impl<T, D> PyArray<T, D> {
 
     /// Returns the number of dimensions in the array.
     ///
-    /// Same as [numpy.ndarray.ndim](https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.ndim.html)
+    /// Same as [numpy.ndarray.ndim](https://numpy.org/doc/stable/reference/generated/numpy.ndarray.ndim.html)
     ///
     /// # Example
     /// ```
@@ -237,7 +234,7 @@ impl<T, D> PyArray<T, D> {
     /// assert_eq!(arr.ndim(), 3);
     /// # }
     /// ```
-    // C API: https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_NDIM
+    // C API: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_NDIM
     pub fn ndim(&self) -> usize {
         let ptr = self.as_array_ptr();
         unsafe { (*ptr).nd as usize }
@@ -245,7 +242,7 @@ impl<T, D> PyArray<T, D> {
 
     /// Returns a slice which contains how many bytes you need to jump to the next row.
     ///
-    /// Same as [numpy.ndarray.strides](https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.strides.html)
+    /// Same as [numpy.ndarray.strides](https://numpy.org/doc/stable/reference/generated/numpy.ndarray.strides.html)
     /// # Example
     /// ```
     /// # fn main() {
@@ -255,19 +252,19 @@ impl<T, D> PyArray<T, D> {
     /// assert_eq!(arr.strides(), &[240, 48, 8]);
     /// # }
     /// ```
-    // C API: https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_STRIDES
+    // C API: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_STRIDES
     pub fn strides(&self) -> &[isize] {
         let n = self.ndim();
         let ptr = self.as_array_ptr();
         unsafe {
             let p = (*ptr).strides;
-            ::std::slice::from_raw_parts(p, n)
+            slice::from_raw_parts(p, n)
         }
     }
 
     /// Returns a slice which contains dimmensions of the array.
     ///
-    /// Same as [numpy.ndarray.shape](https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.shape.html)
+    /// Same as [numpy.ndarray.shape](https://numpy.org/doc/stable/reference/generated/numpy.ndarray.shape.html)
     /// # Example
     /// ```
     /// # fn main() {
@@ -277,13 +274,13 @@ impl<T, D> PyArray<T, D> {
     /// assert_eq!(arr.shape(), &[4, 5, 6]);
     /// # }
     /// ```
-    // C API: https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_DIMS
+    // C API: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_DIMS
     pub fn shape(&self) -> &[usize] {
         let n = self.ndim();
         let ptr = self.as_array_ptr();
         unsafe {
             let p = (*ptr).dimensions as *mut usize;
-            ::std::slice::from_raw_parts(p, n)
+            slice::from_raw_parts(p, n)
         }
     }
 
@@ -314,7 +311,7 @@ impl<T, D> PyArray<T, D> {
         let ptr = self.as_array_ptr();
         unsafe {
             let p = (*ptr).strides;
-            ::std::slice::from_raw_parts(p as *const _, n)
+            slice::from_raw_parts(p as *const _, n)
         }
     }
 }
@@ -371,11 +368,11 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
             dims.ndim_cint(),
             dims.as_dims_ptr(),
             T::typenum_default(),
-            strides as *mut _,      // strides
-            ptr::null_mut(),        // data
-            0,                      // itemsize
-            flag,                   // flag
-            ::std::ptr::null_mut(), //obj
+            strides as *mut _, // strides
+            ptr::null_mut(),   // data
+            0,                 // itemsize
+            flag,              // flag
+            ptr::null_mut(),   //obj
         );
         Self::from_owned_ptr(py, ptr)
     }
@@ -404,7 +401,7 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
             data_ptr as _,              // data
             mem::size_of::<T>() as i32, // itemsize
             0,                          // flag
-            ::std::ptr::null_mut(),     //obj
+            ptr::null_mut(),            //obj
         );
         PY_ARRAY_API.PyArray_SetBaseObject(ptr as *mut npyffi::PyArrayObject, cell as _);
         Self::from_owned_ptr(py, ptr)
@@ -415,7 +412,7 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     /// If `is_fortran` is true, then
     /// a fortran order array is created, otherwise a C-order array is created.
     ///
-    /// See also [PyArray_Zeros](https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_Zeros)
+    /// See also [PyArray_Zeros](https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_Zeros)
     ///
     /// # Example
     /// ```
@@ -469,7 +466,7 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
         if !self.is_contiguous() {
             Err(ErrorKind::NotContiguous)
         } else {
-            Ok(unsafe { ::std::slice::from_raw_parts(self.data(), self.len()) })
+            Ok(unsafe { slice::from_raw_parts(self.data(), self.len()) })
         }
     }
 
@@ -479,7 +476,7 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
         if !self.is_contiguous() {
             Err(ErrorKind::NotContiguous)
         } else {
-            Ok(unsafe { ::std::slice::from_raw_parts_mut(self.data(), self.len()) })
+            Ok(unsafe { slice::from_raw_parts_mut(self.data(), self.len()) })
         }
     }
 
@@ -1037,9 +1034,9 @@ impl<T: TypeNum, D> PyArray<T, D> {
 
 impl<T: TypeNum + AsPrimitive<f64>> PyArray<T, Ix1> {
     /// Return evenly spaced values within a given interval.
-    /// Same as [numpy.arange](https://docs.scipy.org/doc/numpy/reference/generated/numpy.arange.html).
+    /// Same as [numpy.arange](https://numpy.org/doc/stable/reference/generated/numpy.arange.html).
     ///
-    /// See also [PyArray_Arange](https://docs.scipy.org/doc/numpy/reference/c-api.array.html#c.PyArray_Arange).
+    /// See also [PyArray_Arange](https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_Arange).
     ///
     /// # Example
     /// ```

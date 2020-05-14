@@ -1,9 +1,7 @@
-//! Low-Level binding for [UFunc API](https://docs.scipy.org/doc/numpy/reference/c-api.ufunc.html)
+//! Low-Level binding for [UFunc API](https://numpy.org/doc/stable/reference/c-api/ufunc.html)
 
-use std::ops::Deref;
 use std::os::raw::*;
-use std::ptr;
-use std::sync::Once;
+use std::{cell::Cell, ptr, sync::Once};
 
 use pyo3::ffi::PyObject;
 
@@ -14,35 +12,34 @@ use super::types::*;
 const MOD_NAME: &str = "numpy.core.umath";
 const CAPSULE_NAME: &str = "_UFUNC_API";
 
-pub static PY_UFUNC_API: PyUFuncAPI = PyUFuncAPI {
-    __private_field: (),
-};
+/// A global variable which stores a ['capsule'](https://docs.python.org/3/c-api/capsule.html)
+/// pointer to [Numpy UFunc API](https://numpy.org/doc/stable/reference/c-api/array.html).
+pub static PY_UFUNC_API: PyUFuncAPI = PyUFuncAPI::new();
 
 pub struct PyUFuncAPI {
-    __private_field: (),
+    once: Once,
+    api: Cell<*const *const c_void>,
 }
 
-impl Deref for PyUFuncAPI {
-    type Target = PyUFuncAPI_Inner;
-    fn deref(&self) -> &Self::Target {
-        static INIT_API: Once = Once::new();
-        static mut UFUNC_API_CACHE: PyUFuncAPI_Inner = PyUFuncAPI_Inner(ptr::null());
-        unsafe {
-            if UFUNC_API_CACHE.0.is_null() {
-                let api = get_numpy_api(MOD_NAME, CAPSULE_NAME);
-                INIT_API.call_once(move || {
-                    UFUNC_API_CACHE = PyUFuncAPI_Inner(api);
-                });
-            }
-            &UFUNC_API_CACHE
+impl PyUFuncAPI {
+    const fn new() -> Self {
+        Self {
+            once: Once::new(),
+            api: Cell::new(ptr::null_mut()),
         }
+    }
+    fn get(&self, offset: isize) -> *const *const c_void {
+        if self.api.get().is_null() {
+            let api = get_numpy_api(MOD_NAME, CAPSULE_NAME);
+            self.once.call_once(|| self.api.set(api));
+        }
+        unsafe { self.api.get().offset(offset) }
     }
 }
 
-#[allow(non_camel_case_types)]
-pub struct PyUFuncAPI_Inner(*const *const c_void);
+unsafe impl Sync for PyUFuncAPI {}
 
-impl PyUFuncAPI_Inner {
+impl PyUFuncAPI {
     impl_api![1; PyUFunc_FromFuncAndData(func: *mut PyUFuncGenericFunction, data: *mut *mut c_void, types: *mut c_char, ntypes: c_int, nin: c_int, nout: c_int, identity: c_int, name: *const c_char, doc: *const c_char, unused: c_int) -> *mut PyObject];
     impl_api![2; PyUFunc_RegisterLoopForType(ufunc: *mut PyUFuncObject, usertype: c_int, function: PyUFuncGenericFunction, arg_types: *mut c_int, data: *mut c_void) -> c_int];
     impl_api![3; PyUFunc_GenericFunction(ufunc: *mut PyUFuncObject, args: *mut PyObject, kwds: *mut PyObject, op: *mut *mut PyArrayObject) -> c_int];
