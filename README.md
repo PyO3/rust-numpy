@@ -19,6 +19,7 @@ https://github.com/PyO3/pyo3/blob/master/build.rs for minimum required version)
   - [pyo3](https://github.com/PyO3/pyo3) for cpython binding
   - and more (see [Cargo.toml](Cargo.toml))
 - [numpy](http://www.numpy.org/) installed in your python environments (e.g., via `pip install numpy`)
+  - We recommend `numpy >= 1.16.0`, though older version may work.
 
 **Note**
 Starting from 0.3, rust-numpy migrated from rust-cpython to pyo3.
