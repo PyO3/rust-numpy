@@ -313,6 +313,8 @@ impl PyArrayAPI {
     impl_api![299; PyDataMem_NEW_ZEROED(size: usize, elsize: usize) -> *mut c_void];
     impl_api![300; PyArray_CheckAnyScalarExact(obj: *mut PyObject) -> c_int];
     impl_api![301; PyArray_MapIterArrayCopyIfOverlap(a: *mut PyArrayObject, index: *mut PyObject, copy_if_overlap: c_int, extra_op: *mut PyArrayObject) -> *mut PyObject];
+    impl_api![302; PyArray_ResolveWritebackIfCopy(self_: *mut PyArrayObject) -> c_int];
+    impl_api![303; PyArray_SetWritebackIfCopyBase(arr: *mut PyArrayObject, base: *mut PyArrayObject) -> c_int];
 }
 
 /// Define PyTypeObject related to Array API

@@ -28,13 +28,17 @@ Please make sure that you get gil, by `let gil = Python::acquire_gil();`"
 
 // Define Array&UFunc APIs
 macro_rules! impl_api {
-    [ $offset:expr; $fname:ident ( $($arg:ident : $t:ty),* ) $( -> $ret:ty )* ] => {
+    [$offset: expr; $fname: ident ( $($arg: ident : $t: ty),* ) $( -> $ret: ty )* ] => {
         #[allow(non_snake_case)]
         pub unsafe fn $fname(&self, $($arg : $t), *) $( -> $ret )* {
             let fptr = self.get($offset)
                            as *const extern fn ($($arg : $t), *) $( -> $ret )*;
             (*fptr)($($arg), *)
         }
+    };
+    // To allow fn a(b: type,) -> ret
+    [$offset: expr; $fname: ident ( $($arg: ident : $t:ty,)* ) $( -> $ret: ty )* ] => {
+        impl_api![$offset; $fname( $($arg: $t),*) $( -> $ret )*];
     }
 }
 

@@ -81,4 +81,18 @@ impl PyUFuncAPI {
     impl_api![39; PyUFunc_DefaultTypeResolver(ufunc: *mut PyUFuncObject, casting: NPY_CASTING, operands: *mut *mut PyArrayObject, type_tup: *mut PyObject, out_dtypes: *mut *mut PyArray_Descr) -> c_int];
     impl_api![40; PyUFunc_ValidateCasting(ufunc: *mut PyUFuncObject, casting: NPY_CASTING, operands: *mut *mut PyArrayObject, dtypes: *mut *mut PyArray_Descr) -> c_int];
     impl_api![41; PyUFunc_RegisterLoopForDescr(ufunc: *mut PyUFuncObject, user_dtype: *mut PyArray_Descr, function: PyUFuncGenericFunction, arg_dtypes: *mut *mut PyArray_Descr, data: *mut c_void) -> c_int];
+    impl_api![42; PyUFunc_FromFuncAndDataAndSignatureAndIdentity(
+        ufunc: *mut PyUFuncObject,
+        data: *mut *mut c_void,
+        types: *mut c_char,
+        ntypes: c_int,
+        nin: c_int,
+        nout: c_int,
+        identity: c_int,
+        name: *const c_char,
+        doc: *const c_char,
+        unused: c_int,
+        signature: *const c_char,
+        identity_value: *const c_char,
+    ) -> c_int];
 }
