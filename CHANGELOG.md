@@ -1,6 +1,12 @@
 # Changelog
+<<<<<<< HEAD
 - v0.10.0
   - Remove `ErrorKind` and introduce some concrete error types
+=======
+- Unreleased
+  - `PyArray::as_slice_mut` and `PyArray::as_array_mut` is now unsafe.
+  - Introduce `PyArray::as_cell_slice`, `PyArray::as_cow_array` and `PyArray::to_vec`
+>>>>>>> 660f04f... Overhaul conversion methods
 
 - v0.9.0
   - Update PyO3 to 0.10.0

@@ -140,7 +140,7 @@ fn rust_ext(_py: Python, m: &PyModule) -> PyResult<()> {
     // wrapper of `mult`
     #[pyfn(m, "mult")]
     fn mult_py(_py: Python, a: f64, x: &PyArrayDyn<f64>) -> PyResult<()> {
-        let x = x.as_array_mut();
+        let x = unsafe { x.as_array_mut() };
         mult(a, x);
         Ok(())
     }

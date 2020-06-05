@@ -4,8 +4,8 @@ use ndarray::*;
 use num_traits::AsPrimitive;
 use pyo3::{ffi, prelude::*, type_object, types::PyAny};
 use pyo3::{AsPyPointer, PyDowncastError, PyNativeType, PyResult};
+use std::{cell::Cell, mem, os::raw::c_int, ptr, slice};
 use std::{iter::ExactSizeIterator, marker::PhantomData};
-use std::{mem, os::raw::c_int, ptr, slice};
 
 use crate::convert::{IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
 use crate::error::{FromVecError, NotContiguousError, ShapeError};
@@ -429,7 +429,7 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
         }
     }
 
-    /// Get the immutable view of the internal data of `PyArray`, as slice.
+    /// Returns the immutable view of the internal data of `PyArray` as slice.
     ///
     /// Returns `ErrorKind::NotContiguous` if the internal array is not contiguous.
     /// # Example
@@ -456,12 +456,27 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
         }
     }
 
-    /// Get the mmutable view of the internal data of `PyArray`, as slice.
-    pub fn as_slice_mut(&self) -> Result<&mut [T], NotContiguousError> {
+    /// Returns the view of the internal data of `PyArray` as `&[Cell<T>]`.
+    pub fn as_cell_slice(&self) -> Result<&[Cell<T>], NotContiguousError> {
         if !self.is_contiguous() {
             Err(NotContiguousError)
         } else {
-            Ok(unsafe { slice::from_raw_parts_mut(self.data(), self.len()) })
+            Ok(unsafe { slice::from_raw_parts(self.data() as _, self.len()) })
+        }
+    }
+
+    /// Returns the view of the internal data of `PyArray` as mutable slice.
+    ///
+    /// # Soundness
+    /// If another reference to the internal data exists(e.g., `&[T]` or `ArrayView`),
+    /// it causes an undefined undefined behavior.
+    ///
+    /// In such case, please consider the use of [`as_cell_slice`](#method.as_cell_slice),
+    pub unsafe fn as_slice_mut(&self) -> Result<&mut [T], NotContiguousError> {
+        if !self.is_contiguous() {
+            Err(NotContiguousError)
+        } else {
+            Ok(slice::from_raw_parts_mut(self.data(), self.len()))
         }
     }
 
@@ -522,10 +537,22 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
         unsafe { ArrayView::from_shape_ptr(self.ndarray_shape(), self.data()) }
     }
 
-    /// Almost same as [`as_array`](#method.as_array), but returns `ArrayViewMut`.
-    pub fn as_array_mut(&self) -> ArrayViewMut<'_, T, D> {
+    /// Returns the internal array as `CowArray`. See also [`as_array`](#method.as_array).
+    pub fn as_cow_array(&self) -> CowArray<'_, T, D> {
+        CowArray::from(self.as_array())
+    }
+
+    /// Returns the internal array as `ArrayViewMut`. See also [`as_array`](#method.as_array).
+    ///
+    /// # Soundness
+    /// If another reference to the internal data exists(e.g., `&[T]` or `ArrayView`),
+    /// it causes an undefined undefined behavior.
+    ///
+    /// In such case, please consider the use of
+    /// [`as_cell_array`](#method.as_cell_array) or [`as_cow_array`](#method.as_cow_array).
+    pub unsafe fn as_array_mut(&self) -> ArrayViewMut<'_, T, D> {
         self.type_check_assert();
-        unsafe { ArrayViewMut::from_shape_ptr(self.ndarray_shape(), self.data()) }
+        ArrayViewMut::from_shape_ptr(self.ndarray_shape(), self.data())
     }
 
     /// Get an immutable reference of a specified element, with checking the passed index is valid.
@@ -566,16 +593,6 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     {
         let offset = index.get_checked::<T>(self.shape(), self.strides())?;
         unsafe { Some(&*self.data().offset(offset)) }
-    }
-
-    /// Same as [get](#method.get), but returns `Option<&mut T>`.
-    #[inline(always)]
-    pub fn get_mut<Idx>(&self, index: Idx) -> Option<&mut T>
-    where
-        Idx: NpyIndex<Dim = D>,
-    {
-        let offset = index.get_checked::<T>(self.shape(), self.strides())?;
-        unsafe { Some(&mut *(self.data().offset(offset) as *mut T)) }
     }
 
     /// Get an immutable reference of a specified element, without checking the
@@ -637,7 +654,7 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     }
 }
 
-impl<T: TypeNum + Clone, D: Dimension> PyArray<T, D> {
+impl<T: Clone + TypeNum, D: Dimension> PyArray<T, D> {
     /// Get a copy of `PyArray` as
     /// [`ndarray::Array`](https://docs.rs/ndarray/latest/ndarray/type.Array.html).
     ///
@@ -654,6 +671,31 @@ impl<T: TypeNum + Clone, D: Dimension> PyArray<T, D> {
     /// ```
     pub fn to_owned_array(&self) -> Array<T, D> {
         self.as_array().to_owned()
+    }
+
+    /// Returns the copy of the internal data of `PyArray` to `Vec`.
+    ///
+    /// Returns `ErrorKind::NotContiguous` if the internal array is not contiguous.
+    /// See also [`as_slice`](#method.as_slice)
+    ///
+    /// # Example
+    /// ```
+    /// # fn main() {
+    /// use numpy::PyArray2;
+    /// use pyo3::types::IntoPyDict;
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let py = gil.python();
+    /// let locals = [("np", numpy::get_array_module(py).unwrap())].into_py_dict(py);
+    /// let array: &PyArray2<i64> = py
+    ///     .eval("np.array([[0, 1], [2, 3]], dtype='int64')", Some(locals), None)
+    ///     .unwrap()
+    ///     .downcast()
+    ///     .unwrap();
+    /// assert_eq!(array.to_vec().unwrap(), vec![0, 1, 2, 3]);
+    /// # }
+    /// ```
+    pub fn to_vec(&self) -> Result<Vec<T>, NotContiguousError> {
+        self.as_slice().map(ToOwned::to_owned)
     }
 }
 
