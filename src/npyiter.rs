@@ -1,15 +1,18 @@
-use crate::array::PyArray;
-use crate::npyffi;
-use crate::npyffi::array::PY_ARRAY_API;
-use crate::npyffi::objects;
-use crate::npyffi::types::{npy_uint32, NPY_CASTING, NPY_ORDER};
-use pyo3::prelude::*;
+use crate::array::{PyArray, PyArrayDyn};
+use crate::npyffi::{
+    array::PY_ARRAY_API,
+    types::{NPY_CASTING, NPY_ORDER},
+    *,
+};
+use crate::types::TypeNum;
+use pyo3::{prelude::*, PyNativeType};
 
 use std::marker::PhantomData;
 use std::os::raw::*;
 use std::ptr;
 
-pub enum NPyIterFlag {
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum NpyIterFlag {
     CIndex,
     FIndex,
     MultiIndex,
@@ -24,105 +27,71 @@ pub enum NPyIterFlag {
     DelayBufAlloc,
     DontNegateStrides,
     CopyIfOverlap,
+    ReadWrite,
+    ReadOnly,
+    WriteOnly,
 }
 
-/*
-
-#define NPY_ITER_C_INDEX                    0x00000001
-#define NPY_ITER_F_INDEX                    0x00000002
-#define NPY_ITER_MULTI_INDEX                0x00000004
-#define NPY_ITER_EXTERNAL_LOOP              0x00000008
-#define NPY_ITER_COMMON_DTYPE               0x00000010
-#define NPY_ITER_REFS_OK                    0x00000020
-#define NPY_ITER_ZEROSIZE_OK                0x00000040
-#define NPY_ITER_REDUCE_OK                  0x00000080
-#define NPY_ITER_RANGED                     0x00000100
-#define NPY_ITER_BUFFERED                   0x00000200
-#define NPY_ITER_GROWINNER                  0x00000400
-#define NPY_ITER_DELAY_BUFALLOC             0x00000800
-#define NPY_ITER_DONT_NEGATE_STRIDES        0x00001000
-#define NPY_ITER_COPY_IF_OVERLAP            0x00002000
-#define NPY_ITER_READWRITE                  0x00010000
-#define NPY_ITER_READONLY                   0x00020000
-#define NPY_ITER_WRITEONLY                  0x00040000
-#define NPY_ITER_NBO                        0x00080000
-#define NPY_ITER_ALIGNED                    0x00100000
-#define NPY_ITER_CONTIG                     0x00200000
-#define NPY_ITER_COPY                       0x00400000
-#define NPY_ITER_UPDATEIFCOPY               0x00800000
-#define NPY_ITER_ALLOCATE                   0x01000000
-#define NPY_ITER_NO_SUBTYPE                 0x02000000
-#define NPY_ITER_VIRTUAL                    0x04000000
-#define NPY_ITER_NO_BROADCAST               0x08000000
-#define NPY_ITER_WRITEMASKED                0x10000000
-#define NPY_ITER_ARRAYMASK                  0x20000000
-#define NPY_ITER_OVERLAP_ASSUME_ELEMENTWISE 0x40000000
-
-#define NPY_ITER_GLOBAL_FLAGS               0x0000ffff
-#define NPY_ITER_PER_OP_FLAGS               0xffff0000
-
-*/
-
-impl NPyIterFlag {
+impl NpyIterFlag {
     fn to_c_enum(&self) -> npy_uint32 {
-        use NPyIterFlag::*;
+        use NpyIterFlag::*;
         match self {
-            CIndex => 0x00000001,
-            FIndex => 0x00000002,
-            MultiIndex => 0x00000004,
-            ExternalLoop => 0x00000008,
-            CommonDtype => 0x00000010,
-            RefsOk => 0x00000020,
-            ZerosizeOk => 0x00000040,
-            ReduceOk => 0x00000080,
-            Ranged => 0x00000100,
-            Buffered => 0x00000200,
-            GrowInner => 0x00000400,
-            DelayBufAlloc => 0x00000800,
-            DontNegateStrides => 0x00001000,
-            CopyIfOverlap => 0x00002000,
+            CIndex => NPY_ITER_C_INDEX,
+            FIndex => NPY_ITER_C_INDEX,
+            MultiIndex => NPY_ITER_MULTI_INDEX,
+            ExternalLoop => NPY_ITER_EXTERNAL_LOOP,
+            CommonDtype => NPY_ITER_COMMON_DTYPE,
+            RefsOk => NPY_ITER_REFS_OK,
+            ZerosizeOk => NPY_ITER_ZEROSIZE_OK,
+            ReduceOk => NPY_ITER_REDUCE_OK,
+            Ranged => NPY_ITER_RANGED,
+            Buffered => NPY_ITER_BUFFERED,
+            GrowInner => NPY_ITER_GROWINNER,
+            DelayBufAlloc => NPY_ITER_DELAY_BUFALLOC,
+            DontNegateStrides => NPY_ITER_DONT_NEGATE_STRIDES,
+            CopyIfOverlap => NPY_ITER_COPY_IF_OVERLAP,
+            ReadWrite => NPY_ITER_READWRITE,
+            ReadOnly => NPY_ITER_READONLY,
+            WriteOnly => NPY_ITER_WRITEONLY,
         }
     }
 }
 
 pub struct NpyIterBuilder<'py, T> {
     flags: npy_uint32,
-    array: *mut npyffi::PyArrayObject,
-    py: Python<'py>,
-    return_type: PhantomData<T>,
+    array: &'py PyArrayDyn<T>,
 }
 
-impl<'py, T> NpyIterBuilder<'py, T> {
-    pub fn new<D>(array: PyArray<T, D>, py: Python<'py>) -> NpyIterBuilder<'py, T> {
+impl<'py, T: TypeNum> NpyIterBuilder<'py, T> {
+    pub fn new<D: ndarray::Dimension>(array: &'py PyArray<T, D>) -> NpyIterBuilder<'py, T> {
         NpyIterBuilder {
-            array: array.as_array_ptr(),
-            py,
             flags: 0,
-            return_type: PhantomData,
+            array: array.into_dyn(),
         }
     }
 
-    pub fn set_iter_flags(&mut self, flag: NPyIterFlag, value: bool) -> &mut Self {
-        if value {
-            self.flags |= flag.to_c_enum();
-        } else {
-            self.flags &= !flag.to_c_enum();
-        }
+    pub fn add(mut self, flag: NpyIterFlag) -> Self {
+        self.flags |= flag.to_c_enum();
         self
     }
 
-    pub fn finish(self) -> Option<NpyIterSingleArray<'py, T>> {
+    pub fn remove(mut self, flag: NpyIterFlag) -> Self {
+        self.flags &= !flag.to_c_enum();
+        self
+    }
+
+    pub fn build(self) -> PyResult<NpyIterSingleArray<'py, T>> {
         let iter_ptr = unsafe {
             PY_ARRAY_API.NpyIter_New(
-                self.array,
+                self.array.as_array_ptr(),
                 self.flags,
                 NPY_ORDER::NPY_ANYORDER,
                 NPY_CASTING::NPY_SAFE_CASTING,
                 ptr::null_mut(),
             )
         };
-
-        NpyIterSingleArray::new(iter_ptr, self.py)
+        let py = self.array.py();
+        NpyIterSingleArray::new(iter_ptr, py).ok_or_else(|| PyErr::fetch(py))
     }
 }
 
