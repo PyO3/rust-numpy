@@ -70,12 +70,17 @@ impl<'py, T: TypeNum> NpyIterBuilder<'py, T> {
         }
     }
 
-    pub fn add(mut self, flag: NpyIterFlag) -> Self {
+    pub fn set(mut self, flag: NpyIterFlag) -> Self {
+        if flag == NpyIterFlag::ExternalLoop {
+            // TODO: I don't want to make set fallible, but also we don't want to
+            // support ExternalLoop yet (maybe ever?).
+            panic!("rust-numpy does not currently support ExternalLoop access");
+        }
         self.flags |= flag.to_c_enum();
         self
     }
 
-    pub fn remove(mut self, flag: NpyIterFlag) -> Self {
+    pub fn unset(mut self, flag: NpyIterFlag) -> Self {
         self.flags &= !flag.to_c_enum();
         self
     }
@@ -143,6 +148,10 @@ impl<'py, T: 'py> std::iter::Iterator for NpyIterSingleArray<'py, T> {
         if self.empty {
             None
         } else {
+            // Note: This pointer is correct and doesn't need to be updated,
+            // note that we're derefencing a **char into a *char casting to a *T
+            // and then transforming that into a reference, the value that dataptr
+            // points to is being updated by iternext to point to the next value.
             let retval = Some(unsafe { &*(*self.dataptr as *mut T) });
             self.empty = unsafe { (self.iternext)(self.iterator.as_mut()) } == 0;
             retval
