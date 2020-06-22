@@ -1,4 +1,4 @@
-use pyo3::class::methods::PyMethodsImpl;
+use pyo3::class::{methods::PyMethods, proto_methods::PyProtoMethods};
 use pyo3::pyclass::{PyClass, PyClassAlloc};
 use pyo3::pyclass_slots::PyClassDummySlot;
 use pyo3::{ffi, type_object, types::PyAny, PyCell, PyClassInitializer};
@@ -42,11 +42,13 @@ unsafe impl<T> type_object::PyTypeInfo for SliceBox<T> {
     const FLAGS: usize = 0;
 
     #[inline]
-    fn type_object() -> &'static ffi::PyTypeObject {
+    fn type_object_raw(py: pyo3::Python) -> *mut ffi::PyTypeObject {
         use pyo3::type_object::LazyStaticType;
         static TYPE_OBJECT: LazyStaticType = LazyStaticType::new();
-        TYPE_OBJECT.get_or_init::<Self>()
+        TYPE_OBJECT.get_or_init::<Self>(py)
     }
 }
 
-impl<T> PyMethodsImpl for SliceBox<T> {}
+impl<T> PyMethods for SliceBox<T> {}
+impl<T> PyProtoMethods for SliceBox<T> {}
+unsafe impl<T> Send for SliceBox<T> {}
