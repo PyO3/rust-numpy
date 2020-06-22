@@ -208,7 +208,7 @@ impl<T, D> PyArray<T, D> {
     /// # }
     /// ```
     pub fn to_owned(&self) -> Py<Self> {
-        unsafe { Py::from_borrowed_ptr(self.as_ptr()) }
+        unsafe { Py::from_borrowed_ptr(self.py(), self.as_ptr()) }
     }
 
     /// Constructs `PyArray` from raw python object without incrementing reference counts.

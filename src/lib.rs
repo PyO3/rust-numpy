@@ -28,8 +28,6 @@
 //!     );
 //! }
 //! ```
-#![feature(specialization)]
-#![deny(rust_2018_idioms)]
 
 #[macro_use]
 extern crate cfg_if;

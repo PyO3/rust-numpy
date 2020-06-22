@@ -2,7 +2,7 @@
 use libc::FILE;
 use pyo3::ffi::{self, PyObject, PyTypeObject};
 use std::os::raw::*;
-use std::{cell::Cell, ptr, sync::Once};
+use std::{cell::Cell, ptr};
 
 use crate::npyffi::*;
 
@@ -33,21 +33,20 @@ pub static PY_ARRAY_API: PyArrayAPI = PyArrayAPI::new();
 
 /// See [PY_ARRAY_API] for more.
 pub struct PyArrayAPI {
-    once: Once,
     api: Cell<*const *const c_void>,
 }
 
 impl PyArrayAPI {
     const fn new() -> Self {
         Self {
-            once: Once::new(),
             api: Cell::new(ptr::null_mut()),
         }
     }
     fn get(&self, offset: isize) -> *const *const c_void {
         if self.api.get().is_null() {
-            let api = get_numpy_api(MOD_NAME, CAPSULE_NAME);
-            self.once.call_once(|| self.api.set(api));
+            let ensure_gil = pyo3::internal_utils::ensure_gil();
+            let api = get_numpy_api(unsafe { ensure_gil.python() }, MOD_NAME, CAPSULE_NAME);
+            self.api.set(api);
         }
         unsafe { self.api.get().offset(offset) }
     }
