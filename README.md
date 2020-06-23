@@ -12,9 +12,8 @@ Rust bindings for the NumPy C-API
 
 
 ## Requirements
-- current nightly rust (see https://github.com/PyO3/pyo3/issues/5 for nightly features, and
-https://github.com/PyO3/pyo3/blob/master/build.rs for minimum required version)
-- some rust libraries
+- Rust 1.39
+- Some Rust libraries
   - [ndarray](https://github.com/bluss/ndarray) for rust-side matrix library
   - [pyo3](https://github.com/PyO3/pyo3) for cpython binding
   - and more (see [Cargo.toml](Cargo.toml))
