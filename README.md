@@ -3,6 +3,7 @@ rust-numpy
 [![Build Status](https://travis-ci.org/pyo3/rust-numpy.svg?branch=master)](https://travis-ci.org/pyo3/rust-numpy)
 [![Build status](https://ci.appveyor.com/api/projects/status/bjaru43c7t1alx2x/branch/master?svg=true)](https://ci.appveyor.com/project/kngwyu/rust-numpy/branch/master)
 [![Crate](http://meritbadge.herokuapp.com/numpy)](https://crates.io/crates/numpy)
+[![minimum rustc 1.39](https://img.shields.io/badge/rustc-1.39+-blue.svg)](https://rust-lang.github.io/rfcs/2495-min-rust-version.html)
 
 Rust bindings for the NumPy C-API
 
@@ -12,9 +13,8 @@ Rust bindings for the NumPy C-API
 
 
 ## Requirements
-- current nightly rust (see https://github.com/PyO3/pyo3/issues/5 for nightly features, and
-https://github.com/PyO3/pyo3/blob/master/build.rs for minimum required version)
-- some rust libraries
+- Rust 1.39+
+- Some Rust libraries
   - [ndarray](https://github.com/bluss/ndarray) for rust-side matrix library
   - [pyo3](https://github.com/PyO3/pyo3) for cpython binding
   - and more (see [Cargo.toml](Cargo.toml))
