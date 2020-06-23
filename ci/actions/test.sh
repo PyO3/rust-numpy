@@ -3,7 +3,7 @@
 set -ex
 
 cargo build --verbose
-cargo test --verbose -- --test-threads=1
+cargo test --verbose
 
 for example_dir in examples/*; do
     if [ $example != 'examples/linalg' ]; then
