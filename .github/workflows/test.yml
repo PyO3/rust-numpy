@@ -36,7 +36,9 @@ jobs:
           python -m pip install -U pip setuptools
           pip install setuptools-rust pytest pytest-benchmark tox tox-venv numpy
       - name: Test
-        run: ci/actions/test.sh
+        run: |
+          ci/travis/setup.sh
+          ci/actions/test.sh
         shell: bash
     env:
       RUST_BACKTRACE: 1
