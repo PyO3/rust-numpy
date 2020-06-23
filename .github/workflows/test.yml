@@ -34,7 +34,7 @@ jobs:
       - name: Install test dependencies
         run: |
           python -m pip install -U pip setuptools
-          pip install setuptools-rust pytest pytest-benchmark tox tox-venv
+          pip install setuptools-rust pytest pytest-benchmark tox tox-venv numpy
       - name: Test
         run: ci/actions/test.sh
         shell: bash
