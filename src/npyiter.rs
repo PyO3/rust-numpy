@@ -163,13 +163,13 @@ pub trait MultiIterMode {}
 
 impl MultiIterMode for () {}
 
-pub struct RO<S> {
+pub struct RO<S: MultiIterMode> {
     structure: PhantomData<S>,
 }
 
 impl<S: MultiIterMode> MultiIterMode for RO<S> {}
 
-pub struct RW<S> {
+pub struct RW<S: MultiIterMode> {
     structure: PhantomData<S>,
 }
 
@@ -318,11 +318,14 @@ impl<'py, T, S: MultiIterModeHasManyArrays> Drop for NpyMultiIterArray<'py, T, S
     }
 }
 
-impl<'py, T: 'py> std::iter::Iterator for NpyMultiIterArray<'py, T, RO<RO<()>>> {
-    type Item = (&'py T, &'py T);
+macro_rules! implement_iter_on_type {
+    ( $arg:ty, $ty:ty, $arg_name:ident, $sol:expr ) =>
+    {
+impl<'py, T: 'py> std::iter::Iterator for NpyMultiIterArray<'py, T, $arg> {
+    type Item = $ty;
 
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.empty {
+    fn next(&mut $arg_name) -> Option<Self::Item> {
+        if $arg_name.empty {
             None
         } else {
             // Note: This pointer is correct and doesn't need to be updated,
@@ -330,82 +333,140 @@ impl<'py, T: 'py> std::iter::Iterator for NpyMultiIterArray<'py, T, RO<RO<()>>> 
             // and then transforming that into a reference, the value that dataptr
             // points to is being updated by iternext to point to the next value.
             let retval = Some(unsafe {
-                (
-                    &*(*self.dataptr as *mut T),
-                    &*(*self.dataptr.offset(1) as *mut T),
-                )
+                    $sol
             });
-            self.empty = unsafe { (self.iternext)(self.iterator.as_mut()) } == 0;
+            $arg_name.empty = unsafe { ($arg_name.iternext)($arg_name.iterator.as_mut()) } == 0;
             retval
         }
     }
 }
-
-impl<'py, T: 'py> std::iter::Iterator for NpyMultiIterArray<'py, T, RO<RW<()>>> {
-    type Item = (&'py mut T, &'py T);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.empty {
-            None
-        } else {
-            // Note: This pointer is correct and doesn't need to be updated,
-            // note that we're derefencing a **char into a *char casting to a *T
-            // and then transforming that into a reference, the value that dataptr
-            // points to is being updated by iternext to point to the next value.
-            let retval = Some(unsafe {
-                (
-                    &mut *(*self.dataptr as *mut T),
-                    &*(*self.dataptr.offset(1) as *mut T),
-                )
-            });
-            self.empty = unsafe { (self.iternext)(self.iterator.as_mut()) } == 0;
-            retval
-        }
     }
 }
 
-impl<'py, T: 'py> std::iter::Iterator for NpyMultiIterArray<'py, T, RW<RO<()>>> {
-    type Item = (&'py T, &'py mut T);
+implement_iter_on_type!(
+    RO<RO<()>>,
+    (&'py T, &'py T),
+    self,
+    (
+        &*(*self.dataptr as *mut T),
+        &*(*self.dataptr.offset(1) as *mut T),
+    )
+);
 
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.empty {
-            None
-        } else {
-            // Note: This pointer is correct and doesn't need to be updated,
-            // note that we're derefencing a **char into a *char casting to a *T
-            // and then transforming that into a reference, the value that dataptr
-            // points to is being updated by iternext to point to the next value.
-            let retval = Some(unsafe {
-                (
-                    &*(*self.dataptr as *mut T),
-                    &mut *(*self.dataptr.offset(1) as *mut T),
-                )
-            });
-            self.empty = unsafe { (self.iternext)(self.iterator.as_mut()) } == 0;
-            retval
-        }
-    }
-}
+implement_iter_on_type!(
+    RO<RW<()>>,
+    (&'py mut T, &'py T),
+    self,
+    (
+        &mut *(*self.dataptr as *mut T),
+        &*(*self.dataptr.offset(1) as *mut T),
+    )
+);
 
-impl<'py, T: 'py> std::iter::Iterator for NpyMultiIterArray<'py, T, RW<RW<()>>> {
-    type Item = (&'py mut T, &'py mut T);
+implement_iter_on_type!(
+    RW<RO<()>>,
+    (&'py T, &'py mut T),
+    self,
+    (
+        &*(*self.dataptr as *mut T),
+        &mut *(*self.dataptr.offset(1) as *mut T),
+    )
+);
 
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.empty {
-            None
-        } else {
-            // Note: This pointer is correct and doesn't need to be updated,
-            // note that we're derefencing a **char into a *char casting to a *T
-            // and then transforming that into a reference, the value that dataptr
-            // points to is being updated by iternext to point to the next value.
-            let retval = Some(unsafe {
-                (
-                    &mut *(*self.dataptr as *mut T),
-                    &mut *(*self.dataptr.offset(1) as *mut T),
-                )
-            });
-            self.empty = unsafe { (self.iternext)(self.iterator.as_mut()) } == 0;
-            retval
-        }
-    }
-}
+implement_iter_on_type!(
+    RW<RW<()>>,
+    (&'py mut T, &'py mut T),
+    self,
+    (
+        &mut *(*self.dataptr as *mut T),
+        &mut *(*self.dataptr.offset(1) as *mut T),
+    )
+);
+
+implement_iter_on_type!(
+    RW<RW<RW<()>>>,
+    (&'py mut T, &'py mut T, &'py mut T),
+    self,
+    (
+        &mut *(*self.dataptr as *mut T),
+        &mut *(*self.dataptr.offset(1) as *mut T),
+        &mut *(*self.dataptr.offset(2) as *mut T),
+    )
+);
+
+implement_iter_on_type!(
+    RW<RW<RO<()>>>,
+    (&'py T, &'py mut T, &'py mut T),
+    self,
+    (
+        &*(*self.dataptr as *mut T),
+        &mut *(*self.dataptr.offset(1) as *mut T),
+        &mut *(*self.dataptr.offset(2) as *mut T),
+    )
+);
+
+implement_iter_on_type!(
+    RW<RO<RW<()>>>,
+    (&'py mut T, &'py T, &'py mut T),
+    self,
+    (
+        &mut *(*self.dataptr as *mut T),
+        &*(*self.dataptr.offset(1) as *mut T),
+        &mut *(*self.dataptr.offset(2) as *mut T),
+    )
+);
+
+implement_iter_on_type!(
+    RO<RW<RW<()>>>,
+    (&'py mut T, &'py mut T, &'py T),
+    self,
+    (
+        &mut *(*self.dataptr as *mut T),
+        &mut *(*self.dataptr.offset(1) as *mut T),
+        &*(*self.dataptr.offset(2) as *mut T),
+    )
+);
+
+implement_iter_on_type!(
+    RW<RO<RO<()>>>,
+    (&'py T, &'py T, &'py mut T),
+    self,
+    (
+        &*(*self.dataptr as *mut T),
+        &*(*self.dataptr.offset(1) as *mut T),
+        &mut *(*self.dataptr.offset(2) as *mut T),
+    )
+);
+
+implement_iter_on_type!(
+    RO<RW<RO<()>>>,
+    (&'py T, &'py mut T, &'py T),
+    self,
+    (
+        &*(*self.dataptr as *mut T),
+        &mut *(*self.dataptr.offset(1) as *mut T),
+        &*(*self.dataptr.offset(2) as *mut T),
+    )
+);
+
+implement_iter_on_type!(
+    RO<RO<RW<()>>>,
+    (&'py mut T, &'py T, &'py T),
+    self,
+    (
+        &mut *(*self.dataptr as *mut T),
+        &*(*self.dataptr.offset(1) as *mut T),
+        &*(*self.dataptr.offset(2) as *mut T),
+    )
+);
+
+implement_iter_on_type!(
+    RO<RO<RO<()>>>,
+    (&'py T, &'py T, &'py T),
+    self,
+    (
+        &*(*self.dataptr as *mut T),
+        &*(*self.dataptr.offset(1) as *mut T),
+        &*(*self.dataptr.offset(2) as *mut T),
+    )
+);
