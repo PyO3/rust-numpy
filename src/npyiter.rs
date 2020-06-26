@@ -4,7 +4,7 @@ use crate::npyffi::{
     types::{NPY_CASTING, NPY_ORDER},
     *,
 };
-use crate::types::TypeNum;
+use crate::types::Element;
 use pyo3::{prelude::*, PyNativeType};
 
 use std::marker::PhantomData;
@@ -13,10 +13,11 @@ use std::ptr;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum NpyIterFlag {
-    CIndex,
+    /* CIndex,
     FIndex,
-    MultiIndex,
-    ExternalLoop,
+    MultiIndex, */
+    // ExternalLoop, // This flag greatly modifies the behaviour of accessing the data
+                     // so we don't support it.
     CommonDtype,
     RefsOk,
     ZerosizeOk,
@@ -27,19 +28,19 @@ pub enum NpyIterFlag {
     DelayBufAlloc,
     DontNegateStrides,
     CopyIfOverlap,
-    ReadWrite,
+    /* ReadWrite,
     ReadOnly,
-    WriteOnly,
+    WriteOnly, */
 }
 
 impl NpyIterFlag {
     fn to_c_enum(&self) -> npy_uint32 {
         use NpyIterFlag::*;
         match self {
-            CIndex => NPY_ITER_C_INDEX,
+            /* CIndex => NPY_ITER_C_INDEX,
             FIndex => NPY_ITER_C_INDEX,
-            MultiIndex => NPY_ITER_MULTI_INDEX,
-            ExternalLoop => NPY_ITER_EXTERNAL_LOOP,
+            MultiIndex => NPY_ITER_MULTI_INDEX, */
+            /* ExternalLoop => NPY_ITER_EXTERNAL_LOOP, */
             CommonDtype => NPY_ITER_COMMON_DTYPE,
             RefsOk => NPY_ITER_REFS_OK,
             ZerosizeOk => NPY_ITER_ZEROSIZE_OK,
@@ -50,9 +51,9 @@ impl NpyIterFlag {
             DelayBufAlloc => NPY_ITER_DELAY_BUFALLOC,
             DontNegateStrides => NPY_ITER_DONT_NEGATE_STRIDES,
             CopyIfOverlap => NPY_ITER_COPY_IF_OVERLAP,
-            ReadWrite => NPY_ITER_READWRITE,
+            /* ReadWrite => NPY_ITER_READWRITE,
             ReadOnly => NPY_ITER_READONLY,
-            WriteOnly => NPY_ITER_WRITEONLY,
+            WriteOnly => NPY_ITER_WRITEONLY, */
         }
     }
 }
@@ -62,20 +63,22 @@ pub struct NpyIterBuilder<'py, T> {
     array: &'py PyArrayDyn<T>,
 }
 
-impl<'py, T: TypeNum> NpyIterBuilder<'py, T> {
-    pub fn new<D: ndarray::Dimension>(array: &'py PyArray<T, D>) -> NpyIterBuilder<'py, T> {
+impl<'py, T: Element> NpyIterBuilder<'py, T> {
+    pub fn readwrite<D: ndarray::Dimension>(array: &'py PyArray<T, D>) -> NpyIterBuilder<'py, T> {
         NpyIterBuilder {
-            flags: 0,
-            array: array.into_dyn(),
+            flags: NPY_ITER_READWRITE,
+            array: array.to_dyn(),
+        }
+    }
+
+    pub fn readonly<D: ndarray::Dimension>(array: &'py PyArray<T, D>) -> NpyIterBuilder<'py, T> {
+        NpyIterBuilder {
+            flags: NPY_ITER_READONLY,
+            array: array.to_dyn(),
         }
     }
 
     pub fn set(mut self, flag: NpyIterFlag) -> Self {
-        if flag == NpyIterFlag::ExternalLoop {
-            // TODO: I don't want to make set fallible, but also we don't want to
-            // support ExternalLoop yet (maybe ever?).
-            panic!("rust-numpy does not currently support ExternalLoop access");
-        }
         self.flags |= flag.to_c_enum();
         self
     }
@@ -191,7 +194,7 @@ pub struct NpyMultiIterBuilder<'py, T, S: MultiIterMode> {
     structure: PhantomData<S>,
 }
 
-impl<'py, T: TypeNum> NpyMultiIterBuilder<'py, T, ()> {
+impl<'py, T: Element> NpyMultiIterBuilder<'py, T, ()> {
     pub fn new() -> Self {
         Self {
             flags: 0,
@@ -202,11 +205,6 @@ impl<'py, T: TypeNum> NpyMultiIterBuilder<'py, T, ()> {
     }
 
     pub fn set(mut self, flag: NpyIterFlag) -> Self {
-        if flag == NpyIterFlag::ExternalLoop {
-            // TODO: I don't want to make set fallible, but also we don't want to
-            // support ExternalLoop yet (maybe ever?).
-            panic!("rust-numpy does not currently support ExternalLoop access");
-        }
         self.flags |= flag.to_c_enum();
         self
     }
@@ -217,12 +215,12 @@ impl<'py, T: TypeNum> NpyMultiIterBuilder<'py, T, ()> {
     }
 }
 
-impl<'py, T: TypeNum, S: MultiIterMode> NpyMultiIterBuilder<'py, T, S> {
+impl<'py, T: Element, S: MultiIterMode> NpyMultiIterBuilder<'py, T, S> {
     pub fn add_readonly_array<D: ndarray::Dimension>(
         mut self,
         array: &'py PyArray<T, D>,
     ) -> NpyMultiIterBuilder<'py, T, RO<S>> {
-        self.arrays.push(array.into_dyn());
+        self.arrays.push(array.to_dyn());
         self.opflags.push(NPY_ITER_READONLY);
 
         NpyMultiIterBuilder {
@@ -237,7 +235,7 @@ impl<'py, T: TypeNum, S: MultiIterMode> NpyMultiIterBuilder<'py, T, S> {
         mut self,
         array: &'py PyArray<T, D>,
     ) -> NpyMultiIterBuilder<'py, T, RW<S>> {
-        self.arrays.push(array.into_dyn());
+        self.arrays.push(array.to_dyn());
         self.opflags.push(NPY_ITER_READWRITE);
 
         NpyMultiIterBuilder {
@@ -249,7 +247,7 @@ impl<'py, T: TypeNum, S: MultiIterMode> NpyMultiIterBuilder<'py, T, S> {
     }
 }
 
-impl<'py, T: TypeNum, S: MultiIterModeHasManyArrays> NpyMultiIterBuilder<'py, T, S> {
+impl<'py, T: Element, S: MultiIterModeHasManyArrays> NpyMultiIterBuilder<'py, T, S> {
     pub fn build(mut self) -> PyResult<NpyMultiIterArray<'py, T, S>> {
         assert!(self.arrays.len() == self.opflags.len());
         assert!(self.arrays.len() <= i32::MAX as usize);
@@ -279,6 +277,7 @@ pub struct NpyMultiIterArray<'py, T, S: MultiIterModeHasManyArrays> {
     iterator: ptr::NonNull<objects::NpyIter>,
     iternext: unsafe extern "C" fn(*mut objects::NpyIter) -> c_int,
     empty: bool,
+    iter_size: npy_intp,
     dataptr: *mut *mut c_char,
 
     return_type: PhantomData<T>,
@@ -298,11 +297,14 @@ impl<'py, T, S: MultiIterModeHasManyArrays> NpyMultiIterArray<'py, T, S> {
         if dataptr.is_null() {
             unsafe { PY_ARRAY_API.NpyIter_Deallocate(iterator.as_mut()) };
         }
+        
+        let iter_size = unsafe { PY_ARRAY_API.NpyIter_GetIterSize(iterator.as_mut()) };
 
         Some(Self {
             iterator,
             iternext,
-            empty: false, // TODO: Handle empty iterators
+            iter_size,
+            empty: iter_size != 0, // TODO: Handle empty iterators
             dataptr,
             return_type: PhantomData,
             structure: PhantomData,
@@ -338,6 +340,10 @@ impl<'py, T: 'py> std::iter::Iterator for NpyMultiIterArray<'py, T, $arg> {
             $arg_name.empty = unsafe { ($arg_name.iternext)($arg_name.iterator.as_mut()) } == 0;
             retval
         }
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.iter_size as usize, Some(self.iter_size as usize))
     }
 }
     }

@@ -6,8 +6,7 @@ fn get_iter() {
     let gil = pyo3::Python::acquire_gil();
     let dim = (3, 5);
     let arr = PyArray::<f64, _>::zeros(gil.python(), dim, false);
-    let mut iter = npyiter::NpyIterBuilder::new(arr)
-        .set(NpyIterFlag::ReadOnly)
+    let mut iter = npyiter::NpyIterBuilder::readonly(arr)
         .build()
         .map_err(|e| e.print(gil.python()))
         .unwrap();
@@ -20,8 +19,7 @@ fn sum_iter() -> PyResult<()> {
     let vec_data = vec![vec![0.0, 1.0], vec![2.0, 3.0], vec![4.0, 5.0]];
 
     let arr = PyArray::from_vec2(gil.python(), &vec_data)?;
-    let iter = npyiter::NpyIterBuilder::new(arr)
-        .set(NpyIterFlag::ReadOnly)
+    let iter = npyiter::NpyIterBuilder::readonly(arr)
         .build()
         .map_err(|e| e.print(gil.python()))
         .unwrap();
@@ -38,14 +36,14 @@ fn multi_iter() -> PyResult<()> {
     let vec_data1 = vec![vec![0.0, 1.0], vec![2.0, 3.0], vec![4.0, 5.0]];
     let vec_data2 = vec![vec![6.0, 7.0], vec![8.0, 9.0], vec![10.0, 11.0]];
 
-    let arr1 = PyArray::from_vec2(gil.python(), &vec_data1)?;
-    let arr2 = PyArray::from_vec2(gil.python(), &vec_data2)?;
-
+    let py = gil.python();
+    let arr1 = PyArray::from_vec2(py, &vec_data1)?;
+    let arr2 = PyArray::from_vec2(py, &vec_data2)?;
     let iter = npyiter::NpyMultiIterBuilder::new()
         .add_readonly_array(arr1)
         .add_readonly_array(arr2)
         .build()
-        .map_err(|e| e.print(gil.python()))
+        .map_err(|e| e.print(py))
         .unwrap();
 
     let mut sum = 0.0;
