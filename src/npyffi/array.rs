@@ -18,7 +18,6 @@ const CAPSULE_NAME: &str = "_ARRAY_API";
 ///
 /// # Example
 /// ```
-/// # fn main() {
 /// use numpy::{PyArray, npyffi::types::NPY_SORTKIND, PY_ARRAY_API};
 /// use pyo3::Python;
 /// let gil = Python::acquire_gil();
@@ -26,8 +25,7 @@ const CAPSULE_NAME: &str = "_ARRAY_API";
 /// unsafe {
 ///     PY_ARRAY_API.PyArray_Sort(array.as_array_ptr(), 0, NPY_SORTKIND::NPY_QUICKSORT);
 /// }
-/// assert_eq!(array.as_slice().unwrap(), &[2, 3, 4])
-/// # }
+/// assert_eq!(array.as_slice().unwrap(), &[2, 3, 4]);
 /// ```
 pub static PY_ARRAY_API: PyArrayAPI = PyArrayAPI::new();
 

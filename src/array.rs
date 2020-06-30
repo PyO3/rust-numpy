@@ -61,7 +61,7 @@ use crate::types::{NpyDataType, TypeNum};
 ///
 /// # Example
 /// ```
-/// # #[macro_use] extern crate ndarray; fn main() {
+/// # #[macro_use] extern crate ndarray;
 /// use pyo3::{GILGuard, Python};
 /// use numpy::PyArray;
 /// use ndarray::Array;
@@ -72,7 +72,6 @@ use crate::types::{NpyDataType, TypeNum};
 ///     array.dot(&pyarray.as_array()),
 ///     array![[8., 15.], [12., 23.]]
 /// );
-/// # }
 /// ```
 pub struct PyArray<T, D>(PyAny, PhantomData<T>, PhantomData<D>);
 
@@ -157,7 +156,6 @@ impl<T, D> PyArray<T, D> {
     ///
     /// # Example
     /// ```
-    /// # fn main() {
     /// use pyo3::types::IntoPyDict;
     /// let gil = pyo3::Python::acquire_gil();
     /// let py = gil.python();
@@ -170,7 +168,6 @@ impl<T, D> PyArray<T, D> {
     ///     .downcast()
     ///     .unwrap();
     /// assert!(!not_contiguous.is_contiguous());
-    /// # }
     /// ```
     pub fn is_contiguous(&self) -> bool {
         self.check_flag(npyffi::NPY_ARRAY_C_CONTIGUOUS)
@@ -194,7 +191,6 @@ impl<T, D> PyArray<T, D> {
     ///
     /// # Example
     /// ```
-    /// # fn main() {
     /// use pyo3::{GILGuard, Python, Py, AsPyRef};
     /// use numpy::PyArray1;
     /// fn return_py_array() -> Py<PyArray1<i32>> {
@@ -205,7 +201,6 @@ impl<T, D> PyArray<T, D> {
     /// let gil = Python::acquire_gil();
     /// let array = return_py_array();
     /// assert_eq!(array.as_ref(gil.python()).as_slice().unwrap(), &[0, 0, 0, 0, 0]);
-    /// # }
     /// ```
     pub fn to_owned(&self) -> Py<Self> {
         unsafe { Py::from_borrowed_ptr(self.py(), self.as_ptr()) }
@@ -227,12 +222,10 @@ impl<T, D> PyArray<T, D> {
     ///
     /// # Example
     /// ```
-    /// # fn main() {
     /// use numpy::PyArray3;
     /// let gil = pyo3::Python::acquire_gil();
     /// let arr = PyArray3::<f64>::new(gil.python(), [4, 5, 6], false);
-    /// assert_eq!(arr.ndim(), 3);
-    /// # }
+    /// assert_eq!(arr.ndim(),
     /// ```
     // C API: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_NDIM
     pub fn ndim(&self) -> usize {
@@ -245,12 +238,10 @@ impl<T, D> PyArray<T, D> {
     /// Same as [numpy.ndarray.strides](https://numpy.org/doc/stable/reference/generated/numpy.ndarray.strides.html)
     /// # Example
     /// ```
-    /// # fn main() {
     /// use numpy::PyArray3;
     /// let gil = pyo3::Python::acquire_gil();
     /// let arr = PyArray3::<f64>::new(gil.python(), [4, 5, 6], false);
     /// assert_eq!(arr.strides(), &[240, 48, 8]);
-    /// # }
     /// ```
     // C API: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_STRIDES
     pub fn strides(&self) -> &[isize] {
@@ -267,12 +258,10 @@ impl<T, D> PyArray<T, D> {
     /// Same as [numpy.ndarray.shape](https://numpy.org/doc/stable/reference/generated/numpy.ndarray.shape.html)
     /// # Example
     /// ```
-    /// # fn main() {
     /// use numpy::PyArray3;
     /// let gil = pyo3::Python::acquire_gil();
     /// let arr = PyArray3::<f64>::new(gil.python(), [4, 5, 6], false);
     /// assert_eq!(arr.shape(), &[4, 5, 6]);
-    /// # }
     /// ```
     // C API: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_DIMS
     pub fn shape(&self) -> &[usize] {
@@ -286,7 +275,11 @@ impl<T, D> PyArray<T, D> {
 
     /// Calcurates the total number of elements in the array.
     pub fn len(&self) -> usize {
-        self.shape().iter().fold(1, |a, b| a * b)
+        self.shape().iter().product()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 
     fn typenum(&self) -> i32 {
@@ -338,14 +331,13 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     ///
     /// # Example
     /// ```
-    /// # #[macro_use] extern crate ndarray; fn main() {
+    /// # #[macro_use] extern crate ndarray;
     /// use numpy::PyArray3;
     /// let gil = pyo3::Python::acquire_gil();
     /// let pyarray = PyArray3::<i32>::new(gil.python(), [4, 5, 6], false);
     /// assert_eq!(pyarray.shape(), &[4, 5, 6]);
-    /// # }
     /// ```
-    pub fn new<'py, ID>(py: Python<'py>, dims: ID, is_fortran: bool) -> &'py Self
+    pub fn new<ID>(py: Python, dims: ID, is_fortran: bool) -> &Self
     where
         ID: IntoDimension<Dim = D>,
     {
@@ -353,12 +345,12 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
         unsafe { PyArray::new_(py, dims, ptr::null_mut(), flags) }
     }
 
-    pub(crate) unsafe fn new_<'py, ID>(
-        py: Python<'py>,
+    pub(crate) unsafe fn new_<ID>(
+        py: Python,
         dims: ID,
         strides: *const npy_intp,
         flag: c_int,
-    ) -> &'py Self
+    ) -> &Self
     where
         ID: IntoDimension<Dim = D>,
     {
@@ -416,14 +408,13 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     ///
     /// # Example
     /// ```
-    /// # #[macro_use] extern crate ndarray; fn main() {
+    /// # #[macro_use] extern crate ndarray;
     /// use numpy::PyArray2;
     /// let gil = pyo3::Python::acquire_gil();
     /// let pyarray: &PyArray2<usize> = PyArray2::zeros(gil.python(), [2, 2], false);
     /// assert_eq!(pyarray.as_array(), array![[0, 0], [0, 0]]);
-    /// # }
     /// ```
-    pub fn zeros<'py, ID>(py: Python<'py>, dims: ID, is_fortran: bool) -> &'py Self
+    pub fn zeros<ID>(py: Python, dims: ID, is_fortran: bool) -> &Self
     where
         ID: IntoDimension<Dim = D>,
     {
@@ -445,7 +436,6 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     /// Returns `ErrorKind::NotContiguous` if the internal array is not contiguous.
     /// # Example
     /// ```
-    /// # fn main() {
     /// use numpy::{PyArray, PyArray1};
     /// use pyo3::types::IntoPyDict;
     /// let gil = pyo3::Python::acquire_gil();
@@ -459,7 +449,6 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     ///     .downcast()
     ///     .unwrap();
     /// assert!(not_contiguous.as_slice().is_err());
-    /// # }
     /// ```
     pub fn as_slice(&self) -> Result<&[T], ErrorKind> {
         self.type_check()?;
@@ -487,12 +476,11 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     ///
     /// # Example
     /// ```
-    /// # #[macro_use] extern crate ndarray; fn main() {
+    /// # #[macro_use] extern crate ndarray;
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let pyarray = PyArray::from_array(gil.python(), &array![[1, 2], [3, 4]]);
     /// assert_eq!(pyarray.as_array(), array![[1, 2], [3, 4]]);
-    /// # }
     /// ```
     pub fn from_array<'py, S>(py: Python<'py>, arr: &ArrayBase<S, D>) -> &'py Self
     where
@@ -509,12 +497,11 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     ///
     /// # Example
     /// ```
-    /// # #[macro_use] extern crate ndarray; fn main() {
+    /// # #[macro_use] extern crate ndarray;
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let pyarray = PyArray::from_owned_array(gil.python(), array![[1, 2], [3, 4]]);
     /// assert_eq!(pyarray.as_array(), array![[1, 2], [3, 4]]);
-    /// # }
     /// ```
     pub fn from_owned_array<'py>(py: Python<'py>, arr: Array<T, D>) -> &'py Self {
         IntoPyArray::into_pyarray(arr, py)
@@ -525,7 +512,7 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     ///
     /// # Example
     /// ```
-    /// # #[macro_use] extern crate ndarray; fn main() {
+    /// # #[macro_use] extern crate ndarray;
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let py_array = PyArray::arange(gil.python(), 0, 4, 1).reshape([2, 2]).unwrap();
@@ -533,7 +520,6 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     ///     py_array.as_array(),
     ///     array![[0, 1], [2, 3]]
     /// )
-    /// # }
     /// ```
     pub fn as_array(&self) -> ArrayView<'_, T, D> {
         self.type_check_assert();
@@ -554,34 +540,28 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     ///
     /// # Example
     /// ```
-    /// # fn main() {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let arr = PyArray::arange(gil.python(), 0, 16, 1).reshape([2, 2, 4]).unwrap();
     /// assert_eq!(*arr.get([1, 0, 3]).unwrap(), 11);
     /// assert!(arr.get([2, 0, 3]).is_none());
-    /// # }
     /// ```
     ///
     /// For fixed dimension arrays, passing an index with invalid dimension causes compile error.
     /// ```compile_fail
-    /// # fn main() {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let arr = PyArray::arange(gil.python(), 0, 16, 1).reshape([2, 2, 4]).unwrap();
     /// let a = arr.get([1, 2]); // Compile Error!
-    /// # }
     /// ```
     ///
     /// However, for dinamic arrays, we cannot raise a compile error and just returns `None`.
     /// ```
-    /// # fn main() {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let arr = PyArray::arange(gil.python(), 0, 16, 1).reshape([2, 2, 4]).unwrap();
-    /// let arr = arr.into_dyn();
+    /// let arr = arr.to_dyn();
     /// assert!(arr.get([1, 2].as_ref()).is_none());
-    /// # }
     /// ```
     #[inline(always)]
     pub fn get<Idx>(&self, index: Idx) -> Option<&T>
@@ -611,12 +591,10 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     ///
     /// # Example
     /// ```
-    /// # fn main() {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let arr = PyArray::arange(gil.python(), 0, 16, 1).reshape([2, 2, 4]).unwrap();
     /// assert_eq!(unsafe { *arr.uget([1, 0, 3]) }, 11);
-    /// # }
     /// ```
     #[inline(always)]
     pub unsafe fn uget<Idx>(&self, index: Idx) -> &T
@@ -629,6 +607,7 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
 
     /// Same as [uget](#method.uget), but returns `&mut T`.
     #[inline(always)]
+    #[allow(clippy::mut_from_ref)]
     pub unsafe fn uget_mut<Idx>(&self, index: Idx) -> &mut T
     where
         Idx: NpyIndex<Dim = D>,
@@ -640,7 +619,7 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     /// Get dynamic dimensioned array from fixed dimension array.
     ///
     /// See [get](#method.get) for usage.
-    pub fn into_dyn(&self) -> &PyArray<T, IxDyn> {
+    pub fn to_dyn(&self) -> &PyArray<T, IxDyn> {
         let python = self.py();
         unsafe { PyArray::from_borrowed_ptr(python, self.as_ptr()) }
     }
@@ -657,7 +636,12 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
         if T::is_same_type(truth) && dim_ok {
             Ok(())
         } else {
-            Err(ErrorKind::to_rust(truth, dim, T::npy_data_type(), D::NDIM))
+            Err(ErrorKind::py_to_rust(
+                truth,
+                dim,
+                T::npy_data_type(),
+                D::NDIM,
+            ))
         }
     }
 }
@@ -668,7 +652,7 @@ impl<T: TypeNum + Clone, D: Dimension> PyArray<T, D> {
     ///
     /// # Example
     /// ```
-    /// # #[macro_use] extern crate ndarray; fn main() {
+    /// # #[macro_use] extern crate ndarray;
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let py_array = PyArray::arange(gil.python(), 0, 4, 1).reshape([2, 2]).unwrap();
@@ -676,7 +660,6 @@ impl<T: TypeNum + Clone, D: Dimension> PyArray<T, D> {
     ///     py_array.to_owned_array(),
     ///     array![[0, 1], [2, 3]]
     /// )
-    /// # }
     /// ```
     pub fn to_owned_array(&self) -> Array<T, D> {
         self.as_array().to_owned()
@@ -688,13 +671,11 @@ impl<T: TypeNum> PyArray<T, Ix1> {
     ///
     /// # Example
     /// ```
-    /// # fn main() {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let array = [1, 2, 3, 4, 5];
     /// let pyarray = PyArray::from_slice(gil.python(), &array);
     /// assert_eq!(pyarray.as_slice().unwrap(), &[1, 2, 3, 4, 5]);
-    /// # }
     /// ```
     pub fn from_slice<'py>(py: Python<'py>, slice: &[T]) -> &'py Self {
         let array = PyArray::new(py, [slice.len()], false);
@@ -709,13 +690,11 @@ impl<T: TypeNum> PyArray<T, Ix1> {
     ///
     /// # Example
     /// ```
-    /// # fn main() {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let vec = vec![1, 2, 3, 4, 5];
     /// let pyarray = PyArray::from_vec(gil.python(), vec);
     /// assert_eq!(pyarray.as_slice().unwrap(), &[1, 2, 3, 4, 5]);
-    /// # }
     /// ```
     pub fn from_vec<'py>(py: Python<'py>, vec: Vec<T>) -> &'py Self {
         IntoPyArray::into_pyarray(vec, py)
@@ -726,14 +705,12 @@ impl<T: TypeNum> PyArray<T, Ix1> {
     ///
     /// # Example
     /// ```
-    /// # fn main() {
     /// use numpy::PyArray;
     /// use std::collections::BTreeSet;
     /// let gil = pyo3::Python::acquire_gil();
     /// let vec = vec![1, 2, 3, 4, 5];
     /// let pyarray = PyArray::from_iter(gil.python(), vec.iter().map(|&x| x));
     /// assert_eq!(pyarray.as_slice().unwrap(), &[1, 2, 3, 4, 5]);
-    /// # }
     /// ```
     pub fn from_exact_iter(py: Python<'_>, iter: impl ExactSizeIterator<Item = T>) -> &Self {
         let array = Self::new(py, [iter.len()], false);
@@ -753,19 +730,17 @@ impl<T: TypeNum> PyArray<T, Ix1> {
     ///
     /// # Example
     /// ```
-    /// # fn main() {
     /// use numpy::PyArray;
     /// use std::collections::BTreeSet;
     /// let gil = pyo3::Python::acquire_gil();
     /// let set: BTreeSet<u32> = [4, 3, 2, 5, 1].into_iter().cloned().collect();
     /// let pyarray = PyArray::from_iter(gil.python(), set);
     /// assert_eq!(pyarray.as_slice().unwrap(), &[1, 2, 3, 4, 5]);
-    /// # }
     /// ```
     pub fn from_iter(py: Python<'_>, iter: impl IntoIterator<Item = T>) -> &Self {
         let iter = iter.into_iter();
         let (min_len, max_len) = iter.size_hint();
-        let mut capacity = max_len.unwrap_or(min_len.max(512 / mem::size_of::<T>()));
+        let mut capacity = max_len.unwrap_or_else(|| min_len.max(512 / mem::size_of::<T>()));
         let array = Self::new(py, [capacity], false);
         let mut length = 0;
         unsafe {
@@ -790,21 +765,19 @@ impl<T: TypeNum> PyArray<T, Ix1> {
     ///
     /// # Example
     /// ```
-    /// # fn main() {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let pyarray = PyArray::arange(gil.python(), 0, 10, 1);
     /// assert_eq!(pyarray.len(), 10);
     /// pyarray.resize(100).unwrap();
     /// assert_eq!(pyarray.len(), 100);
-    /// # }
     /// ```
     pub fn resize(&self, new_elems: usize) -> Result<(), ErrorKind> {
         self.resize_([new_elems], 1, NPY_ORDER::NPY_ANYORDER)
     }
 
-    fn resize_<'py, D: IntoDimension>(
-        &'py self,
+    fn resize_<D: IntoDimension>(
+        &self,
         dims: D,
         check_ref: c_int,
         order: NPY_ORDER,
@@ -835,16 +808,15 @@ impl<T: TypeNum> PyArray<T, Ix2> {
     ///
     /// # Example
     /// ```
-    /// # #[macro_use] extern crate ndarray; fn main() {
+    /// # #[macro_use] extern crate ndarray;
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let vec2 = vec![vec![1, 2, 3]; 2];
     /// let pyarray = PyArray::from_vec2(gil.python(), &vec2).unwrap();
     /// assert_eq!(pyarray.as_array(), array![[1, 2, 3], [1, 2, 3]]);
-    /// assert!(PyArray::from_vec2(gil.python(), &vec![vec![1], vec![2, 3]]).is_err());
-    /// # }
+    /// assert!(PyArray::from_vec2(gil.python(), &[vec![1], vec![2, 3]]).is_err());
     /// ```
-    pub fn from_vec2<'py>(py: Python<'py>, v: &Vec<Vec<T>>) -> Result<&'py Self, ErrorKind>
+    pub fn from_vec2<'py>(py: Python<'py>, v: &[Vec<T>]) -> Result<&'py Self, ErrorKind>
     where
         T: Clone,
     {
@@ -858,9 +830,9 @@ impl<T: TypeNum> PyArray<T, Ix2> {
         let dims = [v.len(), last_len];
         let array = Self::new(py, dims, false);
         unsafe {
-            for y in 0..v.len() {
-                for x in 0..last_len {
-                    *array.uget_mut([y, x]) = v[y][x].clone();
+            for (y, vy) in v.iter().enumerate() {
+                for (x, vyx) in vy.iter().enumerate() {
+                    *array.uget_mut([y, x]) = *vyx;
                 }
             }
         }
@@ -876,7 +848,7 @@ impl<T: TypeNum> PyArray<T, Ix3> {
     ///
     /// # Example
     /// ```
-    /// # #[macro_use] extern crate ndarray; fn main() {
+    /// # #[macro_use] extern crate ndarray;
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let vec2 = vec![vec![vec![1, 2]; 2]; 2];
@@ -885,10 +857,9 @@ impl<T: TypeNum> PyArray<T, Ix3> {
     ///     pyarray.as_array(),
     ///     array![[[1, 2], [1, 2]], [[1, 2], [1, 2]]]
     /// );
-    /// assert!(PyArray::from_vec3(gil.python(), &vec![vec![vec![1], vec![]]]).is_err());
-    /// # }
+    /// assert!(PyArray::from_vec3(gil.python(), &[vec![vec![1], vec![]]]).is_err());
     /// ```
-    pub fn from_vec3<'py>(py: Python<'py>, v: &Vec<Vec<Vec<T>>>) -> Result<&'py Self, ErrorKind>
+    pub fn from_vec3<'py>(py: Python<'py>, v: &[Vec<Vec<T>>]) -> Result<&'py Self, ErrorKind>
     where
         T: Clone,
     {
@@ -909,10 +880,10 @@ impl<T: TypeNum> PyArray<T, Ix3> {
         let dims = [v.len(), dim2, dim3];
         let array = Self::new(py, dims, false);
         unsafe {
-            for z in 0..v.len() {
-                for y in 0..dim2 {
-                    for x in 0..dim3 {
-                        *array.uget_mut([z, y, x]) = v[z][y][x].clone();
+            for (z, vz) in v.iter().enumerate() {
+                for (y, vzy) in vz.iter().enumerate() {
+                    for (x, vzyx) in vzy.iter().enumerate() {
+                        *array.uget_mut([z, y, x]) = *vzyx;
                     }
                 }
             }
@@ -930,14 +901,13 @@ impl<T: TypeNum, D> PyArray<T, D> {
     /// Copies self into `other`, performing a data-type conversion if necessary.
     /// # Example
     /// ```
-    /// # fn main() {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let pyarray_f = PyArray::arange(gil.python(), 2.0, 5.0, 1.0);
     /// let pyarray_i = PyArray::<i64, _>::new(gil.python(), [3], false);
     /// assert!(pyarray_f.copy_to(pyarray_i).is_ok());
     /// assert_eq!(pyarray_i.as_slice().unwrap(), &[2, 3, 4]);
-    /// # }
+    /// ```
     pub fn copy_to<U: TypeNum>(&self, other: &PyArray<U, D>) -> Result<(), ErrorKind> {
         let self_ptr = self.as_array_ptr();
         let other_ptr = other.as_array_ptr();
@@ -952,13 +922,11 @@ impl<T: TypeNum, D> PyArray<T, D> {
     /// Cast the `PyArray<T>` to `PyArray<U>`, by allocating a new array.
     /// # Example
     /// ```
-    /// # fn main() {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let pyarray_f = PyArray::arange(gil.python(), 2.0, 5.0, 1.0);
     /// let pyarray_i = pyarray_f.cast::<i32>(false).unwrap();
     /// assert_eq!(pyarray_i.as_slice().unwrap(), &[2, 3, 4]);
-    /// # }
     pub fn cast<'py, U: TypeNum>(
         &'py self,
         is_fortran: bool,
@@ -987,14 +955,13 @@ impl<T: TypeNum, D> PyArray<T, D> {
     /// # Example
     ///
     /// ```
-    /// # #[macro_use] extern crate ndarray; fn main() {
+    /// # #[macro_use] extern crate ndarray;
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let array = PyArray::from_exact_iter(gil.python(), 0..9);
     /// let array = array.reshape([3, 3]).unwrap();
     /// assert_eq!(array.as_array(), array![[0, 1, 2], [3, 4, 5], [6, 7, 8]]);
     /// assert!(array.reshape([5]).is_err());
-    /// # }
     /// ```
     #[inline(always)]
     pub fn reshape<'py, ID, D2>(&'py self, dims: ID) -> Result<&'py PyArray<T, D2>, ErrorKind>
@@ -1040,15 +1007,13 @@ impl<T: TypeNum + AsPrimitive<f64>> PyArray<T, Ix1> {
     ///
     /// # Example
     /// ```
-    /// # fn main() {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let pyarray = PyArray::arange(gil.python(), 2.0, 4.0, 0.5);
     /// assert_eq!(pyarray.as_slice().unwrap(), &[2.0, 2.5, 3.0, 3.5]);
     /// let pyarray = PyArray::arange(gil.python(), -2, 4, 3);
     /// assert_eq!(pyarray.as_slice().unwrap(), &[-2, 1]);
-    /// # }
-    pub fn arange<'py>(py: Python<'py>, start: T, stop: T, step: T) -> &'py Self {
+    pub fn arange(py: Python, start: T, stop: T, step: T) -> &Self {
         unsafe {
             let ptr = PY_ARRAY_API.PyArray_Arange(
                 start.as_(),
@@ -1073,6 +1038,6 @@ fn test_get_unchecked() {
 #[test]
 fn test_dyn_to_owned_array() {
     let gil = pyo3::Python::acquire_gil();
-    let array = PyArray::from_vec2(gil.python(), &vec![vec![1, 2], vec![3, 4]]).unwrap();
-    array.into_dyn().to_owned_array();
+    let array = PyArray::from_vec2(gil.python(), &[vec![1, 2], vec![3, 4]]).unwrap();
+    array.to_dyn().to_owned_array();
 }

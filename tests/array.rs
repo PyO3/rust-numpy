@@ -116,7 +116,7 @@ fn from_vec2() {
     let gil = pyo3::Python::acquire_gil();
     let pyarray = PyArray::from_vec2(gil.python(), &vec2).unwrap();
     assert_eq!(pyarray.as_array(), array![[1, 2, 3], [1, 2, 3]]);
-    assert!(PyArray::from_vec2(gil.python(), &vec![vec![1], vec![2, 3]]).is_err());
+    assert!(PyArray::from_vec2(gil.python(), &[vec![1], vec![2, 3]]).is_err());
 }
 
 #[test]

@@ -64,20 +64,20 @@ pub enum ErrorKind {
 }
 
 impl ErrorKind {
-    pub(crate) fn to_rust(
-        from_t: i32,
-        from_d: usize,
-        to_t: NpyDataType,
-        to_d: Option<usize>,
+    pub(crate) fn py_to_rust(
+        from_type: i32,
+        from_dim: usize,
+        to_type: NpyDataType,
+        to_dim: Option<usize>,
     ) -> Self {
         ErrorKind::PyToRust {
             from: ArrayDim {
-                dim: Some(from_d),
-                dtype: NpyDataType::from_i32(from_t),
+                dim: Some(from_dim),
+                dtype: NpyDataType::from_i32(from_type),
             },
             to: ArrayDim {
-                dim: to_d,
-                dtype: to_t,
+                dim: to_dim,
+                dtype: to_type,
             },
         }
     }
