@@ -17,7 +17,7 @@ fn to_pyarray_array() {
     let gil = pyo3::Python::acquire_gil();
 
     let a = Array3::<f64>::zeros((3, 4, 2));
-    let shape = a.shape().iter().cloned().collect::<Vec<_>>();
+    let shape = a.shape().to_vec();
     let strides = a.strides().iter().map(|d| d * 8).collect::<Vec<_>>();
     println!("a.shape   = {:?}", a.shape());
     println!("a.strides = {:?}", a.strides());
@@ -94,7 +94,7 @@ fn into_pyarray_vec() {
 fn into_pyarray_array() {
     let gil = pyo3::Python::acquire_gil();
     let arr = Array3::<f64>::zeros((3, 4, 2));
-    let shape = arr.shape().iter().cloned().collect::<Vec<_>>();
+    let shape = arr.shape().to_vec();
     let strides = arr.strides().iter().map(|d| d * 8).collect::<Vec<_>>();
     let py_arr = arr.into_pyarray(gil.python());
     assert_eq!(py_arr.shape(), shape.as_slice());

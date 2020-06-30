@@ -17,13 +17,11 @@ use crate::npyffi::npy_intp;
 /// **you cannot use some destructive methods like `resize`.**
 /// # Example
 /// ```
-/// # fn main() {
 /// use numpy::{PyArray, IntoPyArray};
 /// let gil = pyo3::Python::acquire_gil();
 /// let py_array = vec![1, 2, 3].into_pyarray(gil.python());
 /// assert_eq!(py_array.as_slice().unwrap(), &[1, 2, 3]);
 /// assert!(py_array.resize(100).is_err()); // You can't resize owned-by-rust array.
-/// # }
 /// ```
 pub trait IntoPyArray {
     type Item: TypeNum;
@@ -132,7 +130,7 @@ where
                 let array = PyArray::<A, _>::new_(py, dim, strides.as_ptr(), 0);
                 let data_ptr = array.data();
                 for (i, item) in self.iter().enumerate() {
-                    data_ptr.offset(i as isize).write(*item);
+                    data_ptr.add(i).write(*item);
                 }
                 array
             }
@@ -166,7 +164,7 @@ where
 {
     fn npy_strides(&self) -> NpyStrides {
         NpyStrides::new(
-            self.strides().into_iter().map(|&x| x as npyffi::npy_intp),
+            self.strides().iter().map(|&x| x as npyffi::npy_intp),
             mem::size_of::<A>(),
         )
     }
@@ -199,7 +197,7 @@ impl NpyStrides {
         Self::new(
             dim.default_strides()
                 .slice()
-                .into_iter()
+                .iter()
                 .map(|&x| x as npyffi::npy_intp),
             type_size,
         )
@@ -266,7 +264,7 @@ impl<D: IntoDimension> NpyIndex for D {
         if indices.len() != dims.len() {
             return None;
         }
-        if indices.into_iter().zip(dims).any(|(i, d)| i >= d) {
+        if indices.iter().zip(dims).any(|(i, d)| i >= d) {
             return None;
         }
         Some(get_unchecked_impl(
