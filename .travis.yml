@@ -1,5 +1,6 @@
 language: python
-dist: xenial
+os: linux
+dist: bionic
 
 cache:
   pip: true
@@ -8,38 +9,26 @@ cache:
 matrix:
   include:
     - python: "3.5"
-      env: FEATURES=python3
     - python: "3.6"
-      env: FEATURES=python3
     - python: "3.7"
-      env: FEATURES=python3
     - python: "3.8"
-      env: FEATURES=python3
+      env: RUN_LINT=1
 
 env:
   global:
-    - TRAVIS_RUST_VERSION=nightly
+    - TRAVIS_RUST_VERSION=stable
     - RUST_BACKTRACE=1
-    - FEATURES=python3
 
 addons:
   apt:
     packages:
-      - libcurl4-openssl-dev
-      - libelf-dev
-      - libdw-dev
-      - cmake
-      - gcc
-      - binutils-dev
-      - libiberty-dev
       - gfortran
 
 before_install:
   - source ./ci/travis/setup.sh
 
 install:
-  - pip install setuptools-rust pytest pytest-benchmark \
-             tox numpy flake8
+  - pip install setuptools-rust pytest tox numpy flake8
 
 script:
   - flake8 examples/

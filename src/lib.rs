@@ -57,15 +57,10 @@ pub use ndarray::{Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};
 #[doc(hidden)]
 pub mod doc_test {
     macro_rules! doc_comment {
-        ($x:expr, $($tt:tt)*) => {
+        ($x: expr, $modname: ident) => {
             #[doc = $x]
-            $($tt)*
+            mod $modname {}
         };
     }
-    macro_rules! doctest {
-        ($x: literal, $y:ident) => {
-            doc_comment!(include_str!($x), mod $y {});
-        };
-    }
-    doctest!("../README.md", readme_md);
+    doc_comment!(include_str!("../README.md"), readme);
 }

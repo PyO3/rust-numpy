@@ -225,7 +225,7 @@ impl<T, D> PyArray<T, D> {
     /// use numpy::PyArray3;
     /// let gil = pyo3::Python::acquire_gil();
     /// let arr = PyArray3::<f64>::new(gil.python(), [4, 5, 6], false);
-    /// assert_eq!(arr.ndim(),
+    /// assert_eq!(arr.ndim(), 3);
     /// ```
     // C API: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_NDIM
     pub fn ndim(&self) -> usize {
