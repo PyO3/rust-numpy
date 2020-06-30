@@ -57,7 +57,7 @@ using [setuptools-rust](https://github.com/PyO3/setuptools-rust).
 name = "numpy-test"
 
 [dependencies]
-pyo3 = "0.10.1"
+pyo3 = "0.11.1"
 numpy = "0.9.0"
 ```
 

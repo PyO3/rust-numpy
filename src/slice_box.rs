@@ -1,5 +1,5 @@
 use pyo3::class::{methods::PyMethods, proto_methods::PyProtoMethods};
-use pyo3::pyclass::{PyClass, PyClassAlloc};
+use pyo3::pyclass::{PyClass, PyClassAlloc, PyClassSend, ThreadCheckerStub};
 use pyo3::pyclass_slots::PyClassDummySlot;
 use pyo3::{ffi, type_object, types::PyAny, PyCell, PyClassInitializer};
 
@@ -49,6 +49,10 @@ unsafe impl<T> type_object::PyTypeInfo for SliceBox<T> {
     }
 }
 
+// Some stubs to use PyClass
 impl<T> PyMethods for SliceBox<T> {}
 impl<T> PyProtoMethods for SliceBox<T> {}
 unsafe impl<T> Send for SliceBox<T> {}
+impl<T> PyClassSend for SliceBox<T> {
+    type ThreadChecker = ThreadCheckerStub<Self>;
+}
