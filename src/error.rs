@@ -1,43 +1,15 @@
 //! Defines error types.
 use crate::types::NpyDataType;
-use pyo3::{exceptions as exc, PyErr, PyResult, Python};
-use std::error;
+use pyo3::{exceptions as exc, PyErr, PyErrArguments, PyErrValue, PyObject, Python, ToPyObject};
 use std::fmt;
-
-pub trait IntoPyErr: Into<PyErr> {
-    fn into_pyerr(self) -> PyErr;
-    fn into_pyerr_with<D: fmt::Display>(self, _: impl FnOnce() -> D) -> PyErr;
-}
-
-pub trait IntoPyResult {
-    type ValueType;
-    fn into_pyresult(self) -> PyResult<Self::ValueType>;
-    fn into_pyresult_with<D: fmt::Display>(
-        self,
-        _: impl FnOnce() -> D,
-    ) -> PyResult<Self::ValueType>;
-}
-
-impl<T, E: IntoPyErr> IntoPyResult for Result<T, E> {
-    type ValueType = T;
-    fn into_pyresult(self) -> PyResult<Self::ValueType> {
-        self.map_err(|e| e.into())
-    }
-    fn into_pyresult_with<D: fmt::Display>(
-        self,
-        msg: impl FnOnce() -> D,
-    ) -> PyResult<Self::ValueType> {
-        self.map_err(|e| e.into_pyerr_with(msg))
-    }
-}
 
 /// Represents a dimension and dtype of numpy array.
 ///
 /// Only for error formatting.
 #[derive(Debug)]
-pub struct ArrayDim {
-    pub dim: Option<usize>,
-    pub dtype: NpyDataType,
+pub(crate) struct ArrayDim {
+    dim: Option<usize>,
+    dtype: NpyDataType,
 }
 
 impl fmt::Display for ArrayDim {
@@ -50,27 +22,21 @@ impl fmt::Display for ArrayDim {
     }
 }
 
-/// Represents a casting error between rust types and numpy array.
+/// Represents that shapes of the given arrays don't match.
 #[derive(Debug)]
-pub enum ErrorKind {
-    /// Error for casting `PyArray` into `ArrayView` or `ArrayViewMut`
-    PyToRust { from: ArrayDim, to: ArrayDim },
-    /// Error for casting rust's `Vec` into numpy array.
-    FromVec { dim1: usize, dim2: usize },
-    /// Error occured in Python iterpreter
-    Python(PyErr),
-    /// The array need to be contiguous to finish the opretion
-    NotContiguous,
+pub struct ShapeError {
+    from: ArrayDim,
+    to: ArrayDim,
 }
 
-impl ErrorKind {
-    pub(crate) fn py_to_rust(
+impl ShapeError {
+    pub(crate) fn new(
         from_type: i32,
         from_dim: usize,
         to_type: NpyDataType,
         to_dim: Option<usize>,
     ) -> Self {
-        ErrorKind::PyToRust {
+        ShapeError {
             from: ArrayDim {
                 dim: Some(from_dim),
                 dtype: NpyDataType::from_i32(from_type),
@@ -81,44 +47,69 @@ impl ErrorKind {
             },
         }
     }
-    pub(crate) fn py(py: Python<'_>) -> Self {
-        ErrorKind::Python(PyErr::fetch(py))
+}
+
+impl fmt::Display for ShapeError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let ShapeError { from, to } = self;
+        write!(f, "Shape Mismatch:\n from=({}), to=({})", from, to)
     }
 }
 
-impl fmt::Display for ErrorKind {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            ErrorKind::PyToRust { from, to } => {
-                write!(f, "Extraction failed:\n from=({}), to=({})", from, to)
+macro_rules! impl_pyerr {
+    ($err_type: ty) => {
+        impl std::error::Error for $err_type {}
+
+        impl PyErrArguments for $err_type {
+            fn arguments(&self, py: Python) -> PyObject {
+                format!("{}", self).to_object(py)
             }
-            ErrorKind::FromVec { dim1, dim2 } => write!(
-                f,
-                "Cast failed: Vec To PyArray:\n expect all dim {} but {} was found",
-                dim1, dim2
-            ),
-            ErrorKind::Python(e) => write!(f, "Python error: {:?}", e),
-            ErrorKind::NotContiguous => write!(f, "This array is not contiguous!"),
         }
-    }
-}
 
-impl error::Error for ErrorKind {}
-
-impl From<ErrorKind> for PyErr {
-    fn from(err: ErrorKind) -> PyErr {
-        match err {
-            ErrorKind::Python(e) => e,
-            _ => PyErr::new::<exc::TypeError, _>(format!("{}", err)),
+        impl std::convert::From<$err_type> for PyErr {
+            fn from(err: $err_type) -> PyErr {
+                PyErr::from_value::<exc::TypeError>(PyErrValue::from_err_args(err))
+            }
         }
+    };
+}
+
+impl_pyerr!(ShapeError);
+
+/// Represents that given vec cannot be treated as array.
+#[derive(Debug)]
+pub struct FromVecError {
+    len1: usize,
+    len2: usize,
+}
+
+impl FromVecError {
+    pub(crate) fn new(len1: usize, len2: usize) -> Self {
+        FromVecError { len1, len2 }
     }
 }
 
-impl IntoPyErr for ErrorKind {
-    fn into_pyerr(self) -> PyErr {
-        Into::into(self)
-    }
-    fn into_pyerr_with<D: fmt::Display>(self, msg: impl FnOnce() -> D) -> PyErr {
-        PyErr::new::<exc::TypeError, _>(format!("{}\n context: {}", self, msg()))
+impl fmt::Display for FromVecError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let FromVecError { len1, len2 } = self;
+        write!(
+            f,
+            "Invalid lenension as an array\n Expected the same length {}, but found {}",
+            len1, len2
+        )
     }
 }
+
+impl_pyerr!(FromVecError);
+
+/// Represents that the array is not contiguous.
+#[derive(Debug)]
+pub struct NotContiguousError;
+
+impl fmt::Display for NotContiguousError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "The given array is not contiguous",)
+    }
+}
+
+impl_pyerr!(NotContiguousError);
