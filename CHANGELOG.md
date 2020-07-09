@@ -1,4 +1,7 @@
 # Changelog
+- v0.10.0
+  - Remove `ErrorKind` and introduce some concrete error types
+
 - v0.9.0
   - Update PyO3 to 0.10.0
 

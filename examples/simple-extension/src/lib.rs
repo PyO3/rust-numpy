@@ -1,4 +1,3 @@
-#![deny(rust_2018_idioms)]
 use ndarray::{ArrayD, ArrayViewD, ArrayViewMutD};
 use numpy::{IntoPyArray, PyArrayDyn};
 use pyo3::prelude::{pymodule, Py, PyModule, PyResult, Python};

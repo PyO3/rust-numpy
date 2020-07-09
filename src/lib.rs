@@ -38,7 +38,7 @@ extern crate pyo3;
 
 pub mod array;
 pub mod convert;
-pub mod error;
+mod error;
 pub mod npyffi;
 mod slice_box;
 pub mod types;
@@ -48,7 +48,7 @@ pub use crate::array::{
     PyArrayDyn,
 };
 pub use crate::convert::{IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
-pub use crate::error::{ErrorKind, IntoPyErr, IntoPyResult};
+pub use crate::error::{FromVecError, NotContiguousError, ShapeError};
 pub use crate::npyffi::{PY_ARRAY_API, PY_UFUNC_API};
 pub use crate::types::{c32, c64, NpyDataType, TypeNum};
 pub use ndarray::{Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};
