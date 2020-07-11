@@ -2,8 +2,10 @@
 use crate::npyffi::{self, npy_intp, NPY_ORDER, PY_ARRAY_API};
 use ndarray::*;
 use num_traits::AsPrimitive;
-use pyo3::{ffi, prelude::*, type_object, types::PyAny};
-use pyo3::{AsPyPointer, PyDowncastError, PyNativeType, PyResult};
+use pyo3::{
+    ffi, prelude::*, type_object, types::PyAny, AsPyPointer, PyDowncastError, PyNativeType,
+    PyResult,
+};
 use std::{cell::Cell, mem, os::raw::c_int, ptr, slice};
 use std::{iter::ExactSizeIterator, marker::PhantomData};
 
@@ -69,7 +71,7 @@ use crate::types::{NpyDataType, TypeNum};
 /// let pyarray = PyArray::arange(gil.python(), 0., 4., 1.).reshape([2, 2]).unwrap();
 /// let array = array![[3., 4.], [5., 6.]];
 /// assert_eq!(
-///     array.dot(&pyarray.as_array()),
+///     array.dot(&pyarray.readonly().as_array()),
 ///     array![[8., 15.], [12., 23.]]
 /// );
 /// ```
@@ -146,7 +148,17 @@ impl<T, D> PyArray<T, D> {
 
     #[inline(always)]
     fn check_flag(&self, flag: c_int) -> bool {
-        unsafe { (*self.as_array_ptr()).flags & flag == flag }
+        unsafe { *self.as_array_ptr() }.flags & flag == flag
+    }
+
+    #[inline(always)]
+    pub(crate) fn get_flag(&self) -> c_int {
+        unsafe { *self.as_array_ptr() }.flags
+    }
+
+    /// Returns a temporally unwriteable reference of the array.
+    pub fn readonly(&self) -> crate::PyReadonlyArray<T, D> {
+        self.into()
     }
 
     /// Returns `true` if the internal data of the array is C-style contiguous
@@ -198,7 +210,7 @@ impl<T, D> PyArray<T, D> {
     /// }
     /// let gil = Python::acquire_gil();
     /// let array = return_py_array();
-    /// assert_eq!(array.as_ref(gil.python()).as_slice().unwrap(), &[0, 0, 0, 0, 0]);
+    /// assert_eq!(array.as_ref(gil.python()).readonly().as_slice().unwrap(), &[0, 0, 0, 0, 0]);
     /// ```
     pub fn to_owned(&self) -> Py<Self> {
         unsafe { Py::from_borrowed_ptr(self.py(), self.as_ptr()) }
@@ -410,7 +422,7 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     /// use numpy::PyArray2;
     /// let gil = pyo3::Python::acquire_gil();
     /// let pyarray: &PyArray2<usize> = PyArray2::zeros(gil.python(), [2, 2], false);
-    /// assert_eq!(pyarray.as_array(), array![[0, 0], [0, 0]]);
+    /// assert_eq!(pyarray.readonly().as_array(), array![[0, 0], [0, 0]]);
     /// ```
     pub fn zeros<ID>(py: Python, dims: ID, is_fortran: bool) -> &Self
     where
@@ -430,29 +442,17 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     }
 
     /// Returns the immutable view of the internal data of `PyArray` as slice.
+    /// Please consider the use of [`PyReadonlyArray::as_slice`](../struct.PyReadonlyArray.html)
+    /// instead of this.
     ///
-    /// Returns `ErrorKind::NotContiguous` if the internal array is not contiguous.
-    /// # Example
-    /// ```
-    /// use numpy::{PyArray, PyArray1};
-    /// use pyo3::types::IntoPyDict;
-    /// let gil = pyo3::Python::acquire_gil();
-    /// let py = gil.python();
-    /// let py_array = PyArray::arange(py, 0, 4, 1).reshape([2, 2]).unwrap();
-    /// assert_eq!(py_array.as_slice().unwrap(), &[0, 1, 2, 3]);
-    /// let locals = [("np", numpy::get_array_module(py).unwrap())].into_py_dict(py);
-    /// let not_contiguous: &PyArray1<i32> = py
-    ///     .eval("np.arange(10)[::2]", Some(locals), None)
-    ///     .unwrap()
-    ///     .downcast()
-    ///     .unwrap();
-    /// assert!(not_contiguous.as_slice().is_err());
-    /// ```
-    pub fn as_slice(&self) -> Result<&[T], NotContiguousError> {
+    /// # Safety
+    /// If the internal array is not readonly and can be mutated from Python code,
+    /// holding the slice might cause undefined behavior.
+    pub unsafe fn as_slice(&self) -> Result<&[T], NotContiguousError> {
         if !self.is_contiguous() {
             Err(NotContiguousError)
         } else {
-            Ok(unsafe { slice::from_raw_parts(self.data(), self.len()) })
+            Ok(slice::from_raw_parts(self.data(), self.len()))
         }
     }
 
@@ -467,9 +467,9 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
 
     /// Returns the view of the internal data of `PyArray` as mutable slice.
     ///
-    /// # Soundness
+    /// # Safety
     /// If another reference to the internal data exists(e.g., `&[T]` or `ArrayView`),
-    /// it causes an undefined undefined behavior.
+    /// it might cause undefined behavior.
     ///
     /// In such case, please consider the use of [`as_cell_slice`](#method.as_cell_slice),
     pub unsafe fn as_slice_mut(&self) -> Result<&mut [T], NotContiguousError> {
@@ -491,7 +491,7 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let pyarray = PyArray::from_array(gil.python(), &array![[1, 2], [3, 4]]);
-    /// assert_eq!(pyarray.as_array(), array![[1, 2], [3, 4]]);
+    /// assert_eq!(pyarray.readonly().as_array(), array![[1, 2], [3, 4]]);
     /// ```
     pub fn from_array<'py, S>(py: Python<'py>, arr: &ArrayBase<S, D>) -> &'py Self
     where
@@ -512,7 +512,7 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let pyarray = PyArray::from_owned_array(gil.python(), array![[1, 2], [3, 4]]);
-    /// assert_eq!(pyarray.as_array(), array![[1, 2], [3, 4]]);
+    /// assert_eq!(pyarray.readonly().as_array(), array![[1, 2], [3, 4]]);
     /// ```
     pub fn from_owned_array<'py>(py: Python<'py>, arr: Array<T, D>) -> &'py Self {
         IntoPyArray::into_pyarray(arr, py)
@@ -521,37 +521,19 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
     /// Get the immutable view of the internal data of `PyArray`, as
     /// [`ndarray::ArrayView`](https://docs.rs/ndarray/latest/ndarray/type.ArrayView.html).
     ///
-    /// # Example
-    /// ```
-    /// # #[macro_use] extern crate ndarray;
-    /// use numpy::PyArray;
-    /// let gil = pyo3::Python::acquire_gil();
-    /// let py_array = PyArray::arange(gil.python(), 0, 4, 1).reshape([2, 2]).unwrap();
-    /// assert_eq!(
-    ///     py_array.as_array(),
-    ///     array![[0, 1], [2, 3]]
-    /// )
-    /// ```
-    pub fn as_array(&self) -> ArrayView<'_, T, D> {
-        self.type_check_assert();
-        unsafe { ArrayView::from_shape_ptr(self.ndarray_shape(), self.data()) }
-    }
-
-    /// Returns the internal array as `CowArray`. See also [`as_array`](#method.as_array).
-    pub fn as_cow_array(&self) -> CowArray<'_, T, D> {
-        CowArray::from(self.as_array())
+    /// # Safety
+    /// If the internal array is not readonly and can be mutated from Python code,
+    /// holding the `ArrayView` might cause undefined behavior.
+    pub unsafe fn as_array(&self) -> ArrayView<'_, T, D> {
+        ArrayView::from_shape_ptr(self.ndarray_shape(), self.data())
     }
 
     /// Returns the internal array as `ArrayViewMut`. See also [`as_array`](#method.as_array).
     ///
-    /// # Soundness
+    /// # Safety
     /// If another reference to the internal data exists(e.g., `&[T]` or `ArrayView`),
-    /// it causes an undefined undefined behavior.
-    ///
-    /// In such case, please consider the use of
-    /// [`as_cell_array`](#method.as_cell_array) or [`as_cow_array`](#method.as_cow_array).
+    /// it might cause undefined behavior.
     pub unsafe fn as_array_mut(&self) -> ArrayViewMut<'_, T, D> {
-        self.type_check_assert();
         ArrayViewMut::from_shape_ptr(self.ndarray_shape(), self.data())
     }
 
@@ -637,11 +619,6 @@ impl<T: TypeNum, D: Dimension> PyArray<T, D> {
         unsafe { PyArray::from_borrowed_ptr(python, self.as_ptr()) }
     }
 
-    fn type_check_assert(&self) {
-        let type_check = self.type_check();
-        assert!(type_check.is_ok(), "{:?}", type_check);
-    }
-
     fn type_check(&self) -> Result<(), ShapeError> {
         let truth = self.typenum();
         let dim = self.shape().len();
@@ -670,7 +647,7 @@ impl<T: Clone + TypeNum, D: Dimension> PyArray<T, D> {
     /// )
     /// ```
     pub fn to_owned_array(&self) -> Array<T, D> {
-        self.as_array().to_owned()
+        unsafe { self.as_array() }.to_owned()
     }
 
     /// Returns the copy of the internal data of `PyArray` to `Vec`.
@@ -680,7 +657,6 @@ impl<T: Clone + TypeNum, D: Dimension> PyArray<T, D> {
     ///
     /// # Example
     /// ```
-    /// # fn main() {
     /// use numpy::PyArray2;
     /// use pyo3::types::IntoPyDict;
     /// let gil = pyo3::Python::acquire_gil();
@@ -692,10 +668,9 @@ impl<T: Clone + TypeNum, D: Dimension> PyArray<T, D> {
     ///     .downcast()
     ///     .unwrap();
     /// assert_eq!(array.to_vec().unwrap(), vec![0, 1, 2, 3]);
-    /// # }
     /// ```
     pub fn to_vec(&self) -> Result<Vec<T>, NotContiguousError> {
-        self.as_slice().map(ToOwned::to_owned)
+        unsafe { self.as_slice() }.map(ToOwned::to_owned)
     }
 }
 
@@ -708,7 +683,7 @@ impl<T: TypeNum> PyArray<T, Ix1> {
     /// let gil = pyo3::Python::acquire_gil();
     /// let array = [1, 2, 3, 4, 5];
     /// let pyarray = PyArray::from_slice(gil.python(), &array);
-    /// assert_eq!(pyarray.as_slice().unwrap(), &[1, 2, 3, 4, 5]);
+    /// assert_eq!(pyarray.readonly().as_slice().unwrap(), &[1, 2, 3, 4, 5]);
     /// ```
     pub fn from_slice<'py>(py: Python<'py>, slice: &[T]) -> &'py Self {
         let array = PyArray::new(py, [slice.len()], false);
@@ -727,7 +702,7 @@ impl<T: TypeNum> PyArray<T, Ix1> {
     /// let gil = pyo3::Python::acquire_gil();
     /// let vec = vec![1, 2, 3, 4, 5];
     /// let pyarray = PyArray::from_vec(gil.python(), vec);
-    /// assert_eq!(pyarray.as_slice().unwrap(), &[1, 2, 3, 4, 5]);
+    /// assert_eq!(pyarray.readonly().as_slice().unwrap(), &[1, 2, 3, 4, 5]);
     /// ```
     pub fn from_vec<'py>(py: Python<'py>, vec: Vec<T>) -> &'py Self {
         IntoPyArray::into_pyarray(vec, py)
@@ -743,7 +718,7 @@ impl<T: TypeNum> PyArray<T, Ix1> {
     /// let gil = pyo3::Python::acquire_gil();
     /// let vec = vec![1, 2, 3, 4, 5];
     /// let pyarray = PyArray::from_iter(gil.python(), vec.iter().map(|&x| x));
-    /// assert_eq!(pyarray.as_slice().unwrap(), &[1, 2, 3, 4, 5]);
+    /// assert_eq!(pyarray.readonly().as_slice().unwrap(), &[1, 2, 3, 4, 5]);
     /// ```
     pub fn from_exact_iter(py: Python<'_>, iter: impl ExactSizeIterator<Item = T>) -> &Self {
         let array = Self::new(py, [iter.len()], false);
@@ -768,7 +743,7 @@ impl<T: TypeNum> PyArray<T, Ix1> {
     /// let gil = pyo3::Python::acquire_gil();
     /// let set: BTreeSet<u32> = [4, 3, 2, 5, 1].into_iter().cloned().collect();
     /// let pyarray = PyArray::from_iter(gil.python(), set);
-    /// assert_eq!(pyarray.as_slice().unwrap(), &[1, 2, 3, 4, 5]);
+    /// assert_eq!(pyarray.readonly().as_slice().unwrap(), &[1, 2, 3, 4, 5]);
     /// ```
     pub fn from_iter(py: Python<'_>, iter: impl IntoIterator<Item = T>) -> &Self {
         let iter = iter.into_iter();
@@ -846,7 +821,7 @@ impl<T: TypeNum> PyArray<T, Ix2> {
     /// let gil = pyo3::Python::acquire_gil();
     /// let vec2 = vec![vec![1, 2, 3]; 2];
     /// let pyarray = PyArray::from_vec2(gil.python(), &vec2).unwrap();
-    /// assert_eq!(pyarray.as_array(), array![[1, 2, 3], [1, 2, 3]]);
+    /// assert_eq!(pyarray.readonly().as_array(), array![[1, 2, 3], [1, 2, 3]]);
     /// assert!(PyArray::from_vec2(gil.python(), &[vec![1], vec![2, 3]]).is_err());
     /// ```
     pub fn from_vec2<'py>(py: Python<'py>, v: &[Vec<T>]) -> Result<&'py Self, FromVecError>
@@ -884,7 +859,7 @@ impl<T: TypeNum> PyArray<T, Ix3> {
     /// let vec2 = vec![vec![vec![1, 2]; 2]; 2];
     /// let pyarray = PyArray::from_vec3(gil.python(), &vec2).unwrap();
     /// assert_eq!(
-    ///     pyarray.as_array(),
+    ///     pyarray.readonly().as_array(),
     ///     array![[[1, 2], [1, 2]], [[1, 2], [1, 2]]]
     /// );
     /// assert!(PyArray::from_vec3(gil.python(), &[vec![vec![1], vec![]]]).is_err());
@@ -930,7 +905,7 @@ impl<T: TypeNum, D> PyArray<T, D> {
     /// let pyarray_f = PyArray::arange(gil.python(), 2.0, 5.0, 1.0);
     /// let pyarray_i = PyArray::<i64, _>::new(gil.python(), [3], false);
     /// assert!(pyarray_f.copy_to(pyarray_i).is_ok());
-    /// assert_eq!(pyarray_i.as_slice().unwrap(), &[2, 3, 4]);
+    /// assert_eq!(pyarray_i.readonly().as_slice().unwrap(), &[2, 3, 4]);
     /// ```
     pub fn copy_to<U: TypeNum>(&self, other: &PyArray<U, D>) -> PyResult<()> {
         let self_ptr = self.as_array_ptr();
@@ -950,7 +925,7 @@ impl<T: TypeNum, D> PyArray<T, D> {
     /// let gil = pyo3::Python::acquire_gil();
     /// let pyarray_f = PyArray::arange(gil.python(), 2.0, 5.0, 1.0);
     /// let pyarray_i = pyarray_f.cast::<i32>(false).unwrap();
-    /// assert_eq!(pyarray_i.as_slice().unwrap(), &[2, 3, 4]);
+    /// assert_eq!(pyarray_i.readonly().as_slice().unwrap(), &[2, 3, 4]);
     pub fn cast<'py, U: TypeNum>(&'py self, is_fortran: bool) -> PyResult<&'py PyArray<U, D>> {
         let ptr = unsafe {
             let descr = PY_ARRAY_API.PyArray_DescrFromType(U::typenum_default());
@@ -981,7 +956,7 @@ impl<T: TypeNum, D> PyArray<T, D> {
     /// let gil = pyo3::Python::acquire_gil();
     /// let array = PyArray::from_exact_iter(gil.python(), 0..9);
     /// let array = array.reshape([3, 3]).unwrap();
-    /// assert_eq!(array.as_array(), array![[0, 1, 2], [3, 4, 5], [6, 7, 8]]);
+    /// assert_eq!(array.readonly().as_array(), array![[0, 1, 2], [3, 4, 5], [6, 7, 8]]);
     /// assert!(array.reshape([5]).is_err());
     /// ```
     #[inline(always)]
@@ -1031,9 +1006,9 @@ impl<T: TypeNum + AsPrimitive<f64>> PyArray<T, Ix1> {
     /// use numpy::PyArray;
     /// let gil = pyo3::Python::acquire_gil();
     /// let pyarray = PyArray::arange(gil.python(), 2.0, 4.0, 0.5);
-    /// assert_eq!(pyarray.as_slice().unwrap(), &[2.0, 2.5, 3.0, 3.5]);
+    /// assert_eq!(pyarray.readonly().as_slice().unwrap(), &[2.0, 2.5, 3.0, 3.5]);
     /// let pyarray = PyArray::arange(gil.python(), -2, 4, 3);
-    /// assert_eq!(pyarray.as_slice().unwrap(), &[-2, 1]);
+    /// assert_eq!(pyarray.readonly().as_slice().unwrap(), &[-2, 1]);
     pub fn arange(py: Python, start: T, stop: T, step: T) -> &Self {
         unsafe {
             let ptr = PY_ARRAY_API.PyArray_Arange(

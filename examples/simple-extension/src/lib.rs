@@ -1,6 +1,6 @@
 use ndarray::{ArrayD, ArrayViewD, ArrayViewMutD};
-use numpy::{IntoPyArray, PyArrayDyn};
-use pyo3::prelude::{pymodule, Py, PyModule, PyResult, Python};
+use numpy::{IntoPyArray, PyArrayDyn, PyReadonlyArrayDyn};
+use pyo3::prelude::{pymodule, PyModule, PyResult, Python};
 
 #[pymodule]
 fn rust_ext(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
@@ -16,21 +16,21 @@ fn rust_ext(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
 
     // wrapper of `axpy`
     #[pyfn(m, "axpy")]
-    fn axpy_py(
-        py: Python<'_>,
+    fn axpy_py<'py>(
+        py: Python<'py>,
         a: f64,
-        x: &PyArrayDyn<f64>,
-        y: &PyArrayDyn<f64>,
-    ) -> Py<PyArrayDyn<f64>> {
+        x: PyReadonlyArrayDyn<f64>,
+        y: PyReadonlyArrayDyn<f64>,
+    ) -> &'py PyArrayDyn<f64> {
         let x = x.as_array();
         let y = y.as_array();
-        axpy(a, x, y).into_pyarray(py).to_owned()
+        axpy(a, x, y).into_pyarray(py)
     }
 
     // wrapper of `mult`
     #[pyfn(m, "mult")]
     fn mult_py(_py: Python<'_>, a: f64, x: &PyArrayDyn<f64>) -> PyResult<()> {
-        let x = x.as_array_mut();
+        let x = unsafe { x.as_array_mut() };
         mult(a, x);
         Ok(())
     }

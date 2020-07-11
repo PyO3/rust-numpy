@@ -8,6 +8,10 @@ rusty-tags.*
 # More information here http://doc.crates.io/guide.html#cargotoml-vs-cargolock
 Cargo.lock
 
-# cargo fmt
-*.bk
+# Some Python specific files
 .tox/
+build/
+*.so
+*.egg-info/
+**/dist/
+__pycache__

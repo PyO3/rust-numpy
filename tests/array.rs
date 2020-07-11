@@ -81,13 +81,14 @@ fn as_array() {
     let gil = pyo3::Python::acquire_gil();
     let py = gil.python();
     let arr = PyArray::<f64, _>::zeros(py, [3, 2, 4], false);
+    let arr = arr.readonly();
     let a = arr.as_array();
     assert_eq!(arr.shape(), a.shape());
     assert_eq!(
         arr.strides().iter().map(|x| x / 8).collect::<Vec<_>>(),
         a.strides()
     );
-    let not_contiguous = not_contiguous_array(py);
+    let not_contiguous = not_contiguous_array(py).readonly();
     assert_eq!(not_contiguous.as_array(), array![1, 3])
 }
 
@@ -95,9 +96,9 @@ fn as_array() {
 fn as_slice() {
     let gil = pyo3::Python::acquire_gil();
     let py = gil.python();
-    let arr = PyArray::<i32, _>::zeros(py, [3, 2, 4], false);
+    let arr = PyArray::<i32, _>::zeros(py, [3, 2, 4], false).readonly();
     assert_eq!(arr.as_slice().unwrap().len(), 3 * 2 * 4);
-    let not_contiguous = not_contiguous_array(py);
+    let not_contiguous = not_contiguous_array(py).readonly();
     assert!(not_contiguous.as_slice().is_err())
 }
 
@@ -115,7 +116,7 @@ fn from_vec2() {
     let vec2 = vec![vec![1, 2, 3]; 2];
     let gil = pyo3::Python::acquire_gil();
     let pyarray = PyArray::from_vec2(gil.python(), &vec2).unwrap();
-    assert_eq!(pyarray.as_array(), array![[1, 2, 3], [1, 2, 3]]);
+    assert_eq!(pyarray.readonly().as_array(), array![[1, 2, 3], [1, 2, 3]]);
     assert!(PyArray::from_vec2(gil.python(), &[vec![1], vec![2, 3]]).is_err());
 }
 
@@ -125,7 +126,7 @@ fn from_vec3() {
     let vec3 = vec![vec![vec![1, 2]; 2]; 2];
     let pyarray = PyArray::from_vec3(gil.python(), &vec3).unwrap();
     assert_eq!(
-        pyarray.as_array(),
+        pyarray.readonly().as_array(),
         array![[[1, 2], [1, 2]], [[1, 2], [1, 2]]]
     );
 }
@@ -140,7 +141,7 @@ fn from_eval_to_fixed() {
         .unwrap()
         .extract()
         .unwrap();
-    assert_eq!(pyarray.as_array(), array![1, 2, 3]);
+    assert_eq!(pyarray.readonly().as_array(), array![1, 2, 3]);
 }
 
 #[test]
@@ -157,7 +158,10 @@ fn from_eval_to_dyn() {
         .unwrap()
         .extract()
         .unwrap();
-    assert_eq!(pyarray.as_array(), array![[1, 2], [3, 4]].into_dyn());
+    assert_eq!(
+        pyarray.readonly().as_array(),
+        array![[1, 2], [3, 4]].into_dyn()
+    );
 }
 
 #[test]
@@ -174,7 +178,10 @@ fn from_eval_to_dyn_u64() {
         .unwrap()
         .extract()
         .unwrap();
-    assert_eq!(pyarray.as_array(), array![[1, 2], [3, 4]].into_dyn());
+    assert_eq!(
+        pyarray.readonly().as_array(),
+        array![[1, 2], [3, 4]].into_dyn()
+    );
 }
 
 #[test]
@@ -211,5 +218,5 @@ fn array_cast() {
     let vec2 = vec![vec![1.0, 2.0, 3.0]; 2];
     let arr_f64 = PyArray::from_vec2(gil.python(), &vec2).unwrap();
     let arr_i32: &PyArray2<i32> = arr_f64.cast(false).unwrap();
-    assert_eq!(arr_i32.as_array(), array![[1, 2, 3], [1, 2, 3]]);
+    assert_eq!(arr_i32.readonly().as_array(), array![[1, 2, 3], [1, 2, 3]]);
 }
