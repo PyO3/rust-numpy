@@ -25,7 +25,7 @@
 //!     let py = gil.python();
 //!     let py_array = array![[1i64, 2], [3, 4]].to_pyarray(py);
 //!     assert_eq!(
-//!         py_array.as_array(),
+//!         py_array.readonly().as_array(),
 //!         array![[1i64, 2], [3, 4]]
 //!     );
 //! }
@@ -40,6 +40,7 @@ pub mod array;
 pub mod convert;
 mod error;
 pub mod npyffi;
+mod readonly;
 mod slice_box;
 pub mod types;
 
@@ -50,6 +51,10 @@ pub use crate::array::{
 pub use crate::convert::{IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
 pub use crate::error::{FromVecError, NotContiguousError, ShapeError};
 pub use crate::npyffi::{PY_ARRAY_API, PY_UFUNC_API};
+pub use crate::readonly::{
+    PyReadonlyArray, PyReadonlyArray1, PyReadonlyArray2, PyReadonlyArray3, PyReadonlyArray4,
+    PyReadonlyArray5, PyReadonlyArray6, PyReadonlyArrayDyn,
+};
 pub use crate::types::{c32, c64, NpyDataType, TypeNum};
 pub use ndarray::{Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};
 

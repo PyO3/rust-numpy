@@ -6,7 +6,7 @@ fn to_pyarray_vec() {
     let gil = pyo3::Python::acquire_gil();
 
     let a = vec![1, 2, 3];
-    let arr = a.to_pyarray(gil.python());
+    let arr = a.to_pyarray(gil.python()).readonly();
     println!("arr.shape = {:?}", arr.shape());
     assert_eq!(arr.shape(), [3]);
     assert_eq!(arr.as_slice().unwrap(), &[1, 2, 3])
@@ -31,7 +31,7 @@ fn to_pyarray_array() {
 #[test]
 fn iter_to_pyarray() {
     let gil = pyo3::Python::acquire_gil();
-    let arr = PyArray::from_iter(gil.python(), (0..10).map(|x| x * x));
+    let arr = PyArray::from_iter(gil.python(), (0..10).map(|x| x * x)).readonly();
     assert_eq!(
         arr.as_slice().unwrap(),
         &[0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
@@ -41,7 +41,7 @@ fn iter_to_pyarray() {
 #[test]
 fn long_iter_to_pyarray() {
     let gil = pyo3::Python::acquire_gil();
-    let arr = PyArray::from_iter(gil.python(), (0u32..512).map(|x| x));
+    let arr = PyArray::from_iter(gil.python(), (0u32..512).map(|x| x)).readonly();
     let slice = arr.as_slice().unwrap();
     for (i, &elem) in slice.iter().enumerate() {
         assert_eq!(i as u32, elem);
@@ -55,7 +55,7 @@ macro_rules! small_array_test {
             let gil = pyo3::Python::acquire_gil();
             $({
                 let array: [$t; 2] = [$t::min_value(), $t::max_value()];
-                let pyarray = array.to_pyarray(gil.python());
+                let pyarray = array.to_pyarray(gil.python()).readonly();
                 assert_eq!(
                     pyarray.as_slice().unwrap(),
                     &[$t::min_value(), $t::max_value()]
@@ -86,7 +86,7 @@ fn usize_dtype() {
 fn into_pyarray_vec() {
     let gil = pyo3::Python::acquire_gil();
     let a = vec![1, 2, 3];
-    let arr = a.into_pyarray(gil.python());
+    let arr = a.into_pyarray(gil.python()).readonly();
     assert_eq!(arr.as_slice().unwrap(), &[1, 2, 3])
 }
 
@@ -116,7 +116,10 @@ fn forder_to_pyarray() {
     let matrix = Array2::from_shape_vec([4, 2], vec![0, 1, 2, 3, 4, 5, 6, 7]).unwrap();
     let fortran_matrix = matrix.reversed_axes();
     let fmat_py = fortran_matrix.to_pyarray(py);
-    assert_eq!(fmat_py.as_array(), array![[0, 2, 4, 6], [1, 3, 5, 7]],);
+    assert_eq!(
+        fmat_py.readonly().as_array(),
+        array![[0, 2, 4, 6], [1, 3, 5, 7]],
+    );
     pyo3::py_run!(py, fmat_py, "assert fmat_py.flags['F_CONTIGUOUS']")
 }
 
@@ -127,7 +130,10 @@ fn slice_to_pyarray() {
     let matrix = Array2::from_shape_vec([4, 2], vec![0, 1, 2, 3, 4, 5, 6, 7]).unwrap();
     let slice = matrix.slice(s![1..4; -1, ..]);
     let slice_py = slice.to_pyarray(py);
-    assert_eq!(slice_py.as_array(), array![[6, 7], [4, 5], [2, 3]],);
+    assert_eq!(
+        slice_py.readonly().as_array(),
+        array![[6, 7], [4, 5], [2, 3]],
+    );
     pyo3::py_run!(py, slice_py, "assert slice_py.flags['C_CONTIGUOUS']")
 }
 
@@ -138,6 +144,9 @@ fn forder_into_pyarray() {
     let matrix = Array2::from_shape_vec([4, 2], vec![0, 1, 2, 3, 4, 5, 6, 7]).unwrap();
     let fortran_matrix = matrix.reversed_axes();
     let fmat_py = fortran_matrix.into_pyarray(py);
-    assert_eq!(fmat_py.as_array(), array![[0, 2, 4, 6], [1, 3, 5, 7]],);
+    assert_eq!(
+        fmat_py.readonly().as_array(),
+        array![[0, 2, 4, 6], [1, 3, 5, 7]],
+    );
     pyo3::py_run!(py, fmat_py, "assert fmat_py.flags['F_CONTIGUOUS']")
 }

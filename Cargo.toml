@@ -23,3 +23,6 @@ default = []
 # This is no longer needed but setuptools-rust assumes this feature
 python3 = ["pyo3/python3"]
 
+
+[workspace]
+members = ["examples/*"]
