@@ -67,6 +67,7 @@ impl DataType {
             None
         }
     }
+    #[inline]
     pub fn into_ffi_dtype(self) -> NPY_TYPES {
         match self {
             DataType::Bool => NPY_TYPES::NPY_BOOL,
@@ -91,6 +92,7 @@ impl DataType {
 pub trait Element: Clone {
     const DATA_TYPE: DataType;
     fn is_same_type(other: i32) -> bool;
+    #[inline]
     fn ffi_dtype() -> NPY_TYPES {
         Self::DATA_TYPE.into_ffi_dtype()
     }
@@ -139,12 +141,5 @@ cfg_if! {
         impl_num_element!(u32, Uint32, NPY_UINT);
         impl_num_element!(i64, Int64, NPY_LONG, NPY_LONGLONG);
         impl_num_element!(u64, Uint64, NPY_ULONG, NPY_ULONGLONG);
-    }
-}
-
-impl Element for pyo3::PyObject {
-    const DATA_TYPE: DataType = DataType::Object;
-    fn is_same_type(other: i32) -> bool {
-        other == Self::DATA_TYPE as i32
     }
 }
