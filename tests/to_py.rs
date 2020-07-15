@@ -13,6 +13,23 @@ fn to_pyarray_vec() {
 }
 
 #[test]
+fn to_pyarray_object_vec() {
+    use pyo3::{AsPyRef, ToPyObject};
+    let gil = pyo3::Python::acquire_gil();
+    let py = gil.python();
+    let dict = pyo3::types::PyDict::new(py);
+    let list = pyo3::types::PyString::new(py, "Hello:)");
+    let a = vec![dict.to_object(py), list.to_object(py)];
+    let arr = a.to_pyarray(gil.python()).readonly();
+    for (a, b) in a.iter().zip(arr.as_slice().unwrap().iter()) {
+        assert_eq!(
+            a.as_ref(py).compare(b).map_err(|e| e.print(py)).unwrap(),
+            std::cmp::Ordering::Equal
+        );
+    }
+}
+
+#[test]
 fn to_pyarray_array() {
     let gil = pyo3::Python::acquire_gil();
 

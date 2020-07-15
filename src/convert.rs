@@ -5,8 +5,10 @@ use pyo3::Python;
 
 use std::{mem, os::raw::c_int};
 
-use super::*;
-use crate::npyffi::npy_intp;
+use crate::{
+    npyffi::{self, npy_intp},
+    Element, PyArray,
+};
 
 /// Covnersion trait from some rust types to `PyArray`.
 ///
@@ -24,12 +26,12 @@ use crate::npyffi::npy_intp;
 /// assert!(py_array.resize(100).is_err()); // You can't resize owned-by-rust array.
 /// ```
 pub trait IntoPyArray {
-    type Item: TypeNum;
+    type Item: Element;
     type Dim: Dimension;
     fn into_pyarray<'py>(self, _: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim>;
 }
 
-impl<T: TypeNum> IntoPyArray for Box<[T]> {
+impl<T: Element> IntoPyArray for Box<[T]> {
     type Item = T;
     type Dim = Ix1;
     fn into_pyarray<'py>(self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
@@ -39,7 +41,7 @@ impl<T: TypeNum> IntoPyArray for Box<[T]> {
     }
 }
 
-impl<T: TypeNum> IntoPyArray for Vec<T> {
+impl<T: Element> IntoPyArray for Vec<T> {
     type Item = T;
     type Dim = Ix1;
     fn into_pyarray<'py>(self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
@@ -49,7 +51,7 @@ impl<T: TypeNum> IntoPyArray for Vec<T> {
 
 impl<A, D> IntoPyArray for ArrayBase<OwnedRepr<A>, D>
 where
-    A: TypeNum,
+    A: Element,
     D: Dimension,
 {
     type Item = A;
@@ -91,12 +93,12 @@ where
 /// pyo3::py_run!(py, py_slice, "assert py_slice.flags['C_CONTIGUOUS']");
 /// ```
 pub trait ToPyArray {
-    type Item: TypeNum;
+    type Item: Element;
     type Dim: Dimension;
     fn to_pyarray<'py>(&self, _: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim>;
 }
 
-impl<T: TypeNum> ToPyArray for [T] {
+impl<T: Element> ToPyArray for [T] {
     type Item = T;
     type Dim = Ix1;
     fn to_pyarray<'py>(&self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
@@ -108,7 +110,7 @@ impl<S, D, A> ToPyArray for ArrayBase<S, D>
 where
     S: Data<Elem = A>,
     D: Dimension,
-    A: TypeNum,
+    A: Element,
 {
     type Item = A;
     type Dim = D;
@@ -130,7 +132,7 @@ where
                 let array = PyArray::<A, _>::new_(py, dim, strides.as_ptr(), 0);
                 let data_ptr = array.data();
                 for (i, item) in self.iter().enumerate() {
-                    data_ptr.add(i).write(*item);
+                    data_ptr.add(i).write(item.clone());
                 }
                 array
             }

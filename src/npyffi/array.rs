@@ -211,7 +211,7 @@ impl PyArrayAPI {
     impl_api![194; PyArray_RegisterCanCast(descr: *mut PyArray_Descr, totype: c_int, scalar: NPY_SCALARKIND) -> c_int];
     impl_api![195; PyArray_InitArrFuncs(f: *mut PyArray_ArrFuncs)];
     impl_api![196; PyArray_IntTupleFromIntp(len: c_int, vals: *mut npy_intp) -> *mut PyObject];
-    impl_api![197; PyArray_TypeNumFromName(str: *mut c_char) -> c_int];
+    impl_api![197; PyArray_ElementFromName(str: *mut c_char) -> c_int];
     impl_api![198; PyArray_ClipmodeConverter(object: *mut PyObject, val: *mut NPY_CLIPMODE) -> c_int];
     impl_api![199; PyArray_OutputConverter(object: *mut PyObject, address: *mut *mut PyArrayObject) -> c_int];
     impl_api![200; PyArray_BroadcastToShape(obj: *mut PyObject, dims: *mut npy_intp, nd: c_int) -> *mut PyObject];
