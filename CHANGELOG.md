@@ -1,5 +1,5 @@
 # Changelog
-- Unreleased
+- v0.11.0
   - `PyArray::get` is now unsafe.
   - Introduce `PyArray::get_owned` and `PyReadonlyArray::get`.
 
@@ -8,6 +8,7 @@
   - `PyArray::as_slice`, `PyArray::as_slice_mut`, `PyArray::as_array`, and `PyArray::as_array_mut` is now unsafe.
   - Introduce `PyArray::as_cell_slice`, `PyArray::to_vec`, and `PyArray::to_owned_array`.
   - Rename `TypeNum` trait `Element`, and `NpyDataType` `DataType`.
+  - Update PyO3 to 0.11
 
 - v0.9.0
   - Update PyO3 to 0.10.0
