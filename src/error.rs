@@ -1,5 +1,5 @@
 //! Defines error types.
-use crate::types::NpyDataType;
+use crate::types::DataType;
 use pyo3::{exceptions as exc, PyErr, PyErrArguments, PyErrValue, PyObject, Python, ToPyObject};
 use std::fmt;
 
@@ -9,15 +9,17 @@ use std::fmt;
 #[derive(Debug)]
 pub(crate) struct ArrayDim {
     dim: Option<usize>,
-    dtype: NpyDataType,
+    dtype: Option<DataType>,
 }
 
 impl fmt::Display for ArrayDim {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if let Some(d) = self.dim {
-            write!(f, "dim={:?}, dtype={:?}", d, self.dtype)
-        } else {
-            write!(f, "dim=_, dtype={:?}", self.dtype)
+        let ArrayDim { dim, dtype } = self;
+        match (dim, dtype) {
+            (Some(dim), Some(dtype)) => write!(f, "dim={:?}, dtype={:?}", dim, dtype),
+            (None, Some(dtype)) => write!(f, "dim=_, dtype={:?}", dtype),
+            (Some(dim), None) => write!(f, "dim={:?}, dtype=Unknown", dim),
+            (None, None) => write!(f, "dim=_, dtype=Unknown"),
         }
     }
 }
@@ -33,17 +35,17 @@ impl ShapeError {
     pub(crate) fn new(
         from_type: i32,
         from_dim: usize,
-        to_type: NpyDataType,
+        to_type: DataType,
         to_dim: Option<usize>,
     ) -> Self {
         ShapeError {
             from: ArrayDim {
                 dim: Some(from_dim),
-                dtype: NpyDataType::from_i32(from_type),
+                dtype: DataType::from_i32(from_type),
             },
             to: ArrayDim {
                 dim: to_dim,
-                dtype: to_type,
+                dtype: Some(to_type),
             },
         }
     }

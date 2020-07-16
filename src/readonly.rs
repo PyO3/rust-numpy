@@ -1,6 +1,6 @@
 //! Readonly arrays
 use crate::npyffi::NPY_ARRAY_WRITEABLE;
-use crate::{NotContiguousError, PyArray, TypeNum};
+use crate::{Element, NotContiguousError, PyArray};
 use ndarray::{ArrayView, Dimension, Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};
 use pyo3::{prelude::*, types::PyAny, AsPyPointer};
 
@@ -52,7 +52,7 @@ pub struct PyReadonlyArray<'py, T, D> {
     was_writeable: bool,
 }
 
-impl<'py, T: TypeNum, D: Dimension> PyReadonlyArray<'py, T, D> {
+impl<'py, T: Element, D: Dimension> PyReadonlyArray<'py, T, D> {
     /// Returns the immutable view of the internal data of `PyArray` as slice.
     ///
     /// Returns `ErrorKind::NotContiguous` if the internal array is not contiguous.
@@ -110,7 +110,7 @@ pub type PyReadonlyArray6<'py, T> = PyReadonlyArray<'py, T, Ix6>;
 /// dynamic-dimensional readonly array
 pub type PyReadonlyArrayDyn<'py, T> = PyReadonlyArray<'py, T, IxDyn>;
 
-impl<'py, T: TypeNum, D: Dimension> FromPyObject<'py> for PyReadonlyArray<'py, T, D> {
+impl<'py, T: Element, D: Dimension> FromPyObject<'py> for PyReadonlyArray<'py, T, D> {
     fn extract(obj: &'py PyAny) -> PyResult<Self> {
         let array: &PyArray<T, D> = obj.extract()?;
         Ok(PyReadonlyArray::from(array))

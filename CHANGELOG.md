@@ -3,6 +3,7 @@
   - Remove `ErrorKind` and introduce some concrete error types
   - `PyArray::as_slice`, `PyArray::as_slice_mut`, `PyArray::as_array`, and `PyArray::as_array_mut` is now unsafe.
   - Introduce `PyArray::as_cell_slice`, `PyArray::to_vec`, and `PyArray::to_owned_array`
+  - Rename `TypeNum` trait `Element`, and `NpyDataType` `DataType`
 
 - v0.9.0
   - Update PyO3 to 0.10.0
