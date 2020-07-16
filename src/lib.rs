@@ -1,4 +1,4 @@
-#![allow(clippy::missing_safety_doc, clippy::too_many_arguments)] // FIXME
+#![allow(clippy::missing_safety_doc)] // FIXME
 
 //! `rust-numpy` provides Rust interfaces for [NumPy C APIs](https://numpy.org/doc/stable/reference/c-api),
 //! especially for [ndarray](https://numpy.org/doc/stable/reference/arrays.ndarray.html) class.

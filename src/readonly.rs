@@ -1,6 +1,6 @@
 //! Readonly arrays
 use crate::npyffi::NPY_ARRAY_WRITEABLE;
-use crate::{Element, NotContiguousError, PyArray};
+use crate::{Element, NotContiguousError, NpyIndex, PyArray};
 use ndarray::{ArrayView, Dimension, Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};
 use pyo3::{prelude::*, types::PyAny, AsPyPointer};
 
@@ -27,7 +27,7 @@ use pyo3::{prelude::*, types::PyAny, AsPyPointer};
 ///    // The internal array is not writeable now.
 ///    pyo3::py_run!(py, py_array, "assert not py_array.flags['WRITEABLE']");
 /// }
-/// // After `readonly` drops, the internal array gets writeable again.
+/// // After the `readonly` drops, the internal array gets writeable again.
 /// pyo3::py_run!(py, py_array, "assert py_array.flags['WRITEABLE']");
 /// ```
 /// However, if we convert the `PyReadonlyArray` directly into `PyObject`,
@@ -93,21 +93,57 @@ impl<'py, T: Element, D: Dimension> PyReadonlyArray<'py, T, D> {
     pub fn as_array(&self) -> ArrayView<'_, T, D> {
         unsafe { self.array.as_array() }
     }
+
+    /// Get an immutable reference of the specified element, with checking the passed index is valid.
+    ///
+    /// See [NpyIndex](../convert/trait.NpyIndex.html) for what types you can use as index.
+    ///
+    /// If you pass an invalid index to this function, it returns `None`.
+    ///
+    /// # Example
+    /// ```
+    /// use numpy::PyArray;
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let arr = PyArray::arange(gil.python(), 0, 16, 1).reshape([2, 2, 4]).unwrap().readonly();
+    /// assert_eq!(*arr.get([1, 0, 3]).unwrap(), 11);
+    /// assert!(arr.get([2, 0, 3]).is_none());
+    /// ```
+    ///
+    /// For fixed dimension arrays, passing an index with invalid dimension causes compile error.
+    /// ```compile_fail
+    /// use numpy::PyArray;
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let arr = PyArray::arange(gil.python(), 0, 16, 1).reshape([2, 2, 4]).unwrap().readonly();
+    /// let a = arr.get([1, 2]); // Compile Error!
+    /// ```
+    ///
+    /// However, for dinamic arrays, we cannot raise a compile error and just returns `None`.
+    /// ```
+    /// use numpy::PyArray;
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let arr = PyArray::arange(gil.python(), 0, 16, 1).reshape([2, 2, 4]).unwrap();
+    /// let arr = arr.to_dyn().readonly();
+    /// assert!(arr.get([1, 2].as_ref()).is_none());
+    /// ```
+    #[inline(always)]
+    pub fn get(&self, index: impl NpyIndex<Dim = D>) -> Option<&T> {
+        unsafe { self.array.get(index) }
+    }
 }
 
-/// one-dimensional readonly array
+/// One-dimensional readonly array.
 pub type PyReadonlyArray1<'py, T> = PyReadonlyArray<'py, T, Ix1>;
-/// two-dimensional readonly array
+/// Two-dimensional readonly array.
 pub type PyReadonlyArray2<'py, T> = PyReadonlyArray<'py, T, Ix2>;
-/// three-dimensional readonly array
+/// Three-dimensional readonly array.
 pub type PyReadonlyArray3<'py, T> = PyReadonlyArray<'py, T, Ix3>;
-/// four-dimensional readonly array
+/// Four-dimensional readonly array.
 pub type PyReadonlyArray4<'py, T> = PyReadonlyArray<'py, T, Ix4>;
-/// five-dimensional readonly array
+/// Five-dimensional readonly array.
 pub type PyReadonlyArray5<'py, T> = PyReadonlyArray<'py, T, Ix5>;
-/// six-dimensional readonly array
+/// Six-dimensional readonly array.
 pub type PyReadonlyArray6<'py, T> = PyReadonlyArray<'py, T, Ix6>;
-/// dynamic-dimensional readonly array
+/// Dynamic-dimensional readonly array.
 pub type PyReadonlyArrayDyn<'py, T> = PyReadonlyArray<'py, T, IxDyn>;
 
 impl<'py, T: Element, D: Dimension> FromPyObject<'py> for PyReadonlyArray<'py, T, D> {
