@@ -77,19 +77,19 @@ use crate::types::Element;
 /// ```
 pub struct PyArray<T, D>(PyAny, PhantomData<T>, PhantomData<D>);
 
-/// one-dimensional array
+/// One-dimensional array.
 pub type PyArray1<T> = PyArray<T, Ix1>;
-/// two-dimensional array
+/// Two-dimensional array.
 pub type PyArray2<T> = PyArray<T, Ix2>;
-/// three-dimensional array
+/// Three-dimensional array.
 pub type PyArray3<T> = PyArray<T, Ix3>;
-/// four-dimensional array
+/// Four-dimensional array.
 pub type PyArray4<T> = PyArray<T, Ix4>;
-/// five-dimensional array
+/// Five-dimensional array.
 pub type PyArray5<T> = PyArray<T, Ix5>;
-/// six-dimensional array
+/// Six-dimensional array.
 pub type PyArray6<T> = PyArray<T, Ix6>;
-/// dynamic-dimensional array
+/// Dynamic-dimensional array.
 pub type PyArrayDyn<T> = PyArray<T, IxDyn>;
 
 /// Returns a array module.
@@ -117,6 +117,12 @@ impl<'a, T, D> std::convert::From<&'a PyArray<T, D>> for &'a PyAny {
     }
 }
 
+impl<T, D> IntoPy<PyObject> for PyArray<T, D> {
+    fn into_py(self, py: Python<'_>) -> PyObject {
+        unsafe { PyObject::from_borrowed_ptr(py, self.as_ptr()) }
+    }
+}
+
 impl<'a, T: Element, D: Dimension> FromPyObject<'a> for &'a PyArray<T, D> {
     // here we do type-check three times
     // 1. Checks if the object is PyArray
@@ -129,14 +135,13 @@ impl<'a, T: Element, D: Dimension> FromPyObject<'a> for &'a PyArray<T, D> {
             }
             &*(ob as *const PyAny as *const PyArray<T, D>)
         };
-        array.type_check()?;
-        Ok(array)
-    }
-}
-
-impl<T, D> IntoPy<PyObject> for PyArray<T, D> {
-    fn into_py(self, py: Python<'_>) -> PyObject {
-        unsafe { PyObject::from_borrowed_ptr(py, self.as_ptr()) }
+        let type_ = unsafe { (*(*array.as_array_ptr()).descr).type_num };
+        let dim = array.shape().len();
+        if T::is_same_type(type_) && D::NDIM.map(|n| n == dim).unwrap_or(true) {
+            Ok(array)
+        } else {
+            Err(ShapeError::new(type_, dim, T::DATA_TYPE, D::NDIM).into())
+        }
     }
 }
 
@@ -435,8 +440,10 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     }
 
     /// Returns the immutable view of the internal data of `PyArray` as slice.
-    /// Please consider the use of [`PyReadonlyArray::as_slice`](../struct.PyReadonlyArray.html)
-    /// instead of this.
+    ///
+    /// Please consider the use of safe alternatives
+    /// ([`PyReadonlyArray::as_slice`](../struct.PyReadonlyArray.html#method.as_slice)
+    /// , [`as_cell_slice`](#method.as_cell_slice) or [`to_vec`](#method.to_vec)) instead of this.
     ///
     /// # Safety
     /// If the internal array is not readonly and can be mutated from Python code,
@@ -491,47 +498,22 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         IntoPyArray::into_pyarray(arr, py)
     }
 
-    /// Get an immutable reference of a specified element, with checking the passed index is valid.
+    /// Get the immutable reference of the specified element, with checking the passed index is valid.
     ///
-    /// See [NpyIndex](../convert/trait.NpyIndex.html) for what types you can use as index.
+    /// Please consider the use of safe alternatives
+    /// ([`PyReadonlyArray::get`](../struct.PyReadonlyArray.html#method.get)
+    /// or [`get_owned`](#method.get_owned)) instead of this.
     ///
-    /// If you pass an invalid index to this function, it returns `None`.
-    ///
-    /// # Example
-    /// ```
-    /// use numpy::PyArray;
-    /// let gil = pyo3::Python::acquire_gil();
-    /// let arr = PyArray::arange(gil.python(), 0, 16, 1).reshape([2, 2, 4]).unwrap();
-    /// assert_eq!(*arr.get([1, 0, 3]).unwrap(), 11);
-    /// assert!(arr.get([2, 0, 3]).is_none());
-    /// ```
-    ///
-    /// For fixed dimension arrays, passing an index with invalid dimension causes compile error.
-    /// ```compile_fail
-    /// use numpy::PyArray;
-    /// let gil = pyo3::Python::acquire_gil();
-    /// let arr = PyArray::arange(gil.python(), 0, 16, 1).reshape([2, 2, 4]).unwrap();
-    /// let a = arr.get([1, 2]); // Compile Error!
-    /// ```
-    ///
-    /// However, for dinamic arrays, we cannot raise a compile error and just returns `None`.
-    /// ```
-    /// use numpy::PyArray;
-    /// let gil = pyo3::Python::acquire_gil();
-    /// let arr = PyArray::arange(gil.python(), 0, 16, 1).reshape([2, 2, 4]).unwrap();
-    /// let arr = arr.to_dyn();
-    /// assert!(arr.get([1, 2].as_ref()).is_none());
-    /// ```
+    /// # Safety
+    /// If the internal array is not readonly and can be mutated from Python code,
+    /// holding the slice might cause undefined behavior.
     #[inline(always)]
-    pub fn get<Idx>(&self, index: Idx) -> Option<&T>
-    where
-        Idx: NpyIndex<Dim = D>,
-    {
+    pub unsafe fn get(&self, index: impl NpyIndex<Dim = D>) -> Option<&T> {
         let offset = index.get_checked::<T>(self.shape(), self.strides())?;
-        unsafe { Some(&*self.data().offset(offset)) }
+        Some(&*self.data().offset(offset))
     }
 
-    /// Get an immutable reference of a specified element, without checking the
+    /// Get the immutable reference of the specified element, without checking the
     /// passed index is valid.
     ///
     /// See [NpyIndex](../convert/trait.NpyIndex.html) for what types you can use as index.
@@ -573,14 +555,26 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         unsafe { PyArray::from_borrowed_ptr(python, self.as_ptr()) }
     }
 
-    fn type_check(&self) -> Result<(), ShapeError> {
-        let truth = unsafe { (*(*self.as_array_ptr()).descr).type_num };
-        let dim = self.shape().len();
-        if T::is_same_type(truth) && D::NDIM.map(|n| n == dim).unwrap_or(true) {
-            Ok(())
-        } else {
-            Err(ShapeError::new(truth, dim, T::DATA_TYPE, D::NDIM))
-        }
+    /// Get the copy of the specified element in the array.
+    ///
+    /// See [NpyIndex](../convert/trait.NpyIndex.html) for what types you can use as index.
+    ///
+    /// # Example
+    /// ```
+    /// use numpy::PyArray2;
+    /// use pyo3::types::IntoPyDict;
+    /// let gil = pyo3::Python::acquire_gil();
+    /// let py = gil.python();
+    /// let locals = [("np", numpy::get_array_module(py).unwrap())].into_py_dict(py);
+    /// let array: &PyArray2<i64> = py
+    ///     .eval("np.array([[0, 1], [2, 3]], dtype='int64')", Some(locals), None)
+    ///     .unwrap()
+    ///     .downcast()
+    ///     .unwrap();
+    /// assert_eq!(array.to_vec().unwrap(), vec![0, 1, 2, 3]);
+    /// ```
+    pub fn get_owned(&self, index: impl NpyIndex<Dim = D>) -> Option<T> {
+        unsafe { self.get(index) }.cloned()
     }
 
     /// Returns the copy of the internal data of `PyArray` to `Vec`.
@@ -628,6 +622,10 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
 
     /// Get the immutable view of the internal data of `PyArray`, as
     /// [`ndarray::ArrayView`](https://docs.rs/ndarray/latest/ndarray/type.ArrayView.html).
+    ///
+    /// Please consider the use of safe alternatives
+    /// ([`PyReadonlyArray::as_array`](../struct.PyReadonlyArray.html#method.as_array)
+    /// or [`to_array`](#method.to_array)) instead of this.
     ///
     /// # Safety
     /// If the internal array is not readonly and can be mutated from Python code,
