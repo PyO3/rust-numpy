@@ -104,7 +104,7 @@ numpy = "0.10.0"
 ndarray = "0.13"
 
 [dependencies.pyo3]
-version = "0.10.0"
+version = "0.11.1"
 features = ["extension-module"]
 ```
 
