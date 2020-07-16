@@ -15,7 +15,7 @@ fn get_numpy_api(_py: Python, module: &str, capsule: &str) -> *const *const c_vo
         let numpy = ffi::PyImport_ImportModule(module.as_ptr());
         assert!(!numpy.is_null(), "Failed to import numpy module");
         let capsule = ffi::PyObject_GetAttrString(numpy as _, capsule.as_ptr());
-        assert!(!capsule.is_null(), "Failed to import numpy module");
+        assert!(!capsule.is_null(), "Failed to get numpy capsule API");
         ffi::PyCapsule_GetPointer(capsule, null_mut()) as _
     }
 }
