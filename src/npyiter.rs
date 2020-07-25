@@ -5,6 +5,7 @@ use crate::npyffi::{
     *,
 };
 use crate::types::Element;
+use crate::error::NpyIterInstantiationError;
 use pyo3::{prelude::*, PyNativeType};
 
 use std::marker::PhantomData;
@@ -100,7 +101,7 @@ impl<'py, T: Element> NpySingleIterBuilder<'py, T> {
             )
         };
         let py = self.array.py();
-        NpySingleIter::new(iter_ptr, py).ok_or_else(|| PyErr::fetch(py))
+        NpySingleIter::new(iter_ptr, py)
     }
 }
 
@@ -114,19 +115,29 @@ pub struct NpySingleIter<'py, T> {
 }
 
 impl<'py, T> NpySingleIter<'py, T> {
-    fn new(iterator: *mut objects::NpyIter, py: Python<'py>) -> Option<NpySingleIter<'py, T>> {
-        let mut iterator = ptr::NonNull::new(iterator)?;
+    fn new(iterator: *mut objects::NpyIter, py: Python<'py>) -> PyResult<NpySingleIter<'py, T>> {
+        let mut iterator = match ptr::NonNull::new(iterator) {
+            Some(iter) => iter,
+            None => {
+                return Err(NpyIterInstantiationError.into());
+            }
+        };
 
         // TODO replace the null second arg with something correct.
-        let iternext =
-            unsafe { PY_ARRAY_API.NpyIter_GetIterNext(iterator.as_mut(), ptr::null_mut())? };
+        let iternext = match unsafe { PY_ARRAY_API.NpyIter_GetIterNext(iterator.as_mut(), ptr::null_mut()) } {
+            Some(ptr) => ptr,
+            None => {
+                return Err(PyErr::fetch(py));
+            }
+        };
         let dataptr = unsafe { PY_ARRAY_API.NpyIter_GetDataPtrArray(iterator.as_mut()) };
 
         if dataptr.is_null() {
             unsafe { PY_ARRAY_API.NpyIter_Deallocate(iterator.as_mut()) };
+            return Err(NpyIterInstantiationError.into());
         }
 
-        Some(NpySingleIter {
+        Ok(NpySingleIter {
             iterator,
             iternext,
             empty: false, // TODO: Handle empty iterators

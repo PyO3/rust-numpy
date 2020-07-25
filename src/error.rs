@@ -115,3 +115,15 @@ impl fmt::Display for NotContiguousError {
 }
 
 impl_pyerr!(NotContiguousError);
+
+/// Represents issues in NpyIterator instantiation.
+#[derive(Debug)]
+pub struct NpyIterInstantiationError;
+
+impl fmt::Display for NpyIterInstantiationError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Unknown error while instantiating NpyIter",)
+    }
+}
+
+impl_pyerr!(NpyIterInstantiationError);
