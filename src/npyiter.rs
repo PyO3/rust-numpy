@@ -109,13 +109,14 @@ pub struct NpySingleIter<'py, T> {
     iterator: ptr::NonNull<objects::NpyIter>,
     iternext: unsafe extern "C" fn(*mut objects::NpyIter) -> c_int,
     empty: bool,
+    iter_size: npy_intp,
     dataptr: *mut *mut c_char,
     return_type: PhantomData<T>,
     _py: Python<'py>,
 }
 
 impl<'py, T> NpySingleIter<'py, T> {
-    fn new(iterator: *mut objects::NpyIter, py: Python<'py>) -> PyResult<NpySingleIter<'py, T>> {
+    fn new(iterator: *mut objects::NpyIter, py: Python<'py>) -> PyResult<Self> {
         let mut iterator = match ptr::NonNull::new(iterator) {
             Some(iter) => iter,
             None => {
@@ -123,7 +124,6 @@ impl<'py, T> NpySingleIter<'py, T> {
             }
         };
 
-        // TODO replace the null second arg with something correct.
         let iternext = match unsafe { PY_ARRAY_API.NpyIter_GetIterNext(iterator.as_mut(), ptr::null_mut()) } {
             Some(ptr) => ptr,
             None => {
@@ -137,10 +137,13 @@ impl<'py, T> NpySingleIter<'py, T> {
             return Err(NpyIterInstantiationError.into());
         }
 
-        Ok(NpySingleIter {
+        let iter_size = unsafe { PY_ARRAY_API.NpyIter_GetIterSize(iterator.as_mut()) };
+
+        Ok(Self {
             iterator,
             iternext,
-            empty: false, // TODO: Handle empty iterators
+            iter_size,
+            empty: iter_size == 0,
             dataptr,
             return_type: PhantomData,
             _py: py,
@@ -171,6 +174,10 @@ impl<'py, T: 'py> std::iter::Iterator for NpySingleIter<'py, T> {
             retval
         }
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.iter_size as usize, Some(self.iter_size as usize))
+    }
 }
 
 mod private {
@@ -189,7 +196,7 @@ macro_rules! private_impl {
     };
 }
 
-/// A combinator type that represents an terator mode (e.g., ReadOnly + ReadWrite + ReadOnly).
+/// A combinator type that represents an terator mode (e.g., ReadOnly + ReadWrite).
 pub trait MultiIterMode {
     private_decl!();
     type Pre: MultiIterMode;
@@ -316,7 +323,7 @@ impl<'py, T: Element, S: MultiIterModeWithManyArrays> NpyMultiIterBuilder<'py, T
             )
         };
         let py = self.arrays[0].py();
-        NpyMultiIter::new(iter_ptr, py).ok_or_else(|| PyErr::fetch(py))
+        NpyMultiIter::new(iter_ptr, py)
     }
 }
 
@@ -332,25 +339,34 @@ pub struct NpyMultiIter<'py, T, S: MultiIterModeWithManyArrays> {
 }
 
 impl<'py, T, S: MultiIterModeWithManyArrays> NpyMultiIter<'py, T, S> {
-    fn new(iterator: *mut objects::NpyIter, py: Python<'py>) -> Option<Self> {
-        let mut iterator = ptr::NonNull::new(iterator)?;
+    fn new(iterator: *mut objects::NpyIter, py: Python<'py>) -> PyResult<Self> {
+        let mut iterator = match ptr::NonNull::new(iterator) {
+            Some(ptr) => ptr,
+            None => {
+                return Err(NpyIterInstantiationError.into());
+            }
+        };
 
-        // TODO replace the null second arg with something correct.
-        let iternext =
-            unsafe { PY_ARRAY_API.NpyIter_GetIterNext(iterator.as_mut(), ptr::null_mut())? };
+        let iternext = match unsafe { PY_ARRAY_API.NpyIter_GetIterNext(iterator.as_mut(), ptr::null_mut()) } {
+            Some(ptr) => ptr,
+            None => {
+                return Err(PyErr::fetch(py));
+            }
+        };
         let dataptr = unsafe { PY_ARRAY_API.NpyIter_GetDataPtrArray(iterator.as_mut()) };
 
         if dataptr.is_null() {
             unsafe { PY_ARRAY_API.NpyIter_Deallocate(iterator.as_mut()) };
+            return Err(NpyIterInstantiationError.into());
         }
 
         let iter_size = unsafe { PY_ARRAY_API.NpyIter_GetIterSize(iterator.as_mut()) };
 
-        Some(Self {
+        Ok(Self {
             iterator,
             iternext,
             iter_size,
-            empty: iter_size == 0, // TODO: Handle empty iterators
+            empty: iter_size == 0,
             dataptr,
             marker: PhantomData,
             _py: py,
