@@ -129,6 +129,14 @@ impl<'py, T: Element, D: Dimension> PyReadonlyArray<'py, T, D> {
     pub fn get(&self, index: impl NpyIndex<Dim = D>) -> Option<&T> {
         unsafe { self.array.get(index) }
     }
+
+    pub(crate) fn destruct(self) -> (&'py PyArray<T, D>, bool) {
+        let PyReadonlyArray {
+            array,
+            was_writeable,
+        } = self;
+        (array, was_writeable)
+    }
 }
 
 /// One-dimensional readonly array.

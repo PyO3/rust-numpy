@@ -1,25 +1,46 @@
+//! Wrapper of [Array Iterator API](https://numpy.org/doc/stable/reference/c-api/iterator.html).
+//!
+//! This module exposes two iterators:
+//! [NpySingleIter](./struct.NpySingleIter.html) and
+//! [NpyMultiIter](./struct.NpyMultiIter.html).
 use crate::array::{PyArray, PyArrayDyn};
+use crate::error::NpyIterInstantiationError;
 use crate::npyffi::{
     array::PY_ARRAY_API,
+    npy_intp, npy_uint32,
+    objects::{NpyIter, PyArrayObject},
     types::{NPY_CASTING, NPY_ORDER},
-    *,
+    NPY_ARRAY_WRITEABLE, NPY_ITER_BUFFERED, NPY_ITER_COMMON_DTYPE, NPY_ITER_COPY_IF_OVERLAP,
+    NPY_ITER_DELAY_BUFALLOC, NPY_ITER_DONT_NEGATE_STRIDES, NPY_ITER_GROWINNER, NPY_ITER_RANGED,
+    NPY_ITER_READONLY, NPY_ITER_READWRITE, NPY_ITER_REDUCE_OK, NPY_ITER_REFS_OK,
+    NPY_ITER_ZEROSIZE_OK,
 };
+use crate::readonly::PyReadonlyArray;
 use crate::types::Element;
-use crate::error::NpyIterInstantiationError;
 use pyo3::{prelude::*, PyNativeType};
 
 use std::marker::PhantomData;
 use std::os::raw::*;
 use std::ptr;
 
-/// Flags for `NpySingleIter` and `NpyMultiIter`.
+/// Flags for constructing an iterator.
+/// For the meanings of each flag, readers can refer to [the numpy document][doc].
+///
+/// Note that this enum doesn't provide all flags in the numpy C-API.
+/// If you have any inconvenience about that, please file an [issue].
+///
+/// [doc]: https://numpy.org/doc/stable/reference/c-api/iterator.html#c.NpyIter_MultiNew
+/// [issue]: https://github.com/PyO3/rust-numpy/issues
+// Here's a list of unsupported flags:
+// CIndex,
+// FIndex,
+// MultiIndex,
+// ExternalLoop,
+// ReadWrite,
+// ReadOnly,
+// WriteOnly,
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum NpyIterFlag {
-    /* CIndex,
-    FIndex,
-    MultiIndex, */
-    // ExternalLoop, // This flag greatly modifies the behaviour of accessing the data
-    // so we don't support it.
     CommonDtype,
     RefsOk,
     ZerosizeOk,
@@ -30,19 +51,12 @@ pub enum NpyIterFlag {
     DelayBufAlloc,
     DontNegateStrides,
     CopyIfOverlap,
-    /* ReadWrite,
-    ReadOnly,
-    WriteOnly, */
 }
 
 impl NpyIterFlag {
     fn to_c_enum(&self) -> npy_uint32 {
         use NpyIterFlag::*;
         match self {
-            /* CIndex => NPY_ITER_C_INDEX,
-            FIndex => NPY_ITER_C_INDEX,
-            MultiIndex => NPY_ITER_MULTI_INDEX, */
-            /* ExternalLoop => NPY_ITER_EXTERNAL_LOOP, */
             CommonDtype => NPY_ITER_COMMON_DTYPE,
             RefsOk => NPY_ITER_REFS_OK,
             ZerosizeOk => NPY_ITER_ZEROSIZE_OK,
@@ -53,47 +67,139 @@ impl NpyIterFlag {
             DelayBufAlloc => NPY_ITER_DELAY_BUFALLOC,
             DontNegateStrides => NPY_ITER_DONT_NEGATE_STRIDES,
             CopyIfOverlap => NPY_ITER_COPY_IF_OVERLAP,
-            /* ReadWrite => NPY_ITER_READWRITE,
-            ReadOnly => NPY_ITER_READONLY,
-            WriteOnly => NPY_ITER_WRITEONLY, */
         }
     }
 }
 
-pub struct NpySingleIterBuilder<'py, T> {
-    flags: npy_uint32,
-    array: &'py PyArrayDyn<T>,
+/// Defines IterMode and MultiIterMode.
+mod itermode {
+    use super::*;
+
+    pub struct PrivateGuard;
+    macro_rules! private_decl {
+        () => {
+            fn __private__() -> PrivateGuard;
+        };
+    }
+    macro_rules! private_impl {
+        () => {
+            fn __private__() -> PrivateGuard {
+                PrivateGuard
+            }
+        };
+    }
+
+    /// A combinator type that represents the mode of an iterator
+    /// (E.g., Readonly, ReadWrite, Readonly + ReadWrite).
+    pub trait MultiIterMode {
+        private_decl!();
+        type Pre: MultiIterMode;
+        const FLAG: npy_uint32 = 0;
+        fn flags() -> Vec<npy_uint32> {
+            if Self::FLAG == 0 {
+                vec![]
+            } else {
+                let mut res = Self::Pre::flags();
+                res.push(Self::FLAG);
+                res
+            }
+        }
+    }
+
+    impl MultiIterMode for () {
+        private_impl!();
+        type Pre = ();
+    }
+
+    /// Represents the iterator mode where the last array is readonly.
+    pub struct RO<S: MultiIterMode>(PhantomData<S>);
+
+    /// Represents the iterator mode where the last array is readwrite.
+    pub struct RW<S: MultiIterMode>(PhantomData<S>);
+
+    impl<S: MultiIterMode> MultiIterMode for RO<S> {
+        private_impl!();
+        type Pre = S;
+        const FLAG: npy_uint32 = NPY_ITER_READONLY;
+    }
+
+    impl<S: MultiIterMode> MultiIterMode for RW<S> {
+        private_impl!();
+        type Pre = S;
+        const FLAG: npy_uint32 = NPY_ITER_READWRITE;
+    }
+
+    /// Represents the iterator mode where at least two arrays are iterated.
+    pub trait MultiIterModeWithManyArrays: MultiIterMode {}
+    impl MultiIterModeWithManyArrays for RO<RO<()>> {}
+    impl MultiIterModeWithManyArrays for RO<RW<()>> {}
+    impl MultiIterModeWithManyArrays for RW<RO<()>> {}
+    impl MultiIterModeWithManyArrays for RW<RW<()>> {}
+
+    impl<S: MultiIterModeWithManyArrays> MultiIterModeWithManyArrays for RO<S> {}
+    impl<S: MultiIterModeWithManyArrays> MultiIterModeWithManyArrays for RW<S> {}
+
+    /// Iterator mode for single iterator
+    pub trait IterMode: MultiIterMode {}
+    /// Implies Readonly iterator.
+    pub type Readonly = RO<()>;
+    /// Implies Readwrite iterator.
+    pub type ReadWrite = RW<()>;
+
+    impl IterMode for RO<()> {}
+    impl IterMode for RW<()> {}
 }
 
-impl<'py, T: Element> NpySingleIterBuilder<'py, T> {
+pub use itermode::{
+    IterMode, MultiIterMode, MultiIterModeWithManyArrays, ReadWrite, Readonly, RO, RW,
+};
+
+/// Builder of [NpySingleIter](./struct.NpySingleIter.html).
+pub struct NpySingleIterBuilder<'py, T, I: IterMode> {
+    flags: npy_uint32,
+    array: &'py PyArrayDyn<T>,
+    mode: PhantomData<I>,
+    was_writable: bool,
+}
+
+impl<'py, T: Element> NpySingleIterBuilder<'py, T, Readonly> {
+    /// Make a new builder for a readonly iterator.
+    pub fn readonly<D: ndarray::Dimension>(array: PyReadonlyArray<'py, T, D>) -> Self {
+        let (array, was_writable) = array.destruct();
+        Self {
+            flags: NPY_ITER_READONLY,
+            array: array.to_dyn(),
+            mode: PhantomData,
+            was_writable,
+        }
+    }
+}
+
+impl<'py, T: Element> NpySingleIterBuilder<'py, T, ReadWrite> {
+    /// Make a new builder for a writable iterator.
     pub fn readwrite<D: ndarray::Dimension>(array: &'py PyArray<T, D>) -> Self {
         Self {
             flags: NPY_ITER_READWRITE,
             array: array.to_dyn(),
+            mode: PhantomData,
+            was_writable: false,
         }
     }
+}
 
-    pub fn readonly<D: ndarray::Dimension>(array: &'py PyArray<T, D>) -> Self {
-        Self {
-            flags: NPY_ITER_READONLY,
-            array: array.to_dyn(),
-        }
-    }
-
+impl<'py, T: Element, I: IterMode> NpySingleIterBuilder<'py, T, I> {
+    /// Set a flag to this builder, returning `self`.
     pub fn set(mut self, flag: NpyIterFlag) -> Self {
         self.flags |= flag.to_c_enum();
         self
     }
 
-    pub fn unset(mut self, flag: NpyIterFlag) -> Self {
-        self.flags &= !flag.to_c_enum();
-        self
-    }
-
-    pub fn build(self) -> PyResult<NpySingleIter<'py, T>> {
+    /// Create an iterator from this builder.
+    pub fn build(self) -> PyResult<NpySingleIter<'py, T, I>> {
+        let array_ptr = self.array.as_array_ptr();
         let iter_ptr = unsafe {
             PY_ARRAY_API.NpyIter_New(
-                self.array.as_array_ptr(),
+                array_ptr,
                 self.flags,
                 NPY_ORDER::NPY_ANYORDER,
                 NPY_CASTING::NPY_SAFE_CASTING,
@@ -101,22 +207,38 @@ impl<'py, T: Element> NpySingleIterBuilder<'py, T> {
             )
         };
         let py = self.array.py();
-        NpySingleIter::new(iter_ptr, py)
+        let readonly_array_ptr = if self.was_writable {
+            Some(array_ptr)
+        } else {
+            None
+        };
+        NpySingleIter::new(iter_ptr, readonly_array_ptr, py)
     }
 }
 
-pub struct NpySingleIter<'py, T> {
-    iterator: ptr::NonNull<objects::NpyIter>,
-    iternext: unsafe extern "C" fn(*mut objects::NpyIter) -> c_int,
+/// An iterator over a single array.
+///
+/// # Example
+///
+///
+pub struct NpySingleIter<'py, T, I> {
+    iterator: ptr::NonNull<NpyIter>,
+    iternext: unsafe extern "C" fn(*mut NpyIter) -> c_int,
     empty: bool,
     iter_size: npy_intp,
     dataptr: *mut *mut c_char,
     return_type: PhantomData<T>,
+    mode: PhantomData<I>,
+    readonly_array_ptr: Option<*mut PyArrayObject>,
     _py: Python<'py>,
 }
 
-impl<'py, T> NpySingleIter<'py, T> {
-    fn new(iterator: *mut objects::NpyIter, py: Python<'py>) -> PyResult<Self> {
+impl<'py, T, I> NpySingleIter<'py, T, I> {
+    fn new(
+        iterator: *mut NpyIter,
+        readonly_array_ptr: Option<*mut PyArrayObject>,
+        py: Python<'py>,
+    ) -> PyResult<Self> {
         let mut iterator = match ptr::NonNull::new(iterator) {
             Some(iter) => iter,
             None => {
@@ -124,12 +246,13 @@ impl<'py, T> NpySingleIter<'py, T> {
             }
         };
 
-        let iternext = match unsafe { PY_ARRAY_API.NpyIter_GetIterNext(iterator.as_mut(), ptr::null_mut()) } {
-            Some(ptr) => ptr,
-            None => {
-                return Err(PyErr::fetch(py));
-            }
-        };
+        let iternext =
+            match unsafe { PY_ARRAY_API.NpyIter_GetIterNext(iterator.as_mut(), ptr::null_mut()) } {
+                Some(ptr) => ptr,
+                None => {
+                    return Err(PyErr::fetch(py));
+                }
+            };
         let dataptr = unsafe { PY_ARRAY_API.NpyIter_GetDataPtrArray(iterator.as_mut()) };
 
         if dataptr.is_null() {
@@ -146,22 +269,13 @@ impl<'py, T> NpySingleIter<'py, T> {
             empty: iter_size == 0,
             dataptr,
             return_type: PhantomData,
+            mode: PhantomData,
+            readonly_array_ptr,
             _py: py,
         })
     }
-}
 
-impl<'py, T> Drop for NpySingleIter<'py, T> {
-    fn drop(&mut self) {
-        let _success = unsafe { PY_ARRAY_API.NpyIter_Deallocate(self.iterator.as_mut()) };
-        // TODO: Handle _success somehow?
-    }
-}
-
-impl<'py, T: 'py> std::iter::Iterator for NpySingleIter<'py, T> {
-    type Item = &'py T;
-
-    fn next(&mut self) -> Option<Self::Item> {
+    fn iternext(&mut self) -> Option<*mut T> {
         if self.empty {
             None
         } else {
@@ -169,10 +283,29 @@ impl<'py, T: 'py> std::iter::Iterator for NpySingleIter<'py, T> {
             // note that we're derefencing a **char into a *char casting to a *T
             // and then transforming that into a reference, the value that dataptr
             // points to is being updated by iternext to point to the next value.
-            let retval = Some(unsafe { &*(*self.dataptr as *mut T) });
+            let ret = unsafe { *self.dataptr as *mut T };
             self.empty = unsafe { (self.iternext)(self.iterator.as_mut()) } == 0;
-            retval
+            Some(ret)
         }
+    }
+}
+
+impl<'py, T, I> Drop for NpySingleIter<'py, T, I> {
+    fn drop(&mut self) {
+        let _success = unsafe { PY_ARRAY_API.NpyIter_Deallocate(self.iterator.as_mut()) };
+        if let Some(ptr) = self.readonly_array_ptr {
+            unsafe {
+                (*ptr).flags |= NPY_ARRAY_WRITEABLE;
+            }
+        }
+    }
+}
+
+impl<'py, T: 'py> std::iter::Iterator for NpySingleIter<'py, T, Readonly> {
+    type Item = &'py T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iternext().map(|ptr| unsafe { &*ptr })
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -180,166 +313,132 @@ impl<'py, T: 'py> std::iter::Iterator for NpySingleIter<'py, T> {
     }
 }
 
-mod private {
-    pub struct PrivateGuard;
-}
-macro_rules! private_decl {
-    () => {
-        fn __private__() -> private::PrivateGuard;
-    };
-}
-macro_rules! private_impl {
-    () => {
-        fn __private__() -> private::PrivateGuard {
-            private::PrivateGuard
-        }
-    };
-}
+impl<'py, T: 'py> std::iter::Iterator for NpySingleIter<'py, T, ReadWrite> {
+    type Item = &'py mut T;
 
-/// A combinator type that represents an terator mode (e.g., ReadOnly + ReadWrite).
-pub trait MultiIterMode {
-    private_decl!();
-    type Pre: MultiIterMode;
-    const FLAG: npy_uint32 = 0;
-    fn flags() -> Vec<npy_uint32> {
-        if Self::FLAG == 0 {
-            vec![]
-        } else {
-            let mut res = Self::Pre::flags();
-            res.push(Self::FLAG);
-            res
-        }
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iternext().map(|ptr| unsafe { &mut *ptr })
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.iter_size as usize, Some(self.iter_size as usize))
     }
 }
 
-impl MultiIterMode for () {
-    private_impl!();
-    type Pre = ();
-}
-
-/// Represents the iterator mode where the last array is readonly.
-pub struct RO<S: MultiIterMode>(PhantomData<S>);
-
-impl<S: MultiIterMode> MultiIterMode for RO<S> {
-    private_impl!();
-    type Pre = S;
-    const FLAG: npy_uint32 = NPY_ITER_READONLY;
-}
-
-/// Represents the iterator mode where the last array is readwrite.
-pub struct RW<S: MultiIterMode>(PhantomData<S>);
-
-impl<S: MultiIterMode> MultiIterMode for RW<S> {
-    private_impl!();
-    type Pre = S;
-    const FLAG: npy_uint32 = NPY_ITER_READWRITE;
-}
-
-/// Represents the iterator mode where at least two arrays are iterated.
-pub trait MultiIterModeWithManyArrays: MultiIterMode {}
-impl MultiIterModeWithManyArrays for RO<RO<()>> {}
-impl MultiIterModeWithManyArrays for RO<RW<()>> {}
-impl MultiIterModeWithManyArrays for RW<RO<()>> {}
-impl MultiIterModeWithManyArrays for RW<RW<()>> {}
-
-impl<S: MultiIterModeWithManyArrays> MultiIterModeWithManyArrays for RO<S> {}
-impl<S: MultiIterModeWithManyArrays> MultiIterModeWithManyArrays for RW<S> {}
-
-/// A builder struct for creating multi iterator.
+/// Builder for [NpyMultiIter](./struct.NpyMultiIter.html).
 pub struct NpyMultiIterBuilder<'py, T, S: MultiIterMode> {
     flags: npy_uint32,
     arrays: Vec<&'py PyArrayDyn<T>>,
     structure: PhantomData<S>,
+    was_writables: Vec<bool>,
 }
 
 impl<'py, T: Element> NpyMultiIterBuilder<'py, T, ()> {
+    /// Creates a new builder.
     pub fn new() -> Self {
         Self {
             flags: 0,
             arrays: Vec::new(),
             structure: PhantomData,
+            was_writables: Vec::new(),
         }
     }
 
+    /// Set a flag to this builder, returning `self`.
     pub fn set(mut self, flag: NpyIterFlag) -> Self {
         self.flags |= flag.to_c_enum();
-        self
-    }
-
-    pub fn unset(mut self, flag: NpyIterFlag) -> Self {
-        self.flags &= !flag.to_c_enum();
         self
     }
 }
 
 impl<'py, T: Element, S: MultiIterMode> NpyMultiIterBuilder<'py, T, S> {
-    pub fn add_readonly_array<D: ndarray::Dimension>(
+    /// Add a readonly array to the resulting iterator.
+    pub fn add_readonly<D: ndarray::Dimension>(
         mut self,
-        array: &'py PyArray<T, D>,
+        array: PyReadonlyArray<'py, T, D>,
     ) -> NpyMultiIterBuilder<'py, T, RO<S>> {
+        let (array, was_writable) = array.destruct();
         self.arrays.push(array.to_dyn());
-
+        self.was_writables.push(was_writable);
         NpyMultiIterBuilder {
             flags: self.flags,
             arrays: self.arrays,
+            was_writables: self.was_writables,
             structure: PhantomData,
         }
     }
 
-    pub fn add_readwrite_array<D: ndarray::Dimension>(
+    /// Add a writable array to the resulting iterator.
+    pub fn add_readwrite<D: ndarray::Dimension>(
         mut self,
         array: &'py PyArray<T, D>,
     ) -> NpyMultiIterBuilder<'py, T, RW<S>> {
         self.arrays.push(array.to_dyn());
-
+        self.was_writables.push(false);
         NpyMultiIterBuilder {
             flags: self.flags,
             arrays: self.arrays,
+            was_writables: self.was_writables,
             structure: PhantomData,
         }
     }
 }
 
 impl<'py, T: Element, S: MultiIterModeWithManyArrays> NpyMultiIterBuilder<'py, T, S> {
-    pub fn build(mut self) -> PyResult<NpyMultiIter<'py, T, S>> {
-        assert!(self.arrays.len() <= i32::MAX as usize);
-        assert!(2 <= self.arrays.len());
+    /// Create an iterator from this builder.
+    pub fn build(self) -> PyResult<NpyMultiIter<'py, T, S>> {
+        let Self {
+            flags,
+            arrays,
+            was_writables,
+            ..
+        } = self;
+        debug_assert!(arrays.len() <= i32::MAX as usize);
+        debug_assert!(2 <= arrays.len());
 
         let mut opflags = S::flags();
+        let py = arrays[0].py();
+        let mut arrays = arrays
+            .iter()
+            .map(|x| x.as_array_ptr())
+            .collect::<Vec<_>>()
+            .into_boxed_slice();
 
         let iter_ptr = unsafe {
             PY_ARRAY_API.NpyIter_MultiNew(
-                self.arrays.len() as i32,
-                self.arrays
-                    .iter_mut()
-                    .map(|x| x.as_array_ptr())
-                    .collect::<Vec<_>>()
-                    .as_mut_ptr(),
-                self.flags,
+                arrays.len() as i32,
+                arrays.as_mut_ptr(),
+                flags,
                 NPY_ORDER::NPY_ANYORDER,
                 NPY_CASTING::NPY_SAFE_CASTING,
                 opflags.as_mut_ptr(),
                 ptr::null_mut(),
             )
         };
-        let py = self.arrays[0].py();
-        NpyMultiIter::new(iter_ptr, py)
+        NpyMultiIter::new(iter_ptr, arrays, was_writables, py)
     }
 }
 
 /// Multi iterator
 pub struct NpyMultiIter<'py, T, S: MultiIterModeWithManyArrays> {
-    iterator: ptr::NonNull<objects::NpyIter>,
-    iternext: unsafe extern "C" fn(*mut objects::NpyIter) -> c_int,
+    iterator: ptr::NonNull<NpyIter>,
+    iternext: unsafe extern "C" fn(*mut NpyIter) -> c_int,
     empty: bool,
     iter_size: npy_intp,
     dataptr: *mut *mut c_char,
     marker: PhantomData<(T, S)>,
+    arrays: Box<[*mut PyArrayObject]>,
+    was_writables: Vec<bool>,
     _py: Python<'py>,
 }
 
 impl<'py, T, S: MultiIterModeWithManyArrays> NpyMultiIter<'py, T, S> {
-    fn new(iterator: *mut objects::NpyIter, py: Python<'py>) -> PyResult<Self> {
+    fn new(
+        iterator: *mut NpyIter,
+        arrays: Box<[*mut PyArrayObject]>,
+        was_writables: Vec<bool>,
+        py: Python<'py>,
+    ) -> PyResult<Self> {
         let mut iterator = match ptr::NonNull::new(iterator) {
             Some(ptr) => ptr,
             None => {
@@ -347,12 +446,13 @@ impl<'py, T, S: MultiIterModeWithManyArrays> NpyMultiIter<'py, T, S> {
             }
         };
 
-        let iternext = match unsafe { PY_ARRAY_API.NpyIter_GetIterNext(iterator.as_mut(), ptr::null_mut()) } {
-            Some(ptr) => ptr,
-            None => {
-                return Err(PyErr::fetch(py));
-            }
-        };
+        let iternext =
+            match unsafe { PY_ARRAY_API.NpyIter_GetIterNext(iterator.as_mut(), ptr::null_mut()) } {
+                Some(ptr) => ptr,
+                None => {
+                    return Err(PyErr::fetch(py));
+                }
+            };
         let dataptr = unsafe { PY_ARRAY_API.NpyIter_GetDataPtrArray(iterator.as_mut()) };
 
         if dataptr.is_null() {
@@ -369,6 +469,8 @@ impl<'py, T, S: MultiIterModeWithManyArrays> NpyMultiIter<'py, T, S> {
             empty: iter_size == 0,
             dataptr,
             marker: PhantomData,
+            arrays,
+            was_writables,
             _py: py,
         })
     }
@@ -377,7 +479,11 @@ impl<'py, T, S: MultiIterModeWithManyArrays> NpyMultiIter<'py, T, S> {
 impl<'py, T, S: MultiIterModeWithManyArrays> Drop for NpyMultiIter<'py, T, S> {
     fn drop(&mut self) {
         let _success = unsafe { PY_ARRAY_API.NpyIter_Deallocate(self.iterator.as_mut()) };
-        // TODO: Handle _success somehow?
+        for (array_ptr, &was_writable) in self.arrays.iter().zip(self.was_writables.iter()) {
+            if was_writable {
+                unsafe { (**array_ptr).flags |= NPY_ARRAY_WRITEABLE };
+            }
+        }
     }
 }
 
