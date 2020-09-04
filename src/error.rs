@@ -70,7 +70,7 @@ macro_rules! impl_pyerr {
 
         impl std::convert::From<$err_type> for PyErr {
             fn from(err: $err_type) -> PyErr {
-                PyErr::from_value::<exc::TypeError>(PyErrValue::from_err_args(err))
+                PyErr::from_value::<exc::PyTypeError>(PyErrValue::from_err_args(err))
             }
         }
     };
