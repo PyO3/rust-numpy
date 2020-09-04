@@ -75,6 +75,7 @@ use crate::types::Element;
 ///     array![[8., 15.], [12., 23.]]
 /// );
 /// ```
+#[derive(Debug)]
 pub struct PyArray<T, D>(PyAny, PhantomData<T>, PhantomData<D>);
 
 /// One-dimensional array.
@@ -131,7 +132,7 @@ impl<'a, T: Element, D: Dimension> FromPyObject<'a> for &'a PyArray<T, D> {
     fn extract(ob: &'a PyAny) -> PyResult<Self> {
         let array = unsafe {
             if npyffi::PyArray_Check(ob.as_ptr()) == 0 {
-                return Err(PyDowncastError.into());
+                return Err(PyDowncastError::new(ob, "Array").into());
             }
             &*(ob as *const PyAny as *const PyArray<T, D>)
         };
