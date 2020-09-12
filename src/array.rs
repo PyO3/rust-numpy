@@ -174,7 +174,7 @@ impl<T, D> PyArray<T, D> {
     /// use pyo3::types::IntoPyDict;
     /// let gil = pyo3::Python::acquire_gil();
     /// let py = gil.python();
-    /// let array = numpy::PyArray::arange(py, 0, 1, 10);
+    /// let array = numpy::PyArray::arange(py, 0, 10, 1);
     /// assert!(array.is_contiguous());
     /// let locals = [("np", numpy::get_array_module(py).unwrap())].into_py_dict(py);
     /// let not_contiguous: &numpy::PyArray1<f32> = py
@@ -770,6 +770,14 @@ impl<T: Element> PyArray<T, Ix1> {
     /// ```
     pub fn resize(&self, new_elems: usize) -> PyResult<()> {
         self.resize_([new_elems], 1, NPY_ORDER::NPY_ANYORDER)
+    }
+
+    /// Iterates all elements of this array.
+    /// See [NpySingleIter](../npyiter/struct.NpySingleIter.html) for more.
+    pub fn iter<'py>(
+        &'py self,
+    ) -> PyResult<crate::NpySingleIter<'py, T, crate::npyiter::ReadWrite>> {
+        crate::NpySingleIterBuilder::readwrite(self).build()
     }
 
     fn resize_<D: IntoDimension>(
