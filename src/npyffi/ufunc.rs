@@ -4,6 +4,7 @@ use std::os::raw::*;
 use std::{cell::Cell, ptr};
 
 use pyo3::ffi::PyObject;
+use pyo3::Python;
 
 use super::get_numpy_api;
 use super::objects::*;
@@ -28,9 +29,10 @@ impl PyUFuncAPI {
     }
     fn get(&self, offset: isize) -> *const *const c_void {
         if self.api.get().is_null() {
-            let ensure_gil = pyo3::internal_utils::ensure_gil();
-            let api = get_numpy_api(unsafe { ensure_gil.python() }, MOD_NAME, CAPSULE_NAME);
-            self.api.set(api);
+            Python::with_gil(|py| {
+                let api = get_numpy_api(py, MOD_NAME, CAPSULE_NAME);
+                self.api.set(api);
+            })
         }
         unsafe { self.api.get().offset(offset) }
     }
