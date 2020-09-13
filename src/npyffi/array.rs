@@ -45,7 +45,7 @@ impl PyArrayAPI {
             Python::with_gil(|py| {
                 let api = get_numpy_api(py, MOD_NAME, CAPSULE_NAME);
                 self.api.set(api);
-            })
+            });
         }
         unsafe { self.api.get().offset(offset) }
     }
