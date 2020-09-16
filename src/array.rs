@@ -75,7 +75,6 @@ use crate::types::Element;
 ///     array![[8., 15.], [12., 23.]]
 /// );
 /// ```
-#[derive(Debug)]
 pub struct PyArray<T, D>(PyAny, PhantomData<T>, PhantomData<D>);
 
 /// One-dimensional array.
@@ -111,6 +110,7 @@ pyobject_native_type_convert!(
 );
 
 pyobject_native_type_named!(PyArray<T, D>, T, D);
+pyobject_native_type_fmt!(PyArray<T, D>, T, D);
 
 impl<'a, T, D> std::convert::From<&'a PyArray<T, D>> for &'a PyAny {
     fn from(ob: &'a PyArray<T, D>) -> Self {
