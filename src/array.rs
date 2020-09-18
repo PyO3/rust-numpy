@@ -110,6 +110,7 @@ pyobject_native_type_convert!(
 );
 
 pyobject_native_type_named!(PyArray<T, D>, T, D);
+pyobject_native_type_fmt!(PyArray<T, D>, T, D);
 
 impl<'a, T, D> std::convert::From<&'a PyArray<T, D>> for &'a PyAny {
     fn from(ob: &'a PyArray<T, D>) -> Self {
@@ -131,7 +132,7 @@ impl<'a, T: Element, D: Dimension> FromPyObject<'a> for &'a PyArray<T, D> {
     fn extract(ob: &'a PyAny) -> PyResult<Self> {
         let array = unsafe {
             if npyffi::PyArray_Check(ob.as_ptr()) == 0 {
-                return Err(PyDowncastError.into());
+                return Err(PyDowncastError::new(ob, "PyArray<T, D>").into());
             }
             &*(ob as *const PyAny as *const PyArray<T, D>)
         };
@@ -206,7 +207,7 @@ impl<T, D> PyArray<T, D> {
     ///
     /// # Example
     /// ```
-    /// use pyo3::{GILGuard, Python, Py, AsPyRef};
+    /// use pyo3::{GILGuard, Python, Py};
     /// use numpy::PyArray1;
     /// fn return_py_array() -> Py<PyArray1<i32>> {
     ///    let gil = Python::acquire_gil();
