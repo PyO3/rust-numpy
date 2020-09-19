@@ -129,6 +129,20 @@ impl<'py, T: Element, D: Dimension> PyReadonlyArray<'py, T, D> {
     pub fn get(&self, index: impl NpyIndex<Dim = D>) -> Option<&T> {
         unsafe { self.array.get(index) }
     }
+
+    /// Iterates all elements of this array.
+    /// See [NpySingleIter](../npyiter/struct.NpySingleIter.html) for more.
+    pub fn iter(self) -> PyResult<crate::NpySingleIter<'py, T, crate::npyiter::Readonly>> {
+        crate::NpySingleIterBuilder::readonly(self).build()
+    }
+
+    pub(crate) fn destruct(self) -> (&'py PyArray<T, D>, bool) {
+        let PyReadonlyArray {
+            array,
+            was_writeable,
+        } = self;
+        (array, was_writeable)
+    }
 }
 
 /// One-dimensional readonly array.
