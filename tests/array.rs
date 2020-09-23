@@ -220,3 +220,17 @@ fn array_cast() {
     let arr_i32: &PyArray2<i32> = arr_f64.cast(false).unwrap();
     assert_eq!(arr_i32.readonly().as_array(), array![[1, 2, 3], [1, 2, 3]]);
 }
+
+#[test]
+fn handle_negative_strides() {
+    let gil = pyo3::Python::acquire_gil();
+    let py = gil.python();
+    let arr = array![[2, 3], [4, 5u32]];
+    let pyarr = arr.to_pyarray(py);
+    let negstr_pyarr: &numpy::PyArray2<u32> = py
+        .eval("a[::-1]", Some([("a", pyarr)].into_py_dict(py)), None)
+        .unwrap()
+        .downcast()
+        .unwrap();
+    assert_eq!(negstr_pyarr.to_owned_array(), arr.slice(s![..;-1, ..]));
+}
