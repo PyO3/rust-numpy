@@ -2,6 +2,12 @@ use ndarray::array;
 use numpy::{NpyMultiIterBuilder, NpySingleIterBuilder, PyArray};
 use pyo3::PyResult;
 
+macro_rules! assert_approx_eq {
+    ($x: expr, $y: expr) => {
+        assert!(($x - $y) <= std::f64::EPSILON);
+    };
+}
+
 #[test]
 fn readonly_iter() -> PyResult<()> {
     let gil = pyo3::Python::acquire_gil();
@@ -12,7 +18,7 @@ fn readonly_iter() -> PyResult<()> {
 
     // The order of iteration is not specified, so we should restrict ourselves
     // to tests that don't verify a given order.
-    assert_eq!(iter.sum::<f64>(), 15.0);
+    assert_approx_eq!(iter.sum::<f64>(), 15.0);
     Ok(())
 }
 
@@ -24,10 +30,10 @@ fn mutable_iter() -> PyResult<()> {
     let arr = PyArray::from_array(gil.python(), &data);
     let iter = NpySingleIterBuilder::readwrite(arr).build()?;
     for elem in iter {
-        *elem = *elem * 2.0;
+        *elem *= 2.0;
     }
     let iter = NpySingleIterBuilder::readonly(arr.readonly()).build()?;
-    assert_eq!(iter.sum::<f64>(), 30.0);
+    assert_approx_eq!(iter.sum::<f64>(), 30.0);
     Ok(())
 }
 
@@ -52,7 +58,7 @@ fn multiiter_rr() -> PyResult<()> {
         sum += *x * *y;
     }
 
-    assert_eq!(sum, 145.0);
+    assert_approx_eq!(sum, 145.0);
     Ok(())
 }
 
@@ -80,7 +86,7 @@ fn multiiter_rw() -> PyResult<()> {
         .build()?;
 
     for (x, y) in iter {
-        assert_eq!(*x * 2.0, *y);
+        assert_approx_eq!(*x * 2.0, *y);
     }
 
     Ok(())

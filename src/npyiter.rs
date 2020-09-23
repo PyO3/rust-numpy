@@ -371,6 +371,12 @@ pub struct NpyMultiIterBuilder<'py, T, S: MultiIterMode> {
     was_writables: Vec<bool>,
 }
 
+impl<'py, T: Element> Default for NpyMultiIterBuilder<'py, T, ()> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<'py, T: Element> NpyMultiIterBuilder<'py, T, ()> {
     /// Creates a new builder.
     pub fn new() -> Self {
