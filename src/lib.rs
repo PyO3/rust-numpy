@@ -38,6 +38,7 @@ extern crate pyo3;
 
 pub mod array;
 pub mod convert;
+mod dtype;
 mod error;
 pub mod npyffi;
 pub mod npyiter;
@@ -50,6 +51,7 @@ pub use crate::array::{
     PyArrayDyn,
 };
 pub use crate::convert::{IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
+pub use crate::dtype::PyArrayDescr;
 pub use crate::error::{FromVecError, NotContiguousError, ShapeError};
 pub use crate::npyffi::{PY_ARRAY_API, PY_UFUNC_API};
 pub use crate::npyiter::{

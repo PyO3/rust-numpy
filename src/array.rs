@@ -103,7 +103,7 @@ impl<T, D> type_object::PySizedLayout<PyArray<T, D>> for npyffi::PyArrayObject {
 pyobject_native_type_convert!(
     PyArray<T, D>,
     npyffi::PyArrayObject,
-    *npyffi::PY_ARRAY_API.get_type_object(npyffi::ArrayType::PyArray_Type),
+    *npyffi::PY_ARRAY_API.get_type_object(npyffi::NpyTypes::PyArray_Type),
     Some("numpy"),
     npyffi::PyArray_Check,
     T, D
@@ -386,7 +386,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     {
         let dims = dims.into_dimension();
         let ptr = PY_ARRAY_API.PyArray_New(
-            PY_ARRAY_API.get_type_object(npyffi::ArrayType::PyArray_Type),
+            PY_ARRAY_API.get_type_object(npyffi::NpyTypes::PyArray_Type),
             dims.ndim_cint(),
             dims.as_dims_ptr(),
             T::ffi_dtype() as i32,
@@ -415,7 +415,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
             .create_cell(py)
             .expect("Object creation failed.");
         let ptr = PY_ARRAY_API.PyArray_New(
-            PY_ARRAY_API.get_type_object(npyffi::ArrayType::PyArray_Type),
+            PY_ARRAY_API.get_type_object(npyffi::NpyTypes::PyArray_Type),
             dims.ndim_cint(),
             dims.as_dims_ptr(),
             T::ffi_dtype() as i32,

@@ -234,3 +234,17 @@ fn handle_negative_strides() {
         .unwrap();
     assert_eq!(negstr_pyarr.to_owned_array(), arr.slice(s![..;-1, ..]));
 }
+
+#[test]
+fn dtype_from_py() {
+    let gil = pyo3::Python::acquire_gil();
+    let py = gil.python();
+    let arr = array![[2, 3], [4, 5u32]];
+    let pyarr = arr.to_pyarray(py);
+    let dtype: &numpy::PyArrayDescr = py
+        .eval("a.dtype", Some([("a", pyarr)].into_py_dict(py)), None)
+        .unwrap()
+        .downcast()
+        .unwrap();
+    assert_eq!(&format!("{:?}", dtype), "dtype('uint32')");
+}
