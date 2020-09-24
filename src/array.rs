@@ -10,9 +10,9 @@ use std::{cell::Cell, mem, os::raw::c_int, ptr, slice};
 use std::{iter::ExactSizeIterator, marker::PhantomData};
 
 use crate::convert::{IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
+use crate::dtype::Element;
 use crate::error::{FromVecError, NotContiguousError, ShapeError};
 use crate::slice_box::SliceBox;
-use crate::types::Element;
 
 /// A safe, static-typed interface for
 /// [NumPy ndarray](https://numpy.org/doc/stable/reference/arrays.ndarray.html).
@@ -136,12 +136,12 @@ impl<'a, T: Element, D: Dimension> FromPyObject<'a> for &'a PyArray<T, D> {
             }
             &*(ob as *const PyAny as *const PyArray<T, D>)
         };
-        let type_ = unsafe { (*(*array.as_array_ptr()).descr).type_num };
+        let dtype = array.dtype();
         let dim = array.shape().len();
-        if T::is_same_type(type_) && D::NDIM.map(|n| n == dim).unwrap_or(true) {
+        if T::is_same_type(dtype) && D::NDIM.map(|n| n == dim).unwrap_or(true) {
             Ok(array)
         } else {
-            Err(ShapeError::new(type_, dim, T::DATA_TYPE, D::NDIM).into())
+            Err(ShapeError::new(dtype, dim, T::DATA_TYPE, D::NDIM).into())
         }
     }
 }
@@ -150,6 +150,11 @@ impl<T, D> PyArray<T, D> {
     /// Gets a raw [`PyArrayObject`](../npyffi/objects/struct.PyArrayObject.html) pointer.
     pub fn as_array_ptr(&self) -> *mut npyffi::PyArrayObject {
         self.as_ptr() as _
+    }
+
+    pub fn dtype(&self) -> &crate::PyArrayDescr {
+        let descr_ptr = unsafe { (*self.as_array_ptr()).descr };
+        unsafe { pyo3::FromPyPointer::from_borrowed_ptr(self.py(), descr_ptr as _) }
     }
 
     #[inline(always)]
@@ -389,7 +394,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
             PY_ARRAY_API.get_type_object(npyffi::NpyTypes::PyArray_Type),
             dims.ndim_cint(),
             dims.as_dims_ptr(),
-            T::ffi_dtype() as i32,
+            T::npy_type() as i32,
             strides as *mut _, // strides
             ptr::null_mut(),   // data
             0,                 // itemsize
@@ -418,7 +423,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
             PY_ARRAY_API.get_type_object(npyffi::NpyTypes::PyArray_Type),
             dims.ndim_cint(),
             dims.as_dims_ptr(),
-            T::ffi_dtype() as i32,
+            T::npy_type() as i32,
             strides as *mut _,          // strides
             data_ptr as _,              // data
             mem::size_of::<T>() as i32, // itemsize
@@ -450,11 +455,11 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     {
         let dims = dims.into_dimension();
         unsafe {
-            let descr = PY_ARRAY_API.PyArray_DescrFromType(T::ffi_dtype() as i32);
+            let dtype = T::get_dtype(py);
             let ptr = PY_ARRAY_API.PyArray_Zeros(
                 dims.ndim_cint(),
                 dims.as_dims_ptr(),
-                descr,
+                dtype.into_ptr() as _,
                 if is_fortran { -1 } else { 0 },
             );
             Self::from_owned_ptr(py, ptr)
@@ -941,10 +946,10 @@ impl<T: Element, D> PyArray<T, D> {
     /// assert_eq!(pyarray_i.readonly().as_slice().unwrap(), &[2, 3, 4]);
     pub fn cast<'py, U: Element>(&'py self, is_fortran: bool) -> PyResult<&'py PyArray<U, D>> {
         let ptr = unsafe {
-            let descr = PY_ARRAY_API.PyArray_DescrFromType(U::ffi_dtype() as i32);
+            let dtype = U::get_dtype(self.py());
             PY_ARRAY_API.PyArray_CastToType(
                 self.as_array_ptr(),
-                descr,
+                dtype.into_ptr() as _,
                 if is_fortran { -1 } else { 0 },
             )
         };
@@ -1028,7 +1033,7 @@ impl<T: Element + AsPrimitive<f64>> PyArray<T, Ix1> {
                 start.as_(),
                 stop.as_(),
                 step.as_(),
-                T::ffi_dtype() as i32,
+                T::npy_type() as i32,
             );
             Self::from_owned_ptr(py, ptr)
         }

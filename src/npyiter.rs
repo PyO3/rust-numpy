@@ -3,7 +3,6 @@
 //! This module exposes two iterators:
 //! [NpySingleIter](./struct.NpySingleIter.html) and
 //! [NpyMultiIter](./struct.NpyMultiIter.html).
-use crate::array::{PyArray, PyArrayDyn};
 use crate::npyffi::{
     array::PY_ARRAY_API,
     npy_intp, npy_uint32,
@@ -14,8 +13,7 @@ use crate::npyffi::{
     NPY_ITER_READONLY, NPY_ITER_READWRITE, NPY_ITER_REDUCE_OK, NPY_ITER_REFS_OK,
     NPY_ITER_ZEROSIZE_OK,
 };
-use crate::readonly::PyReadonlyArray;
-use crate::types::Element;
+use crate::{Element, PyArray, PyArrayDyn, PyReadonlyArray};
 use pyo3::{prelude::*, PyNativeType};
 
 use std::marker::PhantomData;

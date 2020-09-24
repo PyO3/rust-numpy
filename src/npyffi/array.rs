@@ -315,10 +315,10 @@ impl PyArrayAPI {
     impl_api![303; PyArray_SetWritebackIfCopyBase(arr: *mut PyArrayObject, base: *mut PyArrayObject) -> c_int];
 }
 
-/// Define PyTypeObject related to Array API
+// Define type objects that belongs to Numpy API
 macro_rules! impl_array_type {
     ($(($offset:expr, $tname:ident)),*) => {
-        /// All type objects that numpy has.
+        /// All type objects of numpy API.
         #[allow(non_camel_case_types)]
         pub enum NpyTypes { $($tname),* }
         impl PyArrayAPI {
