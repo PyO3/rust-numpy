@@ -1,5 +1,5 @@
 //! Defines error types.
-use crate::types::DataType;
+use crate::DataType;
 use pyo3::{exceptions as exc, PyErr, PyErrArguments, PyObject, Python, ToPyObject};
 use std::fmt;
 
@@ -33,7 +33,7 @@ pub struct ShapeError {
 
 impl ShapeError {
     pub(crate) fn new(
-        from_type: i32,
+        from_dtype: &crate::PyArrayDescr,
         from_dim: usize,
         to_type: DataType,
         to_dim: Option<usize>,
@@ -41,7 +41,7 @@ impl ShapeError {
         ShapeError {
             from: ArrayDim {
                 dim: Some(from_dim),
-                dtype: DataType::from_i32(from_type),
+                dtype: from_dtype.get_datatype(),
             },
             to: ArrayDim {
                 dim: to_dim,

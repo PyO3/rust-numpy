@@ -315,25 +315,24 @@ impl PyArrayAPI {
     impl_api![303; PyArray_SetWritebackIfCopyBase(arr: *mut PyArrayObject, base: *mut PyArrayObject) -> c_int];
 }
 
-/// Define PyTypeObject related to Array API
+// Define type objects that belongs to Numpy API
 macro_rules! impl_array_type {
     ($(($offset:expr, $tname:ident)),*) => {
-        /// All type objects that numpy has.
+        /// All type objects of numpy API.
         #[allow(non_camel_case_types)]
-        #[repr(i32)]
-        pub enum ArrayType { $($tname),* }
+        pub enum NpyTypes { $($tname),* }
         impl PyArrayAPI {
             /// Get the pointer of the type object that `self` refers.
-            pub unsafe fn get_type_object(&self, ty: ArrayType) -> *mut PyTypeObject {
+            pub unsafe fn get_type_object(&self, ty: NpyTypes) -> *mut PyTypeObject {
                 match ty {
-                    $( ArrayType::$tname => *(self.get($offset)) as *mut PyTypeObject ),*
+                    $( NpyTypes::$tname => *(self.get($offset)) as _ ),*
                 }
             }
         }
     }
-} // impl_array_type!;
+}
 
-impl_array_type!(
+impl_array_type! {
     (1, PyBigArray_Type),
     (2, PyArray_Type),
     (3, PyArrayDescr_Type),
@@ -373,18 +372,18 @@ impl_array_type!(
     (37, PyStringArrType_Type),
     (38, PyUnicodeArrType_Type),
     (39, PyVoidArrType_Type)
-);
+}
 
 /// Checks that `op` is an instance of `PyArray` or not.
 #[allow(non_snake_case)]
 pub unsafe fn PyArray_Check(op: *mut PyObject) -> c_int {
-    ffi::PyObject_TypeCheck(op, PY_ARRAY_API.get_type_object(ArrayType::PyArray_Type))
+    ffi::PyObject_TypeCheck(op, PY_ARRAY_API.get_type_object(NpyTypes::PyArray_Type))
 }
 
 /// Checks that `op` is an exact instance of `PyArray` or not.
 #[allow(non_snake_case)]
 pub unsafe fn PyArray_CheckExact(op: *mut PyObject) -> c_int {
-    (ffi::Py_TYPE(op) == PY_ARRAY_API.get_type_object(ArrayType::PyArray_Type)) as c_int
+    (ffi::Py_TYPE(op) == PY_ARRAY_API.get_type_object(NpyTypes::PyArray_Type)) as _
 }
 
 #[test]
