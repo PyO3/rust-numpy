@@ -17,13 +17,15 @@ use crate::{
 ///
 /// In addition, if you construct `PyArray` via this method,
 /// **you cannot use some destructive methods like `resize`.**
+///
 /// # Example
 /// ```
 /// use numpy::{PyArray, IntoPyArray};
-/// let gil = pyo3::Python::acquire_gil();
-/// let py_array = vec![1, 2, 3].into_pyarray(gil.python());
-/// assert_eq!(py_array.readonly().as_slice().unwrap(), &[1, 2, 3]);
-/// assert!(py_array.resize(100).is_err()); // You can't resize owned-by-rust array.
+/// pyo3::Python::with_gil(|py| {
+///     let py_array = vec![1, 2, 3].into_pyarray(py);
+///     assert_eq!(py_array.readonly().as_slice().unwrap(), &[1, 2, 3]);
+///     assert!(py_array.resize(100).is_err()); // You can't resize owned-by-rust array.
+/// });
 /// ```
 pub trait IntoPyArray {
     type Item: Element;
@@ -71,9 +73,10 @@ where
 /// # Example
 /// ```
 /// use numpy::{PyArray, ToPyArray};
-/// let gil = pyo3::Python::acquire_gil();
-/// let py_array = vec![1, 2, 3].to_pyarray(gil.python());
-/// assert_eq!(py_array.readonly().as_slice().unwrap(), &[1, 2, 3]);
+/// pyo3::Python::with_gil(|py| {
+///     let py_array = vec![1, 2, 3].to_pyarray(py);
+///     assert_eq!(py_array.readonly().as_slice().unwrap(), &[1, 2, 3]);
+/// });
 /// ```
 ///
 /// This method converts a not-contiguous array to C-order contiguous array.
@@ -81,16 +84,16 @@ where
 /// ```
 /// use numpy::{PyArray, ToPyArray};
 /// use ndarray::{arr3, s};
-/// let gil = pyo3::Python::acquire_gil();
-/// let py = gil.python();
-/// let a = arr3(&[[[ 1,  2,  3], [ 4,  5,  6]],
-///                [[ 7,  8,  9], [10, 11, 12]]]);
-/// let slice = a.slice(s![.., 0..1, ..]);
-/// let sliced = arr3(&[[[ 1,  2,  3]],
-///                     [[ 7,  8,  9]]]);
-/// let py_slice = slice.to_pyarray(py);
-/// assert_eq!(py_slice.readonly().as_array(), sliced);
-/// pyo3::py_run!(py, py_slice, "assert py_slice.flags['C_CONTIGUOUS']");
+/// pyo3::Python::with_gil(|py| {
+///     let a = arr3(&[[[ 1,  2,  3], [ 4,  5,  6]],
+///                    [[ 7,  8,  9], [10, 11, 12]]]);
+///     let slice = a.slice(s![.., 0..1, ..]);
+///     let sliced = arr3(&[[[ 1,  2,  3]],
+///                         [[ 7,  8,  9]]]);
+///     let py_slice = slice.to_pyarray(py);
+///     assert_eq!(py_slice.readonly().as_array(), sliced);
+///     pyo3::py_run!(py, py_slice, "assert py_slice.flags['C_CONTIGUOUS']");
+/// });
 /// ```
 pub trait ToPyArray {
     type Item: Element;

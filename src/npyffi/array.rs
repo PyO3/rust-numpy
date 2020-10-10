@@ -19,13 +19,13 @@ const CAPSULE_NAME: &str = "_ARRAY_API";
 /// # Example
 /// ```
 /// use numpy::{PyArray, npyffi::types::NPY_SORTKIND, PY_ARRAY_API};
-/// use pyo3::Python;
-/// let gil = Python::acquire_gil();
-/// let array = PyArray::from_slice(gil.python(), &[3, 2, 4]);
-/// unsafe {
-///     PY_ARRAY_API.PyArray_Sort(array.as_array_ptr(), 0, NPY_SORTKIND::NPY_QUICKSORT);
-/// }
-/// assert_eq!(array.readonly().as_slice().unwrap(), &[2, 3, 4]);
+/// pyo3::Python::with_gil(|py| {
+///     let array = PyArray::from_slice(py, &[3, 2, 4]);
+///     unsafe {
+///         PY_ARRAY_API.PyArray_Sort(array.as_array_ptr(), 0, NPY_SORTKIND::NPY_QUICKSORT);
+///     }
+///     assert_eq!(array.readonly().as_slice().unwrap(), &[2, 3, 4]);
+/// })
 /// ```
 pub static PY_ARRAY_API: PyArrayAPI = PyArrayAPI::new();
 
@@ -388,12 +388,10 @@ pub unsafe fn PyArray_CheckExact(op: *mut PyObject) -> c_int {
 
 #[test]
 fn call_api() {
-    use pyo3::Python;
-    let _gil = Python::acquire_gil();
-    unsafe {
+    pyo3::Python::with_gil(|_py| unsafe {
         assert_eq!(
             PY_ARRAY_API.PyArray_MultiplyIntList([1, 2, 3].as_mut_ptr(), 3),
             6
         );
-    }
+    })
 }

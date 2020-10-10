@@ -226,36 +226,37 @@ impl<'py, T: Element, I: IterMode> NpySingleIterBuilder<'py, T, I> {
 ///
 /// ```
 /// use numpy::NpySingleIterBuilder;
-/// let gil = pyo3::Python::acquire_gil();
-/// let py = gil.python();
-/// let array = numpy::PyArray::arange(py, 0, 10, 1);
-/// let iter = NpySingleIterBuilder::readwrite(array).build().unwrap();
-/// for (i, elem) in iter.enumerate() {
-///     assert_eq!(*elem, i as i64);
-///     *elem = *elem * 2;  // elements are mutable
-/// }
+/// pyo3::Python::with_gil(|py| {
+///     let array = numpy::PyArray::arange(py, 0, 10, 1);
+///     let iter = NpySingleIterBuilder::readwrite(array).build().unwrap();
+///     for (i, elem) in iter.enumerate() {
+///         assert_eq!(*elem, i as i64);
+///         *elem = *elem * 2;  // elements are mutable
+///     }
+/// });
 /// ```
 /// Or, as a shorthand, `PyArray::iter` can be also used.
 /// ```
 /// # use numpy::NpySingleIterBuilder;
-/// # let gil = pyo3::Python::acquire_gil();
-/// # let py = gil.python();
-/// # let array = numpy::PyArray::arange(py, 0, 10, 1);
-/// for (i, elem) in array.iter().unwrap().enumerate() {
-///     assert_eq!(*elem, i as i64);
-///     *elem = *elem * 2;  // elements are mutable
-/// }
+/// # pyo3::Python::with_gil(|py| {
+/// #   let array = numpy::PyArray::arange(py, 0, 10, 1);
+/// #   let iter = NpySingleIterBuilder::readwrite(array).build().unwrap();
+///     for (i, elem) in array.iter().unwrap().enumerate() {
+///         assert_eq!(*elem, i as i64);
+///         *elem = *elem * 2;  // elements are mutable
+///     }
+/// });
 /// ```
 /// On the other hand, immutable iterator requires [readonly array](../struct.PyReadonlyArray.html).
 /// ```
 /// use numpy::NpySingleIterBuilder;
-/// let gil = pyo3::Python::acquire_gil();
-/// let py = gil.python();
-/// let array = numpy::PyArray::arange(py, 0, 1, 10);
-/// let iter = NpySingleIterBuilder::readonly(array.readonly()).build().unwrap();
-/// for (i, elem) in iter.enumerate() {
-///     assert_eq!(*elem, i as i64);
-/// }
+/// pyo3::Python::with_gil(|py| {
+///     let array = numpy::PyArray::arange(py, 0, 1, 10);
+///     let iter = NpySingleIterBuilder::readonly(array.readonly()).build().unwrap();
+///     for (i, elem) in iter.enumerate() {
+///         assert_eq!(*elem, i as i64);
+///     }
+/// });
 /// ```
 pub struct NpySingleIter<'py, T, I> {
     iterator: ptr::NonNull<NpyIter>,
@@ -473,21 +474,21 @@ impl<'py, T: Element, S: MultiIterModeWithManyArrays> NpyMultiIterBuilder<'py, T
 ///
 /// ```
 /// use numpy::NpyMultiIterBuilder;
-/// let gil = pyo3::Python::acquire_gil();
-/// let py = gil.python();
-/// let array1 = numpy::PyArray::arange(py, 0, 10, 1);
-/// let array2 = numpy::PyArray::arange(py, 10, 20, 1);
-/// let array3 = numpy::PyArray::arange(py, 10, 30, 2);
-/// let iter = NpyMultiIterBuilder::new()
-///     .add_readonly(array1.readonly())
-///     .add_readwrite(array2)
-///     .add_readonly(array3.readonly())
-///     .build()
-///     .unwrap();
-/// for (i, j, k) in iter {
-///     assert_eq!(*i + *j, *k);
-///     *j += *i + *k;  // The third element is only mutable.
-/// }
+/// pyo3::Python::with_gil(|py| {
+///     let array1 = numpy::PyArray::arange(py, 0, 10, 1);
+///     let array2 = numpy::PyArray::arange(py, 10, 20, 1);
+///     let array3 = numpy::PyArray::arange(py, 10, 30, 2);
+///     let iter = NpyMultiIterBuilder::new()
+///         .add_readonly(array1.readonly())
+///         .add_readwrite(array2)
+///         .add_readonly(array3.readonly())
+///         .build()
+///          .unwrap();
+///     for (i, j, k) in iter {
+///         assert_eq!(*i + *j, *k);
+///         *j += *i + *k;  // The third element is only mutable.
+///     }
+/// });
 /// ```
 pub struct NpyMultiIter<'py, T, S: MultiIterModeWithManyArrays> {
     iterator: ptr::NonNull<NpyIter>,

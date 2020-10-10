@@ -62,32 +62,24 @@ numpy = "0.11.0"
 ```
 
 ```rust
-use numpy::{PyArray1, get_array_module};
+use numpy::PyArray1;
 use pyo3::prelude::{PyResult, Python};
-use pyo3::types::PyDict;
+use pyo3::types::IntoPyDict;
 
-fn main() -> Result<(), ()> {
-    let gil = Python::acquire_gil();
-    main_(gil.python()).map_err(|e| {
-        eprintln!("error! :{:?}", e);
-        // we can't display python error type via ::std::fmt::Display
-        // so print error here manually
-        e.print_and_set_sys_last_vars(gil.python());
+fn main() -> PyResult<()> {
+    Python::with_gil(|py| {
+        let np = py.import("numpy")?;
+        let locals = [("np", np)].into_py_dict(py);
+        let pyarray: &PyArray1<i32> = py
+            .eval("np.absolute(np.array([-1, -2, -3], dtype='int32'))", Some(locals), None)?
+            .extract()?;
+        let readonly = pyarray.readonly();
+        let slice = readonly.as_slice()?;
+        assert_eq!(slice, &[1, 2, 3]);
+        Ok(())
     })
 }
 
-fn main_<'py>(py: Python<'py>) -> PyResult<()> {
-    let np = py.import("numpy")?;
-    let dict = PyDict::new(py);
-    dict.set_item("np", np)?;
-    let pyarray: &PyArray1<i32> = py
-        .eval("np.absolute(np.array([-1, -2, -3], dtype='int32'))", Some(&dict), None)?
-        .extract()?;
-    let readonly = pyarray.readonly();
-    let slice = readonly.as_slice().unwrap();
-    assert_eq!(slice, &[1, 2, 3]);
-    Ok(())
-}
 ```
 
 ### Write a Python module in Rust

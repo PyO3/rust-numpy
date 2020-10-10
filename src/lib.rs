@@ -18,16 +18,15 @@
 //! ```
 //! #[macro_use]
 //! extern crate ndarray;
-//! use pyo3::prelude::Python;
 //! use numpy::{ToPyArray, PyArray};
 //! fn main() {
-//!     let gil = Python::acquire_gil();
-//!     let py = gil.python();
-//!     let py_array = array![[1i64, 2], [3, 4]].to_pyarray(py);
-//!     assert_eq!(
-//!         py_array.readonly().as_array(),
-//!         array![[1i64, 2], [3, 4]]
-//!     );
+//!     pyo3::Python::with_gil(|py| {
+//!         let py_array = array![[1i64, 2], [3, 4]].to_pyarray(py);
+//!         assert_eq!(
+//!             py_array.readonly().as_array(),
+//!             array![[1i64, 2], [3, 4]]
+//!         );
+//!     })
 //! }
 //! ```
 

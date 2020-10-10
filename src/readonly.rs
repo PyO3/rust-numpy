@@ -19,33 +19,33 @@ use pyo3::{prelude::*, types::PyAny, AsPyPointer};
 /// becomes writeble again after it drops.
 /// ```
 /// use numpy::{PyArray, npyffi::NPY_ARRAY_WRITEABLE};
-/// let gil = pyo3::Python::acquire_gil();
-/// let py = gil.python();
-/// let py_array = PyArray::arange(py, 0, 4, 1).reshape([2, 2]).unwrap();
-/// {
-///    let readonly = py_array.readonly();
-///    // The internal array is not writeable now.
-///    pyo3::py_run!(py, py_array, "assert not py_array.flags['WRITEABLE']");
-/// }
-/// // After the `readonly` drops, the internal array gets writeable again.
-/// pyo3::py_run!(py, py_array, "assert py_array.flags['WRITEABLE']");
+/// pyo3::Python::with_gil(|py| {
+///     let py_array = PyArray::arange(py, 0, 4, 1).reshape([2, 2]).unwrap();
+///     {
+///        let readonly = py_array.readonly();
+///        // The internal array is not writeable now.
+///        pyo3::py_run!(py, py_array, "assert not py_array.flags['WRITEABLE']");
+///     }
+///     // After the `readonly` drops, the internal array gets writeable again.
+///     pyo3::py_run!(py, py_array, "assert py_array.flags['WRITEABLE']");
+/// });
 /// ```
 /// However, if we convert the `PyReadonlyArray` directly into `PyObject`,
 /// the internal array remains readonly.
 /// ```
 /// use numpy::{PyArray, npyffi::NPY_ARRAY_WRITEABLE};
 /// use pyo3::{IntoPy, PyObject, Python};
-/// let gil = Python::acquire_gil();
-/// let py = gil.python();
-/// let py_array = PyArray::arange(py, 0, 4, 1).reshape([2, 2]).unwrap();
-/// let obj: PyObject = {
-///    let readonly = py_array.readonly();
-///    // The internal array is not writeable now.
-///    pyo3::py_run!(py, py_array, "assert not py_array.flags['WRITEABLE']");
-///    readonly.into_py(py)
-/// };
-/// // The internal array remains readonly.
-/// pyo3::py_run!(py, py_array, "assert py_array.flags['WRITEABLE']");
+/// pyo3::Python::with_gil(|py| {
+///     let py_array = PyArray::arange(py, 0, 4, 1).reshape([2, 2]).unwrap();
+///     let obj: PyObject = {
+///        let readonly = py_array.readonly();
+///        // The internal array is not writeable now.
+///        pyo3::py_run!(py, py_array, "assert not py_array.flags['WRITEABLE']");
+///        readonly.into_py(py)
+///     };
+///     // The internal array remains readonly.
+///     pyo3::py_run!(py, py_array, "assert py_array.flags['WRITEABLE']");
+/// });
 /// ```
 pub struct PyReadonlyArray<'py, T, D> {
     array: &'py PyArray<T, D>,
@@ -60,18 +60,18 @@ impl<'py, T: Element, D: Dimension> PyReadonlyArray<'py, T, D> {
     /// ```
     /// use numpy::{PyArray, PyArray1};
     /// use pyo3::types::IntoPyDict;
-    /// let gil = pyo3::Python::acquire_gil();
-    /// let py = gil.python();
-    /// let py_array = PyArray::arange(py, 0, 4, 1).reshape([2, 2]).unwrap();
-    /// let readonly = py_array.readonly();
-    /// assert_eq!(readonly.as_slice().unwrap(), &[0, 1, 2, 3]);
-    /// let locals = [("np", numpy::get_array_module(py).unwrap())].into_py_dict(py);
-    /// let not_contiguous: &PyArray1<i32> = py
-    ///     .eval("np.arange(10)[::2]", Some(locals), None)
-    ///     .unwrap()
-    ///     .downcast()
-    ///     .unwrap();
-    /// assert!(not_contiguous.readonly().as_slice().is_err());
+    /// pyo3::Python::with_gil(|py| {
+    ///     let py_array = PyArray::arange(py, 0, 4, 1).reshape([2, 2]).unwrap();
+    ///     let readonly = py_array.readonly();
+    ///     assert_eq!(readonly.as_slice().unwrap(), &[0, 1, 2, 3]);
+    ///     let locals = [("np", numpy::get_array_module(py).unwrap())].into_py_dict(py);
+    ///     let not_contiguous: &PyArray1<i32> = py
+    ///         .eval("np.arange(10)[::2]", Some(locals), None)
+    ///         .unwrap()
+    ///         .downcast()
+    ///         .unwrap();
+    ///     assert!(not_contiguous.readonly().as_slice().is_err());
+    /// });
     /// ```
     pub fn as_slice(&self) -> Result<&[T], NotContiguousError> {
         unsafe { self.array.as_slice() }
@@ -84,11 +84,11 @@ impl<'py, T: Element, D: Dimension> PyReadonlyArray<'py, T, D> {
     /// ```
     /// # #[macro_use] extern crate ndarray;
     /// use numpy::PyArray;
-    /// let gil = pyo3::Python::acquire_gil();
-    /// let py = gil.python();
-    /// let array = PyArray::arange(py, 0, 4, 1).reshape([2, 2]).unwrap();
-    /// let readonly = array.readonly();
-    /// assert_eq!(readonly.as_array(), array![[0, 1], [2, 3]]);
+    /// pyo3::Python::with_gil(|py| {
+    ///     let array = PyArray::arange(py, 0, 4, 1).reshape([2, 2]).unwrap();
+    ///     let readonly = array.readonly();
+    ///     assert_eq!(readonly.as_array(), array![[0, 1], [2, 3]]);
+    /// });
     /// ```
     pub fn as_array(&self) -> ArrayView<'_, T, D> {
         unsafe { self.array.as_array() }
@@ -103,27 +103,30 @@ impl<'py, T: Element, D: Dimension> PyReadonlyArray<'py, T, D> {
     /// # Example
     /// ```
     /// use numpy::PyArray;
-    /// let gil = pyo3::Python::acquire_gil();
-    /// let arr = PyArray::arange(gil.python(), 0, 16, 1).reshape([2, 2, 4]).unwrap().readonly();
-    /// assert_eq!(*arr.get([1, 0, 3]).unwrap(), 11);
-    /// assert!(arr.get([2, 0, 3]).is_none());
+    /// pyo3::Python::with_gil(|py| {
+    ///     let arr = PyArray::arange(py, 0, 16, 1).reshape([2, 2, 4]).unwrap().readonly();
+    ///     assert_eq!(*arr.get([1, 0, 3]).unwrap(), 11);
+    ///     assert!(arr.get([2, 0, 3]).is_none());
+    /// });
     /// ```
     ///
     /// For fixed dimension arrays, passing an index with invalid dimension causes compile error.
     /// ```compile_fail
     /// use numpy::PyArray;
-    /// let gil = pyo3::Python::acquire_gil();
-    /// let arr = PyArray::arange(gil.python(), 0, 16, 1).reshape([2, 2, 4]).unwrap().readonly();
-    /// let a = arr.get([1, 2]); // Compile Error!
+    /// pyo3::Python::with_gil(|py| {
+    ///     let arr = PyArray::arange(py, 0, 16, 1).reshape([2, 2, 4]).unwrap().readonly();
+    ///     let a = arr.get([1, 2]); // Compile Error!
+    /// });
     /// ```
     ///
     /// However, for dinamic arrays, we cannot raise a compile error and just returns `None`.
     /// ```
     /// use numpy::PyArray;
-    /// let gil = pyo3::Python::acquire_gil();
-    /// let arr = PyArray::arange(gil.python(), 0, 16, 1).reshape([2, 2, 4]).unwrap();
-    /// let arr = arr.to_dyn().readonly();
-    /// assert!(arr.get([1, 2].as_ref()).is_none());
+    /// pyo3::Python::with_gil(|py| {
+    ///     let arr = PyArray::arange(py, 0, 16, 1).reshape([2, 2, 4]).unwrap().readonly();
+    ///     let arr = arr.to_dyn().readonly();
+    ///     assert!(arr.get([1, 2].as_ref()).is_none());
+    /// });
     /// ```
     #[inline(always)]
     pub fn get(&self, index: impl NpyIndex<Dim = D>) -> Option<&T> {
