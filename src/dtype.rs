@@ -1,4 +1,3 @@
-//! Implements conversion utitlities.
 use crate::npyffi::{NpyTypes, PyArray_Descr, NPY_TYPES, PY_ARRAY_API};
 pub use num_complex::Complex32 as c32;
 pub use num_complex::Complex64 as c64;
@@ -8,6 +7,21 @@ use pyo3::types::PyType;
 use pyo3::{AsPyPointer, PyNativeType};
 use std::os::raw::c_int;
 
+/// Binding of [`numpy.dtype`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.html).
+///
+/// # Example
+/// ```
+/// use pyo3::types::IntoPyDict;
+/// pyo3::Python::with_gil(|py| {
+///     let locals = [("np", numpy::get_array_module(py).unwrap())].into_py_dict(py);
+///     let dtype: &numpy::PyArrayDescr = py
+///         .eval("np.array([1, 2, 3.0]).dtype", Some(locals), None)
+///         .unwrap()
+///         .downcast()
+///         .unwrap();
+///     assert_eq!(dtype.get_datatype().unwrap(), numpy::DataType::Float64);
+/// });
+/// ```
 pub struct PyArrayDescr(PyAny);
 
 pyobject_native_type_core!(
@@ -28,34 +42,48 @@ unsafe fn arraydescr_check(op: *mut ffi::PyObject) -> c_int {
 }
 
 impl PyArrayDescr {
+    /// Returns `self` as `*mut PyArray_Descr`.
     pub fn as_dtype_ptr(&self) -> *mut PyArray_Descr {
         self.as_ptr() as _
     }
 
+    /// Returns the internal `PyType` that this `dtype` holds.
+    ///
+    /// # Example
+    /// ```
+    /// pyo3::Python::with_gil(|py| {
+    ///    let array = numpy::PyArray::from_vec(py, vec![0.0, 1.0, 2.0f64]);
+    ///    let dtype = array.dtype();
+    ///    assert_eq!(dtype.get_type().name().to_string(), "numpy.float64");
+    /// });
+    /// ```
     pub fn get_type(&self) -> &PyType {
         let dtype_type_ptr = unsafe { *self.as_dtype_ptr() }.typeobj;
         unsafe { PyType::from_type_ptr(self.py(), dtype_type_ptr) }
     }
 
-    pub fn get_typenum(&self) -> std::os::raw::c_int {
-        unsafe { *self.as_dtype_ptr() }.type_num
-    }
-
+    /// Returns the data type as `DataType` enum.
     pub fn get_datatype(&self) -> Option<DataType> {
         DataType::from_typenum(self.get_typenum())
     }
 
-    pub fn from_npy_type(py: Python, npy_type: NPY_TYPES) -> &Self {
+    fn from_npy_type(py: Python, npy_type: NPY_TYPES) -> &Self {
         unsafe {
             let descr = PY_ARRAY_API.PyArray_DescrFromType(npy_type as i32);
             py.from_owned_ptr(descr as _)
         }
     }
+
+    fn get_typenum(&self) -> std::os::raw::c_int {
+        unsafe { *self.as_dtype_ptr() }.type_num
+    }
 }
 
-/// An enum type represents numpy data type.
+/// Represents numpy data type.
 ///
-/// This type is mainly for displaying error, and user don't have to use it directly.
+/// This is an incomplete counterpart of
+/// [Enumerated Types](https://numpy.org/doc/stable/reference/c-api/dtype.html#enumerated-types)
+/// in numpy C-API.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum DataType {
     Bool,
@@ -75,6 +103,8 @@ pub enum DataType {
 }
 
 impl DataType {
+    /// Construct `DataType` from
+    /// [Enumerated Types](https://numpy.org/doc/stable/reference/c-api/dtype.html#enumerated-types).
     pub fn from_typenum(typenum: c_int) -> Option<Self> {
         Some(match typenum {
             x if x == NPY_TYPES::NPY_BOOL as i32 => DataType::Bool,
@@ -97,11 +127,8 @@ impl DataType {
         })
     }
 
-    pub fn from_dtype(dtype: &crate::PyArrayDescr) -> Option<Self> {
-        Self::from_typenum(dtype.get_typenum())
-    }
-
-    #[inline]
+    /// Convert `self` into
+    /// [Enumerated Types](https://numpy.org/doc/stable/reference/c-api/dtype.html#enumerated-types).
     pub fn into_ctype(self) -> NPY_TYPES {
         match self {
             DataType::Bool => NPY_TYPES::NPY_BOOL,
@@ -143,15 +170,20 @@ impl DataType {
 
 /// Represents that a type can be an element of `PyArray`.
 pub trait Element: Clone {
+    /// `DataType` corresponding to this type.
     const DATA_TYPE: DataType;
 
+    /// Returns if the give `dtype` is convertible to `Self` in Rust.
     fn is_same_type(dtype: &PyArrayDescr) -> bool;
 
+    /// Returns the corresponding
+    /// [Enumerated Type](https://numpy.org/doc/stable/reference/c-api/dtype.html#enumerated-types).
     #[inline]
     fn npy_type() -> NPY_TYPES {
         Self::DATA_TYPE.into_ctype()
     }
 
+    /// Create `dtype`.
     fn get_dtype(py: Python) -> &PyArrayDescr {
         PyArrayDescr::from_npy_type(py, Self::npy_type())
     }

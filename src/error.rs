@@ -41,7 +41,7 @@ impl ShapeError {
         ShapeError {
             from: ArrayDim {
                 dim: Some(from_dim),
-                dtype: DataType::from_dtype(from_dtype),
+                dtype: from_dtype.get_datatype(),
             },
             to: ArrayDim {
                 dim: to_dim,

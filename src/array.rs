@@ -152,6 +152,17 @@ impl<T, D> PyArray<T, D> {
         self.as_ptr() as _
     }
 
+    /// Returns `dtype` of the array.
+    /// Counterpart of `array.dtype` in Python.
+    ///
+    /// # Example
+    /// ```
+    /// pyo3::Python::with_gil(|py| {
+    ///    let array = numpy::PyArray::from_vec(py, vec![1, 2, 3i32]);
+    ///    let dtype = array.dtype();
+    ///    assert_eq!(dtype.get_datatype().unwrap(), numpy::DataType::Int32);
+    /// });
+    /// ```
     pub fn dtype(&self) -> &crate::PyArrayDescr {
         let descr_ptr = unsafe { (*self.as_array_ptr()).descr };
         unsafe { pyo3::FromPyPointer::from_borrowed_ptr(self.py(), descr_ptr as _) }
