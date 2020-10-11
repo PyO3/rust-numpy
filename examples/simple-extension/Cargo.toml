@@ -13,5 +13,5 @@ numpy = { path = "../.." }
 ndarray = ">= 0.12"
 
 [dependencies.pyo3]
-version = "0.12.0"
+version = "0.12"
 features = ["extension-module"]
