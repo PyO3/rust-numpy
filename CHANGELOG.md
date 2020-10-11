@@ -1,4 +1,9 @@
 # Changelog
+
+- v0.12.0
+  - Introduce `NpySingleIter` and `NpyMultiIter`.
+  - Introduce `PyArrayDescr`.
+
 - v0.11.0
   - `PyArray::get` is now unsafe.
   - Introduce `PyArray::get_owned` and `PyReadonlyArray::get`.
