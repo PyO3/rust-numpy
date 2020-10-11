@@ -1,7 +1,7 @@
 rust-numpy
 ===========
 [![Build Status](https://travis-ci.org/pyo3/rust-numpy.svg?branch=master)](https://travis-ci.org/pyo3/rust-numpy)
-[![Build status](https://ci.appveyor.com/api/projects/status/bjaru43c7t1alx2x/branch/master?svg=true)](https://ci.appveyor.com/project/kngwyu/rust-numpy/branch/master)
+[![Actions Status](https://github.com/pyo3/rust-numpy/workflows/Test/badge.svg)](https://github.com/pyo3/rust-numpy/actions)
 [![Crate](http://meritbadge.herokuapp.com/numpy)](https://crates.io/crates/numpy)
 [![minimum rustc 1.39](https://img.shields.io/badge/rustc-1.39+-blue.svg)](https://rust-lang.github.io/rfcs/2495-min-rust-version.html)
 
@@ -57,8 +57,8 @@ using [setuptools-rust](https://github.com/PyO3/setuptools-rust).
 name = "numpy-test"
 
 [dependencies]
-pyo3 = "0.11.1"
-numpy = "0.11.0"
+pyo3 = "0.12"
+numpy = "0.12.0"
 ```
 
 ```rust
@@ -92,11 +92,11 @@ name = "rust_ext"
 crate-type = ["cdylib"]
 
 [dependencies]
-numpy = "0.11.0"
+numpy = "0.12.0"
 ndarray = "0.13"
 
 [dependencies.pyo3]
-version = "0.11.1"
+version = "0.12"
 features = ["extension-module"]
 ```
 
