@@ -436,7 +436,7 @@ impl<'py, T: Element, S: MultiIterModeWithManyArrays> NpyMultiIterBuilder<'py, T
             was_writables,
             ..
         } = self;
-        debug_assert!(arrays.len() <= i32::MAX as usize);
+        debug_assert!(arrays.len() <= std::i32::MAX as usize);
         debug_assert!(2 <= arrays.len());
 
         let mut opflags = S::flags();

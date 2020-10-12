@@ -6,18 +6,21 @@ cache:
   pip: true
   cargo: true
 
-matrix:
+env:
+  global:
+    - TRAVIS_RUST_VERSION=stable
+    - RUST_BACKTRACE=1
+
+jobs:
   include:
     - python: "3.5"
     - python: "3.6"
     - python: "3.7"
     - python: "3.8"
       env: RUN_LINT=1
-
-env:
-  global:
-    - TRAVIS_RUST_VERSION=stable
-    - RUST_BACKTRACE=1
+    - name: MSRV
+      python: "3.8"
+      env: TRAVIS_RUST_VERSTION=1.39.0
 
 addons:
   apt:
