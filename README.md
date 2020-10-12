@@ -58,7 +58,7 @@ name = "numpy-test"
 
 [dependencies]
 pyo3 = "0.12"
-numpy = "0.12.0"
+numpy = "0.12"
 ```
 
 ```rust
@@ -92,7 +92,7 @@ name = "rust_ext"
 crate-type = ["cdylib"]
 
 [dependencies]
-numpy = "0.12.0"
+numpy = "0.12"
 ndarray = "0.13"
 
 [dependencies.pyo3]

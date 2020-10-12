@@ -1,5 +1,8 @@
 # Changelog
 
+- v0.12.1
+  - Fix compile error in Rust 1.39
+
 - v0.12.0
   - Introduce `NpySingleIter` and `NpyMultiIter`.
   - Introduce `PyArrayDescr`.
