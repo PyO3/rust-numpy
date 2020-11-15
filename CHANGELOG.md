@@ -3,6 +3,9 @@
 - Unreleased
   - Bump num-complex to 0.3
   - Bump ndarray to 0.14
+  - Bump pyo3 to 0.13
+  - Drop support for Python 3.5 (as it is now end-of-life).
+  - Remove unused `python3` feature
 
 - v0.12.1
   - Fix compile error in Rust 1.39
