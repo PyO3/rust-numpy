@@ -12,7 +12,7 @@ license-file = "LICENSE"
 [dependencies]
 cfg-if = "0.1"
 libc = "0.2"
-num-complex = "0.2"
+num-complex = "0.3"
 num-traits = "0.2"
 ndarray = ">=0.13"
 pyo3 = ">=0.12"
