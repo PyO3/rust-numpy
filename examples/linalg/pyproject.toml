@@ -1,0 +1,15 @@
+[build-system]
+build-backend = "maturin"
+
+[tool.poetry]
+name = "numpy-linalg-example"
+version = "0.1.0"
+description = "rust-numpy example with ndarray-linalg"
+authors = ["Yuji Kanagawa <yuji.kngw.80s.revive@gmail.com>"]
+
+[tool.poetry.dependencies]
+numpy = ">=1.18"
+python = ">=3.6"
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.1"

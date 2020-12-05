@@ -1,7 +1,7 @@
 [package]
 name = "numpy-linalg-example"
 version = "0.1.0"
-authors = ["kngwyu <yuji.kngw.80s.revive@gmail.com>"]
+authors = ["Yuji Kanagawa <yuji.kngw.80s.revive@gmail.com>"]
 edition = "2018"
 
 [lib]
@@ -11,7 +11,7 @@ crate-type = ["cdylib"]
 [dependencies]
 numpy = { path = "../.." }
 ndarray = ">= 0.13"
-ndarray-linalg = { version = "0.12", features = ["openblas"] }
+ndarray-linalg = { version = "0.12.1", features = ["openblas-static"] }
 
 [dependencies.pyo3]
 version = "0.12"
