@@ -1,6 +1,5 @@
 rust-numpy
 ===========
-[![Build Status](https://travis-ci.org/pyo3/rust-numpy.svg?branch=master)](https://travis-ci.org/pyo3/rust-numpy)
 [![Actions Status](https://github.com/pyo3/rust-numpy/workflows/Test/badge.svg)](https://github.com/pyo3/rust-numpy/actions)
 [![Crate](http://meritbadge.herokuapp.com/numpy)](https://crates.io/crates/numpy)
 [![minimum rustc 1.39](https://img.shields.io/badge/rustc-1.39+-blue.svg)](https://rust-lang.github.io/rfcs/2495-min-rust-version.html)
@@ -14,6 +13,8 @@ Rust bindings for the NumPy C-API
 
 ## Requirements
 - Rust 1.39+
+- Python >= 3.6
+  - Python 3.5 support is dropped from 0.13
 - Some Rust libraries
   - [ndarray](https://github.com/bluss/ndarray) for rust-side matrix library
   - [pyo3](https://github.com/PyO3/pyo3) for cpython binding
@@ -24,10 +25,6 @@ Rust bindings for the NumPy C-API
 **Note**
 Starting from 0.3, rust-numpy migrated from rust-cpython to pyo3.
 If you want to use rust-cpython, use version 0.2.1 from crates.io.
-
-## Supported Python version
-
-Currently 3.5, 3.6, 3.7, and 3.8 are supported.
 
 
 ## Python2 Support
@@ -43,7 +40,7 @@ features = ["python2"]
 ```
 .
 
-You can also automatically specify python version in [setup.py](examples/simple-extension/setup.py),
+You can also automatically specify python version in `setup.py`,
 using [setuptools-rust](https://github.com/PyO3/setuptools-rust).
 
 
@@ -84,7 +81,7 @@ fn main() -> PyResult<()> {
 
 ### Write a Python module in Rust
 
-Please see the [examples](examples) directory for a complete example
+Please see the [examples](https://github.com/PyO3/rust-numpy/examples) directory for a complete example
 
 ```toml
 [lib]
