@@ -3,14 +3,30 @@ name: Test
 on: [push, pull_request]
 
 jobs:
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          components: rustfmt, clippy
+      - run:
+          cargo fmt --all -- check
+          cargo clippy --tests
+          for example in examples/*; do (cd $example/; cargo clippy) || exit 1; done
+
   build:
     name: python${{ matrix.python-version }}-${{ matrix.platform.python-architecture }} ${{ matrix.platform.os }}
     runs-on: ${{ matrix.platform.os }}
     strategy:
       max-parallel: 12
       matrix:
-        python-version: [3.5, 3.6, 3.7, 3.8]
+        python-version: [3.6, 3.7, 3.8, 3.9]
         platform: [
+          { os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" },
           { os: "macOS-latest",   python-architecture: "x64", rust-target: "x86_64-apple-darwin" },
           { os: "windows-latest", python-architecture: "x64", rust-target: "x86_64-pc-windows-msvc" },
           { os: "windows-latest", python-architecture: "x86", rust-target: "i686-pc-windows-msvc" },
