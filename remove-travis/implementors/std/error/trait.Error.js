@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["numpy"] = [{"text":"impl Error for ShapeError","synthetic":false,"types":[]},{"text":"impl Error for FromVecError","synthetic":false,"types":[]},{"text":"impl Error for NotContiguousError","synthetic":false,"types":[]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

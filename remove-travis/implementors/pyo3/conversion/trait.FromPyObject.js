@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["numpy"] = [{"text":"impl&lt;'a, T:&nbsp;Element, D:&nbsp;Dimension&gt; FromPyObject&lt;'a&gt; for &amp;'a PyArray&lt;T, D&gt;","synthetic":false,"types":[]},{"text":"impl&lt;'py&gt; FromPyObject&lt;'py&gt; for &amp;'py PyArrayDescr","synthetic":false,"types":[]},{"text":"impl&lt;'py, T:&nbsp;Element, D:&nbsp;Dimension&gt; FromPyObject&lt;'py&gt; for PyReadonlyArray&lt;'py, T, D&gt;","synthetic":false,"types":[]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
