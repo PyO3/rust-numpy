@@ -1,4 +1,4 @@
-name: Test
+name: CI
 
 on:
   push:
@@ -51,20 +51,20 @@ jobs:
         run: cargo build --no-default-features --verbose
       - name: Build with default features
         run: cargo build --verbose
-      - name: Install numpy and poetry
-        run:  pip install numpy poetry
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install maturin numpy poetry
       - name: Run cargo test
         run: cargo test --verbose
       - name: Test Examples
         run: |
-          for example_dir in examples/*; do
-              if [ $example != 'examples/linalg' ]; then
-                  pushd $example_dir
-                  poetry install
-                  poetry run maturin develop
-                  poetry run pytest
-                  popd
-              fi
+          for example_dir in 'examples/simple-extension'; do
+              pushd $example_dir && \
+                poetry install && \
+                poetry run maturin develop && \
+                poetry run pytest && \
+                popd
           done
         shell: bash
     env:
@@ -80,21 +80,17 @@ jobs:
           python-version: 3.8
       - name: Install gfortran
         run: |
-          apt update
-          apt install -y gfortran
+          sudo apt install -y gfortran
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           default: true
-      - run: rustup set default-host ${{ matrix.platform.rust-target }}
-      - name: Install numpy and poetry
-        run:  pip install numpy poetry
+      - name: Install maturin and poetry
+        run: pip install maturin poetry
       - name: Test Examples
         run: |
-          cd examples/ndarray-linalg
-          poetry install
-          poetry run maturin develop
-          poetry run pytest
-    env:
-      RUST_BACKTRACE: 1
+          cd examples/linalg && \
+            poetry install && \
+            poetry run maturin develop && \
+            poetry run pytest

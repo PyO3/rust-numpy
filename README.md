@@ -1,6 +1,6 @@
 rust-numpy
 ===========
-[![Actions Status](https://github.com/pyo3/rust-numpy/workflows/Test/badge.svg)](https://github.com/pyo3/rust-numpy/actions)
+[![Actions Status](https://github.com/pyo3/rust-numpy/workflows/CI/badge.svg)](https://github.com/pyo3/rust-numpy/actions)
 [![Crate](http://meritbadge.herokuapp.com/numpy)](https://crates.io/crates/numpy)
 [![minimum rustc 1.39](https://img.shields.io/badge/rustc-1.39+-blue.svg)](https://rust-lang.github.io/rfcs/2495-min-rust-version.html)
 
