@@ -1,5 +1,9 @@
 # Changelog
 
+- Unreleased
+  - Bump num-complex to 0.3
+  - Bump ndarray to 0.14
+
 - v0.12.1
   - Fix compile error in Rust 1.39
 

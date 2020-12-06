@@ -1,26 +1,24 @@
-Example of rust-numpy
-----------------------
+# rust-numpy example extension
 
-- Prerequirement
+Here, we use [`maturin`][maturin] for building Python wheel and
+[`poetry`][poetry] for managing Python dependencies and virtualenvs.
+Following commands creates a virtualenv, install Python-side
+dependencies, and install the extension to the virtualenv.
 
-```
-sudo pip3 install -r requirements.txt
-```
-
-- Build
-
-```
-python3 setup.py develop --user
+```bash
+poetry install
+poetry run maturin develop
 ```
 
-- Run
+Once the extension installed, you can run the extension from
+Python REPL started by `poetry run python`:
 
 ```python
-import numpy as np
-import rust_ext
-
-a = np.array([0.0, 1.0])
-b = np.array([2.0, 3.0])
-rust_ext.axpy(2.0, a, b)
+>>> import numpy as np
+>>> import rust_ext
+>>> rust_ext.axpy(2.0, np.array([0.0, 1.0]), np.array([2.0, 3.0]))
+array([2., 5.])
 ```
-which returns `array([2., 5.])`.
+
+[maturin]: https://github.com/PyO3/maturin
+[poetry]: https://python-poetry.org/

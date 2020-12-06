@@ -42,7 +42,7 @@ fn iter_to_pyarray() {
 #[test]
 fn long_iter_to_pyarray() {
     pyo3::Python::with_gil(|py| {
-        let arr = PyArray::from_iter(py, (0u32..512).map(|x| x)).readonly();
+        let arr = PyArray::from_iter(py, 0u32..512).readonly();
         let slice = arr.as_slice().unwrap();
         for (i, &elem) in slice.iter().enumerate() {
             assert_eq!(i as u32, elem);
