@@ -20,6 +20,7 @@ pyo3 = "0.13"
 [features]
 # In default setting, python version is automatically detected
 default = []
+rayon = ["ndarray/rayon"]
 
 
 [workspace]
