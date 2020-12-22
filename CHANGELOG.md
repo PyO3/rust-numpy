@@ -1,5 +1,9 @@
 # Changelog
 
+- v0.12.2
+  - Pin PyO3 minor versions to 0.12
+  - Pin ndarray minor versions to 0.13
+
 - v0.12.1
   - Fix compile error in Rust 1.39
 
