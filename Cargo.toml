@@ -1,6 +1,6 @@
 [package]
 name = "numpy"
-version = "0.12.1"
+version = "0.12.2"
 authors = ["Toshiki Teramura <toshiki.teramura@gmail.com>", "Yuji Kanagawa <yuji.kngw.80s.revive@gmail.com>"]
 description = "Rust binding of NumPy C-API"
 documentation = "https://pyo3.github.io/rust-numpy/numpy"
@@ -14,8 +14,8 @@ cfg-if = "0.1"
 libc = "0.2"
 num-complex = "0.2"
 num-traits = "0.2"
-ndarray = ">=0.13"
-pyo3 = ">=0.12"
+ndarray = "0.13"
+pyo3 = "0.12"
 
 [features]
 # In default setting, python version is automatically detected
