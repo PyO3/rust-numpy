@@ -1,6 +1,6 @@
 [package]
 name = "numpy"
-version = "0.12.1"
+version = "0.12.2"
 authors = ["Toshiki Teramura <toshiki.teramura@gmail.com>", "Yuji Kanagawa <yuji.kngw.80s.revive@gmail.com>"]
 description = "Rust binding of NumPy C-API"
 documentation = "https://pyo3.github.io/rust-numpy/numpy"
