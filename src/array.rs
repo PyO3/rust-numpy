@@ -101,23 +101,17 @@ pub fn get_array_module(py: Python<'_>) -> PyResult<&PyModule> {
 unsafe impl<T, D> type_object::PyLayout<PyArray<T, D>> for npyffi::PyArrayObject {}
 impl<T, D> type_object::PySizedLayout<PyArray<T, D>> for npyffi::PyArrayObject {}
 
-pyobject_native_type_convert!(
+pyobject_native_type_info!(
     PyArray<T, D>,
     npyffi::PyArrayObject,
     *npyffi::PY_ARRAY_API.get_type_object(npyffi::NpyTypes::PyArray_Type),
     Some("numpy"),
-    npyffi::PyArray_Check,
-    T, D
+    npyffi::PyArray_Check
+    ; T
+    ; D
 );
 
-pyobject_native_type_named!(PyArray<T, D>, T, D);
-pyobject_native_type_fmt!(PyArray<T, D>, T, D);
-
-impl<'a, T, D> std::convert::From<&'a PyArray<T, D>> for &'a PyAny {
-    fn from(ob: &'a PyArray<T, D>) -> Self {
-        unsafe { &*(ob as *const PyArray<T, D> as *const PyAny) }
-    }
-}
+pyobject_native_type_named!(PyArray<T, D> ; T ; D);
 
 impl<T, D> IntoPy<PyObject> for PyArray<T, D> {
     fn into_py(self, py: Python<'_>) -> PyObject {

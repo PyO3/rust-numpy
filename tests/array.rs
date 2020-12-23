@@ -110,8 +110,8 @@ fn as_slice() {
 fn is_instance() {
     pyo3::Python::with_gil(|py| {
         let arr = PyArray2::<f64>::new(py, [3, 5], false);
-        assert!(py.is_instance::<PyArray2<f64>, _>(arr).unwrap());
-        assert!(!py.is_instance::<PyList, _>(arr).unwrap());
+        assert!(arr.is_instance::<PyArray2<f64>>().unwrap());
+        assert!(!arr.is_instance::<PyList>().unwrap());
     })
 }
 
