@@ -1087,12 +1087,6 @@
 <span id="1084">1084</span>
 <span id="1085">1085</span>
 <span id="1086">1086</span>
-<span id="1087">1087</span>
-<span id="1088">1088</span>
-<span id="1089">1089</span>
-<span id="1090">1090</span>
-<span id="1091">1091</span>
-<span id="1092">1092</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Safe interface for NumPy ndarray</span>
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">npyffi</span>::{<span class="self">self</span>, <span class="ident">npy_intp</span>, <span class="ident">NPY_ORDER</span>, <span class="ident">PY_ARRAY_API</span>};
@@ -1197,23 +1191,17 @@
 <span class="kw">unsafe</span> <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> <span class="ident">type_object</span>::<span class="ident">PyLayout</span><span class="op">&lt;</span><span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">npyffi</span>::<span class="ident">PyArrayObject</span> {}
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> <span class="ident">type_object</span>::<span class="ident">PySizedLayout</span><span class="op">&lt;</span><span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">npyffi</span>::<span class="ident">PyArrayObject</span> {}
 
-<span class="macro">pyobject_native_type_convert</span><span class="macro">!</span>(
+<span class="macro">pyobject_native_type_info</span><span class="macro">!</span>(
     <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span>,
     <span class="ident">npyffi</span>::<span class="ident">PyArrayObject</span>,
     <span class="kw-2">*</span><span class="ident">npyffi</span>::<span class="ident">PY_ARRAY_API</span>.<span class="ident">get_type_object</span>(<span class="ident">npyffi</span>::<span class="ident">NpyTypes</span>::<span class="ident">PyArray_Type</span>),
     <span class="prelude-val">Some</span>(<span class="string">&quot;numpy&quot;</span>),
-    <span class="ident">npyffi</span>::<span class="ident">PyArray_Check</span>,
-    <span class="ident">T</span>, <span class="ident">D</span>
+    <span class="ident">npyffi</span>::<span class="ident">PyArray_Check</span>
+    ; <span class="ident">T</span>
+    ; <span class="ident">D</span>
 );
 
-<span class="macro">pyobject_native_type_named</span><span class="macro">!</span>(<span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span>, <span class="ident">T</span>, <span class="ident">D</span>);
-<span class="macro">pyobject_native_type_fmt</span><span class="macro">!</span>(<span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span>, <span class="ident">T</span>, <span class="ident">D</span>);
-
-<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> <span class="ident">std</span>::<span class="ident">convert</span>::<span class="ident">From</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">PyAny</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">ob</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="kw">unsafe</span> { <span class="kw-2">&amp;</span><span class="kw-2">*</span>(<span class="ident">ob</span> <span class="kw">as</span> <span class="kw-2">*</span><span class="kw">const</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> <span class="kw">as</span> <span class="kw-2">*</span><span class="kw">const</span> <span class="ident">PyAny</span>) }
-    }
-}
+<span class="macro">pyobject_native_type_named</span><span class="macro">!</span>(<span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> ; <span class="ident">T</span> ; <span class="ident">D</span>);
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> <span class="ident">IntoPy</span><span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> {
     <span class="kw">fn</span> <span class="ident">into_py</span>(<span class="self">self</span>, <span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyObject</span> {
