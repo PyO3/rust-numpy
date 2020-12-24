@@ -1,6 +1,6 @@
 # Changelog
 
-- Unreleased
+- v0.13.0
   - Bump num-complex to 0.3
   - Bump ndarray to 0.14
   - Bump pyo3 to 0.13
