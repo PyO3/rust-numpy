@@ -286,7 +286,7 @@ impl PyArrayAPI {
     impl_api![273; PyArray_ResultType(narrs: npy_intp, arr: *mut *mut PyArrayObject, ndtypes: npy_intp, dtypes: *mut *mut PyArray_Descr) -> *mut PyArray_Descr];
     impl_api![274; PyArray_CanCastArrayTo(arr: *mut PyArrayObject, to: *mut PyArray_Descr, casting: NPY_CASTING) -> npy_bool];
     impl_api![275; PyArray_CanCastTypeTo(from: *mut PyArray_Descr, to: *mut PyArray_Descr, casting: NPY_CASTING) -> npy_bool];
-    impl_api![276; PyArray_EinsteinSum(subscripts: *mut c_char, nop: npy_intp, op_in: *mut *mut PyArrayObject, dtype: *mut PyArray_Descr, order: NPY_ORDER, casting: NPY_CASTING, out: *mut PyArrayObject) -> *mut PyArrayObject];
+    impl_api![276; PyArray_EinsteinSum(subscripts: *mut c_char, nop: npy_intp, op_in: *mut *mut PyArrayObject, dtype: *mut PyArray_Descr, order: NPY_ORDER, casting: NPY_CASTING, out: *mut PyArrayObject) -> *mut PyObject];
     impl_api![277; PyArray_NewLikeArray(prototype: *mut PyArrayObject, order: NPY_ORDER, dtype: *mut PyArray_Descr, subok: c_int) -> *mut PyObject];
     impl_api![278; PyArray_GetArrayParamsFromObject(op: *mut PyObject, requested_dtype: *mut PyArray_Descr, writeable: npy_bool, out_dtype: *mut *mut PyArray_Descr, out_ndim: *mut c_int, out_dims: *mut npy_intp, out_arr: *mut *mut PyArrayObject, context: *mut PyObject) -> c_int];
     impl_api![279; PyArray_ConvertClipmodeSequence(object: *mut PyObject, modes: *mut NPY_CLIPMODE, n: c_int) -> c_int];
