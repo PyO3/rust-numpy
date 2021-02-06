@@ -75,6 +75,19 @@ pub mod doc_test {
     doc_comment!(include_str!("../README.md"), readme);
 }
 
+/// Create a [PyArray](./array/struct.PyArray.html) with one, two or three dimensions.
+/// This macro is backed by
+/// [`ndarray::array`](https://docs.rs/ndarray/latest/ndarray/macro.array.html).
+///
+/// # Example
+/// ```
+/// pyo3::Python::with_gil(|py| {
+///     let array = numpy::pyarray![py, [1, 2], [3, 4]];
+///     assert_eq!(
+///         array.readonly().as_array(),
+///         ndarray::array![[1, 2], [3, 4]]
+///     );
+/// });
 #[macro_export]
 macro_rules! pyarray {
     ($py: ident, $([$([$($x:expr),* $(,)*]),+ $(,)*]),+ $(,)*) => {{

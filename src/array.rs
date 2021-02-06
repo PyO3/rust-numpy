@@ -710,6 +710,8 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
 
 impl<T: Copy + Element> PyArray<T, Ix0> {
     /// Get the element of zero-dimensional PyArray.
+    ///
+    /// See [inner](../fn.inner.html) for example.
     pub fn item(&self) -> T {
         unsafe { *self.data() }
     }
