@@ -43,10 +43,11 @@ pub mod npyffi;
 pub mod npyiter;
 mod readonly;
 mod slice_box;
+mod sum_products;
 
 pub use crate::array::{
-    get_array_module, PyArray, PyArray1, PyArray2, PyArray3, PyArray4, PyArray5, PyArray6,
-    PyArrayDyn,
+    get_array_module, PyArray, PyArray0, PyArray1, PyArray2, PyArray3, PyArray4, PyArray5,
+    PyArray6, PyArrayDyn,
 };
 pub use crate::convert::{IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
 pub use crate::dtype::{c32, c64, DataType, Element, PyArrayDescr};
@@ -59,7 +60,8 @@ pub use crate::readonly::{
     PyReadonlyArray, PyReadonlyArray1, PyReadonlyArray2, PyReadonlyArray3, PyReadonlyArray4,
     PyReadonlyArray5, PyReadonlyArray6, PyReadonlyArrayDyn,
 };
-pub use ndarray::{Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};
+pub use crate::sum_products::{dot, einsum_impl, inner};
+pub use ndarray::{array, Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};
 
 /// Test readme
 #[doc(hidden)]
@@ -71,4 +73,30 @@ pub mod doc_test {
         };
     }
     doc_comment!(include_str!("../README.md"), readme);
+}
+
+/// Create a [PyArray](./array/struct.PyArray.html) with one, two or three dimensions.
+/// This macro is backed by
+/// [`ndarray::array`](https://docs.rs/ndarray/latest/ndarray/macro.array.html).
+///
+/// # Example
+/// ```
+/// pyo3::Python::with_gil(|py| {
+///     let array = numpy::pyarray![py, [1, 2], [3, 4]];
+///     assert_eq!(
+///         array.readonly().as_array(),
+///         ndarray::array![[1, 2], [3, 4]]
+///     );
+/// });
+#[macro_export]
+macro_rules! pyarray {
+    ($py: ident, $([$([$($x:expr),* $(,)*]),+ $(,)*]),+ $(,)*) => {{
+        $crate::IntoPyArray::into_pyarray($crate::array![$([$([$($x,)*],)*],)*], $py)
+    }};
+    ($py: ident, $([$($x:expr),* $(,)*]),+ $(,)*) => {{
+        $crate::IntoPyArray::into_pyarray($crate::array![$([$($x,)*],)*], $py)
+    }};
+    ($py: ident, $($x:expr),* $(,)*) => {{
+        $crate::IntoPyArray::into_pyarray($crate::array![$($x,)*], $py)
+    }};
 }

@@ -64,10 +64,9 @@ use crate::slice_box::SliceBox;
 /// # Example
 /// ```
 /// # #[macro_use] extern crate ndarray;
-/// use pyo3::{GILGuard, Python};
 /// use numpy::PyArray;
 /// use ndarray::Array;
-/// Python::with_gil(|py| {
+/// pyo3::Python::with_gil(|py| {
 ///     let pyarray = PyArray::arange(py, 0., 4., 1.).reshape([2, 2]).unwrap();
 ///     let array = array![[3., 4.], [5., 6.]];
 ///     assert_eq!(
@@ -78,6 +77,8 @@ use crate::slice_box::SliceBox;
 /// ```
 pub struct PyArray<T, D>(PyAny, PhantomData<T>, PhantomData<D>);
 
+/// Zero-dimensional array.
+pub type PyArray0<T> = PyArray<T, Ix0>;
 /// One-dimensional array.
 pub type PyArray1<T> = PyArray<T, Ix1>;
 /// Two-dimensional array.
@@ -218,10 +219,9 @@ impl<T, D> PyArray<T, D> {
     ///
     /// # Example
     /// ```
-    /// use pyo3::{GILGuard, Python, Py};
     /// use numpy::PyArray1;
-    /// fn return_py_array() -> Py<PyArray1<i32>> {
-    ///    Python::with_gil(|py| PyArray1::zeros(py, [5], false).to_owned())
+    /// fn return_py_array() -> pyo3::Py<PyArray1<i32>> {
+    ///    pyo3::Python::with_gil(|py| PyArray1::zeros(py, [5], false).to_owned())
     /// }
     /// let array = return_py_array();
     /// pyo3::Python::with_gil(|py| {
@@ -594,8 +594,6 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     }
 
     /// Get dynamic dimensioned array from fixed dimension array.
-    ///
-    /// See [get](#method.get) for usage.
     pub fn to_dyn(&self) -> &PyArray<T, IxDyn> {
         let python = self.py();
         unsafe { PyArray::from_borrowed_ptr(python, self.as_ptr()) }
@@ -707,6 +705,15 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     /// ```
     pub fn to_owned_array(&self) -> Array<T, D> {
         unsafe { self.as_array() }.to_owned()
+    }
+}
+
+impl<T: Copy + Element> PyArray<T, Ix0> {
+    /// Get the element of zero-dimensional PyArray.
+    ///
+    /// See [inner](../fn.inner.html) for example.
+    pub fn item(&self) -> T {
+        unsafe { *self.data() }
     }
 }
 
