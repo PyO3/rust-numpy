@@ -46,8 +46,8 @@ mod slice_box;
 mod sum_products;
 
 pub use crate::array::{
-    get_array_module, PyArray, PyArray1, PyArray2, PyArray3, PyArray4, PyArray5, PyArray6,
-    PyArrayDyn,
+    get_array_module, PyArray, PyArray0, PyArray1, PyArray2, PyArray3, PyArray4, PyArray5,
+    PyArray6, PyArrayDyn,
 };
 pub use crate::convert::{IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
 pub use crate::dtype::{c32, c64, DataType, Element, PyArrayDescr};

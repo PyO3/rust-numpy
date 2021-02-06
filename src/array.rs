@@ -77,6 +77,8 @@ use crate::slice_box::SliceBox;
 /// ```
 pub struct PyArray<T, D>(PyAny, PhantomData<T>, PhantomData<D>);
 
+/// Zero-dimensional array.
+pub type PyArray0<T> = PyArray<T, Ix0>;
 /// One-dimensional array.
 pub type PyArray1<T> = PyArray<T, Ix1>;
 /// Two-dimensional array.
@@ -592,8 +594,6 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     }
 
     /// Get dynamic dimensioned array from fixed dimension array.
-    ///
-    /// See [get](#method.get) for usage.
     pub fn to_dyn(&self) -> &PyArray<T, IxDyn> {
         let python = self.py();
         unsafe { PyArray::from_borrowed_ptr(python, self.as_ptr()) }
@@ -705,6 +705,13 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     /// ```
     pub fn to_owned_array(&self) -> Array<T, D> {
         unsafe { self.as_array() }.to_owned()
+    }
+}
+
+impl<T: Copy + Element> PyArray<T, Ix0> {
+    /// Get the element of zero-dimensional PyArray.
+    pub fn item(&self) -> T {
+        unsafe { *self.data() }
     }
 }
 
