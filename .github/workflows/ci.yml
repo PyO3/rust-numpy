@@ -70,6 +70,43 @@ jobs:
     env:
       RUST_BACKTRACE: 1
 
+  check-msrv:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Install MSRV Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: 1.41.1
+      - name: Install maturin, poetry, and toml
+        run: pip install maturin poetry toml
+      - name: Create an isolated example directory
+        run: cp -r examples/simple-extension/ ../simple-extension-msrv
+      - name: Edit Cargo.toml
+        run: |
+          import toml
+          cargo_toml = toml.load("Cargo.toml")
+          cargo_toml["dependencies"]["ndarray"] = "0.13.1"
+          cargo_toml["dependencies"]["num-complex"] = "0.2.4"
+          cargo_toml["dependencies"]["numpy"]["path"] = "../rust-numpy"
+          with open("Cargo.toml", "w") as f:
+            toml.dump(cargo_toml, f)
+        working-directory: ../simple-extension-msrv
+        shell: python
+      - name: Remove ndarray 0.14.0
+        run: cargo update -p ndarray:0.14.0 --precise 0.13.1
+        working-directory: ../simple-extension-msrv
+      - name: Test Example
+        run: |
+          poetry install && poetry run maturin develop && poetry run pytest
+        working-directory: ../simple-extension-msrv
+        shell: bash
+
   linalg-example:
     runs-on: ubuntu-latest
     steps:
@@ -85,7 +122,6 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-          default: true
       - name: Install maturin and poetry
         run: pip install maturin poetry
       - name: Test Examples

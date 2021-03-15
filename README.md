@@ -2,7 +2,7 @@ rust-numpy
 ===========
 [![Actions Status](https://github.com/pyo3/rust-numpy/workflows/CI/badge.svg)](https://github.com/pyo3/rust-numpy/actions)
 [![Crate](http://meritbadge.herokuapp.com/numpy)](https://crates.io/crates/numpy)
-[![minimum rustc 1.39](https://img.shields.io/badge/rustc-1.39+-blue.svg)](https://rust-lang.github.io/rfcs/2495-min-rust-version.html)
+[![minimum rustc 1.41](https://img.shields.io/badge/rustc-1.41+-blue.svg)](https://rust-lang.github.io/rfcs/2495-min-rust-version.html)
 
 Rust bindings for the NumPy C-API
 
@@ -12,12 +12,13 @@ Rust bindings for the NumPy C-API
 
 
 ## Requirements
-- Rust 1.39+
+- Rust >= 1.41.1
+  - Basically, our MSRV follows the one of [PyO3](https://github.com/PyO3/pyo3).
 - Python >= 3.6
   - Python 3.5 support is dropped from 0.13
 - Some Rust libraries
   - [ndarray](https://github.com/bluss/ndarray) for rust-side matrix library
-  - [pyo3](https://github.com/PyO3/pyo3) for cpython binding
+  - [PyO3](https://github.com/PyO3/pyo3) for cpython binding
   - and more (see [Cargo.toml](Cargo.toml))
 - [numpy](http://www.numpy.org/) installed in your python environments (e.g., via `pip install numpy`)
   - We recommend `numpy >= 1.16.0`, though older version may work.
