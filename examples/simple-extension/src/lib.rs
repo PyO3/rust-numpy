@@ -1,5 +1,5 @@
 use ndarray::{ArrayD, ArrayViewD, ArrayViewMutD};
-use numpy::{IntoPyArray, PyArrayDyn, PyReadonlyArrayDyn};
+use numpy::{c64, IntoPyArray, PyArrayDyn, PyReadonlyArrayDyn};
 use pyo3::prelude::{pymodule, PyModule, PyResult, Python};
 
 #[pymodule]
@@ -14,13 +14,18 @@ fn rust_ext(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
         x *= a;
     }
 
+    // complex example
+    fn conj(x: ArrayViewD<'_, c64>) -> ArrayD<c64> {
+        x.map(|c| c.conj())
+    }
+
     // wrapper of `axpy`
     #[pyfn(m, "axpy")]
     fn axpy_py<'py>(
         py: Python<'py>,
         a: f64,
-        x: PyReadonlyArrayDyn<f64>,
-        y: PyReadonlyArrayDyn<f64>,
+        x: PyReadonlyArrayDyn<'_, f64>,
+        y: PyReadonlyArrayDyn<'_, f64>,
     ) -> &'py PyArrayDyn<f64> {
         let x = x.as_array();
         let y = y.as_array();
@@ -29,10 +34,15 @@ fn rust_ext(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
 
     // wrapper of `mult`
     #[pyfn(m, "mult")]
-    fn mult_py(_py: Python<'_>, a: f64, x: &PyArrayDyn<f64>) -> PyResult<()> {
+    fn mult_py(a: f64, x: &PyArrayDyn<f64>) {
         let x = unsafe { x.as_array_mut() };
         mult(a, x);
-        Ok(())
+    }
+
+    // wrapper of `conj`
+    #[pyfn(m, "conj")]
+    fn conj_py<'py>(py: Python<'py>, x: PyReadonlyArrayDyn<'_, c64>) -> &'py PyArrayDyn<c64> {
+        conj(x.as_array()).into_pyarray(py)
     }
 
     Ok(())
