@@ -39,7 +39,7 @@ use crate::slice_box::SliceBox;
 /// Like [`new`](#method.new), all constractor methods of `PyArray` returns `&PyArray`.
 ///
 /// This design follows
-/// [pyo3's ownership concept](https://pyo3.rs/master/doc/pyo3/index.html#ownership-and-lifetimes).
+/// [pyo3's ownership concept](https://pyo3.rs/main/doc/pyo3/index.html#ownership-and-lifetimes).
 ///
 ///
 /// # Data type and Dimension
