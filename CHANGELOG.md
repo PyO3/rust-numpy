@@ -1,5 +1,8 @@
 # Changelog
 
+- v0.13.1
+  - Allow ndarray `>=0.13, < 0.15` to work with Rust 1.41.1.
+
 - v0.13.0
   - Bump num-complex to 0.3
   - Bump ndarray to 0.14

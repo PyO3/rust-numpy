@@ -82,9 +82,9 @@ fn main() -> PyResult<()> {
 
 ### Write a Python module in Rust
 
-Please see [simple-extension](https://github.com/PyO3/rust-numpy/tree/master/examples/simple-extension)
+Please see [simple-extension](https://github.com/PyO3/rust-numpy/tree/main/examples/simple-extension)
 directory for the complete example.
-Also, we have an example project with [ndarray-linalg](https://github.com/PyO3/rust-numpy/tree/master/examples/linalg).
+Also, we have an example project with [ndarray-linalg](https://github.com/PyO3/rust-numpy/tree/main/examples/linalg).
 
 ```toml
 [lib]
@@ -146,7 +146,7 @@ fn rust_ext(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
 We welcome [issues](https://github.com/rust-numpy/rust-numpy/issues)
 and [pull requests](https://github.com/rust-numpy/rust-numpy/pulls).
 
-PyO3's [contrinbuting.md](https://github.com/PyO3/pyo3/blob/master/Contributing.md)
+PyO3's [contrinbuting.md](https://github.com/PyO3/pyo3/blob/main/Contributing.md)
 is a nice guide for starting.
 Also, we have a [gitter](https://gitter.im/PyO3/Lobby) channel for communicating.
 
