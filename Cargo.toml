@@ -7,7 +7,7 @@ documentation = "https://pyo3.github.io/rust-numpy/numpy"
 edition = "2018"
 repository = "https://github.com/rust-numpy/rust-numpy"
 keywords = ["numpy", "python", "binding"]
-license-file = "LICENSE"
+license = "BSD-2-Clause"
 
 [dependencies]
 cfg-if = "0.1"
