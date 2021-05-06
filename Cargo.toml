@@ -8,6 +8,7 @@ edition = "2018"
 repository = "https://github.com/rust-numpy/rust-numpy"
 keywords = ["numpy", "python", "binding"]
 license = "BSD-2-Clause"
+resolver = "2"
 
 [dependencies]
 cfg-if = "0.1"
@@ -15,6 +16,9 @@ libc = "0.2"
 num-complex = ">= 0.2, < 0.4"
 num-traits = "0.2"
 ndarray = ">= 0.13, < 0.15"
+pyo3 = { version = "0.13", default-features = false }
+
+[dev-dependencies]
 pyo3 = "0.13"
 
 [features]
