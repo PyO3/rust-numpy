@@ -100,7 +100,7 @@ jobs:
         shell: python
       - name: Use ndarray 0.13.1 and num-complex 0.2.0
         run: |
-          cargo update -p ndarray:0.15.2 --precise 0.13.1
+          cargo update -p ndarray:0.15.3 --precise 0.13.1
         working-directory: ../simple-extension-msrv
       - name: Test Example
         run: |
