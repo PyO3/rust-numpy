@@ -18,7 +18,7 @@ cfg-if = "0.1"
 libc = "0.2"
 num-complex = ">= 0.2, <= 0.4"
 num-traits = "0.2"
-ndarray = ">= 0.13, < 0.15"
+ndarray = ">= 0.13, < 0.16"
 pyo3 = { version = "0.13", default-features = false }
 
 [dev-dependencies]
@@ -28,7 +28,6 @@ pyo3 = "0.13"
 # In default setting, python version is automatically detected
 default = []
 rayon = ["ndarray/rayon"]
-
 
 [workspace]
 members = ["examples/*"]
