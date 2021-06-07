@@ -99,7 +99,9 @@ jobs:
         working-directory: ../simple-extension-msrv
         shell: python
       - name: Use ndarray 0.13.1
-        run: cargo update -p (cargo pkgid -p ndarray 2>&1 >/dev/null | grep 0.15 | sed -e 's/^[ \t]*//') --precise 0.13.1
+        run: |
+          cargo generate-lockfile
+          cargo update -p $(cargo pkgid -p ndarray 2>&1 >/dev/null | grep 0.15 | sed -e 's/^[ \t]*//') --precise 0.13.1
         working-directory: ../simple-extension-msrv
       - name: Test Example
         run: |
