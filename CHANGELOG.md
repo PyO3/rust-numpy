@@ -1,5 +1,8 @@
 # Changelog
 
+- v0.13.2
+  - Support ndarray 0.15
+
 - v0.13.1
   - Allow ndarray `>=0.13, < 0.15` to work with Rust 1.41.1.
   - Add inner, dot, and einsum
