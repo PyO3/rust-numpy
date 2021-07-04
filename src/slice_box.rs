@@ -1,7 +1,7 @@
-use pyo3::class::{methods::PyMethods, proto_methods::PyProtoMethods};
-use pyo3::pyclass::{PyClass, PyClassAlloc, PyClassSend, ThreadCheckerStub};
+use pyo3::class::impl_::{PyClassImpl, ThreadCheckerStub};
+use pyo3::pyclass::PyClass;
 use pyo3::pyclass_slots::PyClassDummySlot;
-use pyo3::{ffi, type_object, types::PyAny, PyCell, PyClassInitializer};
+use pyo3::{ffi, type_object, types::PyAny, PyCell};
 
 pub(crate) struct SliceBox<T> {
     pub(crate) data: *mut [T],
@@ -21,25 +21,24 @@ impl<T> Drop for SliceBox<T> {
     }
 }
 
-impl<T> PyClassAlloc for SliceBox<T> {}
-
 impl<T> PyClass for SliceBox<T> {
     type Dict = PyClassDummySlot;
     type WeakRef = PyClassDummySlot;
     type BaseNativeType = PyAny;
 }
 
-unsafe impl<T> type_object::PyTypeInfo for SliceBox<T> {
-    type Type = ();
+impl<T> PyClassImpl for SliceBox<T> {
+    const DOC: &'static str = "Memory store for PyArray using rust's Box<[T]> \0";
+
     type BaseType = PyAny;
-    type BaseLayout = pyo3::pycell::PyCellBase<PyAny>;
     type Layout = PyCell<Self>;
-    type Initializer = PyClassInitializer<Self>;
+    type ThreadChecker = ThreadCheckerStub<Self>;
+}
+
+unsafe impl<T> type_object::PyTypeInfo for SliceBox<T> {
     type AsRefTarget = PyCell<Self>;
     const NAME: &'static str = "SliceBox";
     const MODULE: Option<&'static str> = Some("_rust_numpy");
-    const DESCRIPTION: &'static str = "Memory store for PyArray using rust's Box<[T]> \0";
-    const FLAGS: usize = 0;
 
     #[inline]
     fn type_object_raw(py: pyo3::Python) -> *mut ffi::PyTypeObject {
@@ -49,10 +48,4 @@ unsafe impl<T> type_object::PyTypeInfo for SliceBox<T> {
     }
 }
 
-// Some stubs to use PyClass
-impl<T> PyMethods for SliceBox<T> {}
-impl<T> PyProtoMethods for SliceBox<T> {}
 unsafe impl<T> Send for SliceBox<T> {}
-impl<T> PyClassSend for SliceBox<T> {
-    type ThreadChecker = ThreadCheckerStub<Self>;
-}
