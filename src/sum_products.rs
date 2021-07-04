@@ -73,12 +73,10 @@ where
     DOUT: Dimension,
     T: Element,
 {
-    let subscripts: std::borrow::Cow<CStr> = if subscripts.ends_with("\0") {
-        CStr::from_bytes_with_nul(subscripts.as_bytes())
-            .unwrap()
-            .into()
-    } else {
-        std::ffi::CString::new(subscripts).unwrap().into()
+    let subscripts: std::borrow::Cow<CStr> = match CStr::from_bytes_with_nul(subscripts.as_bytes())
+    {
+        Ok(subscripts) => subscripts.into(),
+        Err(_) => std::ffi::CString::new(subscripts).unwrap().into(),
     };
     let obj = unsafe {
         let result = PY_ARRAY_API.PyArray_EinsteinSum(
