@@ -166,7 +166,7 @@ impl DataType {
 }
 
 /// Represents that a type can be an element of `PyArray`.
-pub trait Element: Clone {
+pub trait Element: Clone + Send {
     /// `DataType` corresponding to this type.
     const DATA_TYPE: DataType;
 
