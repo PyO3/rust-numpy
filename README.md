@@ -55,8 +55,8 @@ using [setuptools-rust](https://github.com/PyO3/setuptools-rust).
 name = "numpy-test"
 
 [dependencies]
-pyo3 = "0.13"
-numpy = "0.13"
+pyo3 = "0.14"
+numpy = "0.14"
 ```
 
 ```rust
@@ -92,11 +92,11 @@ name = "rust_ext"
 crate-type = ["cdylib"]
 
 [dependencies]
-numpy = "0.13"
+numpy = "0.14"
 ndarray = "0.14"
 
 [dependencies.pyo3]
-version = "0.13"
+version = "0.14"
 features = ["extension-module"]
 ```
 

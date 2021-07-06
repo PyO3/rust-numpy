@@ -51,7 +51,7 @@ pub enum NpyIterFlag {
 }
 
 impl NpyIterFlag {
-    fn to_c_enum(&self) -> npy_uint32 {
+    fn to_c_enum(self) -> npy_uint32 {
         use NpyIterFlag::*;
         match self {
             CommonDtype => NPY_ITER_COMMON_DTYPE,

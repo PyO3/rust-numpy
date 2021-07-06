@@ -1,5 +1,6 @@
 [build-system]
 build-backend = "maturin"
+requires = ["poetry_core>=1.0.0"]
 
 [tool.poetry]
 name = "numpy-linalg-example"

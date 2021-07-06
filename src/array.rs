@@ -104,10 +104,9 @@ impl<T, D> type_object::PySizedLayout<PyArray<T, D>> for npyffi::PyArrayObject {
 
 pyobject_native_type_info!(
     PyArray<T, D>,
-    npyffi::PyArrayObject,
     *npyffi::PY_ARRAY_API.get_type_object(npyffi::NpyTypes::PyArray_Type),
     Some("numpy"),
-    npyffi::PyArray_Check
+    #checkfunction=npyffi::PyArray_Check
     ; T
     ; D
 );

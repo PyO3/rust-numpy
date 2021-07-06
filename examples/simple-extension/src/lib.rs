@@ -20,7 +20,8 @@ fn rust_ext(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     }
 
     // wrapper of `axpy`
-    #[pyfn(m, "axpy")]
+    #[pyfn(m)]
+    #[pyo3(name = "axpy")]
     fn axpy_py<'py>(
         py: Python<'py>,
         a: f64,
@@ -33,14 +34,16 @@ fn rust_ext(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     }
 
     // wrapper of `mult`
-    #[pyfn(m, "mult")]
+    #[pyfn(m)]
+    #[pyo3(name = "mult")]
     fn mult_py(a: f64, x: &PyArrayDyn<f64>) {
         let x = unsafe { x.as_array_mut() };
         mult(a, x);
     }
 
     // wrapper of `conj`
-    #[pyfn(m, "conj")]
+    #[pyfn(m)]
+    #[pyo3(name = "conj")]
     fn conj_py<'py>(py: Python<'py>, x: PyReadonlyArrayDyn<'_, c64>) -> &'py PyArrayDyn<c64> {
         conj(x.as_array()).into_pyarray(py)
     }

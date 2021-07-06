@@ -26,10 +26,9 @@ pub struct PyArrayDescr(PyAny);
 
 pyobject_native_type_core!(
     PyArrayDescr,
-    PyArray_Descr,
     *PY_ARRAY_API.get_type_object(NpyTypes::PyArrayDescr_Type),
-    Some("numpy"),
-    arraydescr_check
+    #module=Some("numpy"),
+    #checkfunction=arraydescr_check
 );
 
 unsafe fn arraydescr_check(op: *mut ffi::PyObject) -> c_int {
