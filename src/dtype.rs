@@ -132,6 +132,9 @@ impl DataType {
             DataType::Int8 => NPY_TYPES::NPY_BYTE,
             DataType::Int16 => NPY_TYPES::NPY_SHORT,
             DataType::Int32 => NPY_TYPES::NPY_INT,
+            #[cfg(all(target_pointer_width = "64", not(windows)))]
+            DataType::Int64 => NPY_TYPES::NPY_LONG,
+            #[cfg(any(target_pointer_width = "32", windows))]
             DataType::Int64 => NPY_TYPES::NPY_LONGLONG,
             DataType::Uint8 => NPY_TYPES::NPY_UBYTE,
             DataType::Uint16 => NPY_TYPES::NPY_USHORT,
