@@ -115,6 +115,19 @@ fn into_pyarray_cant_resize() {
     })
 }
 
+/// Check that into_pyarray works for ndarray of which the pointer of the first element is
+/// not at the start. See https://github.com/PyO3/rust-numpy/issues/182 for more
+#[test]
+fn into_pyarray_collapsed() {
+    let mut arr = Array2::<f64>::from_shape_fn([3, 4], |(i, j)| (i * 10 + j) as f64);
+    arr.slice_collapse(s![1.., ..]);
+    let copy = arr.clone();
+    pyo3::Python::with_gil(|py| {
+        let py_arr = arr.into_pyarray(py);
+        assert_eq!(py_arr.readonly().as_array(), copy);
+    })
+}
+
 #[test]
 fn forder_to_pyarray() {
     pyo3::Python::with_gil(|py| {
