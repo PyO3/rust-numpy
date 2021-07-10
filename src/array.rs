@@ -415,14 +415,15 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         py: Python<'py>,
         dims: ID,
         strides: *const npy_intp,
-        slice: Box<[T]>,
+        boxed_slice: Box<[T]>,
+        data_ptr: Option<*const T>,
     ) -> &'py Self
     where
         ID: IntoDimension<Dim = D>,
     {
         let dims = dims.into_dimension();
-        let container = SliceBox::new(slice);
-        let data_ptr = container.data.as_ptr();
+        let container = SliceBox::new(boxed_slice);
+        let data_ptr = data_ptr.unwrap_or_else(|| container.data.as_ptr());
         let cell = pyo3::PyClassInitializer::from(container)
             .create_cell(py)
             .expect("Object creation failed.");
