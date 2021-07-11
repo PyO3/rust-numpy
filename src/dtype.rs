@@ -209,6 +209,7 @@ impl_num_element!(f32, Float32, NPY_FLOAT);
 impl_num_element!(f64, Float64, NPY_DOUBLE);
 impl_num_element!(c32, Complex32, NPY_CFLOAT);
 impl_num_element!(c64, Complex64, NPY_CDOUBLE);
+impl_num_element!(PyObject, Object, NPY_OBJECT);
 
 cfg_if! {
     if #[cfg(all(target_pointer_width = "64", windows))] {
