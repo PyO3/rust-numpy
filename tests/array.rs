@@ -116,6 +116,27 @@ fn is_instance() {
 }
 
 #[test]
+fn from_string_slice() {
+    let strs = vec!["a".to_string(), "😜".to_string()];
+    pyo3::Python::with_gil(|py| {
+        let pyarray = PyArray::from_slice(py, &strs);
+        assert_eq!(
+            pyarray.readonly().as_array(),
+            array!["a".to_string(), "😜".to_string()]
+        );
+    })
+}
+
+#[test]
+fn from_str_slice() {
+    let strs = vec!["a", "😜"];
+    pyo3::Python::with_gil(|py| {
+        let pyarray = PyArray::from_slice(py, &strs);
+        assert_eq!(pyarray.readonly().as_array(), array!["a", "😜"]);
+    })
+}
+
+#[test]
 fn from_vec2() {
     let vec2 = vec![vec![1, 2, 3]; 2];
     pyo3::Python::with_gil(|py| {

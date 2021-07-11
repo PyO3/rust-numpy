@@ -97,6 +97,7 @@ pub enum DataType {
     Complex32,
     Complex64,
     Object,
+    Unicode,
 }
 
 impl DataType {
@@ -120,6 +121,7 @@ impl DataType {
             x if x == NPY_TYPES::NPY_CFLOAT as i32 => DataType::Complex32,
             x if x == NPY_TYPES::NPY_CDOUBLE as i32 => DataType::Complex64,
             x if x == NPY_TYPES::NPY_OBJECT as i32 => DataType::Object,
+            x if x == NPY_TYPES::NPY_UNICODE as i32 => DataType::Unicode,
             _ => return None,
         })
     }
@@ -145,6 +147,7 @@ impl DataType {
             DataType::Complex32 => NPY_TYPES::NPY_CFLOAT,
             DataType::Complex64 => NPY_TYPES::NPY_CDOUBLE,
             DataType::Object => NPY_TYPES::NPY_OBJECT,
+            DataType::Unicode => NPY_TYPES::NPY_UNICODE,
         }
     }
 
@@ -187,6 +190,11 @@ pub trait Element: Clone + Send {
     fn get_dtype(py: Python) -> &PyArrayDescr {
         PyArrayDescr::from_npy_type(py, Self::npy_type())
     }
+
+    /// itemsize in bytes
+    fn item_size() -> usize {
+        0
+    }
 }
 
 macro_rules! impl_num_element {
@@ -195,6 +203,18 @@ macro_rules! impl_num_element {
             const DATA_TYPE: DataType = DataType::$npy_dat_t;
             fn is_same_type(dtype: &PyArrayDescr) -> bool {
                 $(dtype.get_typenum() == NPY_TYPES::$npy_types as i32 ||)+ false
+            }
+        }
+    };
+    ($t:ty, $npy_dat_t:ident, $npy_itemsize:expr $(,$npy_types: ident)+) => {
+        impl Element for $t {
+            const DATA_TYPE: DataType = DataType::$npy_dat_t;
+            fn is_same_type(dtype: &PyArrayDescr) -> bool {
+                $(dtype.get_typenum() == NPY_TYPES::$npy_types as i32 ||)+ false
+            }
+
+            fn item_size() -> usize {
+                $npy_itemsize
             }
         }
     };
@@ -209,6 +229,8 @@ impl_num_element!(f32, Float32, NPY_FLOAT);
 impl_num_element!(f64, Float64, NPY_DOUBLE);
 impl_num_element!(c32, Complex32, NPY_CFLOAT);
 impl_num_element!(c64, Complex64, NPY_CDOUBLE);
+impl_num_element!(String, Unicode, std::mem::size_of::<String>(), NPY_UNICODE);
+impl_num_element!(&str, Unicode, std::mem::size_of::<&str>(), NPY_UNICODE);
 
 cfg_if! {
     if #[cfg(all(target_pointer_width = "64", windows))] {
