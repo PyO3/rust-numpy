@@ -1074,20 +1074,25 @@ impl<T: Element + AsPrimitive<f64>> PyArray<T, Ix1> {
     }
 }
 
-#[test]
-fn test_get_unchecked() {
-    pyo3::Python::with_gil(|py| {
-        let array = PyArray::from_slice(py, &[1i32, 2, 3]);
-        unsafe {
-            assert_eq!(*array.uget([1]), 2);
-        }
-    })
-}
+#[cfg(test)]
+mod tests {
+    use super::PyArray;
 
-#[test]
-fn test_dyn_to_owned_array() {
-    pyo3::Python::with_gil(|py| {
-        let array = PyArray::from_vec2(py, &[vec![1, 2], vec![3, 4]]).unwrap();
-        array.to_dyn().to_owned_array();
-    })
+    #[test]
+    fn test_get_unchecked() {
+        pyo3::Python::with_gil(|py| {
+            let array = PyArray::from_slice(py, &[1i32, 2, 3]);
+            unsafe {
+                assert_eq!(*array.uget([1]), 2);
+            }
+        })
+    }
+
+    #[test]
+    fn test_dyn_to_owned_array() {
+        pyo3::Python::with_gil(|py| {
+            let array = PyArray::from_vec2(py, &[vec![1, 2], vec![3, 4]]).unwrap();
+            array.to_dyn().to_owned_array();
+        })
+    }
 }

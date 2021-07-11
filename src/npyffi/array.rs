@@ -386,12 +386,17 @@ pub unsafe fn PyArray_CheckExact(op: *mut PyObject) -> c_int {
     (ffi::Py_TYPE(op) == PY_ARRAY_API.get_type_object(NpyTypes::PyArray_Type)) as _
 }
 
-#[test]
-fn call_api() {
-    pyo3::Python::with_gil(|_py| unsafe {
-        assert_eq!(
-            PY_ARRAY_API.PyArray_MultiplyIntList([1, 2, 3].as_mut_ptr(), 3),
-            6
-        );
-    })
+#[cfg(test)]
+mod tests {
+    use super::PY_ARRAY_API;
+
+    #[test]
+    fn call_api() {
+        pyo3::Python::with_gil(|_py| unsafe {
+            assert_eq!(
+                PY_ARRAY_API.PyArray_MultiplyIntList([1, 2, 3].as_mut_ptr(), 3),
+                6
+            );
+        })
+    }
 }
