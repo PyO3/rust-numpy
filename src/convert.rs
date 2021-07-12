@@ -61,7 +61,8 @@ where
     fn into_pyarray<'py>(self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
         let (strides, dim) = (self.npy_strides(), self.raw_dim());
         let orig_ptr = self.as_ptr();
-        let is_empty_or_size0 = self.is_empty() || std::mem::size_of::<Self>() == 0;
+        // Element of which size is 0 is not supported, but check it for future changes
+        let is_empty_or_size0 = self.is_empty() || std::mem::size_of::<Self::Item>() == 0;
         let vec = self.into_raw_vec();
         let offset = if is_empty_or_size0 {
             0
