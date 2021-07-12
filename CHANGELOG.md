@@ -1,5 +1,9 @@
 # Changelog
 
+- v0.14
+  - Bump PyO3 to 0.14
+  - Fix [conversion bug](https://github.com/PyO3/rust-numpy/pull/194)
+
 - v0.13.2
   - Support ndarray 0.15
 
