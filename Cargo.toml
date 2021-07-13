@@ -1,6 +1,6 @@
 [package]
 name = "numpy"
-version = "0.14.0"
+version = "0.14.1"
 authors = [
     "Toshiki Teramura <toshiki.teramura@gmail.com>",
     "Yuji Kanagawa <yuji.kngw.80s.revive@gmail.com>",
