@@ -62,12 +62,12 @@ where
         let (strides, dim) = (self.npy_strides(), self.raw_dim());
         let orig_ptr = self.as_ptr();
         // Element of which size is 0 is not supported, but check it for future changes
-        let is_empty_or_size0 = self.is_empty() || std::mem::size_of::<Self::Item>() == 0;
+        let is_empty_or_size0 = self.is_empty() || std::mem::size_of::<A>() == 0;
         let vec = self.into_raw_vec();
         let offset = if is_empty_or_size0 {
             0
         } else {
-            unsafe { orig_ptr.offset_from(vec.as_ptr()) as usize }
+            (orig_ptr as usize - vec.as_ptr() as usize) / std::mem::size_of::<A>()
         };
         let mut boxed_slice = vec.into_boxed_slice();
         // data_ptr is not always the pointer to the 1st element.

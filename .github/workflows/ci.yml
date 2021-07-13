@@ -83,6 +83,7 @@ jobs:
         with:
           profile: minimal
           toolchain: 1.41.1
+          default: true
       - name: Install maturin, poetry, and toml
         run: pip install maturin poetry toml
       - name: Create an isolated example directory
