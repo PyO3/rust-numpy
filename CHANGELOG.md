@@ -1,5 +1,8 @@
 # Changelog
 
+- v0.14.1
+  - [Fix MSRV support](https://github.com/PyO3/rust-numpy/issues/198)
+
 - v0.14
   - Bump PyO3 to 0.14
   - Fix [conversion bug](https://github.com/PyO3/rust-numpy/pull/194)
