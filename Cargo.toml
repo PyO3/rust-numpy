@@ -11,7 +11,6 @@ edition = "2018"
 repository = "https://github.com/rust-numpy/rust-numpy"
 keywords = ["numpy", "python", "binding"]
 license = "BSD-2-Clause"
-resolver = "2"
 
 [dependencies]
 cfg-if = "0.1"
