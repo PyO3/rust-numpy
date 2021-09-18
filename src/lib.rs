@@ -45,6 +45,8 @@ mod readonly;
 mod slice_box;
 mod sum_products;
 
+pub use ndarray;
+
 pub use crate::array::{
     get_array_module, PyArray, PyArray0, PyArray1, PyArray2, PyArray3, PyArray4, PyArray5,
     PyArray6, PyArrayDyn,
