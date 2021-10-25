@@ -79,7 +79,7 @@ where
 
 /// Conversion trait from rust types to `PyArray`.
 ///
-/// This trait takes `&self`, which means **it alocates in Python heap and then copies
+/// This trait takes `&self`, which means **it allocates in Python heap and then copies
 /// elements there**.
 /// # Example
 /// ```
