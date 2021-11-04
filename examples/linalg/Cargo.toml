@@ -15,5 +15,5 @@ ndarray = "0.15"
 ndarray-linalg = { git = "https://github.com/rust-ndarray/ndarray-linalg", features = ["openblas-static"] }
 
 [dependencies.pyo3]
-version = "0.14"
+version = "0.15"
 features = ["extension-module"]

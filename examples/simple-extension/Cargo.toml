@@ -14,5 +14,5 @@ ndarray = "0.15.2"
 num-complex = "0.4.0"
 
 [dependencies.pyo3]
-version = "0.14"
+version = "0.15"
 features = ["extension-module"]
