@@ -8,7 +8,7 @@ authors = [
 description = "Rust binding of NumPy C-API"
 documentation = "https://pyo3.github.io/rust-numpy/numpy"
 edition = "2018"
-repository = "https://github.com/rust-numpy/rust-numpy"
+repository = "https://github.com/PyO3/rust-numpy"
 keywords = ["numpy", "python", "binding"]
 license = "BSD-2-Clause"
 
@@ -24,7 +24,7 @@ pyo3 = { version = "0.15", default-features = false }
 pyo3 = { version = "0.15", features = ["auto-initialize"] }
 
 [features]
-# In default setting, python version is automatically detected
+# In default setting, Python version is automatically detected
 default = []
 rayon = ["ndarray/rayon"]
 
