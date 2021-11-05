@@ -45,6 +45,32 @@ You can also automatically specify python version in `setup.py`,
 using [setuptools-rust](https://github.com/PyO3/setuptools-rust).
 
 
+## Dependency on ndarray
+
+This crate uses types from `ndarray` in its public API. `ndarray` is re-exported
+in the crate root so that you do not need to specify it as a direct dependency.
+
+Furthermore, this crate is compatible multiple versions of `ndarray` and therefore depends
+on a range of semver-incompatible versions, currently `>= 0.13, < 0.16`. Cargo does not
+automatically choose a single version of `ndarray` by itself if you depend directly or indirectly
+on anything but that exact range. It can therefore be necessary to manually unify these dependencies.
+
+For example, if you specify the following dependencies
+
+```toml
+numpy = "0.14"
+ndarray = "0.13"
+```
+
+this will currently depend on both version `0.13.1` and `0.15.3` of `ndarray` by default
+even though `0.13.1` is within the range `>= 0.13, < 0.16`. To fix this, you can run
+
+```sh
+cargo update ---package ndarray:0.15.3 --precise 0.13.1
+```
+
+to achieve a single dependency on version `0.13.1` of `ndarray`.
+
 ## Example
 
 
