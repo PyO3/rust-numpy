@@ -169,7 +169,15 @@ impl DataType {
 }
 
 /// Represents that a type can be an element of `PyArray`.
-pub trait Element: Clone + Send {
+///
+/// A type `T` that implements this trait should be safe when managed in numpy array,
+/// thus implementing this trait is marked unsafe.
+/// For example, we don't support `PyObject` because of [an odd segfault](https://github.com/PyO3/rust-numpy/pull/143),
+/// although numpy itself supports it.
+///
+/// Also, we lack supports for some other types like unicode.
+/// If you come up with a nice implementation, we're happy to receive your PR :)
+pub unsafe trait Element: Clone + Send {
     /// `DataType` corresponding to this type.
     const DATA_TYPE: DataType;
 
@@ -191,7 +199,7 @@ pub trait Element: Clone + Send {
 
 macro_rules! impl_num_element {
     ($t:ty, $npy_dat_t:ident $(,$npy_types: ident)+) => {
-        impl Element for $t {
+        unsafe impl Element for $t {
             const DATA_TYPE: DataType = DataType::$npy_dat_t;
             fn is_same_type(dtype: &PyArrayDescr) -> bool {
                 $(dtype.get_typenum() == NPY_TYPES::$npy_types as i32 ||)+ false
