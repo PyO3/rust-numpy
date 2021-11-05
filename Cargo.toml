@@ -24,7 +24,6 @@ pyo3 = { version = "0.15", default-features = false }
 pyo3 = { version = "0.15", features = ["auto-initialize"] }
 
 [features]
-# In default setting, Python version is automatically detected
 default = []
 rayon = ["ndarray/rayon"]
 

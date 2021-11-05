@@ -18,7 +18,7 @@ Rust bindings for the NumPy C-API.
   - Python 3.5 support is dropped from 0.13
 - Some Rust libraries
   - [ndarray](https://github.com/rust-ndarray/ndarray) for Rust-side matrix library
-  - [PyO3](https://github.com/PyO3/pyo3) for CPython bindings
+  - [PyO3](https://github.com/PyO3/pyo3) for Python bindings
   - And more (see [Cargo.toml](Cargo.toml))
 - [numpy](https://numpy.org/) installed in your Python environments (e.g., via `pip install numpy`)
   - We recommend `numpy >= 1.16.0`, though older versions may work
@@ -167,7 +167,7 @@ fn rust_ext(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
 }
 ```
 
-## Conributing
+## Contributing
 We welcome [issues](https://github.com/PyO3/rust-numpy/issues)
 and [pull requests](https://github.com/PyO3/rust-numpy/pulls).
 
