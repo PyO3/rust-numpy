@@ -179,8 +179,9 @@ impl DataType {
 ///
 /// A type `T` that implements this trait should be safe when managed in numpy array,
 /// thus implementing this trait is marked unsafe.
-/// For example, we don't support `PyObject` because of [an odd segfault](https://github.com/PyO3/rust-numpy/pull/143),
-/// although numpy itself supports it.
+/// This means that all data types except for `DataType::Object` are assumed to be trivially copyable.
+/// Furthermore, it is assumed that for `DataType::Object` the elements are pointers into the Python heap
+/// and that the corresponding `Clone` implemenation will never panic as it only increases the reference count.
 pub unsafe trait Element: Clone + Send {
     /// `DataType` corresponding to this type.
     const DATA_TYPE: DataType;
@@ -244,5 +245,12 @@ cfg_if! {
         impl_num_element!(u32, Uint32, NPY_UINT);
         impl_num_element!(i64, Int64, NPY_LONG, NPY_LONGLONG);
         impl_num_element!(u64, Uint64, NPY_ULONG, NPY_ULONGLONG);
+    }
+}
+
+unsafe impl Element for PyObject {
+    const DATA_TYPE: DataType = DataType::Object;
+    fn is_same_type(dtype: &PyArrayDescr) -> bool {
+        dtype.get_typenum() == NPY_TYPES::NPY_OBJECT as i32
     }
 }
