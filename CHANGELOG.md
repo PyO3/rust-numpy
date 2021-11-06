@@ -1,5 +1,9 @@
 # Changelog
 
+- v0.15.0
+  - [Remove resolver from Cargo.toml](https://github.com/PyO3/rust-numpy/pull/202)
+  - [Bump PyO3 to 0.15](https://github.com/PyO3/rust-numpy/pull/212)
+
 - v0.14.1
   - [Fix MSRV support](https://github.com/PyO3/rust-numpy/issues/198)
 

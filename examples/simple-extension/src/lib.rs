@@ -1,4 +1,4 @@
-use ndarray::{ArrayD, ArrayViewD, ArrayViewMutD};
+use numpy::ndarray::{ArrayD, ArrayViewD, ArrayViewMutD};
 use numpy::{c64, IntoPyArray, PyArrayDyn, PyReadonlyArrayDyn};
 use pyo3::prelude::{pymodule, PyModule, PyResult, Python};
 
