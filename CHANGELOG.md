@@ -74,7 +74,7 @@
 - v0.3.0
   - Breaking Change: Migrated to pyo3 from rust-cpython
   - Some api addition
-  - [Static type checking with PhantomData](https://github.com/rust-numpy/rust-numpy/pull/41)
+  - [Static type checking with PhantomData](https://github.com/PyO3/rust-numpy/pull/41)
 
 - v0.2.1
   - NEW: trait `IntoPyErr`, `IntoPyResult` for error translation

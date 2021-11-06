@@ -1,37 +1,37 @@
 rust-numpy
 ===========
-[![Actions Status](https://github.com/pyo3/rust-numpy/workflows/CI/badge.svg)](https://github.com/pyo3/rust-numpy/actions)
-[![Crate](http://meritbadge.herokuapp.com/numpy)](https://crates.io/crates/numpy)
-[![minimum rustc 1.41](https://img.shields.io/badge/rustc-1.41+-blue.svg)](https://rust-lang.github.io/rfcs/2495-min-rust-version.html)
+[![Actions Status](https://github.com/PyO3/rust-numpy/workflows/CI/badge.svg)](https://github.com/PyO3/rust-numpy/actions)
+[![Crate](https://img.shields.io/crates/v/numpy.svg)](https://crates.io/crates/numpy)
+[![Minimum rustc 1.41](https://img.shields.io/badge/rustc-1.41+-blue.svg)](https://rust-lang.github.io/rfcs/2495-min-rust-version.html)
 
-Rust bindings for the NumPy C-API
+Rust bindings for the NumPy C-API.
 
 ## API documentation
 - [Latest release (possibly broken)](https://docs.rs/numpy)
-- [Current Master](https://pyo3.github.io/rust-numpy)
+- [Current main](https://pyo3.github.io/rust-numpy)
 
 
 ## Requirements
 - Rust >= 1.41.1
-  - Basically, our MSRV follows the one of [PyO3](https://github.com/PyO3/pyo3).
+  - Basically, our MSRV follows the one of [PyO3](https://github.com/PyO3/pyo3)
 - Python >= 3.6
   - Python 3.5 support is dropped from 0.13
 - Some Rust libraries
-  - [ndarray](https://github.com/bluss/ndarray) for rust-side matrix library
-  - [PyO3](https://github.com/PyO3/pyo3) for cpython binding
-  - and more (see [Cargo.toml](Cargo.toml))
-- [numpy](http://www.numpy.org/) installed in your python environments (e.g., via `pip install numpy`)
-  - We recommend `numpy >= 1.16.0`, though older version may work.
+  - [ndarray](https://github.com/rust-ndarray/ndarray) for Rust-side matrix library
+  - [PyO3](https://github.com/PyO3/pyo3) for Python bindings
+  - And more (see [Cargo.toml](Cargo.toml))
+- [numpy](https://numpy.org/) installed in your Python environments (e.g., via `pip install numpy`)
+  - We recommend `numpy >= 1.16.0`, though older versions may work
 
-**Note**
-Starting from 0.3, rust-numpy migrated from rust-cpython to pyo3.
+**Note:**
+Starting from 0.3, rust-numpy migrated from rust-cpython to PyO3.
 If you want to use rust-cpython, use version 0.2.1 from crates.io.
 
 
-## Python2 Support
-Version 0.5.0 is the last version that supports Python2.
+## Python 2 support
+Version 0.5.0 is the last version that supports Python 2.
 
-If you want to compile this library with Python2, please use 0.5.0 from crates.io.
+If you want to compile this library with Python 2, please use 0.5.0 from crates.io.
 
 In addition, you have to add a feature flag in `Cargo.toml` like
 ``` toml
@@ -39,9 +39,8 @@ In addition, you have to add a feature flag in `Cargo.toml` like
 version = "0.5.0"
 features = ["python2"]
 ```
-.
 
-You can also automatically specify python version in `setup.py`,
+You can also automatically specify the Python version in `setup.py`,
 using [setuptools-rust](https://github.com/PyO3/setuptools-rust).
 
 
@@ -50,7 +49,7 @@ using [setuptools-rust](https://github.com/PyO3/setuptools-rust).
 This crate uses types from `ndarray` in its public API. `ndarray` is re-exported
 in the crate root so that you do not need to specify it as a direct dependency.
 
-Furthermore, this crate is compatible multiple versions of `ndarray` and therefore depends
+Furthermore, this crate is compatible with multiple versions of `ndarray` and therefore depends
 on a range of semver-incompatible versions, currently `>= 0.13, < 0.16`. Cargo does not
 automatically choose a single version of `ndarray` by itself if you depend directly or indirectly
 on anything but that exact range. It can therefore be necessary to manually unify these dependencies.
@@ -108,7 +107,7 @@ fn main() -> PyResult<()> {
 
 ### Write a Python module in Rust
 
-Please see [simple-extension](https://github.com/PyO3/rust-numpy/tree/main/examples/simple-extension)
+Please see the [simple-extension](https://github.com/PyO3/rust-numpy/tree/main/examples/simple-extension)
 directory for the complete example.
 Also, we have an example project with [ndarray-linalg](https://github.com/PyO3/rust-numpy/tree/main/examples/linalg).
 
@@ -168,11 +167,11 @@ fn rust_ext(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
 }
 ```
 
-## Conributing
-We welcome [issues](https://github.com/rust-numpy/rust-numpy/issues)
-and [pull requests](https://github.com/rust-numpy/rust-numpy/pulls).
+## Contributing
+We welcome [issues](https://github.com/PyO3/rust-numpy/issues)
+and [pull requests](https://github.com/PyO3/rust-numpy/pulls).
 
-PyO3's [contrinbuting.md](https://github.com/PyO3/pyo3/blob/main/Contributing.md)
+PyO3's [Contributing.md](https://github.com/PyO3/pyo3/blob/main/Contributing.md)
 is a nice guide for starting.
-Also, we have a [gitter](https://gitter.im/PyO3/Lobby) channel for communicating.
+Also, we have a [Gitter](https://gitter.im/PyO3/Lobby) channel for communicating.
 

@@ -3,9 +3,7 @@ name: gh-pages
 on:
   push:
     branches:
-      - master
-      - remove-travis
-
+      - main
 
 jobs:
   deploy:
