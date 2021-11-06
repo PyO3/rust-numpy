@@ -170,13 +170,17 @@ impl DataType {
 
 /// Represents that a type can be an element of `PyArray`.
 ///
+/// Currently, only integer/float/complex types are supported.
+/// If you come up with a nice implementation for some other types, we're happy to receive your PR :)
+/// You may refer to the [numpy document](https://numpy.org/doc/stable/reference/c-api/dtype.html#enumerated-types)
+/// for all types that numpy supports.
+///
+/// # Safety
+///
 /// A type `T` that implements this trait should be safe when managed in numpy array,
 /// thus implementing this trait is marked unsafe.
 /// For example, we don't support `PyObject` because of [an odd segfault](https://github.com/PyO3/rust-numpy/pull/143),
 /// although numpy itself supports it.
-///
-/// Also, we lack supports for some other types like unicode.
-/// If you come up with a nice implementation, we're happy to receive your PR :)
 pub unsafe trait Element: Clone + Send {
     /// `DataType` corresponding to this type.
     const DATA_TYPE: DataType;
