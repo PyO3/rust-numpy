@@ -57,7 +57,7 @@ on anything but that exact range. It can therefore be necessary to manually unif
 For example, if you specify the following dependencies
 
 ```toml
-numpy = "0.14"
+numpy = "0.15"
 ndarray = "0.13"
 ```
 
@@ -80,8 +80,8 @@ to achieve a single dependency on version `0.13.1` of `ndarray`.
 name = "numpy-test"
 
 [dependencies]
-pyo3 = "0.14"
-numpy = "0.14"
+pyo3 = "0.15"
+numpy = "0.15"
 ```
 
 ```rust
@@ -117,11 +117,10 @@ name = "rust_ext"
 crate-type = ["cdylib"]
 
 [dependencies]
-numpy = "0.14"
-ndarray = "0.14"
+numpy = "0.15"
 
 [dependencies.pyo3]
-version = "0.14"
+version = "0.15"
 features = ["extension-module"]
 ```
 
