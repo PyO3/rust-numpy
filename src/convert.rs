@@ -7,7 +7,7 @@ use std::{mem, os::raw::c_int};
 
 use crate::{
     npyffi::{self, npy_intp},
-    Element, PyArray,
+    DataType, Element, PyArray,
 };
 
 /// Covnersion trait from some rust types to `PyArray`.
@@ -130,25 +130,29 @@ where
     type Dim = D;
     fn to_pyarray<'py>(&self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
         let len = self.len();
-        if let Some(order) = self.order() {
-            // if the array is contiguous, copy it by `copy_ptr`.
-            let strides = self.npy_strides();
-            unsafe {
-                let array = PyArray::new_(py, self.raw_dim(), strides.as_ptr(), order.to_flag());
-                array.copy_ptr(self.as_ptr(), len);
-                array
-            }
-        } else {
-            // if the array is not contiguous, copy all elements by `ArrayBase::iter`.
-            let dim = self.raw_dim();
-            let strides = NpyStrides::from_dim(&dim, mem::size_of::<A>());
-            unsafe {
-                let array = PyArray::<A, _>::new_(py, dim, strides.as_ptr(), 0);
-                let data_ptr = array.data();
-                for (i, item) in self.iter().enumerate() {
-                    data_ptr.add(i).write(item.clone());
+        match self.order() {
+            Some(order) if A::DATA_TYPE != DataType::Object => {
+                // if the array is contiguous, copy it by `copy_ptr`.
+                let strides = self.npy_strides();
+                unsafe {
+                    let array =
+                        PyArray::new_(py, self.raw_dim(), strides.as_ptr(), order.to_flag());
+                    array.copy_ptr(self.as_ptr(), len);
+                    array
                 }
-                array
+            }
+            _ => {
+                // if the array is not contiguous, copy all elements by `ArrayBase::iter`.
+                let dim = self.raw_dim();
+                let strides = NpyStrides::from_dim(&dim, mem::size_of::<A>());
+                unsafe {
+                    let array = PyArray::<A, _>::new_(py, dim, strides.as_ptr(), 0);
+                    let data_ptr = array.data();
+                    for (i, item) in self.iter().enumerate() {
+                        data_ptr.add(i).write(item.clone());
+                    }
+                    array
+                }
             }
         }
     }

@@ -10,7 +10,7 @@ use std::{cell::Cell, mem, os::raw::c_int, ptr, slice};
 use std::{iter::ExactSizeIterator, marker::PhantomData};
 
 use crate::convert::{IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
-use crate::dtype::Element;
+use crate::dtype::{DataType, Element};
 use crate::error::{FromVecError, NotContiguousError, ShapeError};
 use crate::slice_box::SliceBox;
 
@@ -731,8 +731,17 @@ impl<T: Element> PyArray<T, Ix1> {
     /// ```
     pub fn from_slice<'py>(py: Python<'py>, slice: &[T]) -> &'py Self {
         let array = PyArray::new(py, [slice.len()], false);
-        unsafe {
-            array.copy_ptr(slice.as_ptr(), slice.len());
+        if T::DATA_TYPE != DataType::Object {
+            unsafe {
+                array.copy_ptr(slice.as_ptr(), slice.len());
+            }
+        } else {
+            unsafe {
+                let data_ptr = array.data();
+                for (i, item) in slice.iter().enumerate() {
+                    data_ptr.add(i).write(item.clone());
+                }
+            }
         }
         array
     }
