@@ -10,7 +10,7 @@ use std::{cell::Cell, mem, os::raw::c_int, ptr, slice};
 use std::{iter::ExactSizeIterator, marker::PhantomData};
 
 use crate::convert::{IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
-use crate::dtype::Element;
+use crate::dtype::{DataType, Element};
 use crate::error::{FromVecError, NotContiguousError, ShapeError};
 use crate::slice_box::SliceBox;
 
@@ -731,8 +731,17 @@ impl<T: Element> PyArray<T, Ix1> {
     /// ```
     pub fn from_slice<'py>(py: Python<'py>, slice: &[T]) -> &'py Self {
         let array = PyArray::new(py, [slice.len()], false);
-        unsafe {
-            array.copy_ptr(slice.as_ptr(), slice.len());
+        if T::DATA_TYPE != DataType::Object {
+            unsafe {
+                array.copy_ptr(slice.as_ptr(), slice.len());
+            }
+        } else {
+            unsafe {
+                let data_ptr = array.data();
+                for (i, item) in slice.iter().enumerate() {
+                    data_ptr.add(i).write(item.clone());
+                }
+            }
         }
         array
     }
@@ -767,7 +776,14 @@ impl<T: Element> PyArray<T, Ix1> {
     /// });
     /// ```
     pub fn from_exact_iter(py: Python<'_>, iter: impl ExactSizeIterator<Item = T>) -> &Self {
-        let array = Self::new(py, [iter.len()], false);
+        // Use zero-initialized pointers for object arrays
+        // so that partially initialized arrays can be dropped safely
+        // in case the iterator implementation panics.
+        let array = if T::DATA_TYPE == DataType::Object {
+            Self::zeros(py, [iter.len()], false)
+        } else {
+            Self::new(py, [iter.len()], false)
+        };
         unsafe {
             for (i, item) in iter.enumerate() {
                 *array.uget_mut([i]) = item;
@@ -795,7 +811,14 @@ impl<T: Element> PyArray<T, Ix1> {
         let iter = iter.into_iter();
         let (min_len, max_len) = iter.size_hint();
         let mut capacity = max_len.unwrap_or_else(|| min_len.max(512 / mem::size_of::<T>()));
-        let array = Self::new(py, [capacity], false);
+        // Use zero-initialized pointers for object arrays
+        // so that partially initialized arrays can be dropped safely
+        // in case the iterator implementation panics.
+        let array = if T::DATA_TYPE == DataType::Object {
+            Self::zeros(py, [capacity], false)
+        } else {
+            Self::new(py, [capacity], false)
+        };
         let mut length = 0;
         unsafe {
             for (i, item) in iter.enumerate() {
