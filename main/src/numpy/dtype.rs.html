@@ -254,6 +254,41 @@
 <span id="254">254</span>
 <span id="255">255</span>
 <span id="256">256</span>
+<span id="257">257</span>
+<span id="258">258</span>
+<span id="259">259</span>
+<span id="260">260</span>
+<span id="261">261</span>
+<span id="262">262</span>
+<span id="263">263</span>
+<span id="264">264</span>
+<span id="265">265</span>
+<span id="266">266</span>
+<span id="267">267</span>
+<span id="268">268</span>
+<span id="269">269</span>
+<span id="270">270</span>
+<span id="271">271</span>
+<span id="272">272</span>
+<span id="273">273</span>
+<span id="274">274</span>
+<span id="275">275</span>
+<span id="276">276</span>
+<span id="277">277</span>
+<span id="278">278</span>
+<span id="279">279</span>
+<span id="280">280</span>
+<span id="281">281</span>
+<span id="282">282</span>
+<span id="283">283</span>
+<span id="284">284</span>
+<span id="285">285</span>
+<span id="286">286</span>
+<span id="287">287</span>
+<span id="288">288</span>
+<span id="289">289</span>
+<span id="290">290</span>
+<span id="291">291</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::npyffi</span>::{<span class="ident">NpyTypes</span>, <span class="ident">PyArray_Descr</span>, <span class="ident">NPY_TYPES</span>, <span class="ident">PY_ARRAY_API</span>};
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">num_complex::Complex32</span> <span class="kw">as</span> <span class="ident">c32</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">num_complex::Complex64</span> <span class="kw">as</span> <span class="ident">c64</span>;
@@ -438,6 +473,41 @@
 <span class="doccomment">/// This means that all data types except for `DataType::Object` are assumed to be trivially copyable.</span>
 <span class="doccomment">/// Furthermore, it is assumed that for `DataType::Object` the elements are pointers into the Python heap</span>
 <span class="doccomment">/// and that the corresponding `Clone` implemenation will never panic as it only increases the reference count.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// # Custom element types</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// You can implement this trait to manage arrays of custom element types, but they still need to be stored</span>
+<span class="doccomment">/// on Python&#39;s heap using PyO3&#39;s [Py](pyo3::Py) type.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// ```</span>
+<span class="doccomment">/// use numpy::{ndarray::Array2, DataType, Element, PyArray, PyArrayDescr, ToPyArray};</span>
+<span class="doccomment">/// use pyo3::{pyclass, Py, Python};</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// #[pyclass]</span>
+<span class="doccomment">/// pub struct CustomElement;</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// // The transparent wrapper is necessary as one cannot implement</span>
+<span class="doccomment">/// // a foreign trait (`Element`) on a foreign type (`Py`) directly.</span>
+<span class="doccomment">/// #[derive(Clone)]</span>
+<span class="doccomment">/// #[repr(transparent)]</span>
+<span class="doccomment">/// pub struct Wrapper(pub Py&lt;CustomElement&gt;);</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// unsafe impl Element for Wrapper {</span>
+<span class="doccomment">///     const DATA_TYPE: DataType = DataType::Object;</span>
+<span class="doccomment">///</span>
+<span class="doccomment">///     fn is_same_type(dtype: &amp;PyArrayDescr) -&gt; bool {</span>
+<span class="doccomment">///         dtype.get_datatype() == Some(DataType::Object)</span>
+<span class="doccomment">///     }</span>
+<span class="doccomment">/// }</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// Python::with_gil(|py| {</span>
+<span class="doccomment">///     let array = Array2::&lt;Wrapper&gt;::from_shape_fn((2, 3), |(_i, _j)| {</span>
+<span class="doccomment">///         Wrapper(Py::new(py, CustomElement).unwrap())</span>
+<span class="doccomment">///     });</span>
+<span class="doccomment">///</span>
+<span class="doccomment">///     let _array: &amp;PyArray&lt;Wrapper, _&gt; = array.to_pyarray(py);</span>
+<span class="doccomment">/// });</span>
+<span class="doccomment">/// ```</span>
 <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">trait</span> <span class="ident">Element</span>: <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">Send</span> {
     <span class="doccomment">/// `DataType` corresponding to this type.</span>
     <span class="kw">const</span> <span class="ident">DATA_TYPE</span>: <span class="ident">DataType</span>;
