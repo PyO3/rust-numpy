@@ -1,6 +1,6 @@
 //! Low-Level bindings for NumPy C API.
 //!
-//! https://numpy.org/doc/stable/reference/c-api
+//! <https://numpy.org/doc/stable/reference/c-api>
 #![allow(non_camel_case_types, clippy::too_many_arguments)]
 
 use pyo3::{ffi, Python};

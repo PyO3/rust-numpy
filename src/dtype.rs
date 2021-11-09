@@ -182,6 +182,41 @@ impl DataType {
 /// This means that all data types except for `DataType::Object` are assumed to be trivially copyable.
 /// Furthermore, it is assumed that for `DataType::Object` the elements are pointers into the Python heap
 /// and that the corresponding `Clone` implemenation will never panic as it only increases the reference count.
+///
+/// # Custom element types
+///
+/// You can implement this trait to manage arrays of custom element types, but they still need to be stored
+/// on Python's heap using PyO3's [Py](pyo3::Py) type.
+///
+/// ```
+/// use numpy::{ndarray::Array2, DataType, Element, PyArray, PyArrayDescr, ToPyArray};
+/// use pyo3::{pyclass, Py, Python};
+///
+/// #[pyclass]
+/// pub struct CustomElement;
+///
+/// // The transparent wrapper is necessary as one cannot implement
+/// // a foreign trait (`Element`) on a foreign type (`Py`) directly.
+/// #[derive(Clone)]
+/// #[repr(transparent)]
+/// pub struct Wrapper(pub Py<CustomElement>);
+///
+/// unsafe impl Element for Wrapper {
+///     const DATA_TYPE: DataType = DataType::Object;
+///
+///     fn is_same_type(dtype: &PyArrayDescr) -> bool {
+///         dtype.get_datatype() == Some(DataType::Object)
+///     }
+/// }
+///
+/// Python::with_gil(|py| {
+///     let array = Array2::<Wrapper>::from_shape_fn((2, 3), |(_i, _j)| {
+///         Wrapper(Py::new(py, CustomElement).unwrap())
+///     });
+///
+///     let _array: &PyArray<Wrapper, _> = array.to_pyarray(py);
+/// });
+/// ```
 pub unsafe trait Element: Clone + Send {
     /// `DataType` corresponding to this type.
     const DATA_TYPE: DataType;
