@@ -447,6 +447,9 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     /// If `is_fortran` is true, then
     /// a fortran order array is created, otherwise a C-order array is created.
     ///
+    /// For elements with `DATA_TYPE == DataType::Object`, this will fill the array
+    /// valid pointers to objects of type `<class 'int'>` with value zero.
+    ///
     /// See also [PyArray_Zeros](https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_Zeros)
     ///
     /// # Example
@@ -776,14 +779,9 @@ impl<T: Element> PyArray<T, Ix1> {
     /// });
     /// ```
     pub fn from_exact_iter(py: Python<'_>, iter: impl ExactSizeIterator<Item = T>) -> &Self {
-        // Use zero-initialized pointers for object arrays
-        // so that partially initialized arrays can be dropped safely
-        // in case the iterator implementation panics.
-        let array = if T::DATA_TYPE == DataType::Object {
-            Self::zeros(py, [iter.len()], false)
-        } else {
-            Self::new(py, [iter.len()], false)
-        };
+        // NumPy will always zero-initialize object pointers,
+        // so the array can be dropped safely if the iterator panics.
+        let array = Self::new(py, [iter.len()], false);
         unsafe {
             for (i, item) in iter.enumerate() {
                 *array.uget_mut([i]) = item;
@@ -811,14 +809,9 @@ impl<T: Element> PyArray<T, Ix1> {
         let iter = iter.into_iter();
         let (min_len, max_len) = iter.size_hint();
         let mut capacity = max_len.unwrap_or_else(|| min_len.max(512 / mem::size_of::<T>()));
-        // Use zero-initialized pointers for object arrays
-        // so that partially initialized arrays can be dropped safely
-        // in case the iterator implementation panics.
-        let array = if T::DATA_TYPE == DataType::Object {
-            Self::zeros(py, [capacity], false)
-        } else {
-            Self::new(py, [capacity], false)
-        };
+        // NumPy will always zero-initialize object pointers,
+        // so the array can be dropped safely if the iterator panics.
+        let array = Self::new(py, [capacity], false);
         let mut length = 0;
         unsafe {
             for (i, item) in iter.enumerate() {
