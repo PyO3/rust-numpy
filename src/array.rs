@@ -249,7 +249,7 @@ impl<T, D> PyArray<T, D> {
     /// ```
     /// use numpy::PyArray3;
     /// pyo3::Python::with_gil(|py| {
-    ///     let arr = PyArray3::<f64>::new(py, [4, 5, 6], false);
+    ///     let arr = PyArray3::<f64>::zeros(py, [4, 5, 6], false);
     ///     assert_eq!(arr.ndim(), 3);
     /// });
     /// ```
@@ -266,7 +266,7 @@ impl<T, D> PyArray<T, D> {
     /// ```
     /// use numpy::PyArray3;
     /// pyo3::Python::with_gil(|py| {
-    ///     let arr = PyArray3::<f64>::new(py, [4, 5, 6], false);
+    ///     let arr = PyArray3::<f64>::zeros(py, [4, 5, 6], false);
     ///     assert_eq!(arr.strides(), &[240, 48, 8]);
     /// });
     /// ```
@@ -287,7 +287,7 @@ impl<T, D> PyArray<T, D> {
     /// ```
     /// use numpy::PyArray3;
     /// pyo3::Python::with_gil(|py| {
-    ///     let arr = PyArray3::<f64>::new(py, [4, 5, 6], false);
+    ///     let arr = PyArray3::<f64>::zeros(py, [4, 5, 6], false);
     ///     assert_eq!(arr.shape(), &[4, 5, 6]);
     /// });
     /// ```
@@ -371,20 +371,46 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     ///
     /// If `is_fortran == true`, returns Fortran-order array. Else, returns C-order array.
     ///
+    /// # Safety
+    ///
+    /// The returned array will always be safe to be dropped as the elements must either
+    /// be trivially copyable or have `DATA_TYPE == DataType::Object`, i.e. be pointers
+    /// into Python's heap, which NumPy will automatically zero-initialize.
+    ///
+    /// However, the elements themselves will not be valid and should only be accessed
+    /// via raw pointers obtained via [uget_raw](#method.uget_raw).
+    ///
+    /// All methods which produce references to the elements invoke undefined behaviour.
+    /// In particular, zero-initialized pointers are _not_ valid instances of `PyObject`.
+    ///
     /// # Example
     /// ```
     /// use numpy::PyArray3;
+    ///
     /// pyo3::Python::with_gil(|py| {
-    ///     let arr = PyArray3::<i32>::new(py, [4, 5, 6], false);
+    ///     let arr = unsafe {
+    ///         let arr = PyArray3::<i32>::new(py, [4, 5, 6], false);
+    ///
+    ///         for i in 0..4 {
+    ///             for j in 0..5 {
+    ///                 for k in 0..6 {
+    ///                     arr.uget_raw([i, j, k]).write((i * j * k) as i32);
+    ///                 }
+    ///             }
+    ///         }
+    ///
+    ///         arr
+    ///     };
+    ///
     ///     assert_eq!(arr.shape(), &[4, 5, 6]);
     /// });
     /// ```
-    pub fn new<ID>(py: Python, dims: ID, is_fortran: bool) -> &Self
+    pub unsafe fn new<ID>(py: Python, dims: ID, is_fortran: bool) -> &Self
     where
         ID: IntoDimension<Dim = D>,
     {
         let flags = if is_fortran { 1 } else { 0 };
-        unsafe { PyArray::new_(py, dims, ptr::null_mut(), flags) }
+        PyArray::new_(py, dims, ptr::null_mut(), flags)
     }
 
     pub(crate) unsafe fn new_<ID>(
@@ -448,7 +474,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     /// a fortran order array is created, otherwise a C-order array is created.
     ///
     /// For elements with `DATA_TYPE == DataType::Object`, this will fill the array
-    /// valid pointers to objects of type `<class 'int'>` with value zero.
+    /// with valid pointers to zero-valued Python integer objects.
     ///
     /// See also [PyArray_Zeros](https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_Zeros)
     ///
@@ -596,6 +622,16 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         &mut *(self.data().offset(offset) as *mut _)
     }
 
+    /// Same as [uget](#method.uget), but returns `*mut T`.
+    #[inline(always)]
+    pub unsafe fn uget_raw<Idx>(&self, index: Idx) -> *mut T
+    where
+        Idx: NpyIndex<Dim = D>,
+    {
+        let offset = index.get_unchecked::<T>(self.strides());
+        self.data().offset(offset) as *mut _
+    }
+
     /// Get dynamic dimensioned array from fixed dimension array.
     pub fn to_dyn(&self) -> &PyArray<T, IxDyn> {
         let python = self.py();
@@ -733,20 +769,18 @@ impl<T: Element> PyArray<T, Ix1> {
     /// });
     /// ```
     pub fn from_slice<'py>(py: Python<'py>, slice: &[T]) -> &'py Self {
-        let array = PyArray::new(py, [slice.len()], false);
-        if T::DATA_TYPE != DataType::Object {
-            unsafe {
+        unsafe {
+            let array = PyArray::new(py, [slice.len()], false);
+            if T::DATA_TYPE != DataType::Object {
                 array.copy_ptr(slice.as_ptr(), slice.len());
-            }
-        } else {
-            unsafe {
+            } else {
                 let data_ptr = array.data();
                 for (i, item) in slice.iter().enumerate() {
                     data_ptr.add(i).write(item.clone());
                 }
             }
+            array
         }
-        array
     }
 
     /// Construct one-dimension PyArray
@@ -781,13 +815,13 @@ impl<T: Element> PyArray<T, Ix1> {
     pub fn from_exact_iter(py: Python<'_>, iter: impl ExactSizeIterator<Item = T>) -> &Self {
         // NumPy will always zero-initialize object pointers,
         // so the array can be dropped safely if the iterator panics.
-        let array = Self::new(py, [iter.len()], false);
         unsafe {
+            let array = Self::new(py, [iter.len()], false);
             for (i, item) in iter.enumerate() {
-                *array.uget_mut([i]) = item;
+                array.uget_raw([i]).write(item);
             }
+            array
         }
-        array
     }
 
     /// Construct one-dimension PyArray from a type which implements
@@ -809,11 +843,11 @@ impl<T: Element> PyArray<T, Ix1> {
         let iter = iter.into_iter();
         let (min_len, max_len) = iter.size_hint();
         let mut capacity = max_len.unwrap_or_else(|| min_len.max(512 / mem::size_of::<T>()));
-        // NumPy will always zero-initialize object pointers,
-        // so the array can be dropped safely if the iterator panics.
-        let array = Self::new(py, [capacity], false);
-        let mut length = 0;
         unsafe {
+            // NumPy will always zero-initialize object pointers,
+            // so the array can be dropped safely if the iterator panics.
+            let array = Self::new(py, [capacity], false);
+            let mut length = 0;
             for (i, item) in iter.enumerate() {
                 length += 1;
                 if length > capacity {
@@ -822,13 +856,13 @@ impl<T: Element> PyArray<T, Ix1> {
                         .resize(capacity)
                         .expect("PyArray::from_iter: Failed to allocate memory");
                 }
-                *array.uget_mut([i]) = item;
+                array.uget_raw([i]).write(item);
             }
+            if capacity > length {
+                array.resize(length).unwrap()
+            }
+            array
         }
-        if capacity > length {
-            array.resize(length).unwrap()
-        }
-        array
     }
 
     /// Extends or trancates the length of 1 dimension PyArray.
@@ -902,15 +936,15 @@ impl<T: Element> PyArray<T, Ix2> {
             return Err(FromVecError::new(v.len(), last_len));
         }
         let dims = [v.len(), last_len];
-        let array = Self::new(py, dims, false);
         unsafe {
+            let array = Self::new(py, dims, false);
             for (y, vy) in v.iter().enumerate() {
                 for (x, vyx) in vy.iter().enumerate() {
-                    *array.uget_mut([y, x]) = vyx.clone();
+                    array.uget_raw([y, x]).write(vyx.clone());
                 }
             }
+            Ok(array)
         }
-        Ok(array)
     }
 }
 
@@ -944,17 +978,17 @@ impl<T: Element> PyArray<T, Ix3> {
             return Err(FromVecError::new(v.len(), len3));
         }
         let dims = [v.len(), len2, len3];
-        let array = Self::new(py, dims, false);
         unsafe {
+            let array = Self::new(py, dims, false);
             for (z, vz) in v.iter().enumerate() {
                 for (y, vzy) in vz.iter().enumerate() {
                     for (x, vzyx) in vzy.iter().enumerate() {
-                        *array.uget_mut([z, y, x]) = vzyx.clone();
+                        array.uget_raw([z, y, x]).write(vzyx.clone());
                     }
                 }
             }
+            Ok(array)
         }
-        Ok(array)
     }
 }
 
@@ -965,7 +999,7 @@ impl<T: Element, D> PyArray<T, D> {
     /// use numpy::PyArray;
     /// pyo3::Python::with_gil(|py| {
     ///     let pyarray_f = PyArray::arange(py, 2.0, 5.0, 1.0);
-    ///     let pyarray_i = PyArray::<i64, _>::new(py, [3], false);
+    ///     let pyarray_i = unsafe { PyArray::<i64, _>::new(py, [3], false) };
     ///     assert!(pyarray_f.copy_to(pyarray_i).is_ok());
     ///     assert_eq!(pyarray_i.readonly().as_slice().unwrap(), &[2, 3, 4]);
     /// });
