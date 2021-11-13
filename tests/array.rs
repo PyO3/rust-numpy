@@ -25,7 +25,7 @@ fn not_contiguous_array<'py>(py: Python<'py>) -> &'py PyArray1<i32> {
 fn new_c_order() {
     let dim = [3, 5];
     pyo3::Python::with_gil(|py| {
-        let arr = PyArray::<f64, _>::new(py, dim, false);
+        let arr = PyArray::<f64, _>::zeros(py, dim, false);
         assert!(arr.ndim() == 2);
         assert!(arr.dims() == dim);
         let size = std::mem::size_of::<f64>() as isize;
@@ -37,7 +37,7 @@ fn new_c_order() {
 fn new_fortran_order() {
     let dim = [3, 5];
     pyo3::Python::with_gil(|py| {
-        let arr = PyArray::<f64, _>::new(py, dim, true);
+        let arr = PyArray::<f64, _>::zeros(py, dim, true);
         assert!(arr.ndim() == 2);
         assert!(arr.dims() == dim);
         let size = std::mem::size_of::<f64>() as isize;
@@ -109,7 +109,7 @@ fn as_slice() {
 #[test]
 fn is_instance() {
     pyo3::Python::with_gil(|py| {
-        let arr = PyArray2::<f64>::new(py, [3, 5], false);
+        let arr = PyArray2::<f64>::zeros(py, [3, 5], false);
         assert!(arr.is_instance::<PyArray2<f64>>().unwrap());
         assert!(!arr.is_instance::<PyList>().unwrap());
     })
