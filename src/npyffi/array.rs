@@ -2,7 +2,8 @@
 use libc::FILE;
 use pyo3::ffi::{self, PyObject, PyTypeObject};
 use std::os::raw::*;
-use std::{cell::Cell, ptr};
+use std::ptr::null_mut;
+use std::sync::atomic::{AtomicPtr, Ordering};
 
 use crate::npyffi::*;
 
@@ -12,7 +13,7 @@ const CAPSULE_NAME: &str = "_ARRAY_API";
 /// A global variable which stores a ['capsule'](https://docs.python.org/3/c-api/capsule.html)
 /// pointer to [Numpy Array API](https://numpy.org/doc/stable/reference/c-api/array.html).
 ///
-/// You can acceess raw c APIs via this variable and its Deref implementation.
+/// You can acceess raw C APIs via this variable.
 ///
 /// See [PyArrayAPI](struct.PyArrayAPI.html) for what methods you can use via this variable.
 ///
@@ -31,27 +32,34 @@ pub static PY_ARRAY_API: PyArrayAPI = PyArrayAPI::new();
 
 /// See [PY_ARRAY_API] for more.
 pub struct PyArrayAPI {
-    api: Cell<*const *const c_void>,
+    api: AtomicPtr<*const c_void>,
 }
 
 impl PyArrayAPI {
     const fn new() -> Self {
         Self {
-            api: Cell::new(ptr::null_mut()),
+            api: AtomicPtr::new(null_mut()),
         }
     }
-    fn get(&self, offset: isize) -> *const *const c_void {
-        if self.api.get().is_null() {
-            Python::with_gil(|py| {
-                let api = get_numpy_api(py, MOD_NAME, CAPSULE_NAME);
-                self.api.set(api);
-            });
+    #[cold]
+    fn init(&self) -> *const *const c_void {
+        Python::with_gil(|py| {
+            let mut api = self.api.load(Ordering::Relaxed) as *const *const c_void;
+            if api.is_null() {
+                api = get_numpy_api(py, MOD_NAME, CAPSULE_NAME);
+                self.api.store(api as *mut _, Ordering::Release);
+            }
+            api
+        })
+    }
+    unsafe fn get(&self, offset: isize) -> *const *const c_void {
+        let mut api = self.api.load(Ordering::Acquire) as *const *const c_void;
+        if api.is_null() {
+            api = self.init();
         }
-        unsafe { self.api.get().offset(offset) }
+        api.offset(offset)
     }
 }
-
-unsafe impl Sync for PyArrayAPI {}
 
 impl PyArrayAPI {
     impl_api![0; PyArray_GetNDArrayCVersion() -> c_uint];
