@@ -400,11 +400,20 @@
 <span id="400">400</span>
 <span id="401">401</span>
 <span id="402">402</span>
+<span id="403">403</span>
+<span id="404">404</span>
+<span id="405">405</span>
+<span id="406">406</span>
+<span id="407">407</span>
+<span id="408">408</span>
+<span id="409">409</span>
+<span id="410">410</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Low-Level binding for [Array API](https://numpy.org/doc/stable/reference/c-api/array.html)</span>
 <span class="kw">use</span> <span class="ident">libc::FILE</span>;
 <span class="kw">use</span> <span class="ident">pyo3::ffi</span>::{<span class="self">self</span>, <span class="ident">PyObject</span>, <span class="ident">PyTypeObject</span>};
 <span class="kw">use</span> <span class="ident">std::os::raw</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">cell::Cell</span>, <span class="ident">ptr</span>};
+<span class="kw">use</span> <span class="ident">std::ptr::null_mut</span>;
+<span class="kw">use</span> <span class="ident">std::sync::atomic</span>::{<span class="ident">AtomicPtr</span>, <span class="ident">Ordering</span>};
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::npyffi</span>::<span class="kw-2">*</span>;
 
@@ -414,7 +423,7 @@
 <span class="doccomment">/// A global variable which stores a [&#39;capsule&#39;](https://docs.python.org/3/c-api/capsule.html)</span>
 <span class="doccomment">/// pointer to [Numpy Array API](https://numpy.org/doc/stable/reference/c-api/array.html).</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// You can acceess raw c APIs via this variable and its Deref implementation.</span>
+<span class="doccomment">/// You can acceess raw C APIs via this variable.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// See [PyArrayAPI](struct.PyArrayAPI.html) for what methods you can use via this variable.</span>
 <span class="doccomment">///</span>
@@ -433,27 +442,34 @@
 
 <span class="doccomment">/// See [PY_ARRAY_API] for more.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">PyArrayAPI</span> {
-    <span class="ident">api</span>: <span class="ident">Cell</span><span class="op">&lt;</span><span class="kw-2">*</span><span class="kw">const</span> <span class="kw-2">*</span><span class="kw">const</span> <span class="ident">c_void</span><span class="op">&gt;</span>,
+    <span class="ident">api</span>: <span class="ident">AtomicPtr</span><span class="op">&lt;</span><span class="kw-2">*</span><span class="kw">const</span> <span class="ident">c_void</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">PyArrayAPI</span> {
     <span class="kw">const</span> <span class="kw">fn</span> <span class="ident">new</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
-            <span class="ident">api</span>: <span class="ident">Cell::new</span>(<span class="ident">ptr::null_mut</span>()),
+            <span class="ident">api</span>: <span class="ident">AtomicPtr::new</span>(<span class="ident">null_mut</span>()),
         }
     }
-    <span class="kw">fn</span> <span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">offset</span>: <span class="ident">isize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">*</span><span class="kw">const</span> <span class="kw-2">*</span><span class="kw">const</span> <span class="ident">c_void</span> {
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">api</span>.<span class="ident">get</span>().<span class="ident">is_null</span>() {
-            <span class="ident">Python::with_gil</span>(<span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
-                <span class="kw">let</span> <span class="ident">api</span> <span class="op">=</span> <span class="ident">get_numpy_api</span>(<span class="ident">py</span>, <span class="ident">MOD_NAME</span>, <span class="ident">CAPSULE_NAME</span>);
-                <span class="self">self</span>.<span class="ident">api</span>.<span class="ident">set</span>(<span class="ident">api</span>);
-            });
+    <span class="attribute">#[<span class="ident">cold</span>]</span>
+    <span class="kw">fn</span> <span class="ident">init</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">*</span><span class="kw">const</span> <span class="kw-2">*</span><span class="kw">const</span> <span class="ident">c_void</span> {
+        <span class="ident">Python::with_gil</span>(<span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">api</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">api</span>.<span class="ident">load</span>(<span class="ident">Ordering::Relaxed</span>) <span class="kw">as</span> <span class="kw-2">*</span><span class="kw">const</span> <span class="kw-2">*</span><span class="kw">const</span> <span class="ident">c_void</span>;
+            <span class="kw">if</span> <span class="ident">api</span>.<span class="ident">is_null</span>() {
+                <span class="ident">api</span> <span class="op">=</span> <span class="ident">get_numpy_api</span>(<span class="ident">py</span>, <span class="ident">MOD_NAME</span>, <span class="ident">CAPSULE_NAME</span>);
+                <span class="self">self</span>.<span class="ident">api</span>.<span class="ident">store</span>(<span class="ident">api</span> <span class="kw">as</span> <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="kw">_</span>, <span class="ident">Ordering::Release</span>);
+            }
+            <span class="ident">api</span>
+        })
+    }
+    <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">offset</span>: <span class="ident">isize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">*</span><span class="kw">const</span> <span class="kw-2">*</span><span class="kw">const</span> <span class="ident">c_void</span> {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">api</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">api</span>.<span class="ident">load</span>(<span class="ident">Ordering::Acquire</span>) <span class="kw">as</span> <span class="kw-2">*</span><span class="kw">const</span> <span class="kw-2">*</span><span class="kw">const</span> <span class="ident">c_void</span>;
+        <span class="kw">if</span> <span class="ident">api</span>.<span class="ident">is_null</span>() {
+            <span class="ident">api</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">init</span>();
         }
-        <span class="kw">unsafe</span> { <span class="self">self</span>.<span class="ident">api</span>.<span class="ident">get</span>().<span class="ident">offset</span>(<span class="ident">offset</span>) }
+        <span class="ident">api</span>.<span class="ident">offset</span>(<span class="ident">offset</span>)
     }
 }
-
-<span class="kw">unsafe</span> <span class="kw">impl</span> <span class="ident">Sync</span> <span class="kw">for</span> <span class="ident">PyArrayAPI</span> {}
 
 <span class="kw">impl</span> <span class="ident">PyArrayAPI</span> {
     <span class="macro">impl_api!</span>[<span class="number">0</span>; <span class="ident">PyArray_GetNDArrayCVersion</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">c_uint</span>];
