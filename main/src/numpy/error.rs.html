@@ -130,13 +130,13 @@
 }
 
 <span class="kw">impl</span> <span class="ident">fmt::Display</span> <span class="kw">for</span> <span class="ident">ArrayDim</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt::Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt::Result</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt::Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) -&gt; <span class="ident">fmt::Result</span> {
         <span class="kw">let</span> <span class="ident">ArrayDim</span> { <span class="ident">dim</span>, <span class="ident">dtype</span> } <span class="op">=</span> <span class="self">self</span>;
         <span class="kw">match</span> (<span class="ident">dim</span>, <span class="ident">dtype</span>) {
-            (<span class="prelude-val">Some</span>(<span class="ident">dim</span>), <span class="prelude-val">Some</span>(<span class="ident">dtype</span>)) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write!</span>(<span class="ident">f</span>, <span class="string">&quot;dim={:?}, dtype={:?}&quot;</span>, <span class="ident">dim</span>, <span class="ident">dtype</span>),
-            (<span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(<span class="ident">dtype</span>)) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write!</span>(<span class="ident">f</span>, <span class="string">&quot;dim=_, dtype={:?}&quot;</span>, <span class="ident">dtype</span>),
-            (<span class="prelude-val">Some</span>(<span class="ident">dim</span>), <span class="prelude-val">None</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write!</span>(<span class="ident">f</span>, <span class="string">&quot;dim={:?}, dtype=Unknown&quot;</span>, <span class="ident">dim</span>),
-            (<span class="prelude-val">None</span>, <span class="prelude-val">None</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write!</span>(<span class="ident">f</span>, <span class="string">&quot;dim=_, dtype=Unknown&quot;</span>),
+            (<span class="prelude-val">Some</span>(<span class="ident">dim</span>), <span class="prelude-val">Some</span>(<span class="ident">dtype</span>)) =&gt; <span class="macro">write!</span>(<span class="ident">f</span>, <span class="string">&quot;dim={:?}, dtype={:?}&quot;</span>, <span class="ident">dim</span>, <span class="ident">dtype</span>),
+            (<span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(<span class="ident">dtype</span>)) =&gt; <span class="macro">write!</span>(<span class="ident">f</span>, <span class="string">&quot;dim=_, dtype={:?}&quot;</span>, <span class="ident">dtype</span>),
+            (<span class="prelude-val">Some</span>(<span class="ident">dim</span>), <span class="prelude-val">None</span>) =&gt; <span class="macro">write!</span>(<span class="ident">f</span>, <span class="string">&quot;dim={:?}, dtype=Unknown&quot;</span>, <span class="ident">dim</span>),
+            (<span class="prelude-val">None</span>, <span class="prelude-val">None</span>) =&gt; <span class="macro">write!</span>(<span class="ident">f</span>, <span class="string">&quot;dim=_, dtype=Unknown&quot;</span>),
         }
     }
 }
@@ -154,7 +154,7 @@
         <span class="ident">from_dim</span>: <span class="ident">usize</span>,
         <span class="ident">to_type</span>: <span class="ident">DataType</span>,
         <span class="ident">to_dim</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    ) -&gt; <span class="self">Self</span> {
         <span class="ident">ShapeError</span> {
             <span class="ident">from</span>: <span class="ident">ArrayDim</span> {
                 <span class="ident">dim</span>: <span class="prelude-val">Some</span>(<span class="ident">from_dim</span>),
@@ -169,24 +169,24 @@
 }
 
 <span class="kw">impl</span> <span class="ident">fmt::Display</span> <span class="kw">for</span> <span class="ident">ShapeError</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt::Formatter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt::Result</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt::Formatter</span>) -&gt; <span class="ident">fmt::Result</span> {
         <span class="kw">let</span> <span class="ident">ShapeError</span> { <span class="ident">from</span>, <span class="ident">to</span> } <span class="op">=</span> <span class="self">self</span>;
         <span class="macro">write!</span>(<span class="ident">f</span>, <span class="string">&quot;Shape Mismatch:\n from=({}), to=({})&quot;</span>, <span class="ident">from</span>, <span class="ident">to</span>)
     }
 }
 
 <span class="macro">macro_rules!</span> <span class="ident">impl_pyerr</span> {
-    (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">err_type</span>: <span class="ident">ty</span>) <span class="op">=</span><span class="op">&gt;</span> {
+    (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">err_type</span>: <span class="ident">ty</span>) =&gt; {
         <span class="kw">impl</span> <span class="ident">std::error::Error</span> <span class="kw">for</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">err_type</span> {}
 
         <span class="kw">impl</span> <span class="ident">PyErrArguments</span> <span class="kw">for</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">err_type</span> {
-            <span class="kw">fn</span> <span class="ident">arguments</span>(<span class="self">self</span>, <span class="ident">py</span>: <span class="ident">Python</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyObject</span> {
+            <span class="kw">fn</span> <span class="ident">arguments</span>(<span class="self">self</span>, <span class="ident">py</span>: <span class="ident">Python</span>) -&gt; <span class="ident">PyObject</span> {
                 <span class="macro">format!</span>(<span class="string">&quot;{}&quot;</span>, <span class="self">self</span>).<span class="ident">to_object</span>(<span class="ident">py</span>)
             }
         }
 
         <span class="kw">impl</span> <span class="ident">std::convert::From</span><span class="op">&lt;</span><span class="macro-nonterminal">$</span><span class="macro-nonterminal">err_type</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">PyErr</span> {
-            <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">err</span>: <span class="macro-nonterminal">$</span><span class="macro-nonterminal">err_type</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyErr</span> {
+            <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">err</span>: <span class="macro-nonterminal">$</span><span class="macro-nonterminal">err_type</span>) -&gt; <span class="ident">PyErr</span> {
                 <span class="ident">exc::PyTypeError::new_err</span>(<span class="ident">err</span>)
             }
         }
@@ -203,13 +203,13 @@
 }
 
 <span class="kw">impl</span> <span class="ident">FromVecError</span> {
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">len1</span>: <span class="ident">usize</span>, <span class="ident">len2</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">len1</span>: <span class="ident">usize</span>, <span class="ident">len2</span>: <span class="ident">usize</span>) -&gt; <span class="self">Self</span> {
         <span class="ident">FromVecError</span> { <span class="ident">len1</span>, <span class="ident">len2</span> }
     }
 }
 
 <span class="kw">impl</span> <span class="ident">fmt::Display</span> <span class="kw">for</span> <span class="ident">FromVecError</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt::Formatter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt::Result</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt::Formatter</span>) -&gt; <span class="ident">fmt::Result</span> {
         <span class="kw">let</span> <span class="ident">FromVecError</span> { <span class="ident">len1</span>, <span class="ident">len2</span> } <span class="op">=</span> <span class="self">self</span>;
         <span class="macro">write!</span>(
             <span class="ident">f</span>,
@@ -226,7 +226,7 @@
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">NotContiguousError</span>;
 
 <span class="kw">impl</span> <span class="ident">fmt::Display</span> <span class="kw">for</span> <span class="ident">NotContiguousError</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt::Formatter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt::Result</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt::Formatter</span>) -&gt; <span class="ident">fmt::Result</span> {
         <span class="macro">write!</span>(<span class="ident">f</span>, <span class="string">&quot;The given array is not contiguous&quot;</span>,)
     }
 }

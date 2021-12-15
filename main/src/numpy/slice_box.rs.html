@@ -58,7 +58,7 @@
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="ident">SliceBox</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">data</span>: <span class="ident">Box</span><span class="op">&lt;</span>[<span class="ident">T</span>]<span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">data</span>: <span class="ident">Box</span><span class="op">&lt;</span>[<span class="ident">T</span>]<span class="op">&gt;</span>) -&gt; <span class="self">Self</span> {
         <span class="self">Self</span> { <span class="ident">data</span> }
     }
 }
@@ -92,7 +92,7 @@
     <span class="kw">const</span> <span class="ident">MODULE</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span><span class="op">&gt;</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="string">&quot;_rust_numpy&quot;</span>);
 
     <span class="attribute">#[<span class="ident">inline</span>]</span>
-    <span class="kw">fn</span> <span class="ident">type_object_raw</span>(<span class="ident">py</span>: <span class="ident">pyo3::Python</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">ffi::PyTypeObject</span> {
+    <span class="kw">fn</span> <span class="ident">type_object_raw</span>(<span class="ident">py</span>: <span class="ident">pyo3::Python</span>) -&gt; <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">ffi::PyTypeObject</span> {
         <span class="kw">use</span> <span class="ident">pyo3::type_object::LazyStaticType</span>;
         <span class="kw">static</span> <span class="ident">TYPE_OBJECT</span>: <span class="ident">LazyStaticType</span> <span class="op">=</span> <span class="ident">LazyStaticType::new</span>();
         <span class="ident">TYPE_OBJECT</span>.<span class="ident">get_or_init</span>::<span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>(<span class="ident">py</span>)

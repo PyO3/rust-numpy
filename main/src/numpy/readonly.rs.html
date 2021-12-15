@@ -290,7 +290,7 @@
     <span class="doccomment">///     assert!(not_contiguous.readonly().as_slice().is_err());</span>
     <span class="doccomment">/// });</span>
     <span class="doccomment">/// ```</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">as_slice</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span>[<span class="ident">T</span>], <span class="ident">NotContiguousError</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">as_slice</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span>[<span class="ident">T</span>], <span class="ident">NotContiguousError</span><span class="op">&gt;</span> {
         <span class="kw">unsafe</span> { <span class="self">self</span>.<span class="ident">array</span>.<span class="ident">as_slice</span>() }
     }
 
@@ -307,7 +307,7 @@
     <span class="doccomment">///     assert_eq!(readonly.as_array(), array![[0, 1], [2, 3]]);</span>
     <span class="doccomment">/// });</span>
     <span class="doccomment">/// ```</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">as_array</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ArrayView</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">as_array</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">ArrayView</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> {
         <span class="kw">unsafe</span> { <span class="self">self</span>.<span class="ident">array</span>.<span class="ident">as_array</span>() }
     }
 
@@ -346,17 +346,17 @@
     <span class="doccomment">/// });</span>
     <span class="doccomment">/// ```</span>
     <span class="attribute">#[<span class="ident">inline</span>(<span class="ident">always</span>)]</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">index</span>: <span class="kw">impl</span> <span class="ident">NpyIndex</span><span class="op">&lt;</span><span class="ident">Dim</span> <span class="op">=</span> <span class="ident">D</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">T</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">index</span>: <span class="kw">impl</span> <span class="ident">NpyIndex</span><span class="op">&lt;</span><span class="ident">Dim</span> <span class="op">=</span> <span class="ident">D</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">T</span><span class="op">&gt;</span> {
         <span class="kw">unsafe</span> { <span class="self">self</span>.<span class="ident">array</span>.<span class="ident">get</span>(<span class="ident">index</span>) }
     }
 
     <span class="doccomment">/// Iterates all elements of this array.</span>
     <span class="doccomment">/// See [NpySingleIter](../npyiter/struct.NpySingleIter.html) for more.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">iter</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident"><span class="kw">crate</span>::NpySingleIter</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident"><span class="kw">crate</span>::npyiter::Readonly</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">iter</span>(<span class="self">self</span>) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident"><span class="kw">crate</span>::NpySingleIter</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident"><span class="kw">crate</span>::npyiter::Readonly</span><span class="op">&gt;</span><span class="op">&gt;</span> {
         <span class="ident"><span class="kw">crate</span>::NpySingleIterBuilder::readonly</span>(<span class="self">self</span>).<span class="ident">build</span>()
     }
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">destruct</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span>, <span class="ident">bool</span>) {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">destruct</span>(<span class="self">self</span>) -&gt; (<span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span>, <span class="ident">bool</span>) {
         <span class="kw">let</span> <span class="ident">PyReadonlyArray</span> {
             <span class="ident">array</span>,
             <span class="ident">was_writeable</span>,
@@ -381,21 +381,21 @@
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">PyReadonlyArrayDyn</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">PyReadonlyArray</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">IxDyn</span><span class="op">&gt;</span>;
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>: <span class="ident">Element</span>, <span class="ident">D</span>: <span class="ident">Dimension</span><span class="op">&gt;</span> <span class="ident">FromPyObject</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">PyReadonlyArray</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">extract</span>(<span class="ident">obj</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyAny</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">extract</span>(<span class="ident">obj</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyAny</span>) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">array</span>: <span class="kw-2">&amp;</span><span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">obj</span>.<span class="ident">extract</span>()<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="ident">PyReadonlyArray::from</span>(<span class="ident">array</span>))
     }
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> <span class="ident">IntoPy</span><span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">PyReadonlyArray</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">into_py</span>(<span class="self">self</span>, <span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyObject</span> {
+    <span class="kw">fn</span> <span class="ident">into_py</span>(<span class="self">self</span>, <span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) -&gt; <span class="ident">PyObject</span> {
         <span class="kw">let</span> <span class="ident">PyReadonlyArray</span> { <span class="ident">array</span>, .. } <span class="op">=</span> <span class="self">self</span>;
         <span class="kw">unsafe</span> { <span class="ident">PyObject::from_borrowed_ptr</span>(<span class="ident">py</span>, <span class="ident">array</span>.<span class="ident">as_ptr</span>()) }
     }
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> <span class="ident">From</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">PyReadonlyArray</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">array</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyReadonlyArray</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">array</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span>) -&gt; <span class="ident">PyReadonlyArray</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">flag</span> <span class="op">=</span> <span class="ident">array</span>.<span class="ident">get_flag</span>();
         <span class="kw">let</span> <span class="ident">writeable</span> <span class="op">=</span> <span class="ident">flag</span> <span class="op">&amp;</span> <span class="ident">NPY_ARRAY_WRITEABLE</span> <span class="op">!</span><span class="op">=</span> <span class="number">0</span>;
         <span class="kw">if</span> <span class="ident">writeable</span> {
@@ -421,14 +421,14 @@
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> <span class="ident">AsRef</span><span class="op">&lt;</span><span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">PyReadonlyArray</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">as_ref</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">as_ref</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">array</span>
     }
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> <span class="ident">std::ops::Deref</span> <span class="kw">for</span> <span class="ident">PyReadonlyArray</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> {
     <span class="kw">type</span> <span class="ident">Target</span> <span class="op">=</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span>;
-    <span class="kw">fn</span> <span class="ident">deref</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">deref</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">array</span>
     }
 }

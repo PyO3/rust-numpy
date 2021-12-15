@@ -3,32 +3,32 @@
 <a href="./struct.NpySingleIter.html">NpySingleIter</a> and
 <a href="./struct.NpyMultiIter.html">NpyMultiIter</a>.</p>
 </div></details><h2 id="structs" class="section-header"><a href="#structs">Structs</a></h2>
-<div class="item-table"><div class="item-left module-item"><a class="struct" href="struct.NpyMultiIter.html" title="numpy::npyiter::NpyMultiIter struct">NpyMultiIter</a></div><div class="item-right docblock-short"><p>An iterator over multiple arrays, construced by
+<div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="struct" href="struct.NpyMultiIter.html" title="numpy::npyiter::NpyMultiIter struct">NpyMultiIter</a></div><div class="item-right docblock-short"><p>An iterator over multiple arrays, construced by
 <a href="./struct.NpyMultiIterBuilder.html">NpyMultiIterBuilder</a>.
 You can add
 <a href="./struct.NpyMultiIterBuilder.html#method.add_readwrite"><code>NpyMultiIterBuilder::add_readwrite</code></a>
 for adding a mutable component to the iterator, and
 <a href="./struct.NpyMultiIterBuilder.html#method.add_readonly"><code>NpyMultiIterBuilder::add_readonly</code></a>
 for adding a immutable one.</p>
-</div><div class="item-left module-item"><a class="struct" href="struct.NpyMultiIterBuilder.html" title="numpy::npyiter::NpyMultiIterBuilder struct">NpyMultiIterBuilder</a></div><div class="item-right docblock-short"><p>Builder for <a href="./struct.NpyMultiIter.html">NpyMultiIter</a>.</p>
-</div><div class="item-left module-item"><a class="struct" href="struct.NpySingleIter.html" title="numpy::npyiter::NpySingleIter struct">NpySingleIter</a></div><div class="item-right docblock-short"><p>An iterator over a single array, construced by
+</div></div><div class="item-row"><div class="item-left module-item"><a class="struct" href="struct.NpyMultiIterBuilder.html" title="numpy::npyiter::NpyMultiIterBuilder struct">NpyMultiIterBuilder</a></div><div class="item-right docblock-short"><p>Builder for <a href="./struct.NpyMultiIter.html">NpyMultiIter</a>.</p>
+</div></div><div class="item-row"><div class="item-left module-item"><a class="struct" href="struct.NpySingleIter.html" title="numpy::npyiter::NpySingleIter struct">NpySingleIter</a></div><div class="item-right docblock-short"><p>An iterator over a single array, construced by
 <a href="./struct.NpySingleIterBuilder.html">NpySingleIterBuilder</a>.
 This iterator iterates all elements in the array as <code>&amp;mut T</code> (in case <code>readwrite</code> is used)
 or <code>&amp;T</code> (in case <code>readonly</code> is used).</p>
-</div><div class="item-left module-item"><a class="struct" href="struct.NpySingleIterBuilder.html" title="numpy::npyiter::NpySingleIterBuilder struct">NpySingleIterBuilder</a></div><div class="item-right docblock-short"><p>Builder of <a href="./struct.NpySingleIter.html">NpySingleIter</a>.</p>
-</div><div class="item-left module-item"><a class="struct" href="struct.RO.html" title="numpy::npyiter::RO struct">RO</a></div><div class="item-right docblock-short"><p>Represents the iterator mode where the last array is readonly.</p>
-</div><div class="item-left module-item"><a class="struct" href="struct.RW.html" title="numpy::npyiter::RW struct">RW</a></div><div class="item-right docblock-short"><p>Represents the iterator mode where the last array is readwrite.</p>
-</div></div><h2 id="enums" class="section-header"><a href="#enums">Enums</a></h2>
-<div class="item-table"><div class="item-left module-item"><a class="enum" href="enum.NpyIterFlag.html" title="numpy::npyiter::NpyIterFlag enum">NpyIterFlag</a></div><div class="item-right docblock-short"><p>Flags for constructing an iterator.
+</div></div><div class="item-row"><div class="item-left module-item"><a class="struct" href="struct.NpySingleIterBuilder.html" title="numpy::npyiter::NpySingleIterBuilder struct">NpySingleIterBuilder</a></div><div class="item-right docblock-short"><p>Builder of <a href="./struct.NpySingleIter.html">NpySingleIter</a>.</p>
+</div></div><div class="item-row"><div class="item-left module-item"><a class="struct" href="struct.RO.html" title="numpy::npyiter::RO struct">RO</a></div><div class="item-right docblock-short"><p>Represents the iterator mode where the last array is readonly.</p>
+</div></div><div class="item-row"><div class="item-left module-item"><a class="struct" href="struct.RW.html" title="numpy::npyiter::RW struct">RW</a></div><div class="item-right docblock-short"><p>Represents the iterator mode where the last array is readwrite.</p>
+</div></div></div><h2 id="enums" class="section-header"><a href="#enums">Enums</a></h2>
+<div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="enum" href="enum.NpyIterFlag.html" title="numpy::npyiter::NpyIterFlag enum">NpyIterFlag</a></div><div class="item-right docblock-short"><p>Flags for constructing an iterator.
 For the meanings of each flag, readers can refer to <a href="https://numpy.org/doc/stable/reference/c-api/iterator.html#c.NpyIter_MultiNew">the numpy document</a>.</p>
-</div></div><h2 id="traits" class="section-header"><a href="#traits">Traits</a></h2>
-<div class="item-table"><div class="item-left module-item"><a class="trait" href="trait.IterMode.html" title="numpy::npyiter::IterMode trait">IterMode</a></div><div class="item-right docblock-short"><p>Iterator mode for single iterator</p>
-</div><div class="item-left module-item"><a class="trait" href="trait.MultiIterMode.html" title="numpy::npyiter::MultiIterMode trait">MultiIterMode</a></div><div class="item-right docblock-short"><p>A combinator type that represents the mode of an iterator
+</div></div></div><h2 id="traits" class="section-header"><a href="#traits">Traits</a></h2>
+<div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="trait" href="trait.IterMode.html" title="numpy::npyiter::IterMode trait">IterMode</a></div><div class="item-right docblock-short"><p>Iterator mode for single iterator</p>
+</div></div><div class="item-row"><div class="item-left module-item"><a class="trait" href="trait.MultiIterMode.html" title="numpy::npyiter::MultiIterMode trait">MultiIterMode</a></div><div class="item-right docblock-short"><p>A combinator type that represents the mode of an iterator
 (E.g., Readonly, ReadWrite, Readonly + ReadWrite).</p>
-</div><div class="item-left module-item"><a class="trait" href="trait.MultiIterModeWithManyArrays.html" title="numpy::npyiter::MultiIterModeWithManyArrays trait">MultiIterModeWithManyArrays</a></div><div class="item-right docblock-short"><p>Represents the iterator mode where at least two arrays are iterated.</p>
-</div></div><h2 id="types" class="section-header"><a href="#types">Type Definitions</a></h2>
-<div class="item-table"><div class="item-left module-item"><a class="type" href="type.ReadWrite.html" title="numpy::npyiter::ReadWrite type">ReadWrite</a></div><div class="item-right docblock-short"><p>Implies Readwrite iterator.</p>
-</div><div class="item-left module-item"><a class="type" href="type.Readonly.html" title="numpy::npyiter::Readonly type">Readonly</a></div><div class="item-right docblock-short"><p>Implies Readonly iterator.</p>
-</div></div></section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../" data-current-crate="numpy" data-search-index-js="../../search-index.js" data-search-js="../../search.js"></div>
+</div></div><div class="item-row"><div class="item-left module-item"><a class="trait" href="trait.MultiIterModeWithManyArrays.html" title="numpy::npyiter::MultiIterModeWithManyArrays trait">MultiIterModeWithManyArrays</a></div><div class="item-right docblock-short"><p>Represents the iterator mode where at least two arrays are iterated.</p>
+</div></div></div><h2 id="types" class="section-header"><a href="#types">Type Definitions</a></h2>
+<div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="type" href="type.ReadWrite.html" title="numpy::npyiter::ReadWrite type">ReadWrite</a></div><div class="item-right docblock-short"><p>Implies Readwrite iterator.</p>
+</div></div><div class="item-row"><div class="item-left module-item"><a class="type" href="type.Readonly.html" title="numpy::npyiter::Readonly type">Readonly</a></div><div class="item-right docblock-short"><p>Implies Readonly iterator.</p>
+</div></div></div></section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../" data-current-crate="numpy" data-search-index-js="../../search-index.js" data-search-js="../../search.js"></div>
     <script src="../../main.js"></script>
 </body></html>

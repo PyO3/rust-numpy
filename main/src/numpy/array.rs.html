@@ -1243,7 +1243,7 @@
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">PyArrayDyn</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">IxDyn</span><span class="op">&gt;</span>;
 
 <span class="doccomment">/// Returns a array module.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_array_module</span>(<span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">PyModule</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_array_module</span>(<span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">PyModule</span><span class="op">&gt;</span> {
     <span class="ident">PyModule::import</span>(<span class="ident">py</span>, <span class="ident">npyffi::array::MOD_NAME</span>)
 }
 
@@ -1262,7 +1262,7 @@
 <span class="macro">pyobject_native_type_named!</span>(<span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> ; <span class="ident">T</span> ; <span class="ident">D</span>);
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> <span class="ident">IntoPy</span><span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">into_py</span>(<span class="self">self</span>, <span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyObject</span> {
+    <span class="kw">fn</span> <span class="ident">into_py</span>(<span class="self">self</span>, <span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) -&gt; <span class="ident">PyObject</span> {
         <span class="kw">unsafe</span> { <span class="ident">PyObject::from_borrowed_ptr</span>(<span class="ident">py</span>, <span class="self">self</span>.<span class="ident">as_ptr</span>()) }
     }
 }
@@ -1272,16 +1272,16 @@
     <span class="comment">// 1. Checks if the object is PyArray</span>
     <span class="comment">// 2. Checks if the data type of the array is T</span>
     <span class="comment">// 3. Checks if the dimension is same as D</span>
-    <span class="kw">fn</span> <span class="ident">extract</span>(<span class="ident">ob</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">PyAny</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">extract</span>(<span class="ident">ob</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">PyAny</span>) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">array</span> <span class="op">=</span> <span class="kw">unsafe</span> {
-            <span class="kw">if</span> <span class="ident">npyffi::PyArray_Check</span>(<span class="ident">ob</span>.<span class="ident">as_ptr</span>()) <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
+            <span class="kw">if</span> <span class="ident">npyffi::PyArray_Check</span>(<span class="ident">ob</span>.<span class="ident">as_ptr</span>()) <span class="op">==</span> <span class="number">0</span> {
                 <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PyDowncastError::new</span>(<span class="ident">ob</span>, <span class="string">&quot;PyArray&lt;T, D&gt;&quot;</span>).<span class="ident">into</span>());
             }
             <span class="kw-2">&amp;</span><span class="kw-2">*</span>(<span class="ident">ob</span> <span class="kw">as</span> <span class="kw-2">*</span><span class="kw">const</span> <span class="ident">PyAny</span> <span class="kw">as</span> <span class="kw-2">*</span><span class="kw">const</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span>)
         };
         <span class="kw">let</span> <span class="ident">dtype</span> <span class="op">=</span> <span class="ident">array</span>.<span class="ident">dtype</span>();
         <span class="kw">let</span> <span class="ident">dim</span> <span class="op">=</span> <span class="ident">array</span>.<span class="ident">shape</span>().<span class="ident">len</span>();
-        <span class="kw">if</span> <span class="ident">T::is_same_type</span>(<span class="ident">dtype</span>) <span class="op">&amp;&amp;</span> <span class="ident">D::NDIM</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">n</span><span class="op">|</span> <span class="ident">n</span> <span class="op">=</span><span class="op">=</span> <span class="ident">dim</span>).<span class="ident">unwrap_or</span>(<span class="bool-val">true</span>) {
+        <span class="kw">if</span> <span class="ident">T::is_same_type</span>(<span class="ident">dtype</span>) <span class="op">&amp;&amp;</span> <span class="ident">D::NDIM</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">n</span><span class="op">|</span> <span class="ident">n</span> <span class="op">==</span> <span class="ident">dim</span>).<span class="ident">unwrap_or</span>(<span class="bool-val">true</span>) {
             <span class="prelude-val">Ok</span>(<span class="ident">array</span>)
         } <span class="kw">else</span> {
             <span class="prelude-val">Err</span>(<span class="ident">ShapeError::new</span>(<span class="ident">dtype</span>, <span class="ident">dim</span>, <span class="ident">T::DATA_TYPE</span>, <span class="ident">D::NDIM</span>).<span class="ident">into</span>())
@@ -1291,7 +1291,7 @@
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> {
     <span class="doccomment">/// Gets a raw [`PyArrayObject`](../npyffi/objects/struct.PyArrayObject.html) pointer.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">as_array_ptr</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">npyffi::PyArrayObject</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">as_array_ptr</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">npyffi::PyArrayObject</span> {
         <span class="self">self</span>.<span class="ident">as_ptr</span>() <span class="kw">as</span> <span class="kw">_</span>
     }
 
@@ -1306,23 +1306,23 @@
     <span class="doccomment">///    assert_eq!(dtype.get_datatype().unwrap(), numpy::DataType::Int32);</span>
     <span class="doccomment">/// });</span>
     <span class="doccomment">/// ```</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">dtype</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident"><span class="kw">crate</span>::PyArrayDescr</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">dtype</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="ident"><span class="kw">crate</span>::PyArrayDescr</span> {
         <span class="kw">let</span> <span class="ident">descr_ptr</span> <span class="op">=</span> <span class="kw">unsafe</span> { (<span class="kw-2">*</span><span class="self">self</span>.<span class="ident">as_array_ptr</span>()).<span class="ident">descr</span> };
         <span class="kw">unsafe</span> { <span class="ident">pyo3::FromPyPointer::from_borrowed_ptr</span>(<span class="self">self</span>.<span class="ident">py</span>(), <span class="ident">descr_ptr</span> <span class="kw">as</span> <span class="kw">_</span>) }
     }
 
     <span class="attribute">#[<span class="ident">inline</span>(<span class="ident">always</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">check_flag</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">flag</span>: <span class="ident">c_int</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
-        <span class="kw">unsafe</span> { <span class="kw-2">*</span><span class="self">self</span>.<span class="ident">as_array_ptr</span>() }.<span class="ident">flags</span> <span class="op">&amp;</span> <span class="ident">flag</span> <span class="op">=</span><span class="op">=</span> <span class="ident">flag</span>
+    <span class="kw">fn</span> <span class="ident">check_flag</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">flag</span>: <span class="ident">c_int</span>) -&gt; <span class="ident">bool</span> {
+        <span class="kw">unsafe</span> { <span class="kw-2">*</span><span class="self">self</span>.<span class="ident">as_array_ptr</span>() }.<span class="ident">flags</span> <span class="op">&amp;</span> <span class="ident">flag</span> <span class="op">==</span> <span class="ident">flag</span>
     }
 
     <span class="attribute">#[<span class="ident">inline</span>(<span class="ident">always</span>)]</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">get_flag</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">c_int</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">get_flag</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">c_int</span> {
         <span class="kw">unsafe</span> { <span class="kw-2">*</span><span class="self">self</span>.<span class="ident">as_array_ptr</span>() }.<span class="ident">flags</span>
     }
 
     <span class="doccomment">/// Returns a temporally unwriteable reference of the array.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">readonly</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident"><span class="kw">crate</span>::PyReadonlyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">readonly</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident"><span class="kw">crate</span>::PyReadonlyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">into</span>()
     }
 
@@ -1344,18 +1344,18 @@
     <span class="doccomment">///     assert!(!not_contiguous.is_contiguous());</span>
     <span class="doccomment">/// });</span>
     <span class="doccomment">/// ```</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_contiguous</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_contiguous</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> {
         <span class="self">self</span>.<span class="ident">check_flag</span>(<span class="ident">npyffi::NPY_ARRAY_C_CONTIGUOUS</span>)
             <span class="op">|</span> <span class="self">self</span>.<span class="ident">check_flag</span>(<span class="ident">npyffi::NPY_ARRAY_F_CONTIGUOUS</span>)
     }
 
     <span class="doccomment">/// Returns `true` if the internal data of the array is Fortran-style contiguous.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_fortran_contiguous</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_fortran_contiguous</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> {
         <span class="self">self</span>.<span class="ident">check_flag</span>(<span class="ident">npyffi::NPY_ARRAY_F_CONTIGUOUS</span>)
     }
 
     <span class="doccomment">/// Returns `true` if the internal data of the array is C-style contiguous.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_c_contiguous</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_c_contiguous</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> {
         <span class="self">self</span>.<span class="ident">check_flag</span>(<span class="ident">npyffi::NPY_ARRAY_C_CONTIGUOUS</span>)
     }
 
@@ -1375,17 +1375,17 @@
     <span class="doccomment">///     assert_eq!(array.as_ref(py).readonly().as_slice().unwrap(), &amp;[0, 0, 0, 0, 0]);</span>
     <span class="doccomment">/// });</span>
     <span class="doccomment">/// ```</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_owned</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Py</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_owned</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">Py</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
         <span class="kw">unsafe</span> { <span class="ident">Py::from_borrowed_ptr</span>(<span class="self">self</span>.<span class="ident">py</span>(), <span class="self">self</span>.<span class="ident">as_ptr</span>()) }
     }
 
     <span class="doccomment">/// Constructs `PyArray` from raw python object without incrementing reference counts.</span>
-    <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">from_owned_ptr</span>(<span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>, <span class="ident">ptr</span>: <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">ffi::PyObject</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">from_owned_ptr</span>(<span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>, <span class="ident">ptr</span>: <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">ffi::PyObject</span>) -&gt; <span class="kw-2">&amp;</span><span class="self">Self</span> {
         <span class="ident">py</span>.<span class="ident">from_owned_ptr</span>(<span class="ident">ptr</span>)
     }
 
     <span class="doccomment">/// Constructs PyArray from raw python object and increments reference counts.</span>
-    <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">from_borrowed_ptr</span>(<span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>, <span class="ident">ptr</span>: <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">ffi::PyObject</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">from_borrowed_ptr</span>(<span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>, <span class="ident">ptr</span>: <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">ffi::PyObject</span>) -&gt; <span class="kw-2">&amp;</span><span class="self">Self</span> {
         <span class="ident">py</span>.<span class="ident">from_borrowed_ptr</span>(<span class="ident">ptr</span>)
     }
 
@@ -1402,7 +1402,7 @@
     <span class="doccomment">/// });</span>
     <span class="doccomment">/// ```</span>
     <span class="comment">// C API: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_NDIM</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">ndim</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">ndim</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">usize</span> {
         <span class="kw">let</span> <span class="ident">ptr</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">as_array_ptr</span>();
         <span class="kw">unsafe</span> { (<span class="kw-2">*</span><span class="ident">ptr</span>).<span class="ident">nd</span> <span class="kw">as</span> <span class="ident">usize</span> }
     }
@@ -1419,7 +1419,7 @@
     <span class="doccomment">/// });</span>
     <span class="doccomment">/// ```</span>
     <span class="comment">// C API: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_STRIDES</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">strides</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">isize</span>] {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">strides</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>[<span class="ident">isize</span>] {
         <span class="kw">let</span> <span class="ident">n</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">ndim</span>();
         <span class="kw">let</span> <span class="ident">ptr</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">as_array_ptr</span>();
         <span class="kw">unsafe</span> {
@@ -1440,7 +1440,7 @@
     <span class="doccomment">/// });</span>
     <span class="doccomment">/// ```</span>
     <span class="comment">// C API: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_DIMS</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">shape</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">usize</span>] {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">shape</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>[<span class="ident">usize</span>] {
         <span class="kw">let</span> <span class="ident">n</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">ndim</span>();
         <span class="kw">let</span> <span class="ident">ptr</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">as_array_ptr</span>();
         <span class="kw">unsafe</span> {
@@ -1450,16 +1450,16 @@
     }
 
     <span class="doccomment">/// Calcurates the total number of elements in the array.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">len</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">len</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">usize</span> {
         <span class="self">self</span>.<span class="ident">shape</span>().<span class="ident">iter</span>().<span class="ident">product</span>()
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_empty</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
-        <span class="self">self</span>.<span class="ident">len</span>() <span class="op">=</span><span class="op">=</span> <span class="number">0</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_empty</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> {
+        <span class="self">self</span>.<span class="ident">len</span>() <span class="op">==</span> <span class="number">0</span>
     }
 
     <span class="doccomment">/// Returns the pointer to the first element of the inner array.</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">data</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">T</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">data</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">T</span> {
         <span class="kw">let</span> <span class="ident">ptr</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">as_array_ptr</span>();
         (<span class="kw-2">*</span><span class="ident">ptr</span>).<span class="ident">data</span> <span class="kw">as</span> <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="kw">_</span>
     }
@@ -1482,11 +1482,11 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Element</span>, <span class="ident">D</span>: <span class="ident">Dimension</span><span class="op">&gt;</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> {
     <span class="doccomment">/// Same as [shape](#method.shape), but returns `D`</span>
     <span class="attribute">#[<span class="ident">inline</span>(<span class="ident">always</span>)]</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">dims</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">D</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">dims</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">D</span> {
         <span class="ident">D::from_dimension</span>(<span class="kw-2">&amp;</span><span class="ident">Dim</span>(<span class="self">self</span>.<span class="ident">shape</span>())).<span class="ident">expect</span>(<span class="string">&quot;PyArray::dims different dimension&quot;</span>)
     }
 
-    <span class="kw">fn</span> <span class="ident">ndarray_shape_ptr</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">StrideShape</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>, <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">T</span>, <span class="ident">InvertedAxises</span>) {
+    <span class="kw">fn</span> <span class="ident">ndarray_shape_ptr</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; (<span class="ident">StrideShape</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>, <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">T</span>, <span class="ident">InvertedAxises</span>) {
         <span class="kw">const</span> <span class="ident">ERR_MSG</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;PyArray::ndarray_shape: dimension mismatching&quot;</span>;
         <span class="kw">let</span> <span class="ident">shape_slice</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">shape</span>();
         <span class="kw">let</span> <span class="ident">shape</span>: <span class="ident">Shape</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Dim</span>(<span class="self">self</span>.<span class="ident">dims</span>()).<span class="ident">into</span>();
@@ -1553,7 +1553,7 @@
     <span class="doccomment">///     assert_eq!(arr.shape(), &amp;[4, 5, 6]);</span>
     <span class="doccomment">/// });</span>
     <span class="doccomment">/// ```</span>
-    <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">new</span><span class="op">&lt;</span><span class="ident">ID</span><span class="op">&gt;</span>(<span class="ident">py</span>: <span class="ident">Python</span>, <span class="ident">dims</span>: <span class="ident">ID</span>, <span class="ident">is_fortran</span>: <span class="ident">bool</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="self">Self</span>
+    <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">new</span><span class="op">&lt;</span><span class="ident">ID</span><span class="op">&gt;</span>(<span class="ident">py</span>: <span class="ident">Python</span>, <span class="ident">dims</span>: <span class="ident">ID</span>, <span class="ident">is_fortran</span>: <span class="ident">bool</span>) -&gt; <span class="kw-2">&amp;</span><span class="self">Self</span>
     <span class="kw">where</span>
         <span class="ident">ID</span>: <span class="ident">IntoDimension</span><span class="op">&lt;</span><span class="ident">Dim</span> <span class="op">=</span> <span class="ident">D</span><span class="op">&gt;</span>,
     {
@@ -1566,7 +1566,7 @@
         <span class="ident">dims</span>: <span class="ident">ID</span>,
         <span class="ident">strides</span>: <span class="kw-2">*</span><span class="kw">const</span> <span class="ident">npy_intp</span>,
         <span class="ident">flag</span>: <span class="ident">c_int</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="self">Self</span>
+    ) -&gt; <span class="kw-2">&amp;</span><span class="self">Self</span>
     <span class="kw">where</span>
         <span class="ident">ID</span>: <span class="ident">IntoDimension</span><span class="op">&lt;</span><span class="ident">Dim</span> <span class="op">=</span> <span class="ident">D</span><span class="op">&gt;</span>,
     {
@@ -1591,7 +1591,7 @@
         <span class="ident">strides</span>: <span class="kw-2">*</span><span class="kw">const</span> <span class="ident">npy_intp</span>,
         <span class="ident">boxed_slice</span>: <span class="ident">Box</span><span class="op">&lt;</span>[<span class="ident">T</span>]<span class="op">&gt;</span>,
         <span class="ident">data_ptr</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">*</span><span class="kw">const</span> <span class="ident">T</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="self">Self</span>
+    ) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="self">Self</span>
     <span class="kw">where</span>
         <span class="ident">ID</span>: <span class="ident">IntoDimension</span><span class="op">&lt;</span><span class="ident">Dim</span> <span class="op">=</span> <span class="ident">D</span><span class="op">&gt;</span>,
     {
@@ -1635,7 +1635,7 @@
     <span class="doccomment">///     assert_eq!(pyarray.readonly().as_array(), array![[0, 0], [0, 0]]);</span>
     <span class="doccomment">/// });</span>
     <span class="doccomment">/// ```</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">zeros</span><span class="op">&lt;</span><span class="ident">ID</span><span class="op">&gt;</span>(<span class="ident">py</span>: <span class="ident">Python</span>, <span class="ident">dims</span>: <span class="ident">ID</span>, <span class="ident">is_fortran</span>: <span class="ident">bool</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="self">Self</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">zeros</span><span class="op">&lt;</span><span class="ident">ID</span><span class="op">&gt;</span>(<span class="ident">py</span>: <span class="ident">Python</span>, <span class="ident">dims</span>: <span class="ident">ID</span>, <span class="ident">is_fortran</span>: <span class="ident">bool</span>) -&gt; <span class="kw-2">&amp;</span><span class="self">Self</span>
     <span class="kw">where</span>
         <span class="ident">ID</span>: <span class="ident">IntoDimension</span><span class="op">&lt;</span><span class="ident">Dim</span> <span class="op">=</span> <span class="ident">D</span><span class="op">&gt;</span>,
     {
@@ -1661,7 +1661,7 @@
     <span class="doccomment">/// # Safety</span>
     <span class="doccomment">/// If the internal array is not readonly and can be mutated from Python code,</span>
     <span class="doccomment">/// holding the slice might cause undefined behavior.</span>
-    <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">as_slice</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span>[<span class="ident">T</span>], <span class="ident">NotContiguousError</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">as_slice</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span>[<span class="ident">T</span>], <span class="ident">NotContiguousError</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_contiguous</span>() {
             <span class="prelude-val">Err</span>(<span class="ident">NotContiguousError</span>)
         } <span class="kw">else</span> {
@@ -1670,7 +1670,7 @@
     }
 
     <span class="doccomment">/// Returns the view of the internal data of `PyArray` as `&amp;[Cell&lt;T&gt;]`.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">as_cell_slice</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span>[<span class="ident">Cell</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>], <span class="ident">NotContiguousError</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">as_cell_slice</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span>[<span class="ident">Cell</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>], <span class="ident">NotContiguousError</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_contiguous</span>() {
             <span class="prelude-val">Err</span>(<span class="ident">NotContiguousError</span>)
         } <span class="kw">else</span> {
@@ -1685,7 +1685,7 @@
     <span class="doccomment">/// it might cause undefined behavior.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// In such case, please consider the use of [`as_cell_slice`](#method.as_cell_slice),</span>
-    <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">as_slice_mut</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="kw-2">mut</span> [<span class="ident">T</span>], <span class="ident">NotContiguousError</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">as_slice_mut</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="kw-2">mut</span> [<span class="ident">T</span>], <span class="ident">NotContiguousError</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_contiguous</span>() {
             <span class="prelude-val">Err</span>(<span class="ident">NotContiguousError</span>)
         } <span class="kw">else</span> {
@@ -1708,7 +1708,7 @@
     <span class="doccomment">///     assert_eq!(pyarray.readonly().as_array(), array![[1, 2], [3, 4]]);</span>
     <span class="doccomment">/// });</span>
     <span class="doccomment">/// ```</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_owned_array</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>(<span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>, <span class="ident">arr</span>: <span class="ident">Array</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_owned_array</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>(<span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>, <span class="ident">arr</span>: <span class="ident">Array</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="self">Self</span> {
         <span class="ident">IntoPyArray::into_pyarray</span>(<span class="ident">arr</span>, <span class="ident">py</span>)
     }
 
@@ -1730,7 +1730,7 @@
     <span class="doccomment">/// If the internal array is not readonly and can be mutated from Python code,</span>
     <span class="doccomment">/// holding the slice might cause undefined behavior.</span>
     <span class="attribute">#[<span class="ident">inline</span>(<span class="ident">always</span>)]</span>
-    <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">index</span>: <span class="kw">impl</span> <span class="ident">NpyIndex</span><span class="op">&lt;</span><span class="ident">Dim</span> <span class="op">=</span> <span class="ident">D</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">T</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">index</span>: <span class="kw">impl</span> <span class="ident">NpyIndex</span><span class="op">&lt;</span><span class="ident">Dim</span> <span class="op">=</span> <span class="ident">D</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">T</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">offset</span> <span class="op">=</span> <span class="ident">index</span>.<span class="ident">get_checked</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="self">self</span>.<span class="ident">shape</span>(), <span class="self">self</span>.<span class="ident">strides</span>())<span class="question-mark">?</span>;
         <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="self">self</span>.<span class="ident">data</span>().<span class="ident">offset</span>(<span class="ident">offset</span>))
     }
@@ -1751,7 +1751,7 @@
     <span class="doccomment">/// });</span>
     <span class="doccomment">/// ```</span>
     <span class="attribute">#[<span class="ident">inline</span>(<span class="ident">always</span>)]</span>
-    <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">uget</span><span class="op">&lt;</span><span class="ident">Idx</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">index</span>: <span class="ident">Idx</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">T</span>
+    <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">uget</span><span class="op">&lt;</span><span class="ident">Idx</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">index</span>: <span class="ident">Idx</span>) -&gt; <span class="kw-2">&amp;</span><span class="ident">T</span>
     <span class="kw">where</span>
         <span class="ident">Idx</span>: <span class="ident">NpyIndex</span><span class="op">&lt;</span><span class="ident">Dim</span> <span class="op">=</span> <span class="ident">D</span><span class="op">&gt;</span>,
     {
@@ -1762,7 +1762,7 @@
     <span class="doccomment">/// Same as [uget](#method.uget), but returns `&amp;mut T`.</span>
     <span class="attribute">#[<span class="ident">inline</span>(<span class="ident">always</span>)]</span>
     <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">clippy::mut_from_ref</span>)]</span>
-    <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">uget_mut</span><span class="op">&lt;</span><span class="ident">Idx</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">index</span>: <span class="ident">Idx</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">T</span>
+    <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">uget_mut</span><span class="op">&lt;</span><span class="ident">Idx</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">index</span>: <span class="ident">Idx</span>) -&gt; <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">T</span>
     <span class="kw">where</span>
         <span class="ident">Idx</span>: <span class="ident">NpyIndex</span><span class="op">&lt;</span><span class="ident">Dim</span> <span class="op">=</span> <span class="ident">D</span><span class="op">&gt;</span>,
     {
@@ -1772,7 +1772,7 @@
 
     <span class="doccomment">/// Same as [uget](#method.uget), but returns `*mut T`.</span>
     <span class="attribute">#[<span class="ident">inline</span>(<span class="ident">always</span>)]</span>
-    <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">uget_raw</span><span class="op">&lt;</span><span class="ident">Idx</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">index</span>: <span class="ident">Idx</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">T</span>
+    <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">uget_raw</span><span class="op">&lt;</span><span class="ident">Idx</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">index</span>: <span class="ident">Idx</span>) -&gt; <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">T</span>
     <span class="kw">where</span>
         <span class="ident">Idx</span>: <span class="ident">NpyIndex</span><span class="op">&lt;</span><span class="ident">Dim</span> <span class="op">=</span> <span class="ident">D</span><span class="op">&gt;</span>,
     {
@@ -1781,7 +1781,7 @@
     }
 
     <span class="doccomment">/// Get dynamic dimensioned array from fixed dimension array.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_dyn</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">IxDyn</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_dyn</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">IxDyn</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">python</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">py</span>();
         <span class="kw">unsafe</span> { <span class="ident">PyArray::from_borrowed_ptr</span>(<span class="ident">python</span>, <span class="self">self</span>.<span class="ident">as_ptr</span>()) }
     }
@@ -1798,7 +1798,7 @@
     <span class="doccomment">///     assert_eq!(arr.get_owned([1, 0, 3]), Some(11));</span>
     <span class="doccomment">/// });</span>
     <span class="doccomment">/// ```</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_owned</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">index</span>: <span class="kw">impl</span> <span class="ident">NpyIndex</span><span class="op">&lt;</span><span class="ident">Dim</span> <span class="op">=</span> <span class="ident">D</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_owned</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">index</span>: <span class="kw">impl</span> <span class="ident">NpyIndex</span><span class="op">&lt;</span><span class="ident">Dim</span> <span class="op">=</span> <span class="ident">D</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
         <span class="kw">unsafe</span> { <span class="self">self</span>.<span class="ident">get</span>(<span class="ident">index</span>) }.<span class="ident">cloned</span>()
     }
 
@@ -1821,7 +1821,7 @@
     <span class="doccomment">///     assert_eq!(array.to_vec().unwrap(), vec![0, 1, 2, 3]);</span>
     <span class="doccomment">/// });</span>
     <span class="doccomment">/// ```</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_vec</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">NotContiguousError</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_vec</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">NotContiguousError</span><span class="op">&gt;</span> {
         <span class="kw">unsafe</span> { <span class="self">self</span>.<span class="ident">as_slice</span>() }.<span class="ident">map</span>(<span class="ident">ToOwned::to_owned</span>)
     }
 
@@ -1839,7 +1839,7 @@
     <span class="doccomment">///     assert_eq!(pyarray.readonly().as_array(), array![[1, 2], [3, 4]]);</span>
     <span class="doccomment">/// });</span>
     <span class="doccomment">/// ```</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_array</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">S</span><span class="op">&gt;</span>(<span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>, <span class="ident">arr</span>: <span class="kw-2">&amp;</span><span class="ident">ArrayBase</span><span class="op">&lt;</span><span class="ident">S</span>, <span class="ident">D</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="self">Self</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_array</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">S</span><span class="op">&gt;</span>(<span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>, <span class="ident">arr</span>: <span class="kw-2">&amp;</span><span class="ident">ArrayBase</span><span class="op">&lt;</span><span class="ident">S</span>, <span class="ident">D</span><span class="op">&gt;</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="self">Self</span>
     <span class="kw">where</span>
         <span class="ident">S</span>: <span class="ident">Data</span><span class="op">&lt;</span><span class="ident">Elem</span> <span class="op">=</span> <span class="ident">T</span><span class="op">&gt;</span>,
     {
@@ -1856,7 +1856,7 @@
     <span class="doccomment">/// # Safety</span>
     <span class="doccomment">/// If the internal array is not readonly and can be mutated from Python code,</span>
     <span class="doccomment">/// holding the `ArrayView` might cause undefined behavior.</span>
-    <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">as_array</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ArrayView</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">as_array</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">ArrayView</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> {
         <span class="kw">let</span> (<span class="ident">shape</span>, <span class="ident">ptr</span>, <span class="ident">inverted_axises</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">ndarray_shape_ptr</span>();
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">ArrayView::from_shape_ptr</span>(<span class="ident">shape</span>, <span class="ident">ptr</span>);
         <span class="ident">inverted_axises</span>.<span class="ident">invert</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">res</span>);
@@ -1868,7 +1868,7 @@
     <span class="doccomment">/// # Safety</span>
     <span class="doccomment">/// If another reference to the internal data exists(e.g., `&amp;[T]` or `ArrayView`),</span>
     <span class="doccomment">/// it might cause undefined behavior.</span>
-    <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">as_array_mut</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ArrayViewMut</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">as_array_mut</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">ArrayViewMut</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> {
         <span class="kw">let</span> (<span class="ident">shape</span>, <span class="ident">ptr</span>, <span class="ident">inverted_axises</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">ndarray_shape_ptr</span>();
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">ArrayViewMut::from_shape_ptr</span>(<span class="ident">shape</span>, <span class="ident">ptr</span>);
         <span class="ident">inverted_axises</span>.<span class="ident">invert</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">res</span>);
@@ -1890,7 +1890,7 @@
     <span class="doccomment">///     )</span>
     <span class="doccomment">/// });</span>
     <span class="doccomment">/// ```</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_owned_array</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Array</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_owned_array</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">Array</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> {
         <span class="kw">unsafe</span> { <span class="self">self</span>.<span class="ident">as_array</span>() }.<span class="ident">to_owned</span>()
     }
 }
@@ -1899,7 +1899,7 @@
     <span class="doccomment">/// Get the element of zero-dimensional PyArray.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// See [inner](../fn.inner.html) for example.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">item</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">T</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">item</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">T</span> {
         <span class="kw">unsafe</span> { <span class="kw-2">*</span><span class="self">self</span>.<span class="ident">data</span>() }
     }
 }
@@ -1916,7 +1916,7 @@
     <span class="doccomment">///     assert_eq!(pyarray.readonly().as_slice().unwrap(), &amp;[1, 2, 3, 4, 5]);</span>
     <span class="doccomment">/// });</span>
     <span class="doccomment">/// ```</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_slice</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>(<span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>, <span class="ident">slice</span>: <span class="kw-2">&amp;</span>[<span class="ident">T</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_slice</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>(<span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>, <span class="ident">slice</span>: <span class="kw-2">&amp;</span>[<span class="ident">T</span>]) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="self">Self</span> {
         <span class="kw">unsafe</span> {
             <span class="kw">let</span> <span class="ident">array</span> <span class="op">=</span> <span class="ident">PyArray::new</span>(<span class="ident">py</span>, [<span class="ident">slice</span>.<span class="ident">len</span>()], <span class="bool-val">false</span>);
             <span class="kw">if</span> <span class="ident">T::DATA_TYPE</span> <span class="op">!</span><span class="op">=</span> <span class="ident">DataType::Object</span> {
@@ -1943,7 +1943,7 @@
     <span class="doccomment">///     assert_eq!(pyarray.readonly().as_slice().unwrap(), &amp;[1, 2, 3, 4, 5]);</span>
     <span class="doccomment">/// });</span>
     <span class="doccomment">/// ```</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_vec</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>(<span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>, <span class="ident">vec</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_vec</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>(<span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>, <span class="ident">vec</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="self">Self</span> {
         <span class="ident">IntoPyArray::into_pyarray</span>(<span class="ident">vec</span>, <span class="ident">py</span>)
     }
 
@@ -1960,7 +1960,7 @@
     <span class="doccomment">///     assert_eq!(pyarray.readonly().as_slice().unwrap(), &amp;[1, 2, 3, 4, 5]);</span>
     <span class="doccomment">/// });</span>
     <span class="doccomment">/// ```</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_exact_iter</span>(<span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>, <span class="ident">iter</span>: <span class="kw">impl</span> <span class="ident">ExactSizeIterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="ident">T</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_exact_iter</span>(<span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>, <span class="ident">iter</span>: <span class="kw">impl</span> <span class="ident">ExactSizeIterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="ident">T</span><span class="op">&gt;</span>) -&gt; <span class="kw-2">&amp;</span><span class="self">Self</span> {
         <span class="comment">// NumPy will always zero-initialize object pointers,</span>
         <span class="comment">// so the array can be dropped safely if the iterator panics.</span>
         <span class="kw">unsafe</span> {
@@ -1987,7 +1987,7 @@
     <span class="doccomment">///     assert_eq!(pyarray.readonly().as_slice().unwrap(), &amp;[1, 2, 3, 4, 5]);</span>
     <span class="doccomment">/// });</span>
     <span class="doccomment">/// ```</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_iter</span>(<span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>, <span class="ident">iter</span>: <span class="kw">impl</span> <span class="ident">IntoIterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="ident">T</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_iter</span>(<span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>, <span class="ident">iter</span>: <span class="kw">impl</span> <span class="ident">IntoIterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="ident">T</span><span class="op">&gt;</span>) -&gt; <span class="kw-2">&amp;</span><span class="self">Self</span> {
         <span class="kw">let</span> <span class="ident">iter</span> <span class="op">=</span> <span class="ident">iter</span>.<span class="ident">into_iter</span>();
         <span class="kw">let</span> (<span class="ident">min_len</span>, <span class="ident">max_len</span>) <span class="op">=</span> <span class="ident">iter</span>.<span class="ident">size_hint</span>();
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">capacity</span> <span class="op">=</span> <span class="ident">max_len</span>.<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">min_len</span>.<span class="ident">max</span>(<span class="number">512</span> <span class="op">/</span> <span class="ident">mem::size_of</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>()));
@@ -2025,7 +2025,7 @@
     <span class="doccomment">///     assert_eq!(pyarray.len(), 100);</span>
     <span class="doccomment">/// });</span>
     <span class="doccomment">/// ```</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">resize</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">new_elems</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">resize</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">new_elems</span>: <span class="ident">usize</span>) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">resize_</span>([<span class="ident">new_elems</span>], <span class="number">1</span>, <span class="ident">NPY_ORDER::NPY_ANYORDER</span>)
     }
 
@@ -2033,7 +2033,7 @@
     <span class="doccomment">/// See [NpySingleIter](../npyiter/struct.NpySingleIter.html) for more.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">iter</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>(
         <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="self">self</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident"><span class="kw">crate</span>::NpySingleIter</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident"><span class="kw">crate</span>::npyiter::ReadWrite</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    ) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident"><span class="kw">crate</span>::NpySingleIter</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident"><span class="kw">crate</span>::npyiter::ReadWrite</span><span class="op">&gt;</span><span class="op">&gt;</span> {
         <span class="ident"><span class="kw">crate</span>::NpySingleIterBuilder::readwrite</span>(<span class="self">self</span>).<span class="ident">build</span>()
     }
 
@@ -2042,7 +2042,7 @@
         <span class="ident">dims</span>: <span class="ident">D</span>,
         <span class="ident">check_ref</span>: <span class="ident">c_int</span>,
         <span class="ident">order</span>: <span class="ident">NPY_ORDER</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">dims</span> <span class="op">=</span> <span class="ident">dims</span>.<span class="ident">into_dimension</span>();
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">np_dims</span> <span class="op">=</span> <span class="ident">dims</span>.<span class="ident">to_npy_dims</span>();
         <span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="kw">unsafe</span> {
@@ -2078,7 +2078,7 @@
     <span class="doccomment">///     assert!(PyArray::from_vec2(py, &amp;[vec![1], vec![2, 3]]).is_err());</span>
     <span class="doccomment">/// });</span>
     <span class="doccomment">/// ```</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_vec2</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>(<span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>, <span class="ident">v</span>: <span class="kw-2">&amp;</span>[<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="self">Self</span>, <span class="ident">FromVecError</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_vec2</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>(<span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>, <span class="ident">v</span>: <span class="kw-2">&amp;</span>[<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>]) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="self">Self</span>, <span class="ident">FromVecError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">last_len</span> <span class="op">=</span> <span class="ident">v</span>.<span class="ident">last</span>().<span class="ident">map_or</span>(<span class="number">0</span>, <span class="op">|</span><span class="ident">v</span><span class="op">|</span> <span class="ident">v</span>.<span class="ident">len</span>());
         <span class="kw">if</span> <span class="ident">v</span>.<span class="ident">iter</span>().<span class="ident">any</span>(<span class="op">|</span><span class="ident">v</span><span class="op">|</span> <span class="ident">v</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="ident">last_len</span>) {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">FromVecError::new</span>(<span class="ident">v</span>.<span class="ident">len</span>(), <span class="ident">last_len</span>));
@@ -2116,7 +2116,7 @@
     <span class="doccomment">///     assert!(PyArray::from_vec3(py, &amp;[vec![vec![1], vec![]]]).is_err());</span>
     <span class="doccomment">/// });</span>
     <span class="doccomment">/// ```</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_vec3</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>(<span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>, <span class="ident">v</span>: <span class="kw-2">&amp;</span>[<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="self">Self</span>, <span class="ident">FromVecError</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_vec3</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>(<span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>, <span class="ident">v</span>: <span class="kw-2">&amp;</span>[<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>]) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="self">Self</span>, <span class="ident">FromVecError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">len2</span> <span class="op">=</span> <span class="ident">v</span>.<span class="ident">last</span>().<span class="ident">map_or</span>(<span class="number">0</span>, <span class="op">|</span><span class="ident">v</span><span class="op">|</span> <span class="ident">v</span>.<span class="ident">len</span>());
         <span class="kw">if</span> <span class="ident">v</span>.<span class="ident">iter</span>().<span class="ident">any</span>(<span class="op">|</span><span class="ident">v</span><span class="op">|</span> <span class="ident">v</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="ident">len2</span>) {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">FromVecError::new</span>(<span class="ident">v</span>.<span class="ident">len</span>(), <span class="ident">len2</span>));
@@ -2152,11 +2152,11 @@
     <span class="doccomment">///     assert_eq!(pyarray_i.readonly().as_slice().unwrap(), &amp;[2, 3, 4]);</span>
     <span class="doccomment">/// });</span>
     <span class="doccomment">/// ```</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">copy_to</span><span class="op">&lt;</span><span class="ident">U</span>: <span class="ident">Element</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">U</span>, <span class="ident">D</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">copy_to</span><span class="op">&lt;</span><span class="ident">U</span>: <span class="ident">Element</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">U</span>, <span class="ident">D</span><span class="op">&gt;</span>) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">self_ptr</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">as_array_ptr</span>();
         <span class="kw">let</span> <span class="ident">other_ptr</span> <span class="op">=</span> <span class="ident">other</span>.<span class="ident">as_array_ptr</span>();
         <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="ident">PY_ARRAY_API</span>.<span class="ident">PyArray_CopyInto</span>(<span class="ident">other_ptr</span>, <span class="ident">self_ptr</span>) };
-        <span class="kw">if</span> <span class="ident">result</span> <span class="op">=</span><span class="op">=</span> <span class="op">-</span><span class="number">1</span> {
+        <span class="kw">if</span> <span class="ident">result</span> <span class="op">==</span> <span class="op">-</span><span class="number">1</span> {
             <span class="prelude-val">Err</span>(<span class="ident">PyErr::fetch</span>(<span class="self">self</span>.<span class="ident">py</span>()))
         } <span class="kw">else</span> {
             <span class="prelude-val">Ok</span>(())
@@ -2174,7 +2174,7 @@
     <span class="doccomment">///     assert_eq!(pyarray_i.readonly().as_slice().unwrap(), &amp;[2, 3, 4]);</span>
     <span class="doccomment">/// });</span>
     <span class="doccomment">/// ```</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">cast</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">U</span>: <span class="ident">Element</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="self">self</span>, <span class="ident">is_fortran</span>: <span class="ident">bool</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">U</span>, <span class="ident">D</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">cast</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">U</span>: <span class="ident">Element</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="self">self</span>, <span class="ident">is_fortran</span>: <span class="ident">bool</span>) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">U</span>, <span class="ident">D</span><span class="op">&gt;</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">ptr</span> <span class="op">=</span> <span class="kw">unsafe</span> {
             <span class="kw">let</span> <span class="ident">dtype</span> <span class="op">=</span> <span class="ident">U::get_dtype</span>(<span class="self">self</span>.<span class="ident">py</span>());
             <span class="ident">PY_ARRAY_API</span>.<span class="ident">PyArray_CastToType</span>(
@@ -2209,7 +2209,7 @@
     <span class="doccomment">/// });</span>
     <span class="doccomment">/// ```</span>
     <span class="attribute">#[<span class="ident">inline</span>(<span class="ident">always</span>)]</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">reshape</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">ID</span>, <span class="ident">D2</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="self">self</span>, <span class="ident">dims</span>: <span class="ident">ID</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D2</span><span class="op">&gt;</span><span class="op">&gt;</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">reshape</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">ID</span>, <span class="ident">D2</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="self">self</span>, <span class="ident">dims</span>: <span class="ident">ID</span>) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D2</span><span class="op">&gt;</span><span class="op">&gt;</span>
     <span class="kw">where</span>
         <span class="ident">ID</span>: <span class="ident">IntoDimension</span><span class="op">&lt;</span><span class="ident">Dim</span> <span class="op">=</span> <span class="ident">D2</span><span class="op">&gt;</span>,
         <span class="ident">D2</span>: <span class="ident">Dimension</span>,
@@ -2222,7 +2222,7 @@
         <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="self">self</span>,
         <span class="ident">dims</span>: <span class="ident">ID</span>,
         <span class="ident">order</span>: <span class="ident">NPY_ORDER</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D2</span><span class="op">&gt;</span><span class="op">&gt;</span>
+    ) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D2</span><span class="op">&gt;</span><span class="op">&gt;</span>
     <span class="kw">where</span>
         <span class="ident">ID</span>: <span class="ident">IntoDimension</span><span class="op">&lt;</span><span class="ident">Dim</span> <span class="op">=</span> <span class="ident">D2</span><span class="op">&gt;</span>,
         <span class="ident">D2</span>: <span class="ident">Dimension</span>,
@@ -2259,7 +2259,7 @@
     <span class="doccomment">///     let pyarray = PyArray::arange(py, -2, 4, 3);</span>
     <span class="doccomment">///     assert_eq!(pyarray.readonly().as_slice().unwrap(), &amp;[-2, 1]);</span>
     <span class="doccomment">/// });</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">arange</span>(<span class="ident">py</span>: <span class="ident">Python</span>, <span class="ident">start</span>: <span class="ident">T</span>, <span class="ident">stop</span>: <span class="ident">T</span>, <span class="ident">step</span>: <span class="ident">T</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">arange</span>(<span class="ident">py</span>: <span class="ident">Python</span>, <span class="ident">start</span>: <span class="ident">T</span>, <span class="ident">stop</span>: <span class="ident">T</span>, <span class="ident">step</span>: <span class="ident">T</span>) -&gt; <span class="kw-2">&amp;</span><span class="self">Self</span> {
         <span class="kw">unsafe</span> {
             <span class="kw">let</span> <span class="ident">ptr</span> <span class="op">=</span> <span class="ident">PY_ARRAY_API</span>.<span class="ident">PyArray_Arange</span>(
                 <span class="ident">start</span>.<span class="ident">as_</span>(),

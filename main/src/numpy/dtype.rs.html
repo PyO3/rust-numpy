@@ -322,7 +322,7 @@
     #<span class="ident">checkfunction</span><span class="op">=</span><span class="ident">arraydescr_check</span>
 );
 
-<span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">arraydescr_check</span>(<span class="ident">op</span>: <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">ffi::PyObject</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">c_int</span> {
+<span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">arraydescr_check</span>(<span class="ident">op</span>: <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">ffi::PyObject</span>) -&gt; <span class="ident">c_int</span> {
     <span class="ident">ffi::PyObject_TypeCheck</span>(
         <span class="ident">op</span>,
         <span class="ident">PY_ARRAY_API</span>.<span class="ident">get_type_object</span>(<span class="ident">NpyTypes::PyArrayDescr_Type</span>),
@@ -331,7 +331,7 @@
 
 <span class="kw">impl</span> <span class="ident">PyArrayDescr</span> {
     <span class="doccomment">/// Returns `self` as `*mut PyArray_Descr`.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">as_dtype_ptr</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">PyArray_Descr</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">as_dtype_ptr</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">PyArray_Descr</span> {
         <span class="self">self</span>.<span class="ident">as_ptr</span>() <span class="kw">as</span> <span class="kw">_</span>
     }
 
@@ -345,24 +345,24 @@
     <span class="doccomment">///    assert_eq!(dtype.get_type().name().unwrap().to_string(), &quot;float64&quot;);</span>
     <span class="doccomment">/// });</span>
     <span class="doccomment">/// ```</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_type</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">PyType</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_type</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="ident">PyType</span> {
         <span class="kw">let</span> <span class="ident">dtype_type_ptr</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="kw-2">*</span><span class="self">self</span>.<span class="ident">as_dtype_ptr</span>() }.<span class="ident">typeobj</span>;
         <span class="kw">unsafe</span> { <span class="ident">PyType::from_type_ptr</span>(<span class="self">self</span>.<span class="ident">py</span>(), <span class="ident">dtype_type_ptr</span>) }
     }
 
     <span class="doccomment">/// Returns the data type as `DataType` enum.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_datatype</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">DataType</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_datatype</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">DataType</span><span class="op">&gt;</span> {
         <span class="ident">DataType::from_typenum</span>(<span class="self">self</span>.<span class="ident">get_typenum</span>())
     }
 
-    <span class="kw">fn</span> <span class="ident">from_npy_type</span>(<span class="ident">py</span>: <span class="ident">Python</span>, <span class="ident">npy_type</span>: <span class="ident">NPY_TYPES</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">from_npy_type</span>(<span class="ident">py</span>: <span class="ident">Python</span>, <span class="ident">npy_type</span>: <span class="ident">NPY_TYPES</span>) -&gt; <span class="kw-2">&amp;</span><span class="self">Self</span> {
         <span class="kw">unsafe</span> {
             <span class="kw">let</span> <span class="ident">descr</span> <span class="op">=</span> <span class="ident">PY_ARRAY_API</span>.<span class="ident">PyArray_DescrFromType</span>(<span class="ident">npy_type</span> <span class="kw">as</span> <span class="ident">i32</span>);
             <span class="ident">py</span>.<span class="ident">from_owned_ptr</span>(<span class="ident">descr</span> <span class="kw">as</span> <span class="kw">_</span>)
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">get_typenum</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std::os::raw::c_int</span> {
+    <span class="kw">fn</span> <span class="ident">get_typenum</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">std::os::raw::c_int</span> {
         <span class="kw">unsafe</span> { <span class="kw-2">*</span><span class="self">self</span>.<span class="ident">as_dtype_ptr</span>() }.<span class="ident">type_num</span>
     }
 }
@@ -393,54 +393,54 @@
 <span class="kw">impl</span> <span class="ident">DataType</span> {
     <span class="doccomment">/// Construct `DataType` from</span>
     <span class="doccomment">/// [Enumerated Types](https://numpy.org/doc/stable/reference/c-api/dtype.html#enumerated-types).</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_typenum</span>(<span class="ident">typenum</span>: <span class="ident">c_int</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_typenum</span>(<span class="ident">typenum</span>: <span class="ident">c_int</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
         <span class="prelude-val">Some</span>(<span class="kw">match</span> <span class="ident">typenum</span> {
-            <span class="ident">x</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">=</span><span class="op">=</span> <span class="ident">NPY_TYPES::NPY_BOOL</span> <span class="kw">as</span> <span class="ident">i32</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">DataType::Bool</span>,
-            <span class="ident">x</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">=</span><span class="op">=</span> <span class="ident">NPY_TYPES::NPY_BYTE</span> <span class="kw">as</span> <span class="ident">i32</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">DataType::Int8</span>,
-            <span class="ident">x</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">=</span><span class="op">=</span> <span class="ident">NPY_TYPES::NPY_SHORT</span> <span class="kw">as</span> <span class="ident">i32</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">DataType::Int16</span>,
-            <span class="ident">x</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">=</span><span class="op">=</span> <span class="ident">NPY_TYPES::NPY_INT</span> <span class="kw">as</span> <span class="ident">i32</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">DataType::Int32</span>,
-            <span class="ident">x</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">=</span><span class="op">=</span> <span class="ident">NPY_TYPES::NPY_LONG</span> <span class="kw">as</span> <span class="ident">i32</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="ident">DataType::from_clong</span>(<span class="bool-val">false</span>),
-            <span class="ident">x</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">=</span><span class="op">=</span> <span class="ident">NPY_TYPES::NPY_LONGLONG</span> <span class="kw">as</span> <span class="ident">i32</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">DataType::Int64</span>,
-            <span class="ident">x</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">=</span><span class="op">=</span> <span class="ident">NPY_TYPES::NPY_UBYTE</span> <span class="kw">as</span> <span class="ident">i32</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">DataType::Uint8</span>,
-            <span class="ident">x</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">=</span><span class="op">=</span> <span class="ident">NPY_TYPES::NPY_USHORT</span> <span class="kw">as</span> <span class="ident">i32</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">DataType::Uint16</span>,
-            <span class="ident">x</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">=</span><span class="op">=</span> <span class="ident">NPY_TYPES::NPY_UINT</span> <span class="kw">as</span> <span class="ident">i32</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">DataType::Uint32</span>,
-            <span class="ident">x</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">=</span><span class="op">=</span> <span class="ident">NPY_TYPES::NPY_ULONG</span> <span class="kw">as</span> <span class="ident">i32</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="ident">DataType::from_clong</span>(<span class="bool-val">true</span>),
-            <span class="ident">x</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">=</span><span class="op">=</span> <span class="ident">NPY_TYPES::NPY_ULONGLONG</span> <span class="kw">as</span> <span class="ident">i32</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">DataType::Uint64</span>,
-            <span class="ident">x</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">=</span><span class="op">=</span> <span class="ident">NPY_TYPES::NPY_FLOAT</span> <span class="kw">as</span> <span class="ident">i32</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">DataType::Float32</span>,
-            <span class="ident">x</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">=</span><span class="op">=</span> <span class="ident">NPY_TYPES::NPY_DOUBLE</span> <span class="kw">as</span> <span class="ident">i32</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">DataType::Float64</span>,
-            <span class="ident">x</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">=</span><span class="op">=</span> <span class="ident">NPY_TYPES::NPY_CFLOAT</span> <span class="kw">as</span> <span class="ident">i32</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">DataType::Complex32</span>,
-            <span class="ident">x</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">=</span><span class="op">=</span> <span class="ident">NPY_TYPES::NPY_CDOUBLE</span> <span class="kw">as</span> <span class="ident">i32</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">DataType::Complex64</span>,
-            <span class="ident">x</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">=</span><span class="op">=</span> <span class="ident">NPY_TYPES::NPY_OBJECT</span> <span class="kw">as</span> <span class="ident">i32</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">DataType::Object</span>,
-            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">None</span>,
+            <span class="ident">x</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">==</span> <span class="ident">NPY_TYPES::NPY_BOOL</span> <span class="kw">as</span> <span class="ident">i32</span> =&gt; <span class="ident">DataType::Bool</span>,
+            <span class="ident">x</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">==</span> <span class="ident">NPY_TYPES::NPY_BYTE</span> <span class="kw">as</span> <span class="ident">i32</span> =&gt; <span class="ident">DataType::Int8</span>,
+            <span class="ident">x</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">==</span> <span class="ident">NPY_TYPES::NPY_SHORT</span> <span class="kw">as</span> <span class="ident">i32</span> =&gt; <span class="ident">DataType::Int16</span>,
+            <span class="ident">x</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">==</span> <span class="ident">NPY_TYPES::NPY_INT</span> <span class="kw">as</span> <span class="ident">i32</span> =&gt; <span class="ident">DataType::Int32</span>,
+            <span class="ident">x</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">==</span> <span class="ident">NPY_TYPES::NPY_LONG</span> <span class="kw">as</span> <span class="ident">i32</span> =&gt; <span class="kw">return</span> <span class="ident">DataType::from_clong</span>(<span class="bool-val">false</span>),
+            <span class="ident">x</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">==</span> <span class="ident">NPY_TYPES::NPY_LONGLONG</span> <span class="kw">as</span> <span class="ident">i32</span> =&gt; <span class="ident">DataType::Int64</span>,
+            <span class="ident">x</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">==</span> <span class="ident">NPY_TYPES::NPY_UBYTE</span> <span class="kw">as</span> <span class="ident">i32</span> =&gt; <span class="ident">DataType::Uint8</span>,
+            <span class="ident">x</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">==</span> <span class="ident">NPY_TYPES::NPY_USHORT</span> <span class="kw">as</span> <span class="ident">i32</span> =&gt; <span class="ident">DataType::Uint16</span>,
+            <span class="ident">x</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">==</span> <span class="ident">NPY_TYPES::NPY_UINT</span> <span class="kw">as</span> <span class="ident">i32</span> =&gt; <span class="ident">DataType::Uint32</span>,
+            <span class="ident">x</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">==</span> <span class="ident">NPY_TYPES::NPY_ULONG</span> <span class="kw">as</span> <span class="ident">i32</span> =&gt; <span class="kw">return</span> <span class="ident">DataType::from_clong</span>(<span class="bool-val">true</span>),
+            <span class="ident">x</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">==</span> <span class="ident">NPY_TYPES::NPY_ULONGLONG</span> <span class="kw">as</span> <span class="ident">i32</span> =&gt; <span class="ident">DataType::Uint64</span>,
+            <span class="ident">x</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">==</span> <span class="ident">NPY_TYPES::NPY_FLOAT</span> <span class="kw">as</span> <span class="ident">i32</span> =&gt; <span class="ident">DataType::Float32</span>,
+            <span class="ident">x</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">==</span> <span class="ident">NPY_TYPES::NPY_DOUBLE</span> <span class="kw">as</span> <span class="ident">i32</span> =&gt; <span class="ident">DataType::Float64</span>,
+            <span class="ident">x</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">==</span> <span class="ident">NPY_TYPES::NPY_CFLOAT</span> <span class="kw">as</span> <span class="ident">i32</span> =&gt; <span class="ident">DataType::Complex32</span>,
+            <span class="ident">x</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">==</span> <span class="ident">NPY_TYPES::NPY_CDOUBLE</span> <span class="kw">as</span> <span class="ident">i32</span> =&gt; <span class="ident">DataType::Complex64</span>,
+            <span class="ident">x</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">==</span> <span class="ident">NPY_TYPES::NPY_OBJECT</span> <span class="kw">as</span> <span class="ident">i32</span> =&gt; <span class="ident">DataType::Object</span>,
+            <span class="kw">_</span> =&gt; <span class="kw">return</span> <span class="prelude-val">None</span>,
         })
     }
 
     <span class="doccomment">/// Convert `self` into</span>
     <span class="doccomment">/// [Enumerated Types](https://numpy.org/doc/stable/reference/c-api/dtype.html#enumerated-types).</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">into_ctype</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">NPY_TYPES</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">into_ctype</span>(<span class="self">self</span>) -&gt; <span class="ident">NPY_TYPES</span> {
         <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">DataType::Bool</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">NPY_TYPES::NPY_BOOL</span>,
-            <span class="ident">DataType::Int8</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">NPY_TYPES::NPY_BYTE</span>,
-            <span class="ident">DataType::Int16</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">NPY_TYPES::NPY_SHORT</span>,
-            <span class="ident">DataType::Int32</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">NPY_TYPES::NPY_INT</span>,
+            <span class="ident">DataType::Bool</span> =&gt; <span class="ident">NPY_TYPES::NPY_BOOL</span>,
+            <span class="ident">DataType::Int8</span> =&gt; <span class="ident">NPY_TYPES::NPY_BYTE</span>,
+            <span class="ident">DataType::Int16</span> =&gt; <span class="ident">NPY_TYPES::NPY_SHORT</span>,
+            <span class="ident">DataType::Int32</span> =&gt; <span class="ident">NPY_TYPES::NPY_INT</span>,
             <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">all</span>(<span class="ident">target_pointer_width</span> <span class="op">=</span> <span class="string">&quot;64&quot;</span>, <span class="ident">not</span>(<span class="ident">windows</span>)))]</span>
-            <span class="ident">DataType::Int64</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">NPY_TYPES::NPY_LONG</span>,
+            <span class="ident">DataType::Int64</span> =&gt; <span class="ident">NPY_TYPES::NPY_LONG</span>,
             <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">target_pointer_width</span> <span class="op">=</span> <span class="string">&quot;32&quot;</span>, <span class="ident">windows</span>))]</span>
-            <span class="ident">DataType::Int64</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">NPY_TYPES::NPY_LONGLONG</span>,
-            <span class="ident">DataType::Uint8</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">NPY_TYPES::NPY_UBYTE</span>,
-            <span class="ident">DataType::Uint16</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">NPY_TYPES::NPY_USHORT</span>,
-            <span class="ident">DataType::Uint32</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">NPY_TYPES::NPY_UINT</span>,
-            <span class="ident">DataType::Uint64</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">NPY_TYPES::NPY_ULONGLONG</span>,
-            <span class="ident">DataType::Float32</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">NPY_TYPES::NPY_FLOAT</span>,
-            <span class="ident">DataType::Float64</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">NPY_TYPES::NPY_DOUBLE</span>,
-            <span class="ident">DataType::Complex32</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">NPY_TYPES::NPY_CFLOAT</span>,
-            <span class="ident">DataType::Complex64</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">NPY_TYPES::NPY_CDOUBLE</span>,
-            <span class="ident">DataType::Object</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">NPY_TYPES::NPY_OBJECT</span>,
+            <span class="ident">DataType::Int64</span> =&gt; <span class="ident">NPY_TYPES::NPY_LONGLONG</span>,
+            <span class="ident">DataType::Uint8</span> =&gt; <span class="ident">NPY_TYPES::NPY_UBYTE</span>,
+            <span class="ident">DataType::Uint16</span> =&gt; <span class="ident">NPY_TYPES::NPY_USHORT</span>,
+            <span class="ident">DataType::Uint32</span> =&gt; <span class="ident">NPY_TYPES::NPY_UINT</span>,
+            <span class="ident">DataType::Uint64</span> =&gt; <span class="ident">NPY_TYPES::NPY_ULONGLONG</span>,
+            <span class="ident">DataType::Float32</span> =&gt; <span class="ident">NPY_TYPES::NPY_FLOAT</span>,
+            <span class="ident">DataType::Float64</span> =&gt; <span class="ident">NPY_TYPES::NPY_DOUBLE</span>,
+            <span class="ident">DataType::Complex32</span> =&gt; <span class="ident">NPY_TYPES::NPY_CFLOAT</span>,
+            <span class="ident">DataType::Complex64</span> =&gt; <span class="ident">NPY_TYPES::NPY_CDOUBLE</span>,
+            <span class="ident">DataType::Object</span> =&gt; <span class="ident">NPY_TYPES::NPY_OBJECT</span>,
         }
     }
 
     <span class="attribute">#[<span class="ident">inline</span>(<span class="ident">always</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">from_clong</span>(<span class="ident">is_usize</span>: <span class="ident">bool</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">from_clong</span>(<span class="ident">is_usize</span>: <span class="ident">bool</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="macro">cfg!</span>(<span class="ident">any</span>(<span class="ident">target_pointer_width</span> <span class="op">=</span> <span class="string">&quot;32&quot;</span>, <span class="ident">windows</span>)) {
             <span class="prelude-val">Some</span>(<span class="kw">if</span> <span class="ident">is_usize</span> {
                 <span class="ident">DataType::Uint32</span>
@@ -513,27 +513,27 @@
     <span class="kw">const</span> <span class="ident">DATA_TYPE</span>: <span class="ident">DataType</span>;
 
     <span class="doccomment">/// Returns if the give `dtype` is convertible to `Self` in Rust.</span>
-    <span class="kw">fn</span> <span class="ident">is_same_type</span>(<span class="ident">dtype</span>: <span class="kw-2">&amp;</span><span class="ident">PyArrayDescr</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span>;
+    <span class="kw">fn</span> <span class="ident">is_same_type</span>(<span class="ident">dtype</span>: <span class="kw-2">&amp;</span><span class="ident">PyArrayDescr</span>) -&gt; <span class="ident">bool</span>;
 
     <span class="doccomment">/// Returns the corresponding</span>
     <span class="doccomment">/// [Enumerated Type](https://numpy.org/doc/stable/reference/c-api/dtype.html#enumerated-types).</span>
     <span class="attribute">#[<span class="ident">inline</span>]</span>
-    <span class="kw">fn</span> <span class="ident">npy_type</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">NPY_TYPES</span> {
+    <span class="kw">fn</span> <span class="ident">npy_type</span>() -&gt; <span class="ident">NPY_TYPES</span> {
         <span class="ident"><span class="self">Self</span>::DATA_TYPE</span>.<span class="ident">into_ctype</span>()
     }
 
     <span class="doccomment">/// Create `dtype`.</span>
-    <span class="kw">fn</span> <span class="ident">get_dtype</span>(<span class="ident">py</span>: <span class="ident">Python</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">PyArrayDescr</span> {
+    <span class="kw">fn</span> <span class="ident">get_dtype</span>(<span class="ident">py</span>: <span class="ident">Python</span>) -&gt; <span class="kw-2">&amp;</span><span class="ident">PyArrayDescr</span> {
         <span class="ident">PyArrayDescr::from_npy_type</span>(<span class="ident">py</span>, <span class="ident"><span class="self">Self</span>::npy_type</span>())
     }
 }
 
 <span class="macro">macro_rules!</span> <span class="ident">impl_num_element</span> {
-    (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">t</span>:<span class="ident">ty</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">npy_dat_t</span>:<span class="ident">ident</span> $(,<span class="macro-nonterminal">$</span><span class="macro-nonterminal">npy_types</span>: <span class="ident">ident</span>)<span class="op">+</span>) <span class="op">=</span><span class="op">&gt;</span> {
+    (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">t</span>:<span class="ident">ty</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">npy_dat_t</span>:<span class="ident">ident</span> $(,<span class="macro-nonterminal">$</span><span class="macro-nonterminal">npy_types</span>: <span class="ident">ident</span>)<span class="op">+</span>) =&gt; {
         <span class="kw">unsafe</span> <span class="kw">impl</span> <span class="ident">Element</span> <span class="kw">for</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">t</span> {
             <span class="kw">const</span> <span class="ident">DATA_TYPE</span>: <span class="ident">DataType</span> <span class="op">=</span> <span class="ident">DataType</span>::<span class="macro-nonterminal">$</span><span class="macro-nonterminal">npy_dat_t</span>;
-            <span class="kw">fn</span> <span class="ident">is_same_type</span>(<span class="ident">dtype</span>: <span class="kw-2">&amp;</span><span class="ident">PyArrayDescr</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
-                $(<span class="ident">dtype</span>.<span class="ident">get_typenum</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">NPY_TYPES</span>::<span class="macro-nonterminal">$</span><span class="macro-nonterminal">npy_types</span> <span class="kw">as</span> <span class="ident">i32</span> <span class="op">|</span><span class="op">|</span>)<span class="op">+</span> <span class="bool-val">false</span>
+            <span class="kw">fn</span> <span class="ident">is_same_type</span>(<span class="ident">dtype</span>: <span class="kw-2">&amp;</span><span class="ident">PyArrayDescr</span>) -&gt; <span class="ident">bool</span> {
+                $(<span class="ident">dtype</span>.<span class="ident">get_typenum</span>() <span class="op">==</span> <span class="ident">NPY_TYPES</span>::<span class="macro-nonterminal">$</span><span class="macro-nonterminal">npy_types</span> <span class="kw">as</span> <span class="ident">i32</span> <span class="op">|</span><span class="op">|</span>)<span class="op">+</span> <span class="bool-val">false</span>
             }
         }
     };
@@ -576,8 +576,8 @@
 
 <span class="kw">unsafe</span> <span class="kw">impl</span> <span class="ident">Element</span> <span class="kw">for</span> <span class="ident">PyObject</span> {
     <span class="kw">const</span> <span class="ident">DATA_TYPE</span>: <span class="ident">DataType</span> <span class="op">=</span> <span class="ident">DataType::Object</span>;
-    <span class="kw">fn</span> <span class="ident">is_same_type</span>(<span class="ident">dtype</span>: <span class="kw-2">&amp;</span><span class="ident">PyArrayDescr</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
-        <span class="ident">dtype</span>.<span class="ident">get_typenum</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">NPY_TYPES::NPY_OBJECT</span> <span class="kw">as</span> <span class="ident">i32</span>
+    <span class="kw">fn</span> <span class="ident">is_same_type</span>(<span class="ident">dtype</span>: <span class="kw-2">&amp;</span><span class="ident">PyArrayDescr</span>) -&gt; <span class="ident">bool</span> {
+        <span class="ident">dtype</span>.<span class="ident">get_typenum</span>() <span class="op">==</span> <span class="ident">NPY_TYPES::NPY_OBJECT</span> <span class="kw">as</span> <span class="ident">i32</span>
     }
 }
 </code></pre></div>

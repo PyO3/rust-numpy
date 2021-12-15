@@ -663,19 +663,19 @@
 }
 
 <span class="kw">impl</span> <span class="ident">NpyIterFlag</span> {
-    <span class="kw">fn</span> <span class="ident">to_c_enum</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">npy_uint32</span> {
+    <span class="kw">fn</span> <span class="ident">to_c_enum</span>(<span class="self">self</span>) -&gt; <span class="ident">npy_uint32</span> {
         <span class="kw">use</span> <span class="ident">NpyIterFlag</span>::<span class="kw-2">*</span>;
         <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">CommonDtype</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">NPY_ITER_COMMON_DTYPE</span>,
-            <span class="ident">RefsOk</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">NPY_ITER_REFS_OK</span>,
-            <span class="ident">ZerosizeOk</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">NPY_ITER_ZEROSIZE_OK</span>,
-            <span class="ident">ReduceOk</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">NPY_ITER_REDUCE_OK</span>,
-            <span class="ident">Ranged</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">NPY_ITER_RANGED</span>,
-            <span class="ident">Buffered</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">NPY_ITER_BUFFERED</span>,
-            <span class="ident">GrowInner</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">NPY_ITER_GROWINNER</span>,
-            <span class="ident">DelayBufAlloc</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">NPY_ITER_DELAY_BUFALLOC</span>,
-            <span class="ident">DontNegateStrides</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">NPY_ITER_DONT_NEGATE_STRIDES</span>,
-            <span class="ident">CopyIfOverlap</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">NPY_ITER_COPY_IF_OVERLAP</span>,
+            <span class="ident">CommonDtype</span> =&gt; <span class="ident">NPY_ITER_COMMON_DTYPE</span>,
+            <span class="ident">RefsOk</span> =&gt; <span class="ident">NPY_ITER_REFS_OK</span>,
+            <span class="ident">ZerosizeOk</span> =&gt; <span class="ident">NPY_ITER_ZEROSIZE_OK</span>,
+            <span class="ident">ReduceOk</span> =&gt; <span class="ident">NPY_ITER_REDUCE_OK</span>,
+            <span class="ident">Ranged</span> =&gt; <span class="ident">NPY_ITER_RANGED</span>,
+            <span class="ident">Buffered</span> =&gt; <span class="ident">NPY_ITER_BUFFERED</span>,
+            <span class="ident">GrowInner</span> =&gt; <span class="ident">NPY_ITER_GROWINNER</span>,
+            <span class="ident">DelayBufAlloc</span> =&gt; <span class="ident">NPY_ITER_DELAY_BUFALLOC</span>,
+            <span class="ident">DontNegateStrides</span> =&gt; <span class="ident">NPY_ITER_DONT_NEGATE_STRIDES</span>,
+            <span class="ident">CopyIfOverlap</span> =&gt; <span class="ident">NPY_ITER_COPY_IF_OVERLAP</span>,
         }
     }
 }
@@ -686,13 +686,13 @@
 
     <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">PrivateGuard</span>;
     <span class="macro">macro_rules!</span> <span class="ident">private_decl</span> {
-        () <span class="op">=</span><span class="op">&gt;</span> {
-            <span class="kw">fn</span> <span class="ident">__private__</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PrivateGuard</span>;
+        () =&gt; {
+            <span class="kw">fn</span> <span class="ident">__private__</span>() -&gt; <span class="ident">PrivateGuard</span>;
         };
     }
     <span class="macro">macro_rules!</span> <span class="ident">private_impl</span> {
-        () <span class="op">=</span><span class="op">&gt;</span> {
-            <span class="kw">fn</span> <span class="ident">__private__</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PrivateGuard</span> {
+        () =&gt; {
+            <span class="kw">fn</span> <span class="ident">__private__</span>() -&gt; <span class="ident">PrivateGuard</span> {
                 <span class="ident">PrivateGuard</span>
             }
         };
@@ -704,8 +704,8 @@
         <span class="macro">private_decl!</span>();
         <span class="kw">type</span> <span class="ident">Pre</span>: <span class="ident">MultiIterMode</span>;
         <span class="kw">const</span> <span class="ident">FLAG</span>: <span class="ident">npy_uint32</span> <span class="op">=</span> <span class="number">0</span>;
-        <span class="kw">fn</span> <span class="ident">flags</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">npy_uint32</span><span class="op">&gt;</span> {
-            <span class="kw">if</span> <span class="ident"><span class="self">Self</span>::FLAG</span> <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
+        <span class="kw">fn</span> <span class="ident">flags</span>() -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">npy_uint32</span><span class="op">&gt;</span> {
+            <span class="kw">if</span> <span class="ident"><span class="self">Self</span>::FLAG</span> <span class="op">==</span> <span class="number">0</span> {
                 <span class="macro">vec!</span>[]
             } <span class="kw">else</span> {
                 <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::Pre::flags</span>();
@@ -773,7 +773,7 @@
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>: <span class="ident">Element</span><span class="op">&gt;</span> <span class="ident">NpySingleIterBuilder</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">Readonly</span><span class="op">&gt;</span> {
     <span class="doccomment">/// Makes a new builder for a readonly iterator.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">readonly</span><span class="op">&lt;</span><span class="ident">D</span>: <span class="ident">ndarray::Dimension</span><span class="op">&gt;</span>(<span class="ident">array</span>: <span class="ident">PyReadonlyArray</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">readonly</span><span class="op">&lt;</span><span class="ident">D</span>: <span class="ident">ndarray::Dimension</span><span class="op">&gt;</span>(<span class="ident">array</span>: <span class="ident">PyReadonlyArray</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span>) -&gt; <span class="self">Self</span> {
         <span class="kw">let</span> (<span class="ident">array</span>, <span class="ident">was_writable</span>) <span class="op">=</span> <span class="ident">array</span>.<span class="ident">destruct</span>();
         <span class="self">Self</span> {
             <span class="ident">flags</span>: <span class="ident">NPY_ITER_READONLY</span>,
@@ -786,7 +786,7 @@
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>: <span class="ident">Element</span><span class="op">&gt;</span> <span class="ident">NpySingleIterBuilder</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">ReadWrite</span><span class="op">&gt;</span> {
     <span class="doccomment">/// Makes a new builder for a writable iterator.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">readwrite</span><span class="op">&lt;</span><span class="ident">D</span>: <span class="ident">ndarray::Dimension</span><span class="op">&gt;</span>(<span class="ident">array</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">readwrite</span><span class="op">&lt;</span><span class="ident">D</span>: <span class="ident">ndarray::Dimension</span><span class="op">&gt;</span>(<span class="ident">array</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span>) -&gt; <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">flags</span>: <span class="ident">NPY_ITER_READWRITE</span>,
             <span class="ident">array</span>: <span class="ident">array</span>.<span class="ident">to_dyn</span>(),
@@ -798,13 +798,13 @@
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>: <span class="ident">Element</span>, <span class="ident">I</span>: <span class="ident">IterMode</span><span class="op">&gt;</span> <span class="ident">NpySingleIterBuilder</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">I</span><span class="op">&gt;</span> {
     <span class="doccomment">/// Sets a flag to this builder, returning `self`.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">flag</span>: <span class="ident">NpyIterFlag</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">flag</span>: <span class="ident">NpyIterFlag</span>) -&gt; <span class="self">Self</span> {
         <span class="self">self</span>.<span class="ident">flags</span> <span class="op">|</span><span class="op">=</span> <span class="ident">flag</span>.<span class="ident">to_c_enum</span>();
         <span class="self">self</span>
     }
 
     <span class="doccomment">/// Creates an iterator from this builder.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">build</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">NpySingleIter</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">I</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">build</span>(<span class="self">self</span>) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">NpySingleIter</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">I</span><span class="op">&gt;</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">array_ptr</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">array</span>.<span class="ident">as_array_ptr</span>();
         <span class="kw">let</span> <span class="ident">iter_ptr</span> <span class="op">=</span> <span class="kw">unsafe</span> {
             <span class="ident">PY_ARRAY_API</span>.<span class="ident">NpyIter_New</span>(
@@ -872,7 +872,7 @@
 <span class="doccomment">/// ```</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">NpySingleIter</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">I</span><span class="op">&gt;</span> {
     <span class="ident">iterator</span>: <span class="ident">ptr::NonNull</span><span class="op">&lt;</span><span class="ident">NpyIter</span><span class="op">&gt;</span>,
-    <span class="ident">iternext</span>: <span class="kw">unsafe</span> <span class="kw">extern</span> <span class="string">&quot;C&quot;</span> <span class="kw">fn</span>(<span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">NpyIter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">c_int</span>,
+    <span class="ident">iternext</span>: <span class="kw">unsafe</span> <span class="kw">extern</span> <span class="string">&quot;C&quot;</span> <span class="kw">fn</span>(<span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">NpyIter</span>) -&gt; <span class="ident">c_int</span>,
     <span class="ident">empty</span>: <span class="ident">bool</span>,
     <span class="ident">iter_size</span>: <span class="ident">npy_intp</span>,
     <span class="ident">dataptr</span>: <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">c_char</span>,
@@ -887,18 +887,18 @@
         <span class="ident">iterator</span>: <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">NpyIter</span>,
         <span class="ident">readonly_array_ptr</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">PyArrayObject</span><span class="op">&gt;</span>,
         <span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
+    ) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">iterator</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">ptr::NonNull::new</span>(<span class="ident">iterator</span>) {
-            <span class="prelude-val">Some</span>(<span class="ident">iter</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">iter</span>,
-            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="prelude-val">Some</span>(<span class="ident">iter</span>) =&gt; <span class="ident">iter</span>,
+            <span class="prelude-val">None</span> =&gt; {
                 <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PyErr::fetch</span>(<span class="ident">py</span>));
             }
         };
 
         <span class="kw">let</span> <span class="ident">iternext</span> <span class="op">=</span>
             <span class="kw">match</span> <span class="kw">unsafe</span> { <span class="ident">PY_ARRAY_API</span>.<span class="ident">NpyIter_GetIterNext</span>(<span class="ident">iterator</span>.<span class="ident">as_mut</span>(), <span class="ident">ptr::null_mut</span>()) } {
-                <span class="prelude-val">Some</span>(<span class="ident">ptr</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ptr</span>,
-                <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="prelude-val">Some</span>(<span class="ident">ptr</span>) =&gt; <span class="ident">ptr</span>,
+                <span class="prelude-val">None</span> =&gt; {
                     <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PyErr::fetch</span>(<span class="ident">py</span>));
                 }
             };
@@ -915,7 +915,7 @@
             <span class="ident">iterator</span>,
             <span class="ident">iternext</span>,
             <span class="ident">iter_size</span>,
-            <span class="ident">empty</span>: <span class="ident">iter_size</span> <span class="op">=</span><span class="op">=</span> <span class="number">0</span>,
+            <span class="ident">empty</span>: <span class="ident">iter_size</span> <span class="op">==</span> <span class="number">0</span>,
             <span class="ident">dataptr</span>,
             <span class="ident">return_type</span>: <span class="ident">PhantomData</span>,
             <span class="ident">mode</span>: <span class="ident">PhantomData</span>,
@@ -924,7 +924,7 @@
         })
     }
 
-    <span class="kw">fn</span> <span class="ident">iternext</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">T</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">iternext</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">T</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">empty</span> {
             <span class="prelude-val">None</span>
         } <span class="kw">else</span> {
@@ -933,7 +933,7 @@
             <span class="comment">// and then transforming that into a reference, the value that dataptr</span>
             <span class="comment">// points to is being updated by iternext to point to the next value.</span>
             <span class="kw">let</span> <span class="ident">ret</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="kw-2">*</span><span class="self">self</span>.<span class="ident">dataptr</span> <span class="kw">as</span> <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">T</span> };
-            <span class="self">self</span>.<span class="ident">empty</span> <span class="op">=</span> <span class="kw">unsafe</span> { (<span class="self">self</span>.<span class="ident">iternext</span>)(<span class="self">self</span>.<span class="ident">iterator</span>.<span class="ident">as_mut</span>()) } <span class="op">=</span><span class="op">=</span> <span class="number">0</span>;
+            <span class="self">self</span>.<span class="ident">empty</span> <span class="op">=</span> <span class="kw">unsafe</span> { (<span class="self">self</span>.<span class="ident">iternext</span>)(<span class="self">self</span>.<span class="ident">iterator</span>.<span class="ident">as_mut</span>()) } <span class="op">==</span> <span class="number">0</span>;
             <span class="prelude-val">Some</span>(<span class="ident">ret</span>)
         }
     }
@@ -953,11 +953,11 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>: <span class="lifetime">&#39;py</span><span class="op">&gt;</span> <span class="ident">std::iter::Iterator</span> <span class="kw">for</span> <span class="ident">NpySingleIter</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">Readonly</span><span class="op">&gt;</span> {
     <span class="kw">type</span> <span class="ident">Item</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">T</span>;
 
-    <span class="kw">fn</span> <span class="ident">next</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Item</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">next</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Item</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">iternext</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">ptr</span><span class="op">|</span> <span class="kw">unsafe</span> { <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">ptr</span> })
     }
 
-    <span class="kw">fn</span> <span class="ident">size_hint</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">usize</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>) {
+    <span class="kw">fn</span> <span class="ident">size_hint</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; (<span class="ident">usize</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>) {
         (<span class="self">self</span>.<span class="ident">iter_size</span> <span class="kw">as</span> <span class="ident">usize</span>, <span class="prelude-val">Some</span>(<span class="self">self</span>.<span class="ident">iter_size</span> <span class="kw">as</span> <span class="ident">usize</span>))
     }
 }
@@ -965,11 +965,11 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>: <span class="lifetime">&#39;py</span><span class="op">&gt;</span> <span class="ident">std::iter::Iterator</span> <span class="kw">for</span> <span class="ident">NpySingleIter</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">ReadWrite</span><span class="op">&gt;</span> {
     <span class="kw">type</span> <span class="ident">Item</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="kw-2">mut</span> <span class="ident">T</span>;
 
-    <span class="kw">fn</span> <span class="ident">next</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Item</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">next</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Item</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">iternext</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">ptr</span><span class="op">|</span> <span class="kw">unsafe</span> { <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw-2">*</span><span class="ident">ptr</span> })
     }
 
-    <span class="kw">fn</span> <span class="ident">size_hint</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">usize</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>) {
+    <span class="kw">fn</span> <span class="ident">size_hint</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; (<span class="ident">usize</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>) {
         (<span class="self">self</span>.<span class="ident">iter_size</span> <span class="kw">as</span> <span class="ident">usize</span>, <span class="prelude-val">Some</span>(<span class="self">self</span>.<span class="ident">iter_size</span> <span class="kw">as</span> <span class="ident">usize</span>))
     }
 }
@@ -983,14 +983,14 @@
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>: <span class="ident">Element</span><span class="op">&gt;</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">NpyMultiIterBuilder</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, ()<span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">default</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">default</span>() -&gt; <span class="self">Self</span> {
         <span class="ident"><span class="self">Self</span>::new</span>()
     }
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>: <span class="ident">Element</span><span class="op">&gt;</span> <span class="ident">NpyMultiIterBuilder</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, ()<span class="op">&gt;</span> {
     <span class="doccomment">/// Creates a new builder.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>() -&gt; <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">flags</span>: <span class="number">0</span>,
             <span class="ident">arrays</span>: <span class="ident">Vec::new</span>(),
@@ -1000,7 +1000,7 @@
     }
 
     <span class="doccomment">/// Set a flag to this builder, returning `self`.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">flag</span>: <span class="ident">NpyIterFlag</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">flag</span>: <span class="ident">NpyIterFlag</span>) -&gt; <span class="self">Self</span> {
         <span class="self">self</span>.<span class="ident">flags</span> <span class="op">|</span><span class="op">=</span> <span class="ident">flag</span>.<span class="ident">to_c_enum</span>();
         <span class="self">self</span>
     }
@@ -1011,7 +1011,7 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">add_readonly</span><span class="op">&lt;</span><span class="ident">D</span>: <span class="ident">ndarray::Dimension</span><span class="op">&gt;</span>(
         <span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">array</span>: <span class="ident">PyReadonlyArray</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">NpyMultiIterBuilder</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">RO</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    ) -&gt; <span class="ident">NpyMultiIterBuilder</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">RO</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span><span class="op">&gt;</span> {
         <span class="kw">let</span> (<span class="ident">array</span>, <span class="ident">was_writable</span>) <span class="op">=</span> <span class="ident">array</span>.<span class="ident">destruct</span>();
         <span class="self">self</span>.<span class="ident">arrays</span>.<span class="ident">push</span>(<span class="ident">array</span>.<span class="ident">to_dyn</span>());
         <span class="self">self</span>.<span class="ident">was_writables</span>.<span class="ident">push</span>(<span class="ident">was_writable</span>);
@@ -1027,7 +1027,7 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">add_readwrite</span><span class="op">&lt;</span><span class="ident">D</span>: <span class="ident">ndarray::Dimension</span><span class="op">&gt;</span>(
         <span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">array</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">NpyMultiIterBuilder</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">RW</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    ) -&gt; <span class="ident">NpyMultiIterBuilder</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">RW</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">arrays</span>.<span class="ident">push</span>(<span class="ident">array</span>.<span class="ident">to_dyn</span>());
         <span class="self">self</span>.<span class="ident">was_writables</span>.<span class="ident">push</span>(<span class="bool-val">false</span>);
         <span class="ident">NpyMultiIterBuilder</span> {
@@ -1041,7 +1041,7 @@
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>: <span class="ident">Element</span>, <span class="ident">S</span>: <span class="ident">MultiIterModeWithManyArrays</span><span class="op">&gt;</span> <span class="ident">NpyMultiIterBuilder</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">S</span><span class="op">&gt;</span> {
     <span class="doccomment">/// Creates an iterator from this builder.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">build</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">NpyMultiIter</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">S</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">build</span>(<span class="self">self</span>) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">NpyMultiIter</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">S</span><span class="op">&gt;</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="self">Self</span> {
             <span class="ident">flags</span>,
             <span class="ident">arrays</span>,
@@ -1104,7 +1104,7 @@
 <span class="doccomment">/// ```</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">NpyMultiIter</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">S</span>: <span class="ident">MultiIterModeWithManyArrays</span><span class="op">&gt;</span> {
     <span class="ident">iterator</span>: <span class="ident">ptr::NonNull</span><span class="op">&lt;</span><span class="ident">NpyIter</span><span class="op">&gt;</span>,
-    <span class="ident">iternext</span>: <span class="kw">unsafe</span> <span class="kw">extern</span> <span class="string">&quot;C&quot;</span> <span class="kw">fn</span>(<span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">NpyIter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">c_int</span>,
+    <span class="ident">iternext</span>: <span class="kw">unsafe</span> <span class="kw">extern</span> <span class="string">&quot;C&quot;</span> <span class="kw">fn</span>(<span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">NpyIter</span>) -&gt; <span class="ident">c_int</span>,
     <span class="ident">empty</span>: <span class="ident">bool</span>,
     <span class="ident">iter_size</span>: <span class="ident">npy_intp</span>,
     <span class="ident">dataptr</span>: <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">c_char</span>,
@@ -1120,18 +1120,18 @@
         <span class="ident">arrays</span>: <span class="ident">Box</span><span class="op">&lt;</span>[<span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">PyArrayObject</span>]<span class="op">&gt;</span>,
         <span class="ident">was_writables</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>,
         <span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
+    ) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">iterator</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">ptr::NonNull::new</span>(<span class="ident">iterator</span>) {
-            <span class="prelude-val">Some</span>(<span class="ident">ptr</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ptr</span>,
-            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="prelude-val">Some</span>(<span class="ident">ptr</span>) =&gt; <span class="ident">ptr</span>,
+            <span class="prelude-val">None</span> =&gt; {
                 <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PyErr::fetch</span>(<span class="ident">py</span>));
             }
         };
 
         <span class="kw">let</span> <span class="ident">iternext</span> <span class="op">=</span>
             <span class="kw">match</span> <span class="kw">unsafe</span> { <span class="ident">PY_ARRAY_API</span>.<span class="ident">NpyIter_GetIterNext</span>(<span class="ident">iterator</span>.<span class="ident">as_mut</span>(), <span class="ident">ptr::null_mut</span>()) } {
-                <span class="prelude-val">Some</span>(<span class="ident">ptr</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ptr</span>,
-                <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="prelude-val">Some</span>(<span class="ident">ptr</span>) =&gt; <span class="ident">ptr</span>,
+                <span class="prelude-val">None</span> =&gt; {
                     <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PyErr::fetch</span>(<span class="ident">py</span>));
                 }
             };
@@ -1148,7 +1148,7 @@
             <span class="ident">iterator</span>,
             <span class="ident">iternext</span>,
             <span class="ident">iter_size</span>,
-            <span class="ident">empty</span>: <span class="ident">iter_size</span> <span class="op">=</span><span class="op">=</span> <span class="number">0</span>,
+            <span class="ident">empty</span>: <span class="ident">iter_size</span> <span class="op">==</span> <span class="number">0</span>,
             <span class="ident">dataptr</span>,
             <span class="ident">marker</span>: <span class="ident">PhantomData</span>,
             <span class="ident">arrays</span>,
@@ -1170,10 +1170,10 @@
 }
 
 <span class="macro">macro_rules!</span> <span class="ident">impl_multi_iter</span> {
-    (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">structure</span>: <span class="ident">ty</span>, $(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">ty</span>: <span class="ident">ty</span>)<span class="op">+</span>, $(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">ptr</span>: <span class="ident">ident</span>)<span class="op">+</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">expand</span>: <span class="ident">ident</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">deref</span>: <span class="ident">expr</span>) <span class="op">=</span><span class="op">&gt;</span> {
+    (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">structure</span>: <span class="ident">ty</span>, $(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">ty</span>: <span class="ident">ty</span>)<span class="op">+</span>, $(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">ptr</span>: <span class="ident">ident</span>)<span class="op">+</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">expand</span>: <span class="ident">ident</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">deref</span>: <span class="ident">expr</span>) =&gt; {
         <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>: <span class="lifetime">&#39;py</span><span class="op">&gt;</span> <span class="ident">std::iter::Iterator</span> <span class="kw">for</span> <span class="ident">NpyMultiIter</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">structure</span><span class="op">&gt;</span> {
             <span class="kw">type</span> <span class="ident">Item</span> <span class="op">=</span> ($(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">ty</span>,)<span class="op">+</span>);
-            <span class="kw">fn</span> <span class="ident">next</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Item</span><span class="op">&gt;</span> {
+            <span class="kw">fn</span> <span class="ident">next</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Item</span><span class="op">&gt;</span> {
                 <span class="kw">if</span> <span class="self">self</span>.<span class="ident">empty</span> {
                     <span class="prelude-val">None</span>
                 } <span class="kw">else</span> {
@@ -1183,12 +1183,12 @@
                     <span class="comment">// points to is being updated by iternext to point to the next value.</span>
                     <span class="kw">let</span> ($(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">ptr</span>,)<span class="op">+</span>) <span class="op">=</span> <span class="kw">unsafe</span> { <span class="macro-nonterminal">$</span><span class="macro-nonterminal">expand</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="self">self</span>.<span class="ident">dataptr</span>) };
                     <span class="kw">let</span> <span class="ident">retval</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="kw">unsafe</span> { <span class="macro-nonterminal">$</span><span class="macro-nonterminal">deref</span> });
-                    <span class="self">self</span>.<span class="ident">empty</span> <span class="op">=</span> <span class="kw">unsafe</span> { (<span class="self">self</span>.<span class="ident">iternext</span>)(<span class="self">self</span>.<span class="ident">iterator</span>.<span class="ident">as_mut</span>()) } <span class="op">=</span><span class="op">=</span> <span class="number">0</span>;
+                    <span class="self">self</span>.<span class="ident">empty</span> <span class="op">=</span> <span class="kw">unsafe</span> { (<span class="self">self</span>.<span class="ident">iternext</span>)(<span class="self">self</span>.<span class="ident">iterator</span>.<span class="ident">as_mut</span>()) } <span class="op">==</span> <span class="number">0</span>;
                     <span class="ident">retval</span>
                 }
             }
 
-            <span class="kw">fn</span> <span class="ident">size_hint</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">usize</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>) {
+            <span class="kw">fn</span> <span class="ident">size_hint</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; (<span class="ident">usize</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>) {
                 (<span class="self">self</span>.<span class="ident">iter_size</span> <span class="kw">as</span> <span class="ident">usize</span>, <span class="prelude-val">Some</span>(<span class="self">self</span>.<span class="ident">iter_size</span> <span class="kw">as</span> <span class="ident">usize</span>))
             }
         }
@@ -1197,12 +1197,12 @@
 
 <span class="comment">// Helper functions for conversion</span>
 <span class="attribute">#[<span class="ident">inline</span>(<span class="ident">always</span>)]</span>
-<span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">expand2</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">dataptr</span>: <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">c_char</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">T</span>, <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">T</span>) {
+<span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">expand2</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">dataptr</span>: <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">c_char</span>) -&gt; (<span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">T</span>, <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">T</span>) {
     (<span class="kw-2">*</span><span class="ident">dataptr</span> <span class="kw">as</span> <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">T</span>, <span class="kw-2">*</span><span class="ident">dataptr</span>.<span class="ident">offset</span>(<span class="number">1</span>) <span class="kw">as</span> <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">T</span>)
 }
 
 <span class="attribute">#[<span class="ident">inline</span>(<span class="ident">always</span>)]</span>
-<span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">expand3</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">dataptr</span>: <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">c_char</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">T</span>, <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">T</span>, <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">T</span>) {
+<span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">expand3</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">dataptr</span>: <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">c_char</span>) -&gt; (<span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">T</span>, <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">T</span>, <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">T</span>) {
     (
         <span class="kw-2">*</span><span class="ident">dataptr</span> <span class="kw">as</span> <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">T</span>,
         <span class="kw-2">*</span><span class="ident">dataptr</span>.<span class="ident">offset</span>(<span class="number">1</span>) <span class="kw">as</span> <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">T</span>,
