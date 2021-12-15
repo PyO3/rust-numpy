@@ -125,7 +125,7 @@ features = ["extension-module"]
 ```
 
 ```rust
-use ndarray::{ArrayD, ArrayViewD, ArrayViewMutD};
+use numpy::ndarray::{ArrayD, ArrayViewD, ArrayViewMutD};
 use numpy::{IntoPyArray, PyArrayDyn, PyReadonlyArrayDyn};
 use pyo3::prelude::{pymodule, PyModule, PyResult, Python};
 
