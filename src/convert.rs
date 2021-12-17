@@ -10,7 +10,7 @@ use crate::{
     DataType, Element, PyArray,
 };
 
-/// Covnersion trait from some rust types to `PyArray`.
+/// Conversion trait from some rust types to `PyArray`.
 ///
 /// This trait takes `self`, which means **it holds a pointer to Rust heap, until `resize` or other
 /// destructive method is called**.
