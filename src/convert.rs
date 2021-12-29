@@ -158,7 +158,7 @@ where
     }
 }
 
-enum Order {
+pub(crate) enum Order {
     Standard,
     Fortran,
 }
@@ -172,7 +172,7 @@ impl Order {
     }
 }
 
-trait ArrayExt {
+pub(crate) trait ArrayExt {
     fn npy_strides(&self) -> NpyStrides;
     fn order(&self) -> Option<Order>;
 }
@@ -201,13 +201,13 @@ where
 }
 
 /// Numpy strides with short array optimization
-enum NpyStrides {
+pub(crate) enum NpyStrides {
     Short([npyffi::npy_intp; 8]),
     Long(Vec<npyffi::npy_intp>),
 }
 
 impl NpyStrides {
-    fn as_ptr(&self) -> *const npy_intp {
+    pub(crate) fn as_ptr(&self) -> *const npy_intp {
         match self {
             NpyStrides::Short(inner) => inner.as_ptr(),
             NpyStrides::Long(inner) => inner.as_ptr(),

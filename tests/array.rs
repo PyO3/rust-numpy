@@ -252,3 +252,40 @@ fn dtype_from_py() {
         assert_eq!(dtype.get_datatype().unwrap(), numpy::DataType::Uint32);
     })
 }
+
+#[test]
+fn borrow_from_array() {
+    use numpy::ndarray::Array1;
+    use pyo3::py_run;
+
+    #[pyclass]
+    struct Owner {
+        array: Array1<f64>,
+    }
+
+    #[pymethods]
+    impl Owner {
+        #[getter]
+        fn array<'py>(this: &'py PyCell<Self>) -> &'py PyArray1<f64> {
+            let array = &this.borrow().array;
+
+            unsafe { PyArray1::borrow_from_array(array, this) }
+        }
+    }
+
+    let array = Python::with_gil(|py| {
+        let owner = Py::new(
+            py,
+            Owner {
+                array: Array1::linspace(0., 1., 10),
+            },
+        )
+        .unwrap();
+
+        owner.getattr(py, "array").unwrap()
+    });
+
+    Python::with_gil(|py| {
+        py_run!(py, array, "assert array.shape == (10,)");
+    });
+}
