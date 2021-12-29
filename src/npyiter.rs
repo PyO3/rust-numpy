@@ -186,6 +186,7 @@ impl<'py, T: Element> NpySingleIterBuilder<'py, T, ReadWrite> {
 
 impl<'py, T: Element, I: IterMode> NpySingleIterBuilder<'py, T, I> {
     /// Sets a flag to this builder, returning `self`.
+    #[must_use]
     pub fn set(mut self, flag: NpyIterFlag) -> Self {
         self.flags |= flag.to_c_enum();
         self
@@ -388,6 +389,7 @@ impl<'py, T: Element> NpyMultiIterBuilder<'py, T, ()> {
     }
 
     /// Set a flag to this builder, returning `self`.
+    #[must_use]
     pub fn set(mut self, flag: NpyIterFlag) -> Self {
         self.flags |= flag.to_c_enum();
         self
