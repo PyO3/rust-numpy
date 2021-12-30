@@ -17,7 +17,7 @@ use std::{iter::ExactSizeIterator, marker::PhantomData};
 use crate::convert::{ArrayExt, IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
 use crate::dtype::{DataType, Element};
 use crate::error::{FromVecError, NotContiguousError, ShapeError};
-use crate::slice_box::SliceBox;
+use crate::owner::Owner;
 
 /// A safe, static-typed interface for
 /// [NumPy ndarray](https://numpy.org/doc/stable/reference/arrays.ndarray.html).
@@ -442,34 +442,39 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         Self::from_owned_ptr(py, ptr)
     }
 
-    pub(crate) unsafe fn from_boxed_slice<'py, ID>(
+    pub(crate) unsafe fn from_raw_parts<'py, ID, O>(
         py: Python<'py>,
         dims: ID,
         strides: *const npy_intp,
-        boxed_slice: Box<[T]>,
-        data_ptr: Option<*const T>,
+        data_ptr: *const T,
+        owner: O,
     ) -> &'py Self
     where
         ID: IntoDimension<Dim = D>,
+        Owner: From<O>,
     {
-        let dims = dims.into_dimension();
-        let data_ptr = data_ptr.unwrap_or_else(|| boxed_slice.as_ptr());
-        let container = SliceBox::new(boxed_slice);
-        let cell = pyo3::PyClassInitializer::from(container)
+        let owner = pyo3::PyClassInitializer::from(Owner::from(owner))
             .create_cell(py)
             .expect("Object creation failed.");
+
+        let dims = dims.into_dimension();
         let ptr = PY_ARRAY_API.PyArray_New(
             PY_ARRAY_API.get_type_object(npyffi::NpyTypes::PyArray_Type),
             dims.ndim_cint(),
             dims.as_dims_ptr(),
-            T::npy_type() as i32,
-            strides as *mut _,           // strides
-            data_ptr as _,               // data
-            mem::size_of::<T>() as i32,  // itemsize
-            npyffi::NPY_ARRAY_WRITEABLE, // flag
-            ptr::null_mut(),             // obj
+            T::npy_type() as c_int,
+            strides as *mut npy_intp,     // strides
+            data_ptr as *mut c_void,      // data
+            mem::size_of::<T>() as c_int, // itemsize
+            npyffi::NPY_ARRAY_WRITEABLE,  // flag
+            ptr::null_mut(),              // obj
         );
-        PY_ARRAY_API.PyArray_SetBaseObject(ptr as *mut npyffi::PyArrayObject, cell as _);
+
+        PY_ARRAY_API.PyArray_SetBaseObject(
+            ptr as *mut npyffi::PyArrayObject,
+            owner as *mut ffi::PyObject,
+        );
+
         Self::from_owned_ptr(py, ptr)
     }
 

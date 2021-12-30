@@ -41,8 +41,8 @@ mod dtype;
 mod error;
 pub mod npyffi;
 pub mod npyiter;
+mod owner;
 mod readonly;
-mod slice_box;
 mod sum_products;
 
 pub use ndarray;

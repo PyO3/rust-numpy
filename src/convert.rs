@@ -37,9 +37,10 @@ impl<T: Element> IntoPyArray for Box<[T]> {
     type Item = T;
     type Dim = Ix1;
     fn into_pyarray<'py>(self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
-        let len = self.len();
+        let dims = [self.len()];
         let strides = [mem::size_of::<T>() as npy_intp];
-        unsafe { PyArray::from_boxed_slice(py, [len], strides.as_ptr(), self, None) }
+        let data_ptr = self.as_ptr();
+        unsafe { PyArray::from_raw_parts(py, dims, strides.as_ptr(), data_ptr, self) }
     }
 }
 
@@ -47,7 +48,10 @@ impl<T: Element> IntoPyArray for Vec<T> {
     type Item = T;
     type Dim = Ix1;
     fn into_pyarray<'py>(self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
-        self.into_boxed_slice().into_pyarray(py)
+        let dims = [self.len()];
+        let strides = [mem::size_of::<T>() as npy_intp];
+        let data_ptr = self.as_ptr();
+        unsafe { PyArray::from_raw_parts(py, dims, strides.as_ptr(), data_ptr, self) }
     }
 }
 
@@ -59,21 +63,9 @@ where
     type Item = A;
     type Dim = D;
     fn into_pyarray<'py>(self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
-        let (strides, dim) = (self.npy_strides(), self.raw_dim());
-        let orig_ptr = self.as_ptr();
-        // Element of which size is 0 is not supported, but check it for future changes
-        let is_empty_or_size0 = self.is_empty() || std::mem::size_of::<A>() == 0;
-        let vec = self.into_raw_vec();
-        let offset = if is_empty_or_size0 {
-            0
-        } else {
-            (orig_ptr as usize - vec.as_ptr() as usize) / std::mem::size_of::<A>()
-        };
-        let mut boxed_slice = vec.into_boxed_slice();
-        // data_ptr is not always the pointer to the 1st element.
-        // See https://github.com/PyO3/rust-numpy/issues/182 for the detail.
-        let data_ptr = unsafe { boxed_slice.as_mut_ptr().add(offset) };
-        unsafe { PyArray::from_boxed_slice(py, dim, strides.as_ptr(), boxed_slice, Some(data_ptr)) }
+        let (strides, dims) = (self.npy_strides(), self.raw_dim());
+        let data_ptr = self.as_ptr();
+        unsafe { PyArray::from_raw_parts(py, dims, strides.as_ptr(), data_ptr, self) }
     }
 }
 
