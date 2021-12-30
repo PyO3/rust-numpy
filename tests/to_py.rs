@@ -248,6 +248,10 @@ fn slice_box_type_confusion() {
 
         let _py_arr = nd_arr.into_pyarray(py);
 
+        // Dropping `_arr` used to trigger a segmentation fault due to calling `Py_DECREF`
+        // on 1, 2 and 3 interpreted as pointers into the Python heap
+        // after having created a `SliceBox<PyObject>` backing `_py_arr`,
+        // c.f. https://github.com/PyO3/rust-numpy/issues/232.
         let vec = vec![1, 2, 3];
         let _arr = vec.into_pyarray(py);
     });

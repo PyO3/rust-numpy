@@ -4,29 +4,41 @@ use pyo3::pyclass_slots::PyClassDummySlot;
 use pyo3::type_object::{LazyStaticType, PyTypeInfo};
 use pyo3::{ffi, types::PyAny, PyCell};
 
-pub(crate) struct SliceBox<T> {
-    data: Box<[T]>,
+pub(crate) struct SliceBox {
+    ptr: *mut [u8],
+    drop: unsafe fn(*mut [u8]),
 }
 
-impl<T> SliceBox<T> {
-    pub(crate) fn new(data: Box<[T]>) -> Self {
-        Self { data }
+unsafe impl Send for SliceBox {}
+
+impl SliceBox {
+    pub(crate) fn new<T: Send>(data: Box<[T]>) -> Self {
+        unsafe fn drop_boxed_slice<T>(ptr: *mut [u8]) {
+            let _ = Box::from_raw(ptr as *mut [T]);
+        }
+
+        let ptr = Box::into_raw(data) as *mut [u8];
+        let drop = drop_boxed_slice::<T>;
+
+        Self { ptr, drop }
     }
 }
 
-impl<T> PyClass for SliceBox<T>
-where
-    T: Send,
-{
+impl Drop for SliceBox {
+    fn drop(&mut self) {
+        unsafe {
+            (self.drop)(self.ptr);
+        }
+    }
+}
+
+impl PyClass for SliceBox {
     type Dict = PyClassDummySlot;
     type WeakRef = PyClassDummySlot;
     type BaseNativeType = PyAny;
 }
 
-impl<T> PyClassImpl for SliceBox<T>
-where
-    T: Send,
-{
+impl PyClassImpl for SliceBox {
     const DOC: &'static str = "Memory store for PyArray using rust's Box<[T]> \0";
 
     type BaseType = PyAny;
@@ -34,10 +46,7 @@ where
     type ThreadChecker = ThreadCheckerStub<Self>;
 }
 
-unsafe impl<T> PyTypeInfo for SliceBox<T>
-where
-    T: Send,
-{
+unsafe impl PyTypeInfo for SliceBox {
     type AsRefTarget = PyCell<Self>;
     const NAME: &'static str = "SliceBox";
     const MODULE: Option<&'static str> = Some("_rust_numpy");
