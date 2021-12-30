@@ -448,8 +448,8 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         ID: IntoDimension<Dim = D>,
     {
         let dims = dims.into_dimension();
+        let data_ptr = data_ptr.unwrap_or(boxed_slice.as_ptr());
         let container = SliceBox::new(boxed_slice);
-        let data_ptr = data_ptr.unwrap_or(container.data.as_ptr());
         let cell = pyo3::PyClassInitializer::from(container)
             .create_cell(py)
             .expect("Object creation failed.");

@@ -1,10 +1,11 @@
 use pyo3::class::impl_::{PyClassImpl, ThreadCheckerStub};
 use pyo3::pyclass::PyClass;
 use pyo3::pyclass_slots::PyClassDummySlot;
-use pyo3::{ffi, type_object, types::PyAny, PyCell};
+use pyo3::type_object::{LazyStaticType, PyTypeInfo};
+use pyo3::{ffi, types::PyAny, PyCell};
 
 pub(crate) struct SliceBox<T> {
-    pub(crate) data: Box<[T]>,
+    data: Box<[T]>,
 }
 
 impl<T> SliceBox<T> {
@@ -33,7 +34,7 @@ where
     type ThreadChecker = ThreadCheckerStub<Self>;
 }
 
-unsafe impl<T> type_object::PyTypeInfo for SliceBox<T>
+unsafe impl<T> PyTypeInfo for SliceBox<T>
 where
     T: Send,
 {
@@ -43,7 +44,6 @@ where
 
     #[inline]
     fn type_object_raw(py: pyo3::Python) -> *mut ffi::PyTypeObject {
-        use pyo3::type_object::LazyStaticType;
         static TYPE_OBJECT: LazyStaticType = LazyStaticType::new();
         TYPE_OBJECT.get_or_init::<Self>(py)
     }
