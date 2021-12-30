@@ -432,31 +432,26 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
             PY_ARRAY_API.get_type_object(npyffi::NpyTypes::PyArray_Type),
             dims.ndim_cint(),
             dims.as_dims_ptr(),
-            T::npy_type() as i32,
-            strides as *mut _, // strides
-            ptr::null_mut(),   // data
-            0,                 // itemsize
-            flag,              // flag
-            ptr::null_mut(),   // obj
+            T::npy_type() as c_int,
+            strides as *mut npy_intp, // strides
+            ptr::null_mut(),          // data
+            0,                        // itemsize
+            flag,                     // flag
+            ptr::null_mut(),          // obj
         );
         Self::from_owned_ptr(py, ptr)
     }
 
-    pub(crate) unsafe fn from_raw_parts<'py, ID, O>(
+    unsafe fn new_with_data<'py, ID>(
         py: Python<'py>,
         dims: ID,
         strides: *const npy_intp,
         data_ptr: *const T,
-        owner: O,
+        owner: *mut PyAny,
     ) -> &'py Self
     where
         ID: IntoDimension<Dim = D>,
-        Owner: From<O>,
     {
-        let owner = pyo3::PyClassInitializer::from(Owner::from(owner))
-            .create_cell(py)
-            .expect("Object creation failed.");
-
         let dims = dims.into_dimension();
         let ptr = PY_ARRAY_API.PyArray_New(
             PY_ARRAY_API.get_type_object(npyffi::NpyTypes::PyArray_Type),
@@ -476,6 +471,24 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         );
 
         Self::from_owned_ptr(py, ptr)
+    }
+
+    pub(crate) unsafe fn from_raw_parts<'py, ID, O>(
+        py: Python<'py>,
+        dims: ID,
+        strides: *const npy_intp,
+        data_ptr: *const T,
+        owner: O,
+    ) -> &'py Self
+    where
+        ID: IntoDimension<Dim = D>,
+        Owner: From<O>,
+    {
+        let owner = pyo3::PyClassInitializer::from(Owner::from(owner))
+            .create_cell(py)
+            .expect("Object creation failed.");
+
+        Self::new_with_data(py, dims, strides, data_ptr, owner as *mut PyAny)
     }
 
     /// Creates a NumPy array backed by `array` and ties its ownership to the Python object `owner`.
@@ -515,26 +528,15 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         let (strides, dims) = (array.npy_strides(), array.raw_dim());
         let data_ptr = array.as_ptr();
 
-        let ptr = PY_ARRAY_API.PyArray_New(
-            PY_ARRAY_API.get_type_object(npyffi::NpyTypes::PyArray_Type),
-            dims.ndim_cint(),
-            dims.as_dims_ptr(),
-            T::npy_type() as c_int,
-            strides.as_ptr() as *mut npy_intp, // strides
-            data_ptr as *mut c_void,           // data
-            mem::size_of::<T>() as c_int,      // itemsize
-            0,                                 // flag
-            ptr::null_mut(),                   // obj
-        );
-
         mem::forget(owner.to_object(owner.py()));
 
-        PY_ARRAY_API.PyArray_SetBaseObject(
-            ptr as *mut npyffi::PyArrayObject,
-            owner as *const PyAny as *mut PyAny as *mut ffi::PyObject,
-        );
-
-        Self::from_owned_ptr(owner.py(), ptr)
+        Self::new_with_data(
+            owner.py(),
+            dims,
+            strides.as_ptr(),
+            data_ptr,
+            owner as *const PyAny as *mut PyAny,
+        )
     }
 
     /// Construct a new nd-dimensional array filled with 0.
