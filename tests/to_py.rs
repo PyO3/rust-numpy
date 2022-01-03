@@ -115,6 +115,16 @@ fn into_pyarray_cant_resize() {
     })
 }
 
+#[test]
+fn into_pyarray_can_write() {
+    let a = vec![1, 2, 3];
+    pyo3::Python::with_gil(|py| {
+        let arr = a.into_pyarray(py);
+        pyo3::py_run!(py, arr, "assert arr.flags['WRITEABLE']");
+        pyo3::py_run!(py, arr, "arr[1] = 4");
+    })
+}
+
 /// Check that into_pyarray works for ndarray of which the pointer of the first element is
 /// not at the start. See https://github.com/PyO3/rust-numpy/issues/182 for more
 #[test]
