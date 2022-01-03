@@ -1580,7 +1580,7 @@
             <span class="ident">ptr::null_mut</span>(),   <span class="comment">// data</span>
             <span class="number">0</span>,                 <span class="comment">// itemsize</span>
             <span class="ident">flag</span>,              <span class="comment">// flag</span>
-            <span class="ident">ptr::null_mut</span>(),   <span class="comment">//obj</span>
+            <span class="ident">ptr::null_mut</span>(),   <span class="comment">// obj</span>
         );
         <span class="ident"><span class="self">Self</span>::from_owned_ptr</span>(<span class="ident">py</span>, <span class="ident">ptr</span>)
     }
@@ -1606,11 +1606,11 @@
             <span class="ident">dims</span>.<span class="ident">ndim_cint</span>(),
             <span class="ident">dims</span>.<span class="ident">as_dims_ptr</span>(),
             <span class="ident">T::npy_type</span>() <span class="kw">as</span> <span class="ident">i32</span>,
-            <span class="ident">strides</span> <span class="kw">as</span> <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="kw">_</span>,          <span class="comment">// strides</span>
-            <span class="ident">data_ptr</span> <span class="kw">as</span> <span class="kw">_</span>,              <span class="comment">// data</span>
-            <span class="ident">mem::size_of</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>() <span class="kw">as</span> <span class="ident">i32</span>, <span class="comment">// itemsize</span>
-            <span class="number">0</span>,                          <span class="comment">// flag</span>
-            <span class="ident">ptr::null_mut</span>(),            <span class="comment">//obj</span>
+            <span class="ident">strides</span> <span class="kw">as</span> <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="kw">_</span>,           <span class="comment">// strides</span>
+            <span class="ident">data_ptr</span> <span class="kw">as</span> <span class="kw">_</span>,               <span class="comment">// data</span>
+            <span class="ident">mem::size_of</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>() <span class="kw">as</span> <span class="ident">i32</span>,  <span class="comment">// itemsize</span>
+            <span class="ident">npyffi::NPY_ARRAY_WRITEABLE</span>, <span class="comment">// flag</span>
+            <span class="ident">ptr::null_mut</span>(),             <span class="comment">// obj</span>
         );
         <span class="ident">PY_ARRAY_API</span>.<span class="ident">PyArray_SetBaseObject</span>(<span class="ident">ptr</span> <span class="kw">as</span> <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">npyffi::PyArrayObject</span>, <span class="ident">cell</span> <span class="kw">as</span> <span class="kw">_</span>);
         <span class="ident"><span class="self">Self</span>::from_owned_ptr</span>(<span class="ident">py</span>, <span class="ident">ptr</span>)
