@@ -1596,8 +1596,8 @@
         <span class="ident">ID</span>: <span class="ident">IntoDimension</span><span class="op">&lt;</span><span class="ident">Dim</span> <span class="op">=</span> <span class="ident">D</span><span class="op">&gt;</span>,
     {
         <span class="kw">let</span> <span class="ident">dims</span> <span class="op">=</span> <span class="ident">dims</span>.<span class="ident">into_dimension</span>();
+        <span class="kw">let</span> <span class="ident">data_ptr</span> <span class="op">=</span> <span class="ident">data_ptr</span>.<span class="ident">unwrap_or</span>(<span class="ident">boxed_slice</span>.<span class="ident">as_ptr</span>());
         <span class="kw">let</span> <span class="ident">container</span> <span class="op">=</span> <span class="ident">SliceBox::new</span>(<span class="ident">boxed_slice</span>);
-        <span class="kw">let</span> <span class="ident">data_ptr</span> <span class="op">=</span> <span class="ident">data_ptr</span>.<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">container</span>.<span class="ident">data</span>.<span class="ident">as_ptr</span>());
         <span class="kw">let</span> <span class="ident">cell</span> <span class="op">=</span> <span class="ident">pyo3::PyClassInitializer::from</span>(<span class="ident">container</span>)
             .<span class="ident">create_cell</span>(<span class="ident">py</span>)
             .<span class="ident">expect</span>(<span class="string">&quot;Object creation failed.&quot;</span>);

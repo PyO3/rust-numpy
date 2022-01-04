@@ -610,6 +610,8 @@
 <span id="610">610</span>
 <span id="611">611</span>
 <span id="612">612</span>
+<span id="613">613</span>
+<span id="614">614</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Wrapper of [Array Iterator API](https://numpy.org/doc/stable/reference/c-api/iterator.html).</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This module exposes two iterators:</span>
@@ -798,6 +800,7 @@
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>: <span class="ident">Element</span>, <span class="ident">I</span>: <span class="ident">IterMode</span><span class="op">&gt;</span> <span class="ident">NpySingleIterBuilder</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">I</span><span class="op">&gt;</span> {
     <span class="doccomment">/// Sets a flag to this builder, returning `self`.</span>
+    <span class="attribute">#[<span class="ident">must_use</span>]</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">flag</span>: <span class="ident">NpyIterFlag</span>) -&gt; <span class="self">Self</span> {
         <span class="self">self</span>.<span class="ident">flags</span> <span class="op">|</span><span class="op">=</span> <span class="ident">flag</span>.<span class="ident">to_c_enum</span>();
         <span class="self">self</span>
@@ -1000,6 +1003,7 @@
     }
 
     <span class="doccomment">/// Set a flag to this builder, returning `self`.</span>
+    <span class="attribute">#[<span class="ident">must_use</span>]</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">flag</span>: <span class="ident">NpyIterFlag</span>) -&gt; <span class="self">Self</span> {
         <span class="self">self</span>.<span class="ident">flags</span> <span class="op">|</span><span class="op">=</span> <span class="ident">flag</span>.<span class="ident">to_c_enum</span>();
         <span class="self">self</span>
