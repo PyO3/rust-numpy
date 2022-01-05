@@ -17,10 +17,12 @@ jobs:
           toolchain: stable
           profile: minimal
           components: rustfmt, clippy
-      - run: |
+      - env:
+          CLIPPYFLAGS: --deny warnings --allow clippy::needless-lifetimes
+        run: |
           cargo fmt --all -- --check
-          cargo clippy --tests
-          for example in examples/*; do (cd $example/; cargo clippy) || exit 1; done
+          cargo clippy --tests -- $CLIPPYFLAGS
+          for example in examples/*; do (cd $example/; cargo clippy -- $CLIPPYFLAGS) || exit 1; done
 
   test:
     name: python${{ matrix.python-version }}-${{ matrix.platform.python-architecture }} ${{ matrix.platform.os }}
