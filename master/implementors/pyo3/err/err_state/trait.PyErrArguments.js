@@ -1,3 +1,0 @@
-(function() {var implementors = {};
-implementors["numpy"] = [{"text":"impl PyErrArguments for ShapeError","synthetic":false,"types":[]},{"text":"impl PyErrArguments for FromVecError","synthetic":false,"types":[]},{"text":"impl PyErrArguments for NotContiguousError","synthetic":false,"types":[]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
