@@ -15,9 +15,9 @@ license = "BSD-2-Clause"
 [dependencies]
 cfg-if = "0.1"
 libc = "0.2"
-num-complex = ">= 0.2, <= 0.4"
+num-complex = "0.4"
 num-traits = "0.2"
-ndarray = ">= 0.13, < 0.16"
+ndarray = "0.15"
 pyo3 = { version = "0.15", default-features = false }
 
 [dev-dependencies]

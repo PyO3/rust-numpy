@@ -86,28 +86,17 @@ jobs:
           default: true
       - name: Install maturin, poetry, and toml
         run: pip install maturin poetry toml
-      - name: Create an isolated example directory
-        run: cp -r examples/simple-extension/ ../simple-extension-msrv
-      - name: Edit Cargo.toml and change the path of rust-numpy
+      - name: Override ndarray and num-complex dependencies
         run: |
-          import toml
-          cargo_toml = toml.load("Cargo.toml")
-          cargo_toml["dependencies"]["numpy"]["path"] = "../rust-numpy"
-          cargo_toml["dependencies"]["ndarray"] = "0.13.1"
-          cargo_toml["dependencies"]["num-complex"] = "0.2.4"
-          with open("Cargo.toml", "w") as f:
-            toml.dump(cargo_toml, f)
-        working-directory: ../simple-extension-msrv
-        shell: python
-      - name: Use ndarray 0.13.1
-        run: |
-          cargo generate-lockfile
-          cargo update -p $(cargo pkgid -p ndarray 2>&1 >/dev/null | grep 0.15 | sed -e 's/^[ \t]*//') --precise 0.13.1
-        working-directory: ../simple-extension-msrv
+          echo '[workspace]' >> Cargo.toml
+          echo '[patch.crates-io]' >> Cargo.toml
+          echo 'ndarray = { git = "https://github.com/rust-ndarray/ndarray.git", tag = "0.13.1" }' >> Cargo.toml
+          echo 'num-complex = { git = "https://github.com/rust-num/num-complex.git", tag = "num-complex-0.2.4" }' >> Cargo.toml
+        working-directory: examples/simple-extension
       - name: Test Example
         run: |
           poetry install && poetry run maturin develop && poetry run pytest
-        working-directory: ../simple-extension-msrv
+        working-directory: examples/simple-extension
         shell: bash
 
   linalg-example:
