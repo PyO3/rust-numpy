@@ -7,7 +7,7 @@ rust-numpy
 Rust bindings for the NumPy C-API.
 
 ## API documentation
-- [Latest release (possibly broken)](https://docs.rs/numpy)
+- [Latest release](https://docs.rs/numpy)
 - [Current main](https://pyo3.github.io/rust-numpy)
 
 
