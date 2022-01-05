@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - replace-documentation-on-gh-pages
 
 jobs:
   deploy:
