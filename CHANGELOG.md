@@ -1,7 +1,8 @@
 # Changelog
 
-- Unreleased
+- v0.15.1
   - Make arrays produced via `IntoPyArray`, i.e. those owning Rust data, writeable ([#235](https://github.com/PyO3/rust-numpy/pull/235))
+  - Fix thread-safety in internal API globals ([#222](https://github.com/PyO3/rust-numpy/pull/222))
 
 - v0.15.0
   - [Remove resolver from Cargo.toml](https://github.com/PyO3/rust-numpy/pull/202)
