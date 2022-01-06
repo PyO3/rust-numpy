@@ -1,11 +1,10 @@
 use crate::npyffi::{NpyTypes, PyArray_Descr, NPY_TYPES, PY_ARRAY_API};
+use cfg_if::cfg_if;
+use pyo3::{ffi, prelude::*, pyobject_native_type_core, types::PyType, AsPyPointer, PyNativeType};
+use std::os::raw::c_int;
+
 pub use num_complex::Complex32 as c32;
 pub use num_complex::Complex64 as c64;
-use pyo3::ffi;
-use pyo3::prelude::*;
-use pyo3::types::PyType;
-use pyo3::{AsPyPointer, PyNativeType};
-use std::os::raw::c_int;
 
 /// Binding of [`numpy.dtype`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.html).
 ///

@@ -3,8 +3,8 @@ use crate::npyffi::{self, npy_intp, NPY_ORDER, PY_ARRAY_API};
 use ndarray::*;
 use num_traits::AsPrimitive;
 use pyo3::{
-    ffi, prelude::*, type_object, types::PyAny, AsPyPointer, PyDowncastError, PyNativeType,
-    PyResult,
+    ffi, prelude::*, pyobject_native_type_info, pyobject_native_type_named, type_object,
+    types::PyAny, AsPyPointer, PyDowncastError, PyNativeType, PyResult,
 };
 use std::{
     cell::Cell,
