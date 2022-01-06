@@ -59,9 +59,8 @@ pub use crate::readonly::{
 pub use crate::sum_products::{dot, einsum_impl, inner};
 pub use ndarray::{array, Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};
 
-/// Test readme
-#[doc(hidden)]
-pub mod doc_test {
+#[cfg(doctest)]
+mod doctest {
     macro_rules! doc_comment {
         ($x: expr, $modname: ident) => {
             #[doc = $x]
