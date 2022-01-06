@@ -1,3 +1,0 @@
-(function() {var implementors = {};
-implementors["numpy"] = [{"text":"impl&lt;T, D&gt; PyLayout&lt;<a class=\"struct\" href=\"numpy/array/struct.PyArray.html\" title=\"struct numpy::array::PyArray\">PyArray</a>&lt;T, D&gt;&gt; for <a class=\"struct\" href=\"numpy/npyffi/objects/struct.PyArrayObject.html\" title=\"struct numpy::npyffi::objects::PyArrayObject\">PyArrayObject</a>","synthetic":false,"types":["numpy::npyffi::objects::PyArrayObject"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
