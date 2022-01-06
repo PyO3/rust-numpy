@@ -84,7 +84,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: 1.41.1
+          toolchain: 1.48.0
           default: true
       - name: Install maturin, poetry, and toml
         run: pip install maturin poetry toml

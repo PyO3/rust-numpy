@@ -8,6 +8,7 @@ authors = [
 description = "Rust binding of NumPy C-API"
 documentation = "https://pyo3.github.io/rust-numpy/numpy"
 edition = "2018"
+rust-version = "1.48"
 repository = "https://github.com/PyO3/rust-numpy"
 keywords = ["numpy", "python", "binding"]
 license = "BSD-2-Clause"
