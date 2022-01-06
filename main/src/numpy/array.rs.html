@@ -1146,6 +1146,70 @@
 <span id="1146">1146</span>
 <span id="1147">1147</span>
 <span id="1148">1148</span>
+<span id="1149">1149</span>
+<span id="1150">1150</span>
+<span id="1151">1151</span>
+<span id="1152">1152</span>
+<span id="1153">1153</span>
+<span id="1154">1154</span>
+<span id="1155">1155</span>
+<span id="1156">1156</span>
+<span id="1157">1157</span>
+<span id="1158">1158</span>
+<span id="1159">1159</span>
+<span id="1160">1160</span>
+<span id="1161">1161</span>
+<span id="1162">1162</span>
+<span id="1163">1163</span>
+<span id="1164">1164</span>
+<span id="1165">1165</span>
+<span id="1166">1166</span>
+<span id="1167">1167</span>
+<span id="1168">1168</span>
+<span id="1169">1169</span>
+<span id="1170">1170</span>
+<span id="1171">1171</span>
+<span id="1172">1172</span>
+<span id="1173">1173</span>
+<span id="1174">1174</span>
+<span id="1175">1175</span>
+<span id="1176">1176</span>
+<span id="1177">1177</span>
+<span id="1178">1178</span>
+<span id="1179">1179</span>
+<span id="1180">1180</span>
+<span id="1181">1181</span>
+<span id="1182">1182</span>
+<span id="1183">1183</span>
+<span id="1184">1184</span>
+<span id="1185">1185</span>
+<span id="1186">1186</span>
+<span id="1187">1187</span>
+<span id="1188">1188</span>
+<span id="1189">1189</span>
+<span id="1190">1190</span>
+<span id="1191">1191</span>
+<span id="1192">1192</span>
+<span id="1193">1193</span>
+<span id="1194">1194</span>
+<span id="1195">1195</span>
+<span id="1196">1196</span>
+<span id="1197">1197</span>
+<span id="1198">1198</span>
+<span id="1199">1199</span>
+<span id="1200">1200</span>
+<span id="1201">1201</span>
+<span id="1202">1202</span>
+<span id="1203">1203</span>
+<span id="1204">1204</span>
+<span id="1205">1205</span>
+<span id="1206">1206</span>
+<span id="1207">1207</span>
+<span id="1208">1208</span>
+<span id="1209">1209</span>
+<span id="1210">1210</span>
+<span id="1211">1211</span>
+<span id="1212">1212</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Safe interface for NumPy ndarray</span>
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::npyffi</span>::{<span class="self">self</span>, <span class="ident">npy_intp</span>, <span class="ident">NPY_ORDER</span>, <span class="ident">PY_ARRAY_API</span>};
 <span class="kw">use</span> <span class="ident">ndarray</span>::<span class="kw-2">*</span>;
@@ -1154,10 +1218,15 @@
     <span class="ident">ffi</span>, <span class="ident">prelude</span>::<span class="kw-2">*</span>, <span class="ident">type_object</span>, <span class="ident">types::PyAny</span>, <span class="ident">AsPyPointer</span>, <span class="ident">PyDowncastError</span>, <span class="ident">PyNativeType</span>,
     <span class="ident">PyResult</span>,
 };
-<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">cell::Cell</span>, <span class="ident">mem</span>, <span class="ident">os::raw::c_int</span>, <span class="ident">ptr</span>, <span class="ident">slice</span>};
+<span class="kw">use</span> <span class="ident">std</span>::{
+    <span class="ident">cell::Cell</span>,
+    <span class="ident">mem</span>,
+    <span class="ident">os::raw</span>::{<span class="ident">c_int</span>, <span class="ident">c_void</span>},
+    <span class="ident">ptr</span>, <span class="ident">slice</span>,
+};
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">iter::ExactSizeIterator</span>, <span class="ident">marker::PhantomData</span>};
 
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::convert</span>::{<span class="ident">IntoPyArray</span>, <span class="ident">NpyIndex</span>, <span class="ident">ToNpyDims</span>, <span class="ident">ToPyArray</span>};
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::convert</span>::{<span class="ident">ArrayExt</span>, <span class="ident">IntoPyArray</span>, <span class="ident">NpyIndex</span>, <span class="ident">ToNpyDims</span>, <span class="ident">ToPyArray</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::dtype</span>::{<span class="ident">DataType</span>, <span class="ident">Element</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::error</span>::{<span class="ident">FromVecError</span>, <span class="ident">NotContiguousError</span>, <span class="ident">ShapeError</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::slice_box::SliceBox</span>;
@@ -1614,6 +1683,65 @@
         );
         <span class="ident">PY_ARRAY_API</span>.<span class="ident">PyArray_SetBaseObject</span>(<span class="ident">ptr</span> <span class="kw">as</span> <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">npyffi::PyArrayObject</span>, <span class="ident">cell</span> <span class="kw">as</span> <span class="kw">_</span>);
         <span class="ident"><span class="self">Self</span>::from_owned_ptr</span>(<span class="ident">py</span>, <span class="ident">ptr</span>)
+    }
+
+    <span class="doccomment">/// Creates a NumPy array backed by `array` and ties its ownership to the Python object `owner`.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// # Safety</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// `owner` is set as a base object of the returned array which must not be dropped until `owner` is dropped.</span>
+    <span class="doccomment">/// Furthermore, `array` must not be reallocated from the time this method is called and until `owner` is dropped.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// # Example</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// ```rust</span>
+    <span class="doccomment">/// # use pyo3::prelude::*;</span>
+    <span class="doccomment">/// # use numpy::{ndarray::Array1, PyArray1};</span>
+    <span class="doccomment">/// #</span>
+    <span class="doccomment">/// #[pyclass]</span>
+    <span class="doccomment">/// struct Owner {</span>
+    <span class="doccomment">///     array: Array1&lt;f64&gt;,</span>
+    <span class="doccomment">/// }</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// #[pymethods]</span>
+    <span class="doccomment">/// impl Owner {</span>
+    <span class="doccomment">///     #[getter]</span>
+    <span class="doccomment">///     fn array&lt;&#39;py&gt;(this: &amp;&#39;py PyCell&lt;Self&gt;) -&gt; &amp;&#39;py PyArray1&lt;f64&gt; {</span>
+    <span class="doccomment">///         let array = &amp;this.borrow().array;</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">///         // SAFETY: The memory backing `array` will stay valid as long as this object is alive</span>
+    <span class="doccomment">///         // as we do not modify `array` in any way which would cause it to be reallocated.</span>
+    <span class="doccomment">///         unsafe { PyArray1::borrow_from_array(array, this) }</span>
+    <span class="doccomment">///     }</span>
+    <span class="doccomment">/// }</span>
+    <span class="doccomment">/// ```</span>
+    <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">borrow_from_array</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">S</span><span class="op">&gt;</span>(<span class="ident">array</span>: <span class="kw-2">&amp;</span><span class="ident">ArrayBase</span><span class="op">&lt;</span><span class="ident">S</span>, <span class="ident">D</span><span class="op">&gt;</span>, <span class="ident">owner</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyAny</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="self">Self</span>
+    <span class="kw">where</span>
+        <span class="ident">S</span>: <span class="ident">Data</span><span class="op">&lt;</span><span class="ident">Elem</span> <span class="op">=</span> <span class="ident">T</span><span class="op">&gt;</span>,
+    {
+        <span class="kw">let</span> (<span class="ident">strides</span>, <span class="ident">dims</span>) <span class="op">=</span> (<span class="ident">array</span>.<span class="ident">npy_strides</span>(), <span class="ident">array</span>.<span class="ident">raw_dim</span>());
+        <span class="kw">let</span> <span class="ident">data_ptr</span> <span class="op">=</span> <span class="ident">array</span>.<span class="ident">as_ptr</span>();
+
+        <span class="kw">let</span> <span class="ident">ptr</span> <span class="op">=</span> <span class="ident">PY_ARRAY_API</span>.<span class="ident">PyArray_New</span>(
+            <span class="ident">PY_ARRAY_API</span>.<span class="ident">get_type_object</span>(<span class="ident">npyffi::NpyTypes::PyArray_Type</span>),
+            <span class="ident">dims</span>.<span class="ident">ndim_cint</span>(),
+            <span class="ident">dims</span>.<span class="ident">as_dims_ptr</span>(),
+            <span class="ident">T::npy_type</span>() <span class="kw">as</span> <span class="ident">c_int</span>,
+            <span class="ident">strides</span>.<span class="ident">as_ptr</span>() <span class="kw">as</span> <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">npy_intp</span>, <span class="comment">// strides</span>
+            <span class="ident">data_ptr</span> <span class="kw">as</span> <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">c_void</span>,           <span class="comment">// data</span>
+            <span class="ident">mem::size_of</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>() <span class="kw">as</span> <span class="ident">c_int</span>,      <span class="comment">// itemsize</span>
+            <span class="number">0</span>,                                 <span class="comment">// flag</span>
+            <span class="ident">ptr::null_mut</span>(),                   <span class="comment">// obj</span>
+        );
+
+        <span class="ident">mem::forget</span>(<span class="ident">owner</span>.<span class="ident">to_object</span>(<span class="ident">owner</span>.<span class="ident">py</span>()));
+
+        <span class="ident">PY_ARRAY_API</span>.<span class="ident">PyArray_SetBaseObject</span>(
+            <span class="ident">ptr</span> <span class="kw">as</span> <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">npyffi::PyArrayObject</span>,
+            <span class="ident">owner</span> <span class="kw">as</span> <span class="kw-2">*</span><span class="kw">const</span> <span class="ident">PyAny</span> <span class="kw">as</span> <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">PyAny</span> <span class="kw">as</span> <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">ffi::PyObject</span>,
+        );
+
+        <span class="ident"><span class="self">Self</span>::from_owned_ptr</span>(<span class="ident">owner</span>.<span class="ident">py</span>(), <span class="ident">ptr</span>)
     }
 
     <span class="doccomment">/// Construct a new nd-dimensional array filled with 0.</span>
