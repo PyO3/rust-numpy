@@ -6,10 +6,15 @@ use pyo3::{
     ffi, prelude::*, type_object, types::PyAny, AsPyPointer, PyDowncastError, PyNativeType,
     PyResult,
 };
-use std::{cell::Cell, mem, os::raw::c_int, ptr, slice};
+use std::{
+    cell::Cell,
+    mem,
+    os::raw::{c_int, c_void},
+    ptr, slice,
+};
 use std::{iter::ExactSizeIterator, marker::PhantomData};
 
-use crate::convert::{IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
+use crate::convert::{ArrayExt, IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
 use crate::dtype::{DataType, Element};
 use crate::error::{FromVecError, NotContiguousError, ShapeError};
 use crate::slice_box::SliceBox;
@@ -466,6 +471,65 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         );
         PY_ARRAY_API.PyArray_SetBaseObject(ptr as *mut npyffi::PyArrayObject, cell as _);
         Self::from_owned_ptr(py, ptr)
+    }
+
+    /// Creates a NumPy array backed by `array` and ties its ownership to the Python object `owner`.
+    ///
+    /// # Safety
+    ///
+    /// `owner` is set as a base object of the returned array which must not be dropped until `owner` is dropped.
+    /// Furthermore, `array` must not be reallocated from the time this method is called and until `owner` is dropped.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use pyo3::prelude::*;
+    /// # use numpy::{ndarray::Array1, PyArray1};
+    /// #
+    /// #[pyclass]
+    /// struct Owner {
+    ///     array: Array1<f64>,
+    /// }
+    ///
+    /// #[pymethods]
+    /// impl Owner {
+    ///     #[getter]
+    ///     fn array<'py>(this: &'py PyCell<Self>) -> &'py PyArray1<f64> {
+    ///         let array = &this.borrow().array;
+    ///
+    ///         // SAFETY: The memory backing `array` will stay valid as long as this object is alive
+    ///         // as we do not modify `array` in any way which would cause it to be reallocated.
+    ///         unsafe { PyArray1::borrow_from_array(array, this) }
+    ///     }
+    /// }
+    /// ```
+    pub unsafe fn borrow_from_array<'py, S>(array: &ArrayBase<S, D>, owner: &'py PyAny) -> &'py Self
+    where
+        S: Data<Elem = T>,
+    {
+        let (strides, dims) = (array.npy_strides(), array.raw_dim());
+        let data_ptr = array.as_ptr();
+
+        let ptr = PY_ARRAY_API.PyArray_New(
+            PY_ARRAY_API.get_type_object(npyffi::NpyTypes::PyArray_Type),
+            dims.ndim_cint(),
+            dims.as_dims_ptr(),
+            T::npy_type() as c_int,
+            strides.as_ptr() as *mut npy_intp, // strides
+            data_ptr as *mut c_void,           // data
+            mem::size_of::<T>() as c_int,      // itemsize
+            0,                                 // flag
+            ptr::null_mut(),                   // obj
+        );
+
+        mem::forget(owner.to_object(owner.py()));
+
+        PY_ARRAY_API.PyArray_SetBaseObject(
+            ptr as *mut npyffi::PyArrayObject,
+            owner as *const PyAny as *mut PyAny as *mut ffi::PyObject,
+        );
+
+        Self::from_owned_ptr(owner.py(), ptr)
     }
 
     /// Construct a new nd-dimensional array filled with 0.
