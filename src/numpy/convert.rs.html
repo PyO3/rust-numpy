@@ -305,14 +305,6 @@
 <span id="305">305</span>
 <span id="306">306</span>
 <span id="307">307</span>
-<span id="308">308</span>
-<span id="309">309</span>
-<span id="310">310</span>
-<span id="311">311</span>
-<span id="312">312</span>
-<span id="313">313</span>
-<span id="314">314</span>
-<span id="315">315</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Defines conversion traits between rust types and numpy data types.</span>
 
 <span class="kw">use</span> <span class="ident">ndarray</span>::{<span class="ident">ArrayBase</span>, <span class="ident">Data</span>, <span class="ident">Dimension</span>, <span class="ident">IntoDimension</span>, <span class="ident">Ix1</span>, <span class="ident">OwnedRepr</span>};
@@ -352,9 +344,10 @@
     <span class="kw">type</span> <span class="ident">Item</span> <span class="op">=</span> <span class="ident">T</span>;
     <span class="kw">type</span> <span class="ident">Dim</span> <span class="op">=</span> <span class="ident">Ix1</span>;
     <span class="kw">fn</span> <span class="ident">into_pyarray</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>(<span class="self">self</span>, <span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Item</span>, <span class="ident"><span class="self">Self</span>::Dim</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">len</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">len</span>();
+        <span class="kw">let</span> <span class="ident">dims</span> <span class="op">=</span> [<span class="self">self</span>.<span class="ident">len</span>()];
         <span class="kw">let</span> <span class="ident">strides</span> <span class="op">=</span> [<span class="ident">mem::size_of</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>() <span class="kw">as</span> <span class="ident">npy_intp</span>];
-        <span class="kw">unsafe</span> { <span class="ident">PyArray::from_boxed_slice</span>(<span class="ident">py</span>, [<span class="ident">len</span>], <span class="ident">strides</span>.<span class="ident">as_ptr</span>(), <span class="self">self</span>, <span class="prelude-val">None</span>) }
+        <span class="kw">let</span> <span class="ident">data_ptr</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">as_ptr</span>();
+        <span class="kw">unsafe</span> { <span class="ident">PyArray::from_raw_parts</span>(<span class="ident">py</span>, <span class="ident">dims</span>, <span class="ident">strides</span>.<span class="ident">as_ptr</span>(), <span class="ident">data_ptr</span>, <span class="self">self</span>) }
     }
 }
 
@@ -362,7 +355,10 @@
     <span class="kw">type</span> <span class="ident">Item</span> <span class="op">=</span> <span class="ident">T</span>;
     <span class="kw">type</span> <span class="ident">Dim</span> <span class="op">=</span> <span class="ident">Ix1</span>;
     <span class="kw">fn</span> <span class="ident">into_pyarray</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>(<span class="self">self</span>, <span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Item</span>, <span class="ident"><span class="self">Self</span>::Dim</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">into_boxed_slice</span>().<span class="ident">into_pyarray</span>(<span class="ident">py</span>)
+        <span class="kw">let</span> <span class="ident">dims</span> <span class="op">=</span> [<span class="self">self</span>.<span class="ident">len</span>()];
+        <span class="kw">let</span> <span class="ident">strides</span> <span class="op">=</span> [<span class="ident">mem::size_of</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>() <span class="kw">as</span> <span class="ident">npy_intp</span>];
+        <span class="kw">let</span> <span class="ident">data_ptr</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">as_ptr</span>();
+        <span class="kw">unsafe</span> { <span class="ident">PyArray::from_raw_parts</span>(<span class="ident">py</span>, <span class="ident">dims</span>, <span class="ident">strides</span>.<span class="ident">as_ptr</span>(), <span class="ident">data_ptr</span>, <span class="self">self</span>) }
     }
 }
 
@@ -374,21 +370,9 @@
     <span class="kw">type</span> <span class="ident">Item</span> <span class="op">=</span> <span class="ident">A</span>;
     <span class="kw">type</span> <span class="ident">Dim</span> <span class="op">=</span> <span class="ident">D</span>;
     <span class="kw">fn</span> <span class="ident">into_pyarray</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>(<span class="self">self</span>, <span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Item</span>, <span class="ident"><span class="self">Self</span>::Dim</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> (<span class="ident">strides</span>, <span class="ident">dim</span>) <span class="op">=</span> (<span class="self">self</span>.<span class="ident">npy_strides</span>(), <span class="self">self</span>.<span class="ident">raw_dim</span>());
-        <span class="kw">let</span> <span class="ident">orig_ptr</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">as_ptr</span>();
-        <span class="comment">// Element of which size is 0 is not supported, but check it for future changes</span>
-        <span class="kw">let</span> <span class="ident">is_empty_or_size0</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">is_empty</span>() <span class="op">|</span><span class="op">|</span> <span class="ident">std::mem::size_of</span>::<span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>() <span class="op">==</span> <span class="number">0</span>;
-        <span class="kw">let</span> <span class="ident">vec</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">into_raw_vec</span>();
-        <span class="kw">let</span> <span class="ident">offset</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">is_empty_or_size0</span> {
-            <span class="number">0</span>
-        } <span class="kw">else</span> {
-            (<span class="ident">orig_ptr</span> <span class="kw">as</span> <span class="ident">usize</span> <span class="op">-</span> <span class="ident">vec</span>.<span class="ident">as_ptr</span>() <span class="kw">as</span> <span class="ident">usize</span>) <span class="op">/</span> <span class="ident">std::mem::size_of</span>::<span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>()
-        };
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">boxed_slice</span> <span class="op">=</span> <span class="ident">vec</span>.<span class="ident">into_boxed_slice</span>();
-        <span class="comment">// data_ptr is not always the pointer to the 1st element.</span>
-        <span class="comment">// See https://github.com/PyO3/rust-numpy/issues/182 for the detail.</span>
-        <span class="kw">let</span> <span class="ident">data_ptr</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="ident">boxed_slice</span>.<span class="ident">as_mut_ptr</span>().<span class="ident">add</span>(<span class="ident">offset</span>) };
-        <span class="kw">unsafe</span> { <span class="ident">PyArray::from_boxed_slice</span>(<span class="ident">py</span>, <span class="ident">dim</span>, <span class="ident">strides</span>.<span class="ident">as_ptr</span>(), <span class="ident">boxed_slice</span>, <span class="prelude-val">Some</span>(<span class="ident">data_ptr</span>)) }
+        <span class="kw">let</span> (<span class="ident">strides</span>, <span class="ident">dims</span>) <span class="op">=</span> (<span class="self">self</span>.<span class="ident">npy_strides</span>(), <span class="self">self</span>.<span class="ident">raw_dim</span>());
+        <span class="kw">let</span> <span class="ident">data_ptr</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">as_ptr</span>();
+        <span class="kw">unsafe</span> { <span class="ident">PyArray::from_raw_parts</span>(<span class="ident">py</span>, <span class="ident">dims</span>, <span class="ident">strides</span>.<span class="ident">as_ptr</span>(), <span class="ident">data_ptr</span>, <span class="self">self</span>) }
     }
 }
 
