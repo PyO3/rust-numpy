@@ -17,7 +17,7 @@ use std::{iter::ExactSizeIterator, marker::PhantomData};
 use crate::convert::{ArrayExt, IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
 use crate::dtype::{DataType, Element};
 use crate::error::{FromVecError, NotContiguousError, ShapeError};
-use crate::slice_box::SliceBox;
+use crate::slice_container::PySliceContainer;
 
 /// A safe, static-typed interface for
 /// [NumPy ndarray](https://numpy.org/doc/stable/reference/arrays.ndarray.html).
@@ -432,53 +432,71 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
             PY_ARRAY_API.get_type_object(npyffi::NpyTypes::PyArray_Type),
             dims.ndim_cint(),
             dims.as_dims_ptr(),
-            T::npy_type() as i32,
-            strides as *mut _, // strides
-            ptr::null_mut(),   // data
-            0,                 // itemsize
-            flag,              // flag
-            ptr::null_mut(),   // obj
+            T::npy_type() as c_int,
+            strides as *mut npy_intp, // strides
+            ptr::null_mut(),          // data
+            0,                        // itemsize
+            flag,                     // flag
+            ptr::null_mut(),          // obj
         );
         Self::from_owned_ptr(py, ptr)
     }
 
-    pub(crate) unsafe fn from_boxed_slice<'py, ID>(
+    unsafe fn new_with_data<'py, ID>(
         py: Python<'py>,
         dims: ID,
         strides: *const npy_intp,
-        boxed_slice: Box<[T]>,
-        data_ptr: Option<*const T>,
+        data_ptr: *const T,
+        container: *mut PyAny,
     ) -> &'py Self
     where
         ID: IntoDimension<Dim = D>,
     {
         let dims = dims.into_dimension();
-        let data_ptr = data_ptr.unwrap_or_else(|| boxed_slice.as_ptr());
-        let container = SliceBox::new(boxed_slice);
-        let cell = pyo3::PyClassInitializer::from(container)
-            .create_cell(py)
-            .expect("Object creation failed.");
         let ptr = PY_ARRAY_API.PyArray_New(
             PY_ARRAY_API.get_type_object(npyffi::NpyTypes::PyArray_Type),
             dims.ndim_cint(),
             dims.as_dims_ptr(),
-            T::npy_type() as i32,
-            strides as *mut _,           // strides
-            data_ptr as _,               // data
-            mem::size_of::<T>() as i32,  // itemsize
-            npyffi::NPY_ARRAY_WRITEABLE, // flag
-            ptr::null_mut(),             // obj
+            T::npy_type() as c_int,
+            strides as *mut npy_intp,     // strides
+            data_ptr as *mut c_void,      // data
+            mem::size_of::<T>() as c_int, // itemsize
+            npyffi::NPY_ARRAY_WRITEABLE,  // flag
+            ptr::null_mut(),              // obj
         );
-        PY_ARRAY_API.PyArray_SetBaseObject(ptr as *mut npyffi::PyArrayObject, cell as _);
+
+        PY_ARRAY_API.PyArray_SetBaseObject(
+            ptr as *mut npyffi::PyArrayObject,
+            container as *mut ffi::PyObject,
+        );
+
         Self::from_owned_ptr(py, ptr)
     }
 
-    /// Creates a NumPy array backed by `array` and ties its ownership to the Python object `owner`.
+    pub(crate) unsafe fn from_raw_parts<'py, ID, C>(
+        py: Python<'py>,
+        dims: ID,
+        strides: *const npy_intp,
+        data_ptr: *const T,
+        container: C,
+    ) -> &'py Self
+    where
+        ID: IntoDimension<Dim = D>,
+        PySliceContainer: From<C>,
+    {
+        let container = pyo3::PyClassInitializer::from(PySliceContainer::from(container))
+            .create_cell(py)
+            .expect("Object creation failed.");
+
+        Self::new_with_data(py, dims, strides, data_ptr, container as *mut PyAny)
+    }
+
+    /// Creates a NumPy array backed by `array` and ties its ownership to the Python object `container`.
     ///
     /// # Safety
     ///
-    /// `owner` is set as a base object of the returned array which must not be dropped until `owner` is dropped.
-    /// Furthermore, `array` must not be reallocated from the time this method is called and until `owner` is dropped.
+    /// `container` is set as a base object of the returned array which must not be dropped until `container` is dropped.
+    /// Furthermore, `array` must not be reallocated from the time this method is called and until `container` is dropped.
     ///
     /// # Example
     ///
@@ -503,33 +521,27 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     ///     }
     /// }
     /// ```
-    pub unsafe fn borrow_from_array<'py, S>(array: &ArrayBase<S, D>, owner: &'py PyAny) -> &'py Self
+    pub unsafe fn borrow_from_array<'py, S>(
+        array: &ArrayBase<S, D>,
+        container: &'py PyAny,
+    ) -> &'py Self
     where
         S: Data<Elem = T>,
     {
         let (strides, dims) = (array.npy_strides(), array.raw_dim());
         let data_ptr = array.as_ptr();
 
-        let ptr = PY_ARRAY_API.PyArray_New(
-            PY_ARRAY_API.get_type_object(npyffi::NpyTypes::PyArray_Type),
-            dims.ndim_cint(),
-            dims.as_dims_ptr(),
-            T::npy_type() as c_int,
-            strides.as_ptr() as *mut npy_intp, // strides
-            data_ptr as *mut c_void,           // data
-            mem::size_of::<T>() as c_int,      // itemsize
-            0,                                 // flag
-            ptr::null_mut(),                   // obj
-        );
+        let py = container.py();
 
-        mem::forget(owner.to_object(owner.py()));
+        mem::forget(container.to_object(py));
 
-        PY_ARRAY_API.PyArray_SetBaseObject(
-            ptr as *mut npyffi::PyArrayObject,
-            owner as *const PyAny as *mut PyAny as *mut ffi::PyObject,
-        );
-
-        Self::from_owned_ptr(owner.py(), ptr)
+        Self::new_with_data(
+            py,
+            dims,
+            strides.as_ptr(),
+            data_ptr,
+            container as *const PyAny as *mut PyAny,
+        )
     }
 
     /// Construct a new nd-dimensional array filled with 0.

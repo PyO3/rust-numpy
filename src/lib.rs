@@ -42,7 +42,7 @@ mod error;
 pub mod npyffi;
 pub mod npyiter;
 mod readonly;
-mod slice_box;
+mod slice_container;
 mod sum_products;
 
 pub use ndarray;
