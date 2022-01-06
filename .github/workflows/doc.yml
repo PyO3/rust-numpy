@@ -8,8 +8,6 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    outputs:
-      tag_name: ${{ steps.prepare_tag.outputs.tag_name }}
     steps:
       - uses: actions/checkout@v2
       - name: Build the doc
@@ -17,16 +15,10 @@ jobs:
           cargo doc --all-features --no-deps
           echo "<meta http-equiv=refresh content=0;url=pyo3/index.html>" > target/doc/index.html
 
-      - name: Prepare tag
-        id: prepare_tag
-        run: |
-           TAG_NAME="${GITHUB_REF##*/}"
-           echo "::set-output name=tag_name::${TAG_NAME}"
-
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3.7.0-8
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./target/doc/
-          destination_dir: ${{ steps.prepare_tag.outputs.tag_name }}
-          full_commit_message: 'Upload documentation for ${{ steps.prepare_tag.outputs.tag_name }}'
+          destination_dir: .
+          full_commit_message: 'Upload documentation for current main'
