@@ -23,26 +23,6 @@ Rust bindings for the NumPy C-API.
 - [numpy](https://numpy.org/) installed in your Python environments (e.g., via `pip install numpy`)
   - We recommend `numpy >= 1.16.0`, though older versions may work
 
-**Note:**
-Starting from 0.3, rust-numpy migrated from rust-cpython to PyO3.
-If you want to use rust-cpython, use version 0.2.1 from crates.io.
-
-
-## Python 2 support
-Version 0.5.0 is the last version that supports Python 2.
-
-If you want to compile this library with Python 2, please use 0.5.0 from crates.io.
-
-In addition, you have to add a feature flag in `Cargo.toml` like
-``` toml
-[dependencies.numpy]
-version = "0.5.0"
-features = ["python2"]
-```
-
-You can also automatically specify the Python version in `setup.py`,
-using [setuptools-rust](https://github.com/PyO3/setuptools-rust).
-
 
 ## Dependency on ndarray
 
