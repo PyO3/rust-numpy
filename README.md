@@ -31,7 +31,7 @@ Rust bindings for the NumPy C-API.
 name = "numpy-test"
 
 [dependencies]
-pyo3 = "0.15"
+pyo3 = { version = "0.15", features = ["auto-initialize"] }
 numpy = "0.15"
 ```
 
@@ -68,11 +68,8 @@ name = "rust_ext"
 crate-type = ["cdylib"]
 
 [dependencies]
+pyo3 = { version = "0.15", features = ["extension-module"] }
 numpy = "0.15"
-
-[dependencies.pyo3]
-version = "0.15"
-features = ["extension-module"]
 ```
 
 ```rust
