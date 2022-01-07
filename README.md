@@ -10,7 +10,6 @@ Rust bindings for the NumPy C-API.
 - [Latest release](https://docs.rs/numpy)
 - [Current main](https://pyo3.github.io/rust-numpy)
 
-
 ## Requirements
 - Rust >= 1.41.1
   - Basically, our MSRV follows the one of [PyO3](https://github.com/PyO3/pyo3)
@@ -23,35 +22,7 @@ Rust bindings for the NumPy C-API.
 - [numpy](https://numpy.org/) installed in your Python environments (e.g., via `pip install numpy`)
   - We recommend `numpy >= 1.16.0`, though older versions may work
 
-
-## Dependency on ndarray
-
-This crate uses types from `ndarray` in its public API. `ndarray` is re-exported
-in the crate root so that you do not need to specify it as a direct dependency.
-
-Furthermore, this crate is compatible with multiple versions of `ndarray` and therefore depends
-on a range of semver-incompatible versions, currently `>= 0.13, < 0.16`. Cargo does not
-automatically choose a single version of `ndarray` by itself if you depend directly or indirectly
-on anything but that exact range. It can therefore be necessary to manually unify these dependencies.
-
-For example, if you specify the following dependencies
-
-```toml
-numpy = "0.15"
-ndarray = "0.13"
-```
-
-this will currently depend on both version `0.13.1` and `0.15.3` of `ndarray` by default
-even though `0.13.1` is within the range `>= 0.13, < 0.16`. To fix this, you can run
-
-```sh
-cargo update ---package ndarray:0.15.3 --precise 0.13.1
-```
-
-to achieve a single dependency on version `0.13.1` of `ndarray`.
-
 ## Example
-
 
 ### Execute a Python program from Rust and get results
 
@@ -145,6 +116,32 @@ fn rust_ext(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     Ok(())
 }
 ```
+
+## Dependency on ndarray
+
+This crate uses types from `ndarray` in its public API. `ndarray` is re-exported
+in the crate root so that you do not need to specify it as a direct dependency.
+
+Furthermore, this crate is compatible with multiple versions of `ndarray` and therefore depends
+on a range of semver-incompatible versions, currently `>= 0.13, < 0.16`. Cargo does not
+automatically choose a single version of `ndarray` by itself if you depend directly or indirectly
+on anything but that exact range. It can therefore be necessary to manually unify these dependencies.
+
+For example, if you specify the following dependencies
+
+```toml
+numpy = "0.15"
+ndarray = "0.13"
+```
+
+this will currently depend on both version `0.13.1` and `0.15.3` of `ndarray` by default
+even though `0.13.1` is within the range `>= 0.13, < 0.16`. To fix this, you can run
+
+```sh
+cargo update ---package ndarray:0.15.3 --precise 0.13.1
+```
+
+to achieve a single dependency on version `0.13.1` of `ndarray`.
 
 ## Contributing
 We welcome [issues](https://github.com/PyO3/rust-numpy/issues)
