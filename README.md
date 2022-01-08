@@ -24,42 +24,11 @@ Rust bindings for the NumPy C-API.
 
 ## Example
 
-### Execute a Python program from Rust and get results
-
-``` toml
-[package]
-name = "numpy-test"
-
-[dependencies]
-pyo3 = { version = "0.15", features = ["auto-initialize"] }
-numpy = "0.15"
-```
-
-```rust
-use numpy::PyArray1;
-use pyo3::prelude::{PyResult, Python};
-use pyo3::types::IntoPyDict;
-
-fn main() -> PyResult<()> {
-    Python::with_gil(|py| {
-        let np = py.import("numpy")?;
-        let locals = [("np", np)].into_py_dict(py);
-        let pyarray: &PyArray1<i32> = py
-            .eval("np.absolute(np.array([-1, -2, -3], dtype='int32'))", Some(locals), None)?
-            .extract()?;
-        let readonly = pyarray.readonly();
-        let slice = readonly.as_slice()?;
-        assert_eq!(slice, &[1, 2, 3]);
-        Ok(())
-    })
-}
-
-```
-
 ### Write a Python module in Rust
 
 Please see the [simple-extension](https://github.com/PyO3/rust-numpy/tree/main/examples/simple-extension)
 directory for the complete example.
+
 Also, we have an example project with [ndarray-linalg](https://github.com/PyO3/rust-numpy/tree/main/examples/linalg).
 
 ```toml
@@ -114,6 +83,38 @@ fn rust_ext(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
 }
 ```
 
+### Execute a Python program from Rust and get results
+
+``` toml
+[package]
+name = "numpy-test"
+
+[dependencies]
+pyo3 = { version = "0.15", features = ["auto-initialize"] }
+numpy = "0.15"
+```
+
+```rust
+use numpy::PyArray1;
+use pyo3::prelude::{PyResult, Python};
+use pyo3::types::IntoPyDict;
+
+fn main() -> PyResult<()> {
+    Python::with_gil(|py| {
+        let np = py.import("numpy")?;
+        let locals = [("np", np)].into_py_dict(py);
+        let pyarray: &PyArray1<i32> = py
+            .eval("np.absolute(np.array([-1, -2, -3], dtype='int32'))", Some(locals), None)?
+            .extract()?;
+        let readonly = pyarray.readonly();
+        let slice = readonly.as_slice()?;
+        assert_eq!(slice, &[1, 2, 3]);
+        Ok(())
+    })
+}
+
+```
+
 ## Dependency on ndarray
 
 This crate uses types from `ndarray` in its public API. `ndarray` is re-exported
@@ -141,6 +142,7 @@ cargo update ---package ndarray:0.15.3 --precise 0.13.1
 to achieve a single dependency on version `0.13.1` of `ndarray`.
 
 ## Contributing
+
 We welcome [issues](https://github.com/PyO3/rust-numpy/issues)
 and [pull requests](https://github.com/PyO3/rust-numpy/pulls).
 
