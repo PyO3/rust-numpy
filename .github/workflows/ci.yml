@@ -17,6 +17,8 @@ jobs:
           toolchain: stable
           profile: minimal
           components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v1
+        continue-on-error: true
       - env:
           CLIPPYFLAGS: --deny warnings --allow clippy::needless-lifetimes
         run: |
@@ -87,30 +89,32 @@ jobs:
           profile: minimal
           toolchain: 1.48.0
           default: true
+      - uses: Swatinem/rust-cache@v1
+        with:
+          working-directory: examples/simple-extension
+        continue-on-error: true
       - name: Install maturin, poetry, and toml
         run: pip install maturin poetry toml
-      - name: Create an isolated example directory
-        run: cp -r examples/simple-extension/ ../simple-extension-msrv
-      - name: Edit Cargo.toml and change the path of rust-numpy
+      - name: Edit Cargo.toml and detach from workspace
         run: |
           import toml
           cargo_toml = toml.load("Cargo.toml")
-          cargo_toml["dependencies"]["numpy"]["path"] = "../rust-numpy"
           cargo_toml["dependencies"]["ndarray"] = "0.13.1"
           cargo_toml["dependencies"]["num-complex"] = "0.2.4"
+          cargo_toml["workspace"] = {}
           with open("Cargo.toml", "w") as f:
             toml.dump(cargo_toml, f)
-        working-directory: ../simple-extension-msrv
+        working-directory: examples/simple-extension
         shell: python
       - name: Use ndarray 0.13.1
         run: |
           cargo generate-lockfile
           cargo update -p $(cargo pkgid -p ndarray 2>&1 >/dev/null | grep 0.15 | sed -e 's/^[ \t]*//') --precise 0.13.1
-        working-directory: ../simple-extension-msrv
+        working-directory: examples/simple-extension
       - name: Test Example
         run: |
           poetry install && poetry run maturin develop && poetry run pytest
-        working-directory: ../simple-extension-msrv
+        working-directory: examples/simple-extension
         shell: bash
 
   linalg-example:
@@ -128,6 +132,8 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
+      - uses: Swatinem/rust-cache@v1
+        continue-on-error: true
       - name: Install maturin and poetry
         run: pip install maturin poetry
       - name: Test Examples
