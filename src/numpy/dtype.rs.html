@@ -288,15 +288,13 @@
 <span id="288">288</span>
 <span id="289">289</span>
 <span id="290">290</span>
-<span id="291">291</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::npyffi</span>::{<span class="ident">NpyTypes</span>, <span class="ident">PyArray_Descr</span>, <span class="ident">NPY_TYPES</span>, <span class="ident">PY_ARRAY_API</span>};
+<span class="kw">use</span> <span class="ident">cfg_if::cfg_if</span>;
+<span class="kw">use</span> <span class="ident">pyo3</span>::{<span class="ident">ffi</span>, <span class="ident">prelude</span>::<span class="kw-2">*</span>, <span class="ident">pyobject_native_type_core</span>, <span class="ident">types::PyType</span>, <span class="ident">AsPyPointer</span>, <span class="ident">PyNativeType</span>};
+<span class="kw">use</span> <span class="ident">std::os::raw::c_int</span>;
+
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">num_complex::Complex32</span> <span class="kw">as</span> <span class="ident">c32</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">num_complex::Complex64</span> <span class="kw">as</span> <span class="ident">c64</span>;
-<span class="kw">use</span> <span class="ident">pyo3::ffi</span>;
-<span class="kw">use</span> <span class="ident">pyo3::prelude</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident">pyo3::types::PyType</span>;
-<span class="kw">use</span> <span class="ident">pyo3</span>::{<span class="ident">AsPyPointer</span>, <span class="ident">PyNativeType</span>};
-<span class="kw">use</span> <span class="ident">std::os::raw::c_int</span>;
 
 <span class="doccomment">/// Binding of [`numpy.dtype`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.html).</span>
 <span class="doccomment">///</span>
