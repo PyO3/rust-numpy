@@ -31,48 +31,58 @@ jobs:
     runs-on: ${{ matrix.platform.os }}
     needs: [lint, check-msrv, linalg-example]
     strategy:
-      max-parallel: 16
+      fail-fast: false
       matrix:
-        python-version: [3.6, 3.7, 3.8, 3.9]
+        python-version: [3.7, 3.8, 3.9]
         platform: [
           { os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" },
           { os: "macOS-latest",   python-architecture: "x64", rust-target: "x86_64-apple-darwin" },
           { os: "windows-latest", python-architecture: "x64", rust-target: "x86_64-pc-windows-msvc" },
           { os: "windows-latest", python-architecture: "x86", rust-target: "i686-pc-windows-msvc" },
         ]
+        include:
+          # PyPy and NumPy on macOS and Windows is too slow and brittle
+          - python-version: pypy-3.7
+            platform: { os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" }
+          - python-version: pypy-3.8
+            platform: { os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" }
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
+          architecture: ${{ matrix.platform.python-architecture }}
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
+          profile: minimal
+          target: ${{ matrix.platform.rust-target }}
           default: true
-      - run: rustup set default-host ${{ matrix.platform.rust-target }}
+      - name: Enable Cargo resolver v2 to avoid PyO3 features missing in PyPy
+        run: echo 'resolver = "2"' >> Cargo.toml
       - name: Build without default features
-        run: cargo build --no-default-features --verbose
+        run: cargo build --no-default-features
       - name: Build with default features
-        run: cargo build --verbose
-      - name: Install test dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install maturin numpy poetry
+        run: cargo build
       - name: Run cargo test
-        run: cargo test --verbose
-      - name: Test Examples
         run: |
-          for example_dir in 'examples/simple-extension'; do
-              pushd $example_dir && \
-                poetry install && \
-                poetry run maturin develop && \
-                poetry run pytest && \
-                popd
-          done
-        shell: bash
+            pip install numpy
+            cargo test
+        # Not on PyPy, because no embedding API
+        if: ${{ !startsWith(matrix.python-version, 'pypy') }}
+      - name: Install poetry
+        run: pip install poetry
+      - name: Test example
+        run: |
+            poetry install
+            poetry run maturin develop
+            poetry run pytest
+        working-directory: examples/simple-extension
     env:
+      CARGO_TERM_VERBOSE: true
+      CARGO_BUILD_TARGET: ${{ matrix.platform.rust-target }}
       RUST_BACKTRACE: 1
 
   check-msrv:
@@ -93,8 +103,8 @@ jobs:
         with:
           working-directory: examples/simple-extension
         continue-on-error: true
-      - name: Install maturin, poetry, and toml
-        run: pip install maturin poetry toml
+      - name: Install toml and poetry
+        run: pip install toml poetry
       - name: Edit Cargo.toml and detach from workspace
         run: |
           import toml
@@ -111,11 +121,12 @@ jobs:
           cargo generate-lockfile
           cargo update -p $(cargo pkgid -p ndarray 2>&1 >/dev/null | grep 0.15 | sed -e 's/^[ \t]*//') --precise 0.13.1
         working-directory: examples/simple-extension
-      - name: Test Example
+      - name: Test example
         run: |
-          poetry install && poetry run maturin develop && poetry run pytest
+          poetry install
+          poetry run maturin develop
+          poetry run pytest
         working-directory: examples/simple-extension
-        shell: bash
 
   linalg-example:
     runs-on: ubuntu-latest
@@ -134,11 +145,11 @@ jobs:
           toolchain: stable
       - uses: Swatinem/rust-cache@v1
         continue-on-error: true
-      - name: Install maturin and poetry
-        run: pip install maturin poetry
-      - name: Test Examples
+      - name: Install poetry
+        run: pip install poetry
+      - name: Test example
         run: |
-          cd examples/linalg && \
-            poetry install && \
-            poetry run maturin develop && \
+            poetry install
+            poetry run maturin develop
             poetry run pytest
+        working-directory: examples/linalg
