@@ -11,4 +11,4 @@ crate-type = ["cdylib"]
 [dependencies]
 pyo3 = { version = "0.15", features = ["extension-module"] }
 numpy = { path = "../.." }
-ndarray-linalg = { version = "0.14.1", features = ["openblas-static"] }
+ndarray-linalg = { version = "0.14.1", features = ["openblas-system"] }

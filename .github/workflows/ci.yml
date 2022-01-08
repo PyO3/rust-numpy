@@ -151,9 +151,8 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
-      - name: Install gfortran
-        run: |
-          sudo apt install -y gfortran
+      - name: Install OpenBLAS
+        run: sudo apt install --yes libopenblas-dev
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
