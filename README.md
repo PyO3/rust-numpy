@@ -10,7 +10,6 @@ Rust bindings for the NumPy C-API.
 - [Latest release](https://docs.rs/numpy)
 - [Current main](https://pyo3.github.io/rust-numpy)
 
-
 ## Requirements
 - Rust >= 1.41.1
   - Basically, our MSRV follows the one of [PyO3](https://github.com/PyO3/pyo3)
@@ -23,92 +22,13 @@ Rust bindings for the NumPy C-API.
 - [numpy](https://numpy.org/) installed in your Python environments (e.g., via `pip install numpy`)
   - We recommend `numpy >= 1.16.0`, though older versions may work
 
-**Note:**
-Starting from 0.3, rust-numpy migrated from rust-cpython to PyO3.
-If you want to use rust-cpython, use version 0.2.1 from crates.io.
-
-
-## Python 2 support
-Version 0.5.0 is the last version that supports Python 2.
-
-If you want to compile this library with Python 2, please use 0.5.0 from crates.io.
-
-In addition, you have to add a feature flag in `Cargo.toml` like
-``` toml
-[dependencies.numpy]
-version = "0.5.0"
-features = ["python2"]
-```
-
-You can also automatically specify the Python version in `setup.py`,
-using [setuptools-rust](https://github.com/PyO3/setuptools-rust).
-
-
-## Dependency on ndarray
-
-This crate uses types from `ndarray` in its public API. `ndarray` is re-exported
-in the crate root so that you do not need to specify it as a direct dependency.
-
-Furthermore, this crate is compatible with multiple versions of `ndarray` and therefore depends
-on a range of semver-incompatible versions, currently `>= 0.13, < 0.16`. Cargo does not
-automatically choose a single version of `ndarray` by itself if you depend directly or indirectly
-on anything but that exact range. It can therefore be necessary to manually unify these dependencies.
-
-For example, if you specify the following dependencies
-
-```toml
-numpy = "0.15"
-ndarray = "0.13"
-```
-
-this will currently depend on both version `0.13.1` and `0.15.3` of `ndarray` by default
-even though `0.13.1` is within the range `>= 0.13, < 0.16`. To fix this, you can run
-
-```sh
-cargo update ---package ndarray:0.15.3 --precise 0.13.1
-```
-
-to achieve a single dependency on version `0.13.1` of `ndarray`.
-
 ## Example
-
-
-### Execute a Python program from Rust and get results
-
-``` toml
-[package]
-name = "numpy-test"
-
-[dependencies]
-pyo3 = "0.15"
-numpy = "0.15"
-```
-
-```rust
-use numpy::PyArray1;
-use pyo3::prelude::{PyResult, Python};
-use pyo3::types::IntoPyDict;
-
-fn main() -> PyResult<()> {
-    Python::with_gil(|py| {
-        let np = py.import("numpy")?;
-        let locals = [("np", np)].into_py_dict(py);
-        let pyarray: &PyArray1<i32> = py
-            .eval("np.absolute(np.array([-1, -2, -3], dtype='int32'))", Some(locals), None)?
-            .extract()?;
-        let readonly = pyarray.readonly();
-        let slice = readonly.as_slice()?;
-        assert_eq!(slice, &[1, 2, 3]);
-        Ok(())
-    })
-}
-
-```
 
 ### Write a Python module in Rust
 
 Please see the [simple-extension](https://github.com/PyO3/rust-numpy/tree/main/examples/simple-extension)
 directory for the complete example.
+
 Also, we have an example project with [ndarray-linalg](https://github.com/PyO3/rust-numpy/tree/main/examples/linalg).
 
 ```toml
@@ -117,11 +37,8 @@ name = "rust_ext"
 crate-type = ["cdylib"]
 
 [dependencies]
+pyo3 = { version = "0.15", features = ["extension-module"] }
 numpy = "0.15"
-
-[dependencies.pyo3]
-version = "0.15"
-features = ["extension-module"]
 ```
 
 ```rust
@@ -166,7 +83,66 @@ fn rust_ext(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
 }
 ```
 
+### Execute a Python program from Rust and get results
+
+``` toml
+[package]
+name = "numpy-test"
+
+[dependencies]
+pyo3 = { version = "0.15", features = ["auto-initialize"] }
+numpy = "0.15"
+```
+
+```rust
+use numpy::PyArray1;
+use pyo3::prelude::{PyResult, Python};
+use pyo3::types::IntoPyDict;
+
+fn main() -> PyResult<()> {
+    Python::with_gil(|py| {
+        let np = py.import("numpy")?;
+        let locals = [("np", np)].into_py_dict(py);
+        let pyarray: &PyArray1<i32> = py
+            .eval("np.absolute(np.array([-1, -2, -3], dtype='int32'))", Some(locals), None)?
+            .extract()?;
+        let readonly = pyarray.readonly();
+        let slice = readonly.as_slice()?;
+        assert_eq!(slice, &[1, 2, 3]);
+        Ok(())
+    })
+}
+
+```
+
+## Dependency on ndarray
+
+This crate uses types from `ndarray` in its public API. `ndarray` is re-exported
+in the crate root so that you do not need to specify it as a direct dependency.
+
+Furthermore, this crate is compatible with multiple versions of `ndarray` and therefore depends
+on a range of semver-incompatible versions, currently `>= 0.13, < 0.16`. Cargo does not
+automatically choose a single version of `ndarray` by itself if you depend directly or indirectly
+on anything but that exact range. It can therefore be necessary to manually unify these dependencies.
+
+For example, if you specify the following dependencies
+
+```toml
+numpy = "0.15"
+ndarray = "0.13"
+```
+
+this will currently depend on both version `0.13.1` and `0.15.3` of `ndarray` by default
+even though `0.13.1` is within the range `>= 0.13, < 0.16`. To fix this, you can run
+
+```sh
+cargo update ---package ndarray:0.15.3 --precise 0.13.1
+```
+
+to achieve a single dependency on version `0.13.1` of `ndarray`.
+
 ## Contributing
+
 We welcome [issues](https://github.com/PyO3/rust-numpy/issues)
 and [pull requests](https://github.com/PyO3/rust-numpy/pulls).
 
