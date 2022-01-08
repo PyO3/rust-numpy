@@ -17,6 +17,7 @@ jobs:
           toolchain: stable
           profile: minimal
           components: rustfmt, clippy
+          default: true
       - uses: Swatinem/rust-cache@v1
         continue-on-error: true
       - env:
@@ -41,7 +42,7 @@ jobs:
           { os: "windows-latest", python-architecture: "x86", rust-target: "i686-pc-windows-msvc" },
         ]
         include:
-          # PyPy and NumPy on macOS and Windows is too slow and brittle
+          # NumPy does not provide pre-built wheels for PyPy on macOS and Windows
           - python-version: pypy-3.7
             platform: { os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" }
           - python-version: pypy-3.8
@@ -60,30 +61,36 @@ jobs:
           profile: minimal
           target: ${{ matrix.platform.rust-target }}
           default: true
-      - name: Enable Cargo resolver v2 to avoid PyO3 features missing in PyPy
-        run: echo 'resolver = "2"' >> Cargo.toml
+      - name: Install toml
+        run: pip install toml
+      - name: Edit Cargo.toml and enable new resolver
+        run: |
+          import toml
+          cargo_toml = toml.load("Cargo.toml")
+          cargo_toml["workspace"]["resolver"] = "2"
+          with open("Cargo.toml", "w") as f:
+            toml.dump(cargo_toml, f)
+        shell: python
       - name: Build without default features
         run: cargo build --no-default-features
       - name: Build with default features
         run: cargo build
-      - name: Run cargo test
+      - name: Test
         run: |
             pip install numpy
             cargo test
         # Not on PyPy, because no embedding API
         if: ${{ !startsWith(matrix.python-version, 'pypy') }}
-      - name: Install poetry
-        run: pip install poetry
       - name: Test example
         run: |
-            poetry install
-            poetry run maturin develop
-            poetry run pytest
+          pip install tox
+          tox
         working-directory: examples/simple-extension
     env:
       CARGO_TERM_VERBOSE: true
       CARGO_BUILD_TARGET: ${{ matrix.platform.rust-target }}
       RUST_BACKTRACE: 1
+      TOX_TESTENV_PASSENV: CARGO_BUILD_TARGET
 
   check-msrv:
     runs-on: ubuntu-latest
@@ -93,18 +100,18 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
-      - name: Install MSRV Rust
+      - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
-          profile: minimal
           toolchain: 1.48.0
+          profile: minimal
           default: true
       - uses: Swatinem/rust-cache@v1
         with:
           working-directory: examples/simple-extension
         continue-on-error: true
-      - name: Install toml and poetry
-        run: pip install toml poetry
+      - name: Install toml
+        run: pip install toml
       - name: Edit Cargo.toml and detach from workspace
         run: |
           import toml
@@ -116,16 +123,24 @@ jobs:
             toml.dump(cargo_toml, f)
         working-directory: examples/simple-extension
         shell: python
-      - name: Use ndarray 0.13.1
-        run: |
-          cargo generate-lockfile
-          cargo update -p $(cargo pkgid -p ndarray 2>&1 >/dev/null | grep 0.15 | sed -e 's/^[ \t]*//') --precise 0.13.1
+      - name: Generate lockfile
+        run: cargo generate-lockfile
         working-directory: examples/simple-extension
+      - name: Unify dependencies on ndarray to 0.13.1
+        run: |
+          import toml
+          import subprocess
+          cargo_lock = toml.load("Cargo.lock")
+          for pkg in cargo_lock["package"]:
+            if pkg["name"] == "ndarray" and pkg["version"] != "0.13.1":
+              pkg_id = pkg["name"] + ":" + pkg["version"]
+              subprocess.run(["cargo", "update", "--package", pkg_id, "--precise", "0.13.1"], check=True)
+        working-directory: examples/simple-extension
+        shell: python
       - name: Test example
         run: |
-          poetry install
-          poetry run maturin develop
-          poetry run pytest
+          pip install tox
+          tox
         working-directory: examples/simple-extension
 
   linalg-example:
@@ -143,13 +158,12 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
+          profile: minimal
+          default: true
       - uses: Swatinem/rust-cache@v1
         continue-on-error: true
-      - name: Install poetry
-        run: pip install poetry
       - name: Test example
         run: |
-            poetry install
-            poetry run maturin develop
-            poetry run pytest
+          pip install tox
+          tox
         working-directory: examples/linalg
