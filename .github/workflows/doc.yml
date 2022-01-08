@@ -11,7 +11,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Build the doc
-        run: cargo doc --all-features --no-deps
+        run: |
+          cargo doc --all-features --no-deps
+          echo "<meta http-equiv=refresh content=0;url=numpy/index.html>" > target/doc/index.html
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3.7.0-8
