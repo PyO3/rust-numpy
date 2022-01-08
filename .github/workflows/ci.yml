@@ -27,6 +27,7 @@ jobs:
   test:
     name: python${{ matrix.python-version }}-${{ matrix.platform.python-architecture }} ${{ matrix.platform.os }}
     runs-on: ${{ matrix.platform.os }}
+    needs: [lint, check-msrv, linalg-example]
     strategy:
       max-parallel: 16
       matrix:
