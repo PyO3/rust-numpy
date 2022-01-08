@@ -13,7 +13,7 @@ const CAPSULE_NAME: &str = "_ARRAY_API";
 /// A global variable which stores a ['capsule'](https://docs.python.org/3/c-api/capsule.html)
 /// pointer to [Numpy Array API](https://numpy.org/doc/stable/reference/c-api/array.html).
 ///
-/// You can acceess raw C APIs via this variable.
+/// You can access raw C APIs via this variable.
 ///
 /// See [PyArrayAPI](struct.PyArrayAPI.html) for what methods you can use via this variable.
 ///
