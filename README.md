@@ -2,7 +2,7 @@ rust-numpy
 ===========
 [![Actions Status](https://github.com/PyO3/rust-numpy/workflows/CI/badge.svg)](https://github.com/PyO3/rust-numpy/actions)
 [![Crate](https://img.shields.io/crates/v/numpy.svg)](https://crates.io/crates/numpy)
-[![Minimum rustc 1.41](https://img.shields.io/badge/rustc-1.41+-blue.svg)](https://rust-lang.github.io/rfcs/2495-min-rust-version.html)
+[![Minimum rustc 1.48](https://img.shields.io/badge/rustc-1.48+-blue.svg)](https://rust-lang.github.io/rfcs/2495-min-rust-version.html)
 
 Rust bindings for the NumPy C-API.
 
@@ -11,7 +11,7 @@ Rust bindings for the NumPy C-API.
 - [Current main](https://pyo3.github.io/rust-numpy)
 
 ## Requirements
-- Rust >= 1.41.1
+- Rust >= 1.48.0
   - Basically, our MSRV follows the one of [PyO3](https://github.com/PyO3/pyo3)
 - Python >= 3.6
   - Python 3.5 support is dropped from 0.13
