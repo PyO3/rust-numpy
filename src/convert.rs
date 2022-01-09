@@ -7,7 +7,7 @@ use std::{mem, os::raw::c_int};
 
 use crate::{
     npyffi::{self, npy_intp},
-    DataType, Element, PyArray,
+    Element, PyArray,
 };
 
 /// Conversion trait from some rust types to `PyArray`.
@@ -123,7 +123,7 @@ where
     fn to_pyarray<'py>(&self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
         let len = self.len();
         match self.order() {
-            Some(order) if A::DATA_TYPE != DataType::Object => {
+            Some(order) if A::IS_COPY => {
                 // if the array is contiguous, copy it by `copy_ptr`.
                 let strides = self.npy_strides();
                 unsafe {

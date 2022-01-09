@@ -15,7 +15,7 @@ use std::{
 use std::{iter::ExactSizeIterator, marker::PhantomData};
 
 use crate::convert::{ArrayExt, IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
-use crate::dtype::{DataType, Element};
+use crate::dtype::Element;
 use crate::error::{DimensionalityError, FromVecError, NotContiguousError, TypeError};
 use crate::slice_container::PySliceContainer;
 
@@ -852,7 +852,7 @@ impl<T: Element> PyArray<T, Ix1> {
     pub fn from_slice<'py>(py: Python<'py>, slice: &[T]) -> &'py Self {
         unsafe {
             let array = PyArray::new(py, [slice.len()], false);
-            if T::DATA_TYPE != DataType::Object {
+            if T::IS_COPY {
                 array.copy_ptr(slice.as_ptr(), slice.len());
             } else {
                 let data_ptr = array.data();

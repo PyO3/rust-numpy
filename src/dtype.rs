@@ -257,7 +257,7 @@ impl DataType {
 /// pub struct Wrapper(pub Py<CustomElement>);
 ///
 /// unsafe impl Element for Wrapper {
-///     const DATA_TYPE: DataType = DataType::Object;
+///     const IS_COPY: bool = false;
 ///
 ///     fn get_dtype(py: Python) -> &PyArrayDescr {
 ///         PyArrayDescr::object(py)
@@ -273,17 +273,23 @@ impl DataType {
 /// });
 /// ```
 pub unsafe trait Element: Clone + Send {
-    /// `DataType` corresponding to this type.
-    const DATA_TYPE: DataType;
+    /// Flag that indicates whether this type is trivially copyable.
+    ///
+    /// It should be set to true for all trivially copyable types (like scalar types
+    /// and record/array types only containing trivially copyable fields and elements).
+    ///
+    /// This flag should *always* be set to `false` for object types or record types
+    /// that contain object-type fields.
+    const IS_COPY: bool;
 
-    /// Create `dtype`.
+    /// Returns the associated array descriptor ("dtype") for the given type.
     fn get_dtype(py: Python) -> &PyArrayDescr;
 }
 
 macro_rules! impl_num_element {
     ($ty:ty, $data_type:expr) => {
         unsafe impl Element for $ty {
-            const DATA_TYPE: DataType = $data_type;
+            const IS_COPY: bool = true;
 
             fn get_dtype(py: Python) -> &PyArrayDescr {
                 PyArrayDescr::from_npy_type(py, $data_type.into_npy_type())
@@ -315,7 +321,7 @@ cfg_if! {
 }
 
 unsafe impl Element for PyObject {
-    const DATA_TYPE: DataType = DataType::Object;
+    const IS_COPY: bool = false;
 
     fn get_dtype(py: Python) -> &PyArrayDescr {
         PyArrayDescr::object(py)
