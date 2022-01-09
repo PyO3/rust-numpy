@@ -259,10 +259,6 @@ impl DataType {
 /// unsafe impl Element for Wrapper {
 ///     const DATA_TYPE: DataType = DataType::Object;
 ///
-///     fn is_same_type(dtype: &PyArrayDescr) -> bool {
-///         dtype.get_datatype() == Some(DataType::Object)
-///     }
-///
 ///     fn get_dtype(py: Python) -> &PyArrayDescr {
 ///         PyArrayDescr::object(py)
 ///     }
@@ -280,9 +276,6 @@ pub unsafe trait Element: Clone + Send {
     /// `DataType` corresponding to this type.
     const DATA_TYPE: DataType;
 
-    /// Returns if the give `dtype` is convertible to `Self` in Rust.
-    fn is_same_type(dtype: &PyArrayDescr) -> bool;
-
     /// Create `dtype`.
     fn get_dtype(py: Python) -> &PyArrayDescr;
 }
@@ -291,10 +284,6 @@ macro_rules! impl_num_element {
     ($ty:ty, $data_type:expr) => {
         unsafe impl Element for $ty {
             const DATA_TYPE: DataType = $data_type;
-
-            fn is_same_type(dtype: &PyArrayDescr) -> bool {
-                dtype.get_datatype() == Some($data_type)
-            }
 
             fn get_dtype(py: Python) -> &PyArrayDescr {
                 PyArrayDescr::from_npy_type(py, $data_type.into_npy_type())
@@ -327,10 +316,6 @@ cfg_if! {
 
 unsafe impl Element for PyObject {
     const DATA_TYPE: DataType = DataType::Object;
-
-    fn is_same_type(dtype: &PyArrayDescr) -> bool {
-        dtype.get_typenum() == NPY_TYPES::NPY_OBJECT as i32
-    }
 
     fn get_dtype(py: Python) -> &PyArrayDescr {
         PyArrayDescr::object(py)
