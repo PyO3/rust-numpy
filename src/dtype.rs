@@ -1,10 +1,11 @@
 use std::mem::size_of;
 use std::os::raw::{c_int, c_long, c_longlong, c_short, c_uint, c_ulong, c_ulonglong, c_ushort};
 
-use crate::npyffi::{NpyTypes, PyArray_Descr, NPY_TYPES, PY_ARRAY_API};
 use cfg_if::cfg_if;
 use num_traits::{Bounded, Zero};
 use pyo3::{ffi, prelude::*, pyobject_native_type_core, types::PyType, AsPyPointer, PyNativeType};
+
+use crate::npyffi::{NpyTypes, PyArray_Descr, NPY_TYPES, PY_ARRAY_API};
 
 pub use num_complex::Complex32 as c32;
 pub use num_complex::Complex64 as c64;
@@ -85,17 +86,20 @@ impl PyArrayDescr {
 
     fn from_npy_type(py: Python, npy_type: NPY_TYPES) -> &Self {
         unsafe {
-            let descr = PY_ARRAY_API.PyArray_DescrFromType(npy_type as i32);
+            let descr = PY_ARRAY_API.PyArray_DescrFromType(npy_type as _);
             py.from_owned_ptr(descr as _)
         }
     }
 
-    pub(crate) fn get_typenum(&self) -> std::os::raw::c_int {
+    /// Retrieves the
+    /// [enumerated type](https://numpy.org/doc/stable/reference/c-api/dtype.html#enumerated-types)
+    /// for this type descriptor.
+    pub fn get_typenum(&self) -> c_int {
         unsafe { *self.as_dtype_ptr() }.type_num
     }
 }
 
-/// Represents numpy data type.
+/// Represents NumPy data type.
 ///
 /// This is an incomplete counterpart of
 /// [Enumerated Types](https://numpy.org/doc/stable/reference/c-api/dtype.html#enumerated-types)
@@ -119,26 +123,32 @@ pub enum DataType {
 }
 
 impl DataType {
-    /// Construct `DataType` from
-    /// [Enumerated Types](https://numpy.org/doc/stable/reference/c-api/dtype.html#enumerated-types).
+    /// Convert `self` into an
+    /// [enumerated type](https://numpy.org/doc/stable/reference/c-api/dtype.html#enumerated-types).
+    pub fn into_typenum(self) -> c_int {
+        self.into_npy_type() as _
+    }
+
+    /// Construct the data type from an
+    /// [enumerated type](https://numpy.org/doc/stable/reference/c-api/dtype.html#enumerated-types).
     pub fn from_typenum(typenum: c_int) -> Option<Self> {
         Some(match typenum {
-            x if x == NPY_TYPES::NPY_BOOL as i32 => DataType::Bool,
-            x if x == NPY_TYPES::NPY_BYTE as i32 => DataType::Int8,
-            x if x == NPY_TYPES::NPY_SHORT as i32 => DataType::Int16,
-            x if x == NPY_TYPES::NPY_INT as i32 => Self::integer::<c_int>()?,
-            x if x == NPY_TYPES::NPY_LONG as i32 => Self::integer::<c_long>()?,
-            x if x == NPY_TYPES::NPY_LONGLONG as i32 => Self::integer::<c_longlong>()?,
-            x if x == NPY_TYPES::NPY_UBYTE as i32 => DataType::Uint8,
-            x if x == NPY_TYPES::NPY_USHORT as i32 => DataType::Uint16,
-            x if x == NPY_TYPES::NPY_UINT as i32 => Self::integer::<c_uint>()?,
-            x if x == NPY_TYPES::NPY_ULONG as i32 => Self::integer::<c_ulong>()?,
-            x if x == NPY_TYPES::NPY_ULONGLONG as i32 => Self::integer::<c_ulonglong>()?,
-            x if x == NPY_TYPES::NPY_FLOAT as i32 => DataType::Float32,
-            x if x == NPY_TYPES::NPY_DOUBLE as i32 => DataType::Float64,
-            x if x == NPY_TYPES::NPY_CFLOAT as i32 => DataType::Complex32,
-            x if x == NPY_TYPES::NPY_CDOUBLE as i32 => DataType::Complex64,
-            x if x == NPY_TYPES::NPY_OBJECT as i32 => DataType::Object,
+            x if x == NPY_TYPES::NPY_BOOL as c_int => DataType::Bool,
+            x if x == NPY_TYPES::NPY_BYTE as c_int => DataType::Int8,
+            x if x == NPY_TYPES::NPY_SHORT as c_int => DataType::Int16,
+            x if x == NPY_TYPES::NPY_INT as c_int => Self::integer::<c_int>()?,
+            x if x == NPY_TYPES::NPY_LONG as c_int => Self::integer::<c_long>()?,
+            x if x == NPY_TYPES::NPY_LONGLONG as c_int => Self::integer::<c_longlong>()?,
+            x if x == NPY_TYPES::NPY_UBYTE as c_int => DataType::Uint8,
+            x if x == NPY_TYPES::NPY_USHORT as c_int => DataType::Uint16,
+            x if x == NPY_TYPES::NPY_UINT as c_int => Self::integer::<c_uint>()?,
+            x if x == NPY_TYPES::NPY_ULONG as c_int => Self::integer::<c_ulong>()?,
+            x if x == NPY_TYPES::NPY_ULONGLONG as c_int => Self::integer::<c_ulonglong>()?,
+            x if x == NPY_TYPES::NPY_FLOAT as c_int => DataType::Float32,
+            x if x == NPY_TYPES::NPY_DOUBLE as c_int => DataType::Float64,
+            x if x == NPY_TYPES::NPY_CFLOAT as c_int => DataType::Complex32,
+            x if x == NPY_TYPES::NPY_CDOUBLE as c_int => DataType::Complex64,
+            x if x == NPY_TYPES::NPY_OBJECT as c_int => DataType::Object,
             _ => return None,
         })
     }
@@ -160,9 +170,7 @@ impl DataType {
         })
     }
 
-    /// Convert `self` into
-    /// [Enumerated Types](https://numpy.org/doc/stable/reference/c-api/dtype.html#enumerated-types).
-    pub fn into_ctype(self) -> NPY_TYPES {
+    fn into_npy_type(self) -> NPY_TYPES {
         fn npy_int_type_lookup<T, T0, T1, T2>(npy_types: [NPY_TYPES; 3]) -> NPY_TYPES {
             // `npy_common.h` defines the integer aliases. In order, it checks:
             // NPY_BITSOF_LONG, NPY_BITSOF_LONGLONG, NPY_BITSOF_INT, NPY_BITSOF_SHORT, NPY_BITSOF_CHAR
@@ -284,7 +292,7 @@ macro_rules! impl_num_element {
             }
 
             fn get_dtype(py: Python) -> &PyArrayDescr {
-                PyArrayDescr::from_npy_type(py, $data_type.into_ctype())
+                PyArrayDescr::from_npy_type(py, $data_type.into_npy_type())
             }
         }
     };
