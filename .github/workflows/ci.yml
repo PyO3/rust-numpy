@@ -17,6 +17,9 @@ jobs:
           toolchain: stable
           profile: minimal
           components: rustfmt, clippy
+          default: true
+      - uses: Swatinem/rust-cache@v1
+        continue-on-error: true
       - env:
           CLIPPYFLAGS: --deny warnings --allow clippy::needless-lifetimes
         run: |
@@ -27,50 +30,67 @@ jobs:
   test:
     name: python${{ matrix.python-version }}-${{ matrix.platform.python-architecture }} ${{ matrix.platform.os }}
     runs-on: ${{ matrix.platform.os }}
+    needs: [lint, check-msrv, linalg-example]
     strategy:
-      max-parallel: 16
+      fail-fast: false
       matrix:
-        python-version: [3.6, 3.7, 3.8, 3.9]
+        python-version: [3.7, 3.8, 3.9]
         platform: [
           { os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" },
           { os: "macOS-latest",   python-architecture: "x64", rust-target: "x86_64-apple-darwin" },
           { os: "windows-latest", python-architecture: "x64", rust-target: "x86_64-pc-windows-msvc" },
           { os: "windows-latest", python-architecture: "x86", rust-target: "i686-pc-windows-msvc" },
         ]
+        include:
+          # NumPy does not provide pre-built wheels for PyPy on macOS and Windows
+          - python-version: pypy-3.7
+            platform: { os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" }
+          - python-version: pypy-3.8
+            platform: { os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" }
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
+          architecture: ${{ matrix.platform.python-architecture }}
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
+          profile: minimal
+          target: ${{ matrix.platform.rust-target }}
           default: true
-      - run: rustup set default-host ${{ matrix.platform.rust-target }}
+      - name: Install toml
+        run: pip install toml
+      - name: Edit Cargo.toml and enable new resolver
+        run: |
+          import toml
+          cargo_toml = toml.load("Cargo.toml")
+          cargo_toml["workspace"]["resolver"] = "2"
+          with open("Cargo.toml", "w") as f:
+            toml.dump(cargo_toml, f)
+        shell: python
       - name: Build without default features
-        run: cargo build --no-default-features --verbose
+        run: cargo build --no-default-features
       - name: Build with default features
-        run: cargo build --verbose
-      - name: Install test dependencies
+        run: cargo build
+      - name: Test
         run: |
-          python -m pip install --upgrade pip
-          pip install maturin numpy poetry
-      - name: Run cargo test
-        run: cargo test --verbose
-      - name: Test Examples
+            pip install numpy
+            cargo test
+        # Not on PyPy, because no embedding API
+        if: ${{ !startsWith(matrix.python-version, 'pypy') }}
+      - name: Test example
         run: |
-          for example_dir in 'examples/simple-extension'; do
-              pushd $example_dir && \
-                poetry install && \
-                poetry run maturin develop && \
-                poetry run pytest && \
-                popd
-          done
-        shell: bash
+          pip install tox
+          tox
+        working-directory: examples/simple-extension
     env:
+      CARGO_TERM_VERBOSE: true
+      CARGO_BUILD_TARGET: ${{ matrix.platform.rust-target }}
       RUST_BACKTRACE: 1
+      TOX_TESTENV_PASSENV: CARGO_BUILD_TARGET
 
   check-msrv:
     runs-on: ubuntu-latest
@@ -80,37 +100,48 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
-      - name: Install MSRV Rust
+      - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
-          profile: minimal
           toolchain: 1.48.0
+          profile: minimal
           default: true
-      - name: Install maturin, poetry, and toml
-        run: pip install maturin poetry toml
-      - name: Create an isolated example directory
-        run: cp -r examples/simple-extension/ ../simple-extension-msrv
-      - name: Edit Cargo.toml and change the path of rust-numpy
+      - uses: Swatinem/rust-cache@v1
+        with:
+          working-directory: examples/simple-extension
+        continue-on-error: true
+      - name: Install toml
+        run: pip install toml
+      - name: Edit Cargo.toml and detach from workspace
         run: |
           import toml
           cargo_toml = toml.load("Cargo.toml")
-          cargo_toml["dependencies"]["numpy"]["path"] = "../rust-numpy"
           cargo_toml["dependencies"]["ndarray"] = "0.13.1"
           cargo_toml["dependencies"]["num-complex"] = "0.2.4"
+          cargo_toml["workspace"] = {}
           with open("Cargo.toml", "w") as f:
             toml.dump(cargo_toml, f)
-        working-directory: ../simple-extension-msrv
+        working-directory: examples/simple-extension
         shell: python
-      - name: Use ndarray 0.13.1
+      - name: Generate lockfile
+        run: cargo generate-lockfile
+        working-directory: examples/simple-extension
+      - name: Unify dependencies on ndarray to 0.13.1
         run: |
-          cargo generate-lockfile
-          cargo update -p $(cargo pkgid -p ndarray 2>&1 >/dev/null | grep 0.15 | sed -e 's/^[ \t]*//') --precise 0.13.1
-        working-directory: ../simple-extension-msrv
-      - name: Test Example
+          import toml
+          import subprocess
+          cargo_lock = toml.load("Cargo.lock")
+          for pkg in cargo_lock["package"]:
+            if pkg["name"] == "ndarray" and pkg["version"] != "0.13.1":
+              pkg_id = pkg["name"] + ":" + pkg["version"]
+              subprocess.run(["cargo", "update", "--package", pkg_id, "--precise", "0.13.1"], check=True)
+        working-directory: examples/simple-extension
+        shell: python
+      - name: Test example
         run: |
-          poetry install && poetry run maturin develop && poetry run pytest
-        working-directory: ../simple-extension-msrv
-        shell: bash
+          pip install tox
+          tox
+        working-directory: examples/simple-extension
 
   linalg-example:
     runs-on: ubuntu-latest
@@ -120,18 +151,18 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
-      - name: Install gfortran
-        run: |
-          sudo apt install -y gfortran
+      - name: Install OpenBLAS
+        run: sudo apt install --yes libopenblas-dev
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-      - name: Install maturin and poetry
-        run: pip install maturin poetry
-      - name: Test Examples
+          profile: minimal
+          default: true
+      - uses: Swatinem/rust-cache@v1
+        continue-on-error: true
+      - name: Test example
         run: |
-          cd examples/linalg && \
-            poetry install && \
-            poetry run maturin develop && \
-            poetry run pytest
+          pip install tox
+          tox
+        working-directory: examples/linalg
