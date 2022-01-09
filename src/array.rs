@@ -16,7 +16,7 @@ use std::{iter::ExactSizeIterator, marker::PhantomData};
 
 use crate::convert::{ArrayExt, IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
 use crate::dtype::{DataType, Element};
-use crate::error::{FromVecError, NotContiguousError, ShapeError};
+use crate::error::{DimensionalityError, FromVecError, NotContiguousError, TypeError};
 use crate::slice_container::PySliceContainer;
 
 /// A safe, static-typed interface for
@@ -136,14 +136,21 @@ impl<'a, T: Element, D: Dimension> FromPyObject<'a> for &'a PyArray<T, D> {
             }
             &*(ob as *const PyAny as *const PyArray<T, D>)
         };
+
         let src_dtype = array.dtype();
         let dst_dtype = T::get_dtype(ob.py());
-        let dim = array.shape().len();
-        if src_dtype.is_equiv_to(dst_dtype) && D::NDIM.map(|n| n == dim).unwrap_or(true) {
-            Ok(array)
-        } else {
-            Err(ShapeError::new(src_dtype, dim, T::DATA_TYPE, D::NDIM).into())
+        if !src_dtype.is_equiv_to(dst_dtype) {
+            return Err(TypeError::new(src_dtype, dst_dtype).into());
         }
+
+        let src_ndim = array.shape().len();
+        if let Some(dst_ndim) = D::NDIM {
+            if src_ndim != dst_ndim {
+                return Err(DimensionalityError::new(src_ndim, dst_ndim).into());
+            }
+        }
+
+        Ok(array)
     }
 }
 

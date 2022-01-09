@@ -47,7 +47,7 @@ pub use crate::array::{
 };
 pub use crate::convert::{IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
 pub use crate::dtype::{c32, c64, DataType, Element, PyArrayDescr};
-pub use crate::error::{FromVecError, NotContiguousError, ShapeError};
+pub use crate::error::{DimensionalityError, FromVecError, NotContiguousError, TypeError};
 pub use crate::npyffi::{PY_ARRAY_API, PY_UFUNC_API};
 pub use crate::npyiter::{
     IterMode, NpyIterFlag, NpyMultiIter, NpyMultiIterBuilder, NpySingleIter, NpySingleIterBuilder,

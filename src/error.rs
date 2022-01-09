@@ -1,62 +1,10 @@
 //! Defines error types.
-use crate::DataType;
-use pyo3::{exceptions as exc, PyErr, PyErrArguments, PyObject, Python, ToPyObject};
+
 use std::fmt;
 
-/// Represents a dimension and dtype of numpy array.
-///
-/// Only for error formatting.
-#[derive(Debug)]
-pub(crate) struct ArrayDim {
-    dim: Option<usize>,
-    dtype: Option<DataType>,
-}
+use pyo3::{exceptions as exc, PyErr, PyErrArguments, PyObject, Python, ToPyObject};
 
-impl fmt::Display for ArrayDim {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let ArrayDim { dim, dtype } = self;
-        match (dim, dtype) {
-            (Some(dim), Some(dtype)) => write!(f, "dim={:?}, dtype={:?}", dim, dtype),
-            (None, Some(dtype)) => write!(f, "dim=_, dtype={:?}", dtype),
-            (Some(dim), None) => write!(f, "dim={:?}, dtype=Unknown", dim),
-            (None, None) => write!(f, "dim=_, dtype=Unknown"),
-        }
-    }
-}
-
-/// Represents that shapes of the given arrays don't match.
-#[derive(Debug)]
-pub struct ShapeError {
-    from: ArrayDim,
-    to: ArrayDim,
-}
-
-impl ShapeError {
-    pub(crate) fn new(
-        from_dtype: &crate::PyArrayDescr,
-        from_dim: usize,
-        to_type: DataType,
-        to_dim: Option<usize>,
-    ) -> Self {
-        ShapeError {
-            from: ArrayDim {
-                dim: Some(from_dim),
-                dtype: from_dtype.get_datatype(),
-            },
-            to: ArrayDim {
-                dim: to_dim,
-                dtype: Some(to_type),
-            },
-        }
-    }
-}
-
-impl fmt::Display for ShapeError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let ShapeError { from, to } = self;
-        write!(f, "Shape Mismatch:\n from=({}), to=({})", from, to)
-    }
-}
+use crate::dtype::PyArrayDescr;
 
 macro_rules! impl_pyerr {
     ($err_type: ty) => {
@@ -76,7 +24,57 @@ macro_rules! impl_pyerr {
     };
 }
 
-impl_pyerr!(ShapeError);
+/// Represents that dimensionalities of the given arrays don't match.
+#[derive(Debug)]
+pub struct DimensionalityError {
+    from: usize,
+    to: usize,
+}
+
+impl DimensionalityError {
+    pub(crate) fn new(from: usize, to: usize) -> Self {
+        Self { from, to }
+    }
+}
+
+impl fmt::Display for DimensionalityError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let Self { from, to } = self;
+        write!(f, "dimensionality mismatch:\n from={}, to={}", from, to)
+    }
+}
+
+impl_pyerr!(DimensionalityError);
+
+/// Represents that types of the given arrays don't match.
+#[derive(Debug)]
+pub struct TypeError {
+    from: String,
+    to: String,
+}
+
+impl TypeError {
+    pub(crate) fn new(from: &PyArrayDescr, to: &PyArrayDescr) -> Self {
+        let dtype_to_str = |dtype: &PyArrayDescr| {
+            dtype
+                .str()
+                .map_or_else(|_| "(unknown)".into(), |s| s.to_string_lossy().into_owned())
+        };
+        Self {
+            from: dtype_to_str(from),
+            to: dtype_to_str(to),
+        }
+    }
+}
+
+impl fmt::Display for TypeError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let Self { from, to } = self;
+        write!(f, "type mismatch:\n from={}, to={}", from, to)
+    }
+}
+
+impl_pyerr!(TypeError);
 
 /// Represents that given vec cannot be treated as array.
 #[derive(Debug)]
