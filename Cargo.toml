@@ -2,15 +2,16 @@
 name = "numpy"
 version = "0.15.1"
 authors = [
-    "Toshiki Teramura <toshiki.teramura@gmail.com>",
-    "Yuji Kanagawa <yuji.kngw.80s.revive@gmail.com>",
+    "The rust-numpy Project Developers",
+    "PyO3 Project and Contributors <https://github.com/PyO3>"
 ]
-description = "Rust binding of NumPy C-API"
-documentation = "https://pyo3.github.io/rust-numpy/numpy"
+description = "Rust bindings of NumPy C-API"
+documentation = "https://docs.rs/numpy"
 edition = "2018"
 rust-version = "1.48"
 repository = "https://github.com/PyO3/rust-numpy"
-keywords = ["numpy", "python", "binding"]
+categories = ["api-bindings", "development-tools::ffi", "science"]
+keywords = ["python", "numpy", "ffi", "pyo3"]
 license = "BSD-2-Clause"
 
 [dependencies]
