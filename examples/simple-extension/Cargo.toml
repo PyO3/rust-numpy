@@ -11,4 +11,3 @@ crate-type = ["cdylib"]
 [dependencies]
 pyo3 = { version = "0.15", features = ["extension-module"] }
 numpy = { path = "../.." }
-num-complex = "0.4.0"

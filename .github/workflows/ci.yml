@@ -20,17 +20,14 @@ jobs:
           default: true
       - uses: Swatinem/rust-cache@v1
         continue-on-error: true
-      - env:
-          CLIPPYFLAGS: --deny warnings --allow clippy::needless-lifetimes
-        run: |
+      - run: |
           cargo fmt --all -- --check
-          cargo clippy --tests -- $CLIPPYFLAGS
-          for example in examples/*; do (cd $example/; cargo clippy -- $CLIPPYFLAGS) || exit 1; done
+          cargo clippy --workspace --tests -- --deny warnings --allow clippy::needless-lifetimes
 
   test:
     name: python${{ matrix.python-version }}-${{ matrix.platform.python-architecture }} ${{ matrix.platform.os }}
     runs-on: ${{ matrix.platform.os }}
-    needs: [lint, check-msrv, linalg-example]
+    needs: [lint, check-msrv, examples]
     strategy:
       fail-fast: false
       matrix:
@@ -84,8 +81,7 @@ jobs:
       - name: Test example
         run: |
           pip install tox
-          tox
-        working-directory: examples/simple-extension
+          tox -c examples/simple-extension
     env:
       CARGO_TERM_VERBOSE: true
       CARGO_BUILD_TARGET: ${{ matrix.platform.rust-target }}
@@ -143,7 +139,7 @@ jobs:
           tox
         working-directory: examples/simple-extension
 
-  linalg-example:
+  examples:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -161,8 +157,8 @@ jobs:
           default: true
       - uses: Swatinem/rust-cache@v1
         continue-on-error: true
-      - name: Test example
+      - name: Test examples
         run: |
           pip install tox
-          tox
-        working-directory: examples/linalg
+          tox -c examples/linalg
+          tox -c examples/parallel
