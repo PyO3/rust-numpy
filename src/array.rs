@@ -136,12 +136,13 @@ impl<'a, T: Element, D: Dimension> FromPyObject<'a> for &'a PyArray<T, D> {
             }
             &*(ob as *const PyAny as *const PyArray<T, D>)
         };
-        let dtype = array.dtype();
+        let src_dtype = array.dtype();
+        let dst_dtype = T::get_dtype(ob.py());
         let dim = array.shape().len();
-        if T::is_same_type(dtype) && D::NDIM.map(|n| n == dim).unwrap_or(true) {
+        if src_dtype.is_equiv_to(dst_dtype) && D::NDIM.map(|n| n == dim).unwrap_or(true) {
             Ok(array)
         } else {
-            Err(ShapeError::new(dtype, dim, T::DATA_TYPE, D::NDIM).into())
+            Err(ShapeError::new(src_dtype, dim, T::DATA_TYPE, D::NDIM).into())
         }
     }
 }
@@ -457,10 +458,10 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
             T::get_dtype(py).into_dtype_ptr(),
             dims.ndim_cint(),
             dims.as_dims_ptr(),
-            strides as *mut npy_intp,     // strides
-            data_ptr as *mut c_void,      // data
-            npyffi::NPY_ARRAY_WRITEABLE,  // flag
-            ptr::null_mut(),              // obj
+            strides as *mut npy_intp,    // strides
+            data_ptr as *mut c_void,     // data
+            npyffi::NPY_ARRAY_WRITEABLE, // flag
+            ptr::null_mut(),             // obj
         );
 
         PY_ARRAY_API.PyArray_SetBaseObject(
