@@ -313,10 +313,9 @@ impl_num_element!(c32, DataType::Complex32);
 impl_num_element!(c64, DataType::Complex64);
 
 cfg_if! {
-    if #[cfg(target_pointer_width = "64")] {
-        impl_num_element!(usize, DataType::Uint64);
-    } else if #[cfg(target_pointer_width = "32")] {
-        impl_num_element!(usize, DataType::Uint32);
+    if #[cfg(any(target_pointer_width = "32", target_pointer_width = "64"))] {
+        impl_num_element!(usize, DataType::integer::<usize>().unwrap());
+        impl_num_element!(isize, DataType::integer::<isize>().unwrap());
     }
 }
 
@@ -330,7 +329,7 @@ unsafe impl Element for PyObject {
 
 #[cfg(test)]
 mod tests {
-    use cfg_if::cfg_if;
+    use std::mem::size_of;
 
     use super::{c32, c64, Element, PyArrayDescr};
 
@@ -353,13 +352,17 @@ mod tests {
             assert_eq!(type_name::<f64>(py), "float64");
             assert_eq!(type_name::<c32>(py), "complex64");
             assert_eq!(type_name::<c64>(py), "complex128");
-            cfg_if! {
-                if #[cfg(target_pointer_width = "64")] {
-                    assert_eq!(type_name::<usize>(py), "uint64");
-                } else if #[cfg(target_pointer_width = "32")] {
+            match size_of::<usize>() {
+                32 => {
                     assert_eq!(type_name::<usize>(py), "uint32");
+                    assert_eq!(type_name::<isize>(py), "int32");
                 }
+                64 => {
+                    assert_eq!(type_name::<usize>(py), "uint64");
+                    assert_eq!(type_name::<isize>(py), "int64");
+                }
+                _ => {}
             }
-        })
+        });
     }
 }
