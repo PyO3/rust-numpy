@@ -43,6 +43,13 @@ impl PyArrayDescr {
         self.as_ptr() as _
     }
 
+    /// Returns `self` as `*mut PyArray_Descr` while increasing the reference count.
+    ///
+    /// Useful in cases where the descriptor is stolen by the API.
+    pub fn into_dtype_ptr(&self) -> *mut PyArray_Descr {
+        self.into_ptr() as _
+    }
+
     /// Returns the internal `PyType` that this `dtype` holds.
     ///
     /// # Example

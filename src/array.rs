@@ -430,7 +430,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         let dims = dims.into_dimension();
         let ptr = PY_ARRAY_API.PyArray_NewFromDescr(
             PY_ARRAY_API.get_type_object(npyffi::NpyTypes::PyArray_Type),
-            T::get_dtype(py).into_ptr() as _,
+            T::get_dtype(py).into_dtype_ptr(),
             dims.ndim_cint(),
             dims.as_dims_ptr(),
             strides as *mut npy_intp, // strides
@@ -454,7 +454,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         let dims = dims.into_dimension();
         let ptr = PY_ARRAY_API.PyArray_NewFromDescr(
             PY_ARRAY_API.get_type_object(npyffi::NpyTypes::PyArray_Type),
-            T::get_dtype(py).into_ptr() as _,
+            T::get_dtype(py).into_dtype_ptr(),
             dims.ndim_cint(),
             dims.as_dims_ptr(),
             strides as *mut npy_intp,     // strides
@@ -567,11 +567,10 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     {
         let dims = dims.into_dimension();
         unsafe {
-            let dtype = T::get_dtype(py);
             let ptr = PY_ARRAY_API.PyArray_Zeros(
                 dims.ndim_cint(),
                 dims.as_dims_ptr(),
-                dtype.into_ptr() as _,
+                T::get_dtype(py).into_dtype_ptr(),
                 if is_fortran { -1 } else { 0 },
             );
             Self::from_owned_ptr(py, ptr)
@@ -1102,10 +1101,9 @@ impl<T: Element, D> PyArray<T, D> {
     /// ```
     pub fn cast<'py, U: Element>(&'py self, is_fortran: bool) -> PyResult<&'py PyArray<U, D>> {
         let ptr = unsafe {
-            let dtype = U::get_dtype(self.py());
             PY_ARRAY_API.PyArray_CastToType(
                 self.as_array_ptr(),
-                dtype.into_ptr() as _,
+                U::get_dtype(self.py()).into_dtype_ptr(),
                 if is_fortran { -1 } else { 0 },
             )
         };
