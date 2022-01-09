@@ -428,14 +428,13 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         ID: IntoDimension<Dim = D>,
     {
         let dims = dims.into_dimension();
-        let ptr = PY_ARRAY_API.PyArray_New(
+        let ptr = PY_ARRAY_API.PyArray_NewFromDescr(
             PY_ARRAY_API.get_type_object(npyffi::NpyTypes::PyArray_Type),
+            T::get_dtype(py).into_ptr() as _,
             dims.ndim_cint(),
             dims.as_dims_ptr(),
-            T::npy_type() as c_int,
             strides as *mut npy_intp, // strides
             ptr::null_mut(),          // data
-            0,                        // itemsize
             flag,                     // flag
             ptr::null_mut(),          // obj
         );
@@ -453,14 +452,13 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         ID: IntoDimension<Dim = D>,
     {
         let dims = dims.into_dimension();
-        let ptr = PY_ARRAY_API.PyArray_New(
+        let ptr = PY_ARRAY_API.PyArray_NewFromDescr(
             PY_ARRAY_API.get_type_object(npyffi::NpyTypes::PyArray_Type),
+            T::get_dtype(py).into_ptr() as _,
             dims.ndim_cint(),
             dims.as_dims_ptr(),
-            T::npy_type() as c_int,
             strides as *mut npy_intp,     // strides
             data_ptr as *mut c_void,      // data
-            mem::size_of::<T>() as c_int, // itemsize
             npyffi::NPY_ARRAY_WRITEABLE,  // flag
             ptr::null_mut(),              // obj
         );
@@ -1193,7 +1191,7 @@ impl<T: Element + AsPrimitive<f64>> PyArray<T, Ix1> {
                 start.as_(),
                 stop.as_(),
                 step.as_(),
-                T::npy_type() as i32,
+                T::get_dtype(py).get_typenum(),
             );
             Self::from_owned_ptr(py, ptr)
         }
