@@ -1,7 +1,10 @@
+use std::mem::size_of;
+use std::os::raw::{c_int, c_long, c_longlong, c_short, c_uint, c_ulong, c_ulonglong, c_ushort};
+
 use crate::npyffi::{NpyTypes, PyArray_Descr, NPY_TYPES, PY_ARRAY_API};
 use cfg_if::cfg_if;
+use num_traits::{Bounded, Zero};
 use pyo3::{ffi, prelude::*, pyobject_native_type_core, types::PyType, AsPyPointer, PyNativeType};
-use std::os::raw::c_int;
 
 pub use num_complex::Complex32 as c32;
 pub use num_complex::Complex64 as c64;
@@ -123,14 +126,14 @@ impl DataType {
             x if x == NPY_TYPES::NPY_BOOL as i32 => DataType::Bool,
             x if x == NPY_TYPES::NPY_BYTE as i32 => DataType::Int8,
             x if x == NPY_TYPES::NPY_SHORT as i32 => DataType::Int16,
-            x if x == NPY_TYPES::NPY_INT as i32 => DataType::Int32,
-            x if x == NPY_TYPES::NPY_LONG as i32 => return DataType::from_clong(false),
-            x if x == NPY_TYPES::NPY_LONGLONG as i32 => DataType::Int64,
+            x if x == NPY_TYPES::NPY_INT as i32 => Self::integer::<c_int>()?,
+            x if x == NPY_TYPES::NPY_LONG as i32 => Self::integer::<c_long>()?,
+            x if x == NPY_TYPES::NPY_LONGLONG as i32 => Self::integer::<c_longlong>()?,
             x if x == NPY_TYPES::NPY_UBYTE as i32 => DataType::Uint8,
             x if x == NPY_TYPES::NPY_USHORT as i32 => DataType::Uint16,
-            x if x == NPY_TYPES::NPY_UINT as i32 => DataType::Uint32,
-            x if x == NPY_TYPES::NPY_ULONG as i32 => return DataType::from_clong(true),
-            x if x == NPY_TYPES::NPY_ULONGLONG as i32 => DataType::Uint64,
+            x if x == NPY_TYPES::NPY_UINT as i32 => Self::integer::<c_uint>()?,
+            x if x == NPY_TYPES::NPY_ULONG as i32 => Self::integer::<c_ulong>()?,
+            x if x == NPY_TYPES::NPY_ULONGLONG as i32 => Self::integer::<c_ulonglong>()?,
             x if x == NPY_TYPES::NPY_FLOAT as i32 => DataType::Float32,
             x if x == NPY_TYPES::NPY_DOUBLE as i32 => DataType::Float64,
             x if x == NPY_TYPES::NPY_CFLOAT as i32 => DataType::Complex32,
@@ -140,46 +143,69 @@ impl DataType {
         })
     }
 
+    #[inline]
+    fn integer<T: Bounded + Zero + Sized + PartialEq>() -> Option<Self> {
+        let is_unsigned = T::min_value() == T::zero();
+        let bit_width = size_of::<T>() << 3;
+        Some(match (is_unsigned, bit_width) {
+            (false, 8) => Self::Int8,
+            (false, 16) => Self::Int16,
+            (false, 32) => Self::Int32,
+            (false, 64) => Self::Int64,
+            (true, 8) => Self::Uint8,
+            (true, 16) => Self::Uint16,
+            (true, 32) => Self::Uint32,
+            (true, 64) => Self::Uint64,
+            _ => return None,
+        })
+    }
+
     /// Convert `self` into
     /// [Enumerated Types](https://numpy.org/doc/stable/reference/c-api/dtype.html#enumerated-types).
     pub fn into_ctype(self) -> NPY_TYPES {
+        fn npy_int_type_lookup<T, T0, T1, T2>(npy_types: [NPY_TYPES; 3]) -> NPY_TYPES {
+            // `npy_common.h` defines the integer aliases. In order, it checks:
+            // NPY_BITSOF_LONG, NPY_BITSOF_LONGLONG, NPY_BITSOF_INT, NPY_BITSOF_SHORT, NPY_BITSOF_CHAR
+            // and assigns the alias to the first matching size, so we should check in this order.
+            match size_of::<T>() {
+                x if x == size_of::<T0>() => npy_types[0],
+                x if x == size_of::<T1>() => npy_types[1],
+                x if x == size_of::<T2>() => npy_types[2],
+                _ => panic!("Unable to match integer type descriptor: {:?}", npy_types),
+            }
+        }
+
         match self {
             DataType::Bool => NPY_TYPES::NPY_BOOL,
             DataType::Int8 => NPY_TYPES::NPY_BYTE,
             DataType::Int16 => NPY_TYPES::NPY_SHORT,
-            DataType::Int32 => NPY_TYPES::NPY_INT,
-            #[cfg(all(target_pointer_width = "64", not(windows)))]
-            DataType::Int64 => NPY_TYPES::NPY_LONG,
-            #[cfg(any(target_pointer_width = "32", windows))]
-            DataType::Int64 => NPY_TYPES::NPY_LONGLONG,
+            DataType::Int32 => npy_int_type_lookup::<i32, c_long, c_int, c_short>([
+                NPY_TYPES::NPY_LONG,
+                NPY_TYPES::NPY_INT,
+                NPY_TYPES::NPY_SHORT,
+            ]),
+            DataType::Int64 => npy_int_type_lookup::<i64, c_long, c_longlong, c_int>([
+                NPY_TYPES::NPY_LONG,
+                NPY_TYPES::NPY_LONGLONG,
+                NPY_TYPES::NPY_INT,
+            ]),
             DataType::Uint8 => NPY_TYPES::NPY_UBYTE,
             DataType::Uint16 => NPY_TYPES::NPY_USHORT,
-            DataType::Uint32 => NPY_TYPES::NPY_UINT,
-            DataType::Uint64 => NPY_TYPES::NPY_ULONGLONG,
+            DataType::Uint32 => npy_int_type_lookup::<u32, c_ulong, c_uint, c_ushort>([
+                NPY_TYPES::NPY_ULONG,
+                NPY_TYPES::NPY_UINT,
+                NPY_TYPES::NPY_USHORT,
+            ]),
+            DataType::Uint64 => npy_int_type_lookup::<u64, c_ulong, c_ulonglong, c_uint>([
+                NPY_TYPES::NPY_ULONG,
+                NPY_TYPES::NPY_ULONGLONG,
+                NPY_TYPES::NPY_UINT,
+            ]),
             DataType::Float32 => NPY_TYPES::NPY_FLOAT,
             DataType::Float64 => NPY_TYPES::NPY_DOUBLE,
             DataType::Complex32 => NPY_TYPES::NPY_CFLOAT,
             DataType::Complex64 => NPY_TYPES::NPY_CDOUBLE,
             DataType::Object => NPY_TYPES::NPY_OBJECT,
-        }
-    }
-
-    #[inline(always)]
-    fn from_clong(is_usize: bool) -> Option<Self> {
-        if cfg!(any(target_pointer_width = "32", windows)) {
-            Some(if is_usize {
-                DataType::Uint32
-            } else {
-                DataType::Int32
-            })
-        } else if cfg!(all(target_pointer_width = "64", not(windows))) {
-            Some(if is_usize {
-                DataType::Uint64
-            } else {
-                DataType::Int64
-            })
-        } else {
-            None
         }
     }
 }
@@ -249,59 +275,50 @@ pub unsafe trait Element: Clone + Send {
 }
 
 macro_rules! impl_num_element {
-    ($t:ty, $npy_dat_t:ident $(,$npy_types: ident)+) => {
-        unsafe impl Element for $t {
-            const DATA_TYPE: DataType = DataType::$npy_dat_t;
+    ($ty:ty, $data_type:expr) => {
+        unsafe impl Element for $ty {
+            const DATA_TYPE: DataType = $data_type;
+
             fn is_same_type(dtype: &PyArrayDescr) -> bool {
-                $(dtype.get_typenum() == NPY_TYPES::$npy_types as i32 ||)+ false
+                dtype.get_datatype() == Some($data_type)
             }
+
             fn get_dtype(py: Python) -> &PyArrayDescr {
-                PyArrayDescr::from_npy_type(py, DataType::$npy_dat_t.into_ctype())
+                PyArrayDescr::from_npy_type(py, $data_type.into_ctype())
             }
         }
     };
 }
 
-impl_num_element!(bool, Bool, NPY_BOOL);
-impl_num_element!(i8, Int8, NPY_BYTE);
-impl_num_element!(i16, Int16, NPY_SHORT);
-impl_num_element!(u8, Uint8, NPY_UBYTE);
-impl_num_element!(u16, Uint16, NPY_USHORT);
-impl_num_element!(f32, Float32, NPY_FLOAT);
-impl_num_element!(f64, Float64, NPY_DOUBLE);
-impl_num_element!(c32, Complex32, NPY_CFLOAT);
-impl_num_element!(c64, Complex64, NPY_CDOUBLE);
+impl_num_element!(bool, DataType::Bool);
+impl_num_element!(i8, DataType::Int8);
+impl_num_element!(i16, DataType::Int16);
+impl_num_element!(i32, DataType::Int32);
+impl_num_element!(i64, DataType::Int64);
+impl_num_element!(u8, DataType::Uint8);
+impl_num_element!(u16, DataType::Uint16);
+impl_num_element!(u32, DataType::Uint32);
+impl_num_element!(u64, DataType::Uint64);
+impl_num_element!(f32, DataType::Float32);
+impl_num_element!(f64, DataType::Float64);
+impl_num_element!(c32, DataType::Complex32);
+impl_num_element!(c64, DataType::Complex64);
 
 cfg_if! {
-    if #[cfg(all(target_pointer_width = "64", windows))] {
-            impl_num_element!(usize, Uint64, NPY_ULONGLONG);
-    } else if #[cfg(all(target_pointer_width = "64", not(windows)))] {
-            impl_num_element!(usize, Uint64, NPY_ULONG, NPY_ULONGLONG);
-    } else if #[cfg(all(target_pointer_width = "32", windows))] {
-            impl_num_element!(usize, Uint32, NPY_UINT, NPY_ULONG);
-    } else if #[cfg(all(target_pointer_width = "32", not(windows)))] {
-            impl_num_element!(usize, Uint32, NPY_UINT);
-    }
-}
-cfg_if! {
-    if #[cfg(any(target_pointer_width = "32", windows))] {
-        impl_num_element!(i32, Int32, NPY_INT, NPY_LONG);
-        impl_num_element!(u32, Uint32, NPY_UINT, NPY_ULONG);
-        impl_num_element!(i64, Int64, NPY_LONGLONG);
-        impl_num_element!(u64, Uint64, NPY_ULONGLONG);
-    } else if #[cfg(all(target_pointer_width = "64", not(windows)))] {
-        impl_num_element!(i32, Int32, NPY_INT);
-        impl_num_element!(u32, Uint32, NPY_UINT);
-        impl_num_element!(i64, Int64, NPY_LONG, NPY_LONGLONG);
-        impl_num_element!(u64, Uint64, NPY_ULONG, NPY_ULONGLONG);
+    if #[cfg(target_pointer_width = "64")] {
+        impl_num_element!(usize, DataType::Uint64);
+    } else if #[cfg(target_pointer_width = "32")] {
+        impl_num_element!(usize, DataType::Uint32);
     }
 }
 
 unsafe impl Element for PyObject {
     const DATA_TYPE: DataType = DataType::Object;
+
     fn is_same_type(dtype: &PyArrayDescr) -> bool {
         dtype.get_typenum() == NPY_TYPES::NPY_OBJECT as i32
     }
+
     fn get_dtype(py: Python) -> &PyArrayDescr {
         PyArrayDescr::object(py)
     }
