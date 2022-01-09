@@ -306,3 +306,39 @@ unsafe impl Element for PyObject {
         PyArrayDescr::object(py)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use cfg_if::cfg_if;
+
+    use super::{c32, c64, Element, PyArrayDescr};
+
+    #[test]
+    fn test_dtype_names() {
+        fn type_name<T: Element>(py: pyo3::Python) -> &str {
+            PyArrayDescr::of::<T>(py).get_type().name().unwrap()
+        }
+        pyo3::Python::with_gil(|py| {
+            assert_eq!(type_name::<bool>(py), "bool_");
+            assert_eq!(type_name::<i8>(py), "int8");
+            assert_eq!(type_name::<i16>(py), "int16");
+            assert_eq!(type_name::<i32>(py), "int32");
+            assert_eq!(type_name::<i64>(py), "int64");
+            assert_eq!(type_name::<u8>(py), "uint8");
+            assert_eq!(type_name::<u16>(py), "uint16");
+            assert_eq!(type_name::<u32>(py), "uint32");
+            assert_eq!(type_name::<u64>(py), "uint64");
+            assert_eq!(type_name::<f32>(py), "float32");
+            assert_eq!(type_name::<f64>(py), "float64");
+            assert_eq!(type_name::<c32>(py), "complex64");
+            assert_eq!(type_name::<c64>(py), "complex128");
+            cfg_if! {
+                if #[cfg(target_pointer_width = "64")] {
+                    assert_eq!(type_name::<usize>(py), "uint64");
+                } else if #[cfg(target_pointer_width = "32")] {
+                    assert_eq!(type_name::<usize>(py), "uint32");
+                }
+            }
+        })
+    }
+}
