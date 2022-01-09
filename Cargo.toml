@@ -25,9 +25,5 @@ pyo3 = { version = "0.15", default-features = false }
 [dev-dependencies]
 pyo3 = { version = "0.15", features = ["auto-initialize"] }
 
-[features]
-default = []
-rayon = ["ndarray/rayon"]
-
 [workspace]
 members = ["examples/*"]
