@@ -406,7 +406,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
             ptr::null_mut(),   // data
             0,                 // itemsize
             flag,              // flag
-            ptr::null_mut(),   //obj
+            ptr::null_mut(),   // obj
         );
         Self::from_owned_ptr(py, ptr)
     }
@@ -432,11 +432,11 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
             dims.ndim_cint(),
             dims.as_dims_ptr(),
             T::npy_type() as i32,
-            strides as *mut _,          // strides
-            data_ptr as _,              // data
-            mem::size_of::<T>() as i32, // itemsize
-            0,                          // flag
-            ptr::null_mut(),            //obj
+            strides as *mut _,           // strides
+            data_ptr as _,               // data
+            mem::size_of::<T>() as i32,  // itemsize
+            npyffi::NPY_ARRAY_WRITEABLE, // flag
+            ptr::null_mut(),             // obj
         );
         PY_ARRAY_API.PyArray_SetBaseObject(ptr as *mut npyffi::PyArrayObject, cell as _);
         Self::from_owned_ptr(py, ptr)
