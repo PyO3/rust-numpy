@@ -75,6 +75,11 @@ impl PyArrayDescr {
         Self::from_npy_type(py, NPY_TYPES::NPY_OBJECT)
     }
 
+    /// Returns the type descriptor for a registered type.
+    pub fn of<T: Element>(py: Python) -> &Self {
+        T::get_dtype(py)
+    }
+
     fn from_npy_type(py: Python, npy_type: NPY_TYPES) -> &Self {
         unsafe {
             let descr = PY_ARRAY_API.PyArray_DescrFromType(npy_type as i32);
