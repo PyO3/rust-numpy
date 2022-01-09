@@ -84,6 +84,11 @@ impl PyArrayDescr {
         T::get_dtype(py)
     }
 
+    /// Returns true if two type descriptors are equivalent.
+    pub fn is_equiv_to(&self, other: &Self) -> bool {
+        unsafe { PY_ARRAY_API.PyArray_EquivTypes(self.as_dtype_ptr(), other.as_dtype_ptr()) != 0 }
+    }
+
     fn from_npy_type(py: Python, npy_type: NPY_TYPES) -> &Self {
         unsafe {
             let descr = PY_ARRAY_API.PyArray_DescrFromType(npy_type as _);
