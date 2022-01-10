@@ -1225,4 +1225,16 @@ mod tests {
             array.to_dyn().to_owned_array();
         })
     }
+
+    #[test]
+    fn test_hasobject_flag() {
+        use super::ToPyArray;
+        use pyo3::{py_run, types::PyList, Py, PyAny};
+
+        pyo3::Python::with_gil(|py| {
+            let a = ndarray::Array2::from_shape_fn((2, 3), |(_i, _j)| PyList::empty(py).into());
+            let arr: &PyArray<Py<PyAny>, _> = a.to_pyarray(py);
+            py_run!(py, arr, "assert arr.dtype.hasobject");
+        });
+    }
 }
