@@ -285,39 +285,89 @@ pub unsafe trait Element: Clone + Send {
     fn get_dtype(py: Python) -> &PyArrayDescr;
 }
 
-macro_rules! impl_num_element {
-    ($ty:ty, $data_type:expr $(,#[$meta:meta])*) => {
+fn npy_int_type_lookup<T, T0, T1, T2>(npy_types: [NPY_TYPES; 3]) -> NPY_TYPES {
+    // `npy_common.h` defines the integer aliases. In order, it checks:
+    // NPY_BITSOF_LONG, NPY_BITSOF_LONGLONG, NPY_BITSOF_INT, NPY_BITSOF_SHORT, NPY_BITSOF_CHAR
+    // and assigns the alias to the first matching size, so we should check in this order.
+    match size_of::<T>() {
+        x if x == size_of::<T0>() => npy_types[0],
+        x if x == size_of::<T1>() => npy_types[1],
+        x if x == size_of::<T2>() => npy_types[2],
+        _ => panic!("Unable to match integer type descriptor: {:?}", npy_types),
+    }
+}
+
+fn npy_int_type<T: Bounded + Zero + Sized + PartialEq>() -> NPY_TYPES {
+    let is_unsigned = T::min_value() == T::zero();
+    let bit_width = size_of::<T>() << 3;
+
+    match (is_unsigned, bit_width) {
+        (false, 8) => NPY_TYPES::NPY_BYTE,
+        (false, 16) => NPY_TYPES::NPY_SHORT,
+        (false, 32) => npy_int_type_lookup::<i32, c_long, c_int, c_short>([
+            NPY_TYPES::NPY_LONG,
+            NPY_TYPES::NPY_INT,
+            NPY_TYPES::NPY_SHORT,
+        ]),
+        (false, 64) => npy_int_type_lookup::<i64, c_long, c_longlong, c_int>([
+            NPY_TYPES::NPY_LONG,
+            NPY_TYPES::NPY_LONGLONG,
+            NPY_TYPES::NPY_INT,
+        ]),
+        (true, 8) => NPY_TYPES::NPY_UBYTE,
+        (true, 16) => NPY_TYPES::NPY_USHORT,
+        (true, 32) => npy_int_type_lookup::<u32, c_ulong, c_uint, c_ushort>([
+            NPY_TYPES::NPY_ULONG,
+            NPY_TYPES::NPY_UINT,
+            NPY_TYPES::NPY_USHORT,
+        ]),
+        (true, 64) => npy_int_type_lookup::<u64, c_ulong, c_ulonglong, c_uint>([
+            NPY_TYPES::NPY_ULONG,
+            NPY_TYPES::NPY_ULONGLONG,
+            NPY_TYPES::NPY_UINT,
+        ]),
+        _ => unreachable!(),
+    }
+}
+
+macro_rules! impl_element_scalar {
+    (@impl: $ty:ty, $npy_type:expr $(,#[$meta:meta])*) => {
         $(#[$meta])*
         unsafe impl Element for $ty {
             const IS_COPY: bool = true;
-
             fn get_dtype(py: Python) -> &PyArrayDescr {
-                PyArrayDescr::from_npy_type(py, $data_type.into_npy_type())
+                PyArrayDescr::from_npy_type(py, $npy_type)
             }
         }
     };
+    ($ty:ty, $npy_type:ident $(,#[$meta:meta])*) => {
+        impl_element_scalar!(@impl: $ty, NPY_TYPES::$npy_type $(,#[$meta])*);
+    };
+    ($ty:ty $(,#[$meta:meta])*) => {
+        impl_element_scalar!(@impl: $ty, npy_int_type::<$ty>() $(,#[$meta])*);
+    };
 }
 
-impl_num_element!(bool, DataType::Bool);
-impl_num_element!(i8, DataType::Int8);
-impl_num_element!(i16, DataType::Int16);
-impl_num_element!(i32, DataType::Int32);
-impl_num_element!(i64, DataType::Int64);
-impl_num_element!(u8, DataType::Uint8);
-impl_num_element!(u16, DataType::Uint16);
-impl_num_element!(u32, DataType::Uint32);
-impl_num_element!(u64, DataType::Uint64);
-impl_num_element!(f32, DataType::Float32);
-impl_num_element!(f64, DataType::Float64);
-impl_num_element!(Complex32, DataType::Complex32, 
+impl_element_scalar!(bool, NPY_BOOL);
+impl_element_scalar!(i8);
+impl_element_scalar!(i16);
+impl_element_scalar!(i32);
+impl_element_scalar!(i64);
+impl_element_scalar!(u8);
+impl_element_scalar!(u16);
+impl_element_scalar!(u32);
+impl_element_scalar!(u64);
+impl_element_scalar!(f32, NPY_FLOAT);
+impl_element_scalar!(f64, NPY_DOUBLE);
+impl_element_scalar!(Complex32, NPY_CFLOAT,
     #[doc = "Complex type with `f32` components which maps to `np.csingle` (`np.complex64`)."]);
-impl_num_element!(Complex64, DataType::Complex64,
+impl_element_scalar!(Complex64, NPY_CDOUBLE,
     #[doc = "Complex type with `f64` components which maps to `np.cdouble` (`np.complex128`)."]);
 
 cfg_if! {
     if #[cfg(any(target_pointer_width = "32", target_pointer_width = "64"))] {
-        impl_num_element!(usize, DataType::integer::<usize>().unwrap());
-        impl_num_element!(isize, DataType::integer::<isize>().unwrap());
+        impl_element_scalar!(usize);
+        impl_element_scalar!(isize);
     }
 }
 
