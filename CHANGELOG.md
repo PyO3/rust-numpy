@@ -5,6 +5,17 @@
   - Support borrowing arrays that are part of other Python objects via `PyArray::borrow_from_array` ([#230](https://github.com/PyO3/rust-numpy/pull/216))
   - `PyArray::new` is now `unsafe`, as it produces uninitialized arrays ([#220](https://github.com/PyO3/rust-numpy/pull/220))
   - `rayon` feature is now removed, and directly specifying the feature via `ndarray` dependency is recommended ([#250](https://github.com/PyO3/rust-numpy/pull/250))
+  - Descriptors rework and related changes ([#256](https://github.com/PyO3/rust-numpy/pull/256)):
+    - Remove `DataType`
+    - Add the top-level `dtype` function for easy access to registered dtypes
+    - Add `PyArrayDescr::of`, `PyArrayDescr::into_dtype_ptr` and `PyArrayDescr::is_equiv_to`
+    - `Element` trait has been simplified to just `IS_COPY` const and `get_dtype` method
+    - `Element` is now implemented for `isize`
+    - `c32` and `c64` aliases have been replaced with `Complex32` and `Complex64`
+    - `ShapeError` has been split into `TypeError` and `DimensionalityError`
+    - `i32`, `i64`, `u32` and `u64` are now guaranteed to map to
+      `np.int32`, `np.int64`, `np.uint32` and `np.uint64` respectively
+    - Remove `cfg_if` dependency
 
 - v0.15.1
   - Make arrays produced via `IntoPyArray`, i.e. those owning Rust data, writeable ([#235](https://github.com/PyO3/rust-numpy/pull/235))
