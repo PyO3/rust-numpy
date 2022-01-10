@@ -107,11 +107,14 @@ impl PyArrayDescr {
 ///
 /// # Safety
 ///
-/// A type `T` that implements this trait should be safe when managed in numpy array,
-/// thus implementing this trait is marked unsafe.
-/// This means that all data types except for `DataType::Object` are assumed to be trivially copyable.
-/// Furthermore, it is assumed that for `DataType::Object` the elements are pointers into the Python heap
-/// and that the corresponding `Clone` implemenation will never panic as it only increases the reference count.
+/// A type `T` that implements this trait should be safe when managed in numpy
+/// array, thus implementing this trait is marked unsafe. Data types that don't
+/// contain Python objects (i.e., either the object type itself or record types
+/// containing object-type fields) are assumed to be trivially copyable, which
+/// is reflected in the `IS_COPY` flag. Furthermore, it is assumed that for
+/// the object type the elements are pointers into the Python heap and that the
+/// corresponding `Clone` implemenation will never panic as it only increases
+/// the reference count.
 ///
 /// # Custom element types
 ///
