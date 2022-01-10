@@ -1,5 +1,5 @@
 use numpy::ndarray::{ArrayD, ArrayViewD, ArrayViewMutD};
-use numpy::{c64, IntoPyArray, PyArrayDyn, PyReadonlyArrayDyn};
+use numpy::{Complex64, IntoPyArray, PyArrayDyn, PyReadonlyArrayDyn};
 use pyo3::prelude::{pymodule, PyModule, PyResult, Python};
 
 #[pymodule]
@@ -15,7 +15,7 @@ fn rust_ext(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     }
 
     // complex example
-    fn conj(x: ArrayViewD<'_, c64>) -> ArrayD<c64> {
+    fn conj(x: ArrayViewD<'_, Complex64>) -> ArrayD<Complex64> {
         x.map(|c| c.conj())
     }
 
@@ -44,7 +44,10 @@ fn rust_ext(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     // wrapper of `conj`
     #[pyfn(m)]
     #[pyo3(name = "conj")]
-    fn conj_py<'py>(py: Python<'py>, x: PyReadonlyArrayDyn<'_, c64>) -> &'py PyArrayDyn<c64> {
+    fn conj_py<'py>(
+        py: Python<'py>,
+        x: PyReadonlyArrayDyn<'_, Complex64>,
+    ) -> &'py PyArrayDyn<Complex64> {
         conj(x.as_array()).into_pyarray(py)
     }
 

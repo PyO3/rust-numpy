@@ -7,8 +7,7 @@ use pyo3::{ffi, prelude::*, pyobject_native_type_core, types::PyType, AsPyPointe
 
 use crate::npyffi::{NpyTypes, PyArray_Descr, NPY_TYPES, PY_ARRAY_API};
 
-pub use num_complex::Complex32 as c32;
-pub use num_complex::Complex64 as c64;
+pub use num_complex::{Complex32, Complex64};
 
 /// Binding of [`numpy.dtype`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.html).
 ///
@@ -287,7 +286,8 @@ pub unsafe trait Element: Clone + Send {
 }
 
 macro_rules! impl_num_element {
-    ($ty:ty, $data_type:expr) => {
+    ($ty:ty, $data_type:expr $(,#[$meta:meta])*) => {
+        $(#[$meta])*
         unsafe impl Element for $ty {
             const IS_COPY: bool = true;
 
@@ -309,8 +309,10 @@ impl_num_element!(u32, DataType::Uint32);
 impl_num_element!(u64, DataType::Uint64);
 impl_num_element!(f32, DataType::Float32);
 impl_num_element!(f64, DataType::Float64);
-impl_num_element!(c32, DataType::Complex32);
-impl_num_element!(c64, DataType::Complex64);
+impl_num_element!(Complex32, DataType::Complex32, 
+    #[doc = "Complex type with `f32` components which maps to `np.csingle` (`np.complex64`)."]);
+impl_num_element!(Complex64, DataType::Complex64,
+    #[doc = "Complex type with `f64` components which maps to `np.cdouble` (`np.complex128`)."]);
 
 cfg_if! {
     if #[cfg(any(target_pointer_width = "32", target_pointer_width = "64"))] {
@@ -331,7 +333,7 @@ unsafe impl Element for PyObject {
 mod tests {
     use std::mem::size_of;
 
-    use super::{c32, c64, Element, PyArrayDescr};
+    use super::{Complex32, Complex64, Element, PyArrayDescr};
 
     #[test]
     fn test_dtype_names() {
@@ -350,8 +352,8 @@ mod tests {
             assert_eq!(type_name::<u64>(py), "uint64");
             assert_eq!(type_name::<f32>(py), "float32");
             assert_eq!(type_name::<f64>(py), "float64");
-            assert_eq!(type_name::<c32>(py), "complex64");
-            assert_eq!(type_name::<c64>(py), "complex128");
+            assert_eq!(type_name::<Complex32>(py), "complex64");
+            assert_eq!(type_name::<Complex64>(py), "complex128");
             match size_of::<usize>() {
                 32 => {
                     assert_eq!(type_name::<usize>(py), "uint32");
