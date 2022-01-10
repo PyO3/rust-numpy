@@ -168,7 +168,7 @@ impl<T, D> PyArray<T, D> {
     /// pyo3::Python::with_gil(|py| {
     ///    let array = numpy::PyArray::from_vec(py, vec![1, 2, 3i32]);
     ///    let dtype = array.dtype();
-    ///    assert_eq!(dtype.get_datatype().unwrap(), numpy::DataType::Int32);
+    ///    assert!(dtype.is_equiv_to(numpy::PyArrayDescr::of::<i32>(py)));
     /// });
     /// ```
     pub fn dtype(&self) -> &crate::PyArrayDescr {

@@ -46,7 +46,7 @@ pub use crate::array::{
     PyArray6, PyArrayDyn,
 };
 pub use crate::convert::{IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
-pub use crate::dtype::{Complex32, Complex64, DataType, Element, PyArrayDescr};
+pub use crate::dtype::{Complex32, Complex64, Element, PyArrayDescr};
 pub use crate::error::{DimensionalityError, FromVecError, NotContiguousError, TypeError};
 pub use crate::npyffi::{PY_ARRAY_API, PY_UFUNC_API};
 pub use crate::npyiter::{

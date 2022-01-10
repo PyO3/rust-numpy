@@ -21,7 +21,7 @@ pub use num_complex::{Complex32, Complex64};
 ///         .unwrap()
 ///         .downcast()
 ///         .unwrap();
-///     assert_eq!(dtype.get_datatype().unwrap(), numpy::DataType::Float64);
+///     assert!(dtype.is_equiv_to(numpy::PyArrayDescr::of::<f64>(py)));
 /// });
 /// ```
 pub struct PyArrayDescr(PyAny);
@@ -68,11 +68,6 @@ impl PyArrayDescr {
         unsafe { PyType::from_type_ptr(self.py(), dtype_type_ptr) }
     }
 
-    /// Returns the data type as `DataType` enum.
-    pub fn get_datatype(&self) -> Option<DataType> {
-        DataType::from_typenum(self.get_typenum())
-    }
-
     /// Shortcut for creating a descriptor of 'object' type.
     pub fn object(py: Python) -> &Self {
         Self::from_npy_type(py, NPY_TYPES::NPY_OBJECT)
@@ -103,125 +98,6 @@ impl PyArrayDescr {
     }
 }
 
-/// Represents NumPy data type.
-///
-/// This is an incomplete counterpart of
-/// [Enumerated Types](https://numpy.org/doc/stable/reference/c-api/dtype.html#enumerated-types)
-/// in numpy C-API.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum DataType {
-    Bool,
-    Int8,
-    Int16,
-    Int32,
-    Int64,
-    Uint8,
-    Uint16,
-    Uint32,
-    Uint64,
-    Float32,
-    Float64,
-    Complex32,
-    Complex64,
-    Object,
-}
-
-impl DataType {
-    /// Convert `self` into an
-    /// [enumerated type](https://numpy.org/doc/stable/reference/c-api/dtype.html#enumerated-types).
-    pub fn into_typenum(self) -> c_int {
-        self.into_npy_type() as _
-    }
-
-    /// Construct the data type from an
-    /// [enumerated type](https://numpy.org/doc/stable/reference/c-api/dtype.html#enumerated-types).
-    pub fn from_typenum(typenum: c_int) -> Option<Self> {
-        Some(match typenum {
-            x if x == NPY_TYPES::NPY_BOOL as c_int => DataType::Bool,
-            x if x == NPY_TYPES::NPY_BYTE as c_int => DataType::Int8,
-            x if x == NPY_TYPES::NPY_SHORT as c_int => DataType::Int16,
-            x if x == NPY_TYPES::NPY_INT as c_int => Self::integer::<c_int>()?,
-            x if x == NPY_TYPES::NPY_LONG as c_int => Self::integer::<c_long>()?,
-            x if x == NPY_TYPES::NPY_LONGLONG as c_int => Self::integer::<c_longlong>()?,
-            x if x == NPY_TYPES::NPY_UBYTE as c_int => DataType::Uint8,
-            x if x == NPY_TYPES::NPY_USHORT as c_int => DataType::Uint16,
-            x if x == NPY_TYPES::NPY_UINT as c_int => Self::integer::<c_uint>()?,
-            x if x == NPY_TYPES::NPY_ULONG as c_int => Self::integer::<c_ulong>()?,
-            x if x == NPY_TYPES::NPY_ULONGLONG as c_int => Self::integer::<c_ulonglong>()?,
-            x if x == NPY_TYPES::NPY_FLOAT as c_int => DataType::Float32,
-            x if x == NPY_TYPES::NPY_DOUBLE as c_int => DataType::Float64,
-            x if x == NPY_TYPES::NPY_CFLOAT as c_int => DataType::Complex32,
-            x if x == NPY_TYPES::NPY_CDOUBLE as c_int => DataType::Complex64,
-            x if x == NPY_TYPES::NPY_OBJECT as c_int => DataType::Object,
-            _ => return None,
-        })
-    }
-
-    #[inline]
-    fn integer<T: Bounded + Zero + Sized + PartialEq>() -> Option<Self> {
-        let is_unsigned = T::min_value() == T::zero();
-        let bit_width = size_of::<T>() << 3;
-        Some(match (is_unsigned, bit_width) {
-            (false, 8) => Self::Int8,
-            (false, 16) => Self::Int16,
-            (false, 32) => Self::Int32,
-            (false, 64) => Self::Int64,
-            (true, 8) => Self::Uint8,
-            (true, 16) => Self::Uint16,
-            (true, 32) => Self::Uint32,
-            (true, 64) => Self::Uint64,
-            _ => return None,
-        })
-    }
-
-    fn into_npy_type(self) -> NPY_TYPES {
-        fn npy_int_type_lookup<T, T0, T1, T2>(npy_types: [NPY_TYPES; 3]) -> NPY_TYPES {
-            // `npy_common.h` defines the integer aliases. In order, it checks:
-            // NPY_BITSOF_LONG, NPY_BITSOF_LONGLONG, NPY_BITSOF_INT, NPY_BITSOF_SHORT, NPY_BITSOF_CHAR
-            // and assigns the alias to the first matching size, so we should check in this order.
-            match size_of::<T>() {
-                x if x == size_of::<T0>() => npy_types[0],
-                x if x == size_of::<T1>() => npy_types[1],
-                x if x == size_of::<T2>() => npy_types[2],
-                _ => panic!("Unable to match integer type descriptor: {:?}", npy_types),
-            }
-        }
-
-        match self {
-            DataType::Bool => NPY_TYPES::NPY_BOOL,
-            DataType::Int8 => NPY_TYPES::NPY_BYTE,
-            DataType::Int16 => NPY_TYPES::NPY_SHORT,
-            DataType::Int32 => npy_int_type_lookup::<i32, c_long, c_int, c_short>([
-                NPY_TYPES::NPY_LONG,
-                NPY_TYPES::NPY_INT,
-                NPY_TYPES::NPY_SHORT,
-            ]),
-            DataType::Int64 => npy_int_type_lookup::<i64, c_long, c_longlong, c_int>([
-                NPY_TYPES::NPY_LONG,
-                NPY_TYPES::NPY_LONGLONG,
-                NPY_TYPES::NPY_INT,
-            ]),
-            DataType::Uint8 => NPY_TYPES::NPY_UBYTE,
-            DataType::Uint16 => NPY_TYPES::NPY_USHORT,
-            DataType::Uint32 => npy_int_type_lookup::<u32, c_ulong, c_uint, c_ushort>([
-                NPY_TYPES::NPY_ULONG,
-                NPY_TYPES::NPY_UINT,
-                NPY_TYPES::NPY_USHORT,
-            ]),
-            DataType::Uint64 => npy_int_type_lookup::<u64, c_ulong, c_ulonglong, c_uint>([
-                NPY_TYPES::NPY_ULONG,
-                NPY_TYPES::NPY_ULONGLONG,
-                NPY_TYPES::NPY_UINT,
-            ]),
-            DataType::Float32 => NPY_TYPES::NPY_FLOAT,
-            DataType::Float64 => NPY_TYPES::NPY_DOUBLE,
-            DataType::Complex32 => NPY_TYPES::NPY_CFLOAT,
-            DataType::Complex64 => NPY_TYPES::NPY_CDOUBLE,
-            DataType::Object => NPY_TYPES::NPY_OBJECT,
-        }
-    }
-}
-
 /// Represents that a type can be an element of `PyArray`.
 ///
 /// Currently, only integer/float/complex types are supported.
@@ -243,7 +119,7 @@ impl DataType {
 /// on Python's heap using PyO3's [Py](pyo3::Py) type.
 ///
 /// ```
-/// use numpy::{ndarray::Array2, DataType, Element, PyArray, PyArrayDescr, ToPyArray};
+/// use numpy::{ndarray::Array2, Element, PyArray, PyArrayDescr, ToPyArray};
 /// use pyo3::{pyclass, Py, Python};
 ///
 /// #[pyclass]
