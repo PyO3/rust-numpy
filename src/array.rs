@@ -244,13 +244,24 @@ impl<T, D> PyArray<T, D> {
         unsafe { Py::from_borrowed_ptr(self.py(), self.as_ptr()) }
     }
 
-    /// Constructs `PyArray` from raw python object without incrementing reference counts.
+    /// Constructs `PyArray` from raw Python object without incrementing reference counts.
+    ///
+    /// # Safety
+    ///
+    /// Implementations must ensure the object does not get freed during `'py`
+    /// and ensure that `ptr` is of the correct type.
     pub unsafe fn from_owned_ptr(py: Python<'_>, ptr: *mut ffi::PyObject) -> &Self {
         py.from_owned_ptr(ptr)
     }
 
-    /// Constructs PyArray from raw python object and increments reference counts.
-    pub unsafe fn from_borrowed_ptr(py: Python<'_>, ptr: *mut ffi::PyObject) -> &Self {
+    /// Constructs PyArray from raw Python object and increments reference counts.
+    ///
+    /// # Safety
+    ///
+    /// Implementations must ensure the object does not get freed during `'py`
+    /// and ensure that `ptr` is of the correct type.
+    /// Note that it must be safe to decrement the reference count of ptr.
+    pub unsafe fn from_borrowed_ptr<'py>(py: Python<'py>, ptr: *mut ffi::PyObject) -> &'py Self {
         py.from_borrowed_ptr(ptr)
     }
 
@@ -673,7 +684,10 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     ///
     /// See [NpyIndex](../convert/trait.NpyIndex.html) for what types you can use as index.
     ///
-    /// Passing an invalid index can cause undefined behavior(mostly SIGSEGV).
+    /// # Safety
+    ///
+    /// Passing an invalid index is undefined behavior. The element must also have been initialized.
+    /// The elemet must also not be modified by Python code.
     ///
     /// # Example
     /// ```
@@ -693,6 +707,11 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     }
 
     /// Same as [uget](#method.uget), but returns `&mut T`.
+    ///
+    /// # Safety
+    ///
+    /// Passing an invalid index is undefined behavior. The element must also have been initialized.
+    /// The element must also not be accessed by Python code.
     #[inline(always)]
     #[allow(clippy::mut_from_ref)]
     pub unsafe fn uget_mut<Idx>(&self, index: Idx) -> &mut T
@@ -704,6 +723,9 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     }
 
     /// Same as [uget](#method.uget), but returns `*mut T`.
+    ///
+    /// # Safety
+    /// Passing an invalid index is undefined behavior.
     #[inline(always)]
     pub unsafe fn uget_raw<Idx>(&self, index: Idx) -> *mut T
     where
