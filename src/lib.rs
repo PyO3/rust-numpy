@@ -1,3 +1,4 @@
+#![allow(clippy::needless_lifetimes)] // We often want to make the GIL lifetime explicit.
 #![allow(clippy::missing_safety_doc)] // FIXME
 
 //! `rust-numpy` provides Rust interfaces for [NumPy C APIs](https://numpy.org/doc/stable/reference/c-api),

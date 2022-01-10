@@ -22,7 +22,7 @@ jobs:
         continue-on-error: true
       - run: |
           cargo fmt --all -- --check
-          cargo clippy --workspace --tests -- --deny warnings --allow clippy::needless-lifetimes
+          cargo clippy --workspace --tests -- --deny warnings
 
   test:
     name: python${{ matrix.python-version }}-${{ matrix.platform.python-architecture }} ${{ matrix.platform.os }}
