@@ -254,8 +254,6 @@ unsafe impl Element for PyObject {
 
 #[cfg(test)]
 mod tests {
-    use std::mem::size_of;
-
     use super::{dtype, Complex32, Complex64, Element};
 
     #[test]
@@ -277,16 +275,15 @@ mod tests {
             assert_eq!(type_name::<f64>(py), "float64");
             assert_eq!(type_name::<Complex32>(py), "complex64");
             assert_eq!(type_name::<Complex64>(py), "complex128");
-            match size_of::<usize>() {
-                32 => {
-                    assert_eq!(type_name::<usize>(py), "uint32");
-                    assert_eq!(type_name::<isize>(py), "int32");
-                }
-                64 => {
-                    assert_eq!(type_name::<usize>(py), "uint64");
-                    assert_eq!(type_name::<isize>(py), "int64");
-                }
-                _ => {}
+            #[cfg(target_pointer_width = "32")]
+            {
+                assert_eq!(type_name::<usize>(py), "uint32");
+                assert_eq!(type_name::<isize>(py), "int32");
+            }
+            #[cfg(target_pointer_width = "64")]
+            {
+                assert_eq!(type_name::<usize>(py), "uint64");
+                assert_eq!(type_name::<isize>(py), "int64");
             }
         });
     }
