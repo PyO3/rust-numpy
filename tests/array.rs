@@ -249,7 +249,7 @@ fn dtype_from_py() {
             .downcast()
             .unwrap();
         assert_eq!(&format!("{:?}", dtype), "dtype('uint32')");
-        assert!(dtype.is_equiv_to(numpy::PyArrayDescr::of::<u32>(py)));
+        assert!(dtype.is_equiv_to(numpy::dtype::<u32>(py)));
     })
 }
 

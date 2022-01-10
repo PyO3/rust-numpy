@@ -20,7 +20,7 @@ pub use num_complex::{Complex32, Complex64};
 ///         .unwrap()
 ///         .downcast()
 ///         .unwrap();
-///     assert!(dtype.is_equiv_to(numpy::PyArrayDescr::of::<f64>(py)));
+///     assert!(dtype.is_equiv_to(numpy::dtype::<f64>(py)));
 /// });
 /// ```
 pub struct PyArrayDescr(PyAny);
@@ -37,6 +37,11 @@ unsafe fn arraydescr_check(op: *mut ffi::PyObject) -> c_int {
         op,
         PY_ARRAY_API.get_type_object(NpyTypes::PyArrayDescr_Type),
     )
+}
+
+/// Returns the type descriptor ("dtype") for a registered type.
+pub fn dtype<T: Element>(py: Python) -> &PyArrayDescr {
+    T::get_dtype(py)
 }
 
 impl PyArrayDescr {
@@ -72,7 +77,7 @@ impl PyArrayDescr {
         Self::from_npy_type(py, NPY_TYPES::NPY_OBJECT)
     }
 
-    /// Returns the type descriptor for a registered type.
+    /// Returns the type descriptor ("dtype") for a registered type.
     pub fn of<T: Element>(py: Python) -> &Self {
         T::get_dtype(py)
     }
@@ -251,12 +256,12 @@ unsafe impl Element for PyObject {
 mod tests {
     use std::mem::size_of;
 
-    use super::{Complex32, Complex64, Element, PyArrayDescr};
+    use super::{dtype, Complex32, Complex64, Element};
 
     #[test]
     fn test_dtype_names() {
         fn type_name<T: Element>(py: pyo3::Python) -> &str {
-            PyArrayDescr::of::<T>(py).get_type().name().unwrap()
+            dtype::<T>(py).get_type().name().unwrap()
         }
         pyo3::Python::with_gil(|py| {
             assert_eq!(type_name::<bool>(py), "bool_");
