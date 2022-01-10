@@ -1,7 +1,6 @@
 use std::mem::size_of;
 use std::os::raw::{c_int, c_long, c_longlong, c_short, c_uint, c_ulong, c_ulonglong, c_ushort};
 
-use cfg_if::cfg_if;
 use num_traits::{Bounded, Zero};
 use pyo3::{ffi, prelude::*, pyobject_native_type_core, types::PyType, AsPyPointer, PyNativeType};
 
@@ -219,36 +218,26 @@ macro_rules! impl_element_scalar {
             }
         }
     };
-    ($ty:ty, $npy_type:ident $(,#[$meta:meta])*) => {
+    ($ty:ty => $npy_type:ident $(,#[$meta:meta])*) => {
         impl_element_scalar!(@impl: $ty, NPY_TYPES::$npy_type $(,#[$meta])*);
     };
-    ($ty:ty $(,#[$meta:meta])*) => {
-        impl_element_scalar!(@impl: $ty, npy_int_type::<$ty>() $(,#[$meta])*);
+    ($($tys:ty),+) => {
+        $(impl_element_scalar!(@impl: $tys, npy_int_type::<$tys>());)+
     };
 }
 
-impl_element_scalar!(bool, NPY_BOOL);
-impl_element_scalar!(i8);
-impl_element_scalar!(i16);
-impl_element_scalar!(i32);
-impl_element_scalar!(i64);
-impl_element_scalar!(u8);
-impl_element_scalar!(u16);
-impl_element_scalar!(u32);
-impl_element_scalar!(u64);
-impl_element_scalar!(f32, NPY_FLOAT);
-impl_element_scalar!(f64, NPY_DOUBLE);
-impl_element_scalar!(Complex32, NPY_CFLOAT,
+impl_element_scalar!(bool => NPY_BOOL);
+impl_element_scalar!(i8, i16, i32, i64);
+impl_element_scalar!(u8, u16, u32, u64);
+impl_element_scalar!(f32 => NPY_FLOAT);
+impl_element_scalar!(f64 => NPY_DOUBLE);
+impl_element_scalar!(Complex32 => NPY_CFLOAT,
     #[doc = "Complex type with `f32` components which maps to `np.csingle` (`np.complex64`)."]);
-impl_element_scalar!(Complex64, NPY_CDOUBLE,
+impl_element_scalar!(Complex64 => NPY_CDOUBLE,
     #[doc = "Complex type with `f64` components which maps to `np.cdouble` (`np.complex128`)."]);
 
-cfg_if! {
-    if #[cfg(any(target_pointer_width = "32", target_pointer_width = "64"))] {
-        impl_element_scalar!(usize);
-        impl_element_scalar!(isize);
-    }
-}
+#[cfg(any(target_pointer_width = "32", target_pointer_width = "64"))]
+impl_element_scalar!(usize, isize);
 
 unsafe impl Element for PyObject {
     const IS_COPY: bool = false;
