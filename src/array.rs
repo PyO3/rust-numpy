@@ -127,8 +127,9 @@ impl<T, D> IntoPy<PyObject> for PyArray<T, D> {
 impl<'a, T: Element, D: Dimension> FromPyObject<'a> for &'a PyArray<T, D> {
     // here we do type-check three times
     // 1. Checks if the object is PyArray
-    // 2. Checks if the data type of the array is T
-    // 3. Checks if the dimension is same as D
+    // 2. Checks if the dimension is same as D
+    // 3. Checks if the data type of the array is T
+    // 4. Optionally checks if the elements of the array match T
     fn extract(ob: &'a PyAny) -> PyResult<Self> {
         let array = unsafe {
             if npyffi::PyArray_Check(ob.as_ptr()) == 0 {
@@ -137,18 +138,20 @@ impl<'a, T: Element, D: Dimension> FromPyObject<'a> for &'a PyArray<T, D> {
             &*(ob as *const PyAny as *const PyArray<T, D>)
         };
 
-        let src_dtype = array.dtype();
-        let dst_dtype = T::get_dtype(ob.py());
-        if !src_dtype.is_equiv_to(dst_dtype) {
-            return Err(TypeError::new(src_dtype, dst_dtype).into());
-        }
-
         let src_ndim = array.shape().len();
         if let Some(dst_ndim) = D::NDIM {
             if src_ndim != dst_ndim {
                 return Err(DimensionalityError::new(src_ndim, dst_ndim).into());
             }
         }
+
+        let src_dtype = array.dtype();
+        let dst_dtype = T::get_dtype(ob.py());
+        if !src_dtype.is_equiv_to(dst_dtype) {
+            return Err(TypeError::new(src_dtype, dst_dtype).into());
+        }
+
+        T::check_element_types(ob.py(), array)?;
 
         Ok(array)
     }

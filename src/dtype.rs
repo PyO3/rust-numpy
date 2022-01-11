@@ -1,10 +1,17 @@
+use std::any::{type_name, TypeId};
 use std::mem::size_of;
 use std::os::raw::{c_int, c_long, c_longlong, c_short, c_uint, c_ulong, c_ulonglong, c_ushort};
 
+use ndarray::Dimension;
 use num_traits::{Bounded, Zero};
-use pyo3::{ffi, prelude::*, pyobject_native_type_core, types::PyType, AsPyPointer, PyNativeType};
+use pyo3::{
+    ffi, prelude::*, pyobject_native_type_core, type_object::PyTypeObject, types::PyType,
+    AsPyPointer, PyDowncastError, PyNativeType, PyTypeInfo,
+};
 
+use crate::array::PyArray;
 use crate::npyffi::{NpyTypes, PyArray_Descr, NPY_TYPES, PY_ARRAY_API};
+use crate::NpySingleIterBuilder;
 
 pub use num_complex::{Complex32, Complex64};
 
@@ -132,26 +139,12 @@ impl PyArrayDescr {
 /// #[pyclass]
 /// pub struct CustomElement;
 ///
-/// // The transparent wrapper is necessary as one cannot implement
-/// // a foreign trait (`Element`) on a foreign type (`Py`) directly.
-/// #[derive(Clone)]
-/// #[repr(transparent)]
-/// pub struct Wrapper(pub Py<CustomElement>);
-///
-/// unsafe impl Element for Wrapper {
-///     const IS_COPY: bool = false;
-///
-///     fn get_dtype(py: Python) -> &PyArrayDescr {
-///         PyArrayDescr::object(py)
-///     }
-/// }
-///
 /// Python::with_gil(|py| {
-///     let array = Array2::<Wrapper>::from_shape_fn((2, 3), |(_i, _j)| {
-///         Wrapper(Py::new(py, CustomElement).unwrap())
+///     let array = Array2::<Py<CustomElement>>::from_shape_fn((2, 3), |(_i, _j)| {
+///         Py::new(py, CustomElement).unwrap()
 ///     });
 ///
-///     let _array: &PyArray<Wrapper, _> = array.to_pyarray(py);
+///     let _array: &PyArray<Py<CustomElement>, _> = array.to_pyarray(py);
 /// });
 /// ```
 pub unsafe trait Element: Clone + Send {
@@ -163,6 +156,9 @@ pub unsafe trait Element: Clone + Send {
     /// This flag should *always* be set to `false` for object types or record types
     /// that contain object-type fields.
     const IS_COPY: bool;
+
+    /// TODO
+    fn check_element_types<D: Dimension>(py: Python, array: &PyArray<Self, D>) -> PyResult<()>;
 
     /// Returns the associated array descriptor ("dtype") for the given type.
     fn get_dtype(py: Python) -> &PyArrayDescr;
@@ -218,6 +214,12 @@ macro_rules! impl_element_scalar {
         $(#[$meta])*
         unsafe impl Element for $ty {
             const IS_COPY: bool = true;
+
+            fn check_element_types<D: Dimension>(_py: Python, _array: &PyArray<Self, D>) -> PyResult<()> {
+                // For scalar types, checking the dtype is sufficient.
+                Ok(())
+            }
+
             fn get_dtype(py: Python) -> &PyArrayDescr {
                 PyArrayDescr::from_npy_type(py, $npy_type)
             }
@@ -244,8 +246,29 @@ impl_element_scalar!(Complex64 => NPY_CDOUBLE,
 #[cfg(any(target_pointer_width = "32", target_pointer_width = "64"))]
 impl_element_scalar!(usize, isize);
 
-unsafe impl Element for PyObject {
+unsafe impl<T> Element for Py<T>
+where
+    T: PyTypeInfo + 'static,
+{
     const IS_COPY: bool = false;
+
+    fn check_element_types<D: Dimension>(py: Python, array: &PyArray<Self, D>) -> PyResult<()> {
+        // `PyAny` can represent any Python object.
+        if TypeId::of::<PyAny>() == TypeId::of::<T>() {
+            return Ok(());
+        }
+
+        let type_object = T::type_object(py);
+        let iterator = NpySingleIterBuilder::readwrite(array).build()?;
+
+        for element in iterator {
+            if !type_object.is_instance(element)? {
+                return Err(PyDowncastError::new(array, type_name::<T>()).into());
+            }
+        }
+
+        Ok(())
+    }
 
     fn get_dtype(py: Python) -> &PyArrayDescr {
         PyArrayDescr::object(py)
