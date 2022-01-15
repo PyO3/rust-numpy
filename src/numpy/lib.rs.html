@@ -143,8 +143,8 @@
     <span class="ident">PyArray6</span>, <span class="ident">PyArrayDyn</span>,
 };
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::convert</span>::{<span class="ident">IntoPyArray</span>, <span class="ident">NpyIndex</span>, <span class="ident">ToNpyDims</span>, <span class="ident">ToPyArray</span>};
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::dtype</span>::{<span class="ident">c32</span>, <span class="ident">c64</span>, <span class="ident">DataType</span>, <span class="ident">Element</span>, <span class="ident">PyArrayDescr</span>};
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::error</span>::{<span class="ident">FromVecError</span>, <span class="ident">NotContiguousError</span>, <span class="ident">ShapeError</span>};
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::dtype</span>::{<span class="ident">dtype</span>, <span class="ident">Complex32</span>, <span class="ident">Complex64</span>, <span class="ident">Element</span>, <span class="ident">PyArrayDescr</span>};
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::error</span>::{<span class="ident">DimensionalityError</span>, <span class="ident">FromVecError</span>, <span class="ident">NotContiguousError</span>, <span class="ident">TypeError</span>};
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::npyffi</span>::{<span class="ident">PY_ARRAY_API</span>, <span class="ident">PY_UFUNC_API</span>};
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::npyiter</span>::{
     <span class="ident">IterMode</span>, <span class="ident">NpyIterFlag</span>, <span class="ident">NpyMultiIter</span>, <span class="ident">NpyMultiIterBuilder</span>, <span class="ident">NpySingleIter</span>, <span class="ident">NpySingleIterBuilder</span>,
