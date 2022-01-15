@@ -70,16 +70,16 @@ fn rust_ext(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     ) -> &'py PyArrayDyn<f64> {
         let x = x.as_array();
         let y = y.as_array();
-        axpy(a, x, y).into_pyarray(py)
+        let z = axpy(a, x, y);
+        z.into_pyarray(py)
     }
 
     // wrapper of `mult`
     #[pyfn(m)]
     #[pyo3(name = "mult")]
-    fn mult_py(_py: Python<'_>, a: f64, x: &PyArrayDyn<f64>) -> PyResult<()> {
+    fn mult_py(_py: Python<'_>, a: f64, x: &PyArrayDyn<f64>) {
         let x = unsafe { x.as_array_mut() };
         mult(a, x);
-        Ok(())
     }
 
     Ok(())

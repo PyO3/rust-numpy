@@ -922,7 +922,7 @@ impl<D: Dimension> PyArray<PyObject, D> {
     ///
     ///     let pyarray = PyArray::from_owned_object_array(py, array);
     ///
-    ///     assert!(pyarray.readonly().get(0).unwrap().as_ref(py).is_instance::<CustomElement>().unwrap());
+    ///     assert!(pyarray.readonly().get(0).unwrap().as_ref(py).is_instance_of::<CustomElement>().unwrap());
     /// });
     /// ```
     pub fn from_owned_object_array<'py, T>(py: Python<'py>, arr: Array<Py<T>, D>) -> &'py Self {
