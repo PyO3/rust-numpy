@@ -314,6 +314,8 @@ impl PyArrayDescr {
 /// eliminated in the resulting NumPy array.
 /// In other words, objects are always treated as `Py<PyAny>` (a.k.a. `PyObject`) by Python code,
 /// and only `Py<PyAny>` can be stored in a type safe manner.
+///
+/// You can however create `ndarray::Array<Py<T>, D>` and turn that into a NumPy array safely and efficiently using [`from_owned_object_array`][crate::PyArray::from_owned_object_array].
 pub unsafe trait Element: Clone + Send {
     /// Flag that indicates whether this type is trivially copyable.
     ///

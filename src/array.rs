@@ -629,23 +629,25 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         }
     }
 
-    /// Construct PyArray from
-    /// [`ndarray::Array`](https://docs.rs/ndarray/latest/ndarray/type.Array.html).
+    /// Constructs a `PyArray` from [`ndarray::Array`]
     ///
-    /// This method uses internal [`Vec`](https://doc.rust-lang.org/std/vec/struct.Vec.html)
-    /// of `ndarray::Array` as numpy array.
+    /// This method uses the internal [`Vec`] of the `ndarray::Array` as the base object of the NumPy array.
     ///
     /// # Example
+    ///
     /// ```
-    /// # #[macro_use] extern crate ndarray;
+    /// use ndarray::array;
     /// use numpy::PyArray;
+    ///
     /// pyo3::Python::with_gil(|py| {
     ///     let pyarray = PyArray::from_owned_array(py, array![[1, 2], [3, 4]]);
     ///     assert_eq!(pyarray.readonly().as_array(), array![[1, 2], [3, 4]]);
     /// });
     /// ```
     pub fn from_owned_array<'py>(py: Python<'py>, arr: Array<T, D>) -> &'py Self {
-        IntoPyArray::into_pyarray(arr, py)
+        let (strides, dims) = (arr.npy_strides(), arr.raw_dim());
+        let data_ptr = arr.as_ptr();
+        unsafe { PyArray::from_raw_parts(py, dims, strides.as_ptr(), data_ptr, arr) }
     }
 
     /// Get the immutable reference of the specified element, with checking the passed index is valid.
@@ -855,6 +857,48 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     /// ```
     pub fn to_owned_array(&self) -> Array<T, D> {
         unsafe { self.as_array() }.to_owned()
+    }
+}
+
+impl<D: Dimension> PyArray<PyObject, D> {
+    /// Constructs a `PyArray` containing objects from [`ndarray::Array`]
+    ///
+    /// This method uses the internal [`Vec`] of the `ndarray::Array` as the base object the NumPy array.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use ndarray::array;
+    /// use pyo3::{pyclass, Py, Python};
+    /// use numpy::PyArray;
+    ///
+    /// #[pyclass]
+    /// struct CustomElement {
+    ///     foo: i32,
+    ///     bar: f64,
+    /// }
+    ///
+    /// Python::with_gil(|py| {
+    ///     let array = array![
+    ///         Py::new(py, CustomElement {
+    ///             foo: 1,
+    ///             bar: 2.0,
+    ///         }).unwrap(),
+    ///         Py::new(py, CustomElement {
+    ///             foo: 3,
+    ///             bar: 4.0,
+    ///         }).unwrap(),
+    ///     ];
+    ///
+    ///     let pyarray = PyArray::from_owned_object_array(py, array);
+    ///
+    ///     assert!(pyarray.readonly().get(0).unwrap().as_ref(py).is_instance::<CustomElement>().unwrap());
+    /// });
+    /// ```
+    pub fn from_owned_object_array<'py, T>(py: Python<'py>, arr: Array<Py<T>, D>) -> &'py Self {
+        let (strides, dims) = (arr.npy_strides(), arr.raw_dim());
+        let data_ptr = arr.as_ptr() as *const PyObject;
+        unsafe { PyArray::from_raw_parts(py, dims, strides.as_ptr(), data_ptr, arr) }
     }
 }
 

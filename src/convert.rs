@@ -63,9 +63,7 @@ where
     type Item = A;
     type Dim = D;
     fn into_pyarray<'py>(self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
-        let (strides, dims) = (self.npy_strides(), self.raw_dim());
-        let data_ptr = self.as_ptr();
-        unsafe { PyArray::from_raw_parts(py, dims, strides.as_ptr(), data_ptr, self) }
+        PyArray::from_owned_array(py, self)
     }
 }
 
