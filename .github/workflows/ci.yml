@@ -31,7 +31,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.7, 3.8, 3.9]
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
         platform: [
           { os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" },
           { os: "macOS-latest",   python-architecture: "x64", rust-target: "x86_64-apple-darwin" },
