@@ -1,10 +1,12 @@
-use crate::npyffi::{NpyTypes, PyArray_Descr, NPY_TYPES, PY_ARRAY_API};
-use cfg_if::cfg_if;
-use pyo3::{ffi, prelude::*, pyobject_native_type_core, types::PyType, AsPyPointer, PyNativeType};
-use std::os::raw::c_int;
+use std::mem::size_of;
+use std::os::raw::{c_int, c_long, c_longlong, c_short, c_uint, c_ulong, c_ulonglong, c_ushort};
 
-pub use num_complex::Complex32 as c32;
-pub use num_complex::Complex64 as c64;
+use num_traits::{Bounded, Zero};
+use pyo3::{ffi, prelude::*, pyobject_native_type_core, types::PyType, AsPyPointer, PyNativeType};
+
+use crate::npyffi::{NpyTypes, PyArray_Descr, NPY_TYPES, PY_ARRAY_API};
+
+pub use num_complex::{Complex32, Complex64};
 
 /// Binding of [`numpy.dtype`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.html).
 ///
@@ -18,7 +20,7 @@ pub use num_complex::Complex64 as c64;
 ///         .unwrap()
 ///         .downcast()
 ///         .unwrap();
-///     assert_eq!(dtype.get_datatype().unwrap(), numpy::DataType::Float64);
+///     assert!(dtype.is_equiv_to(numpy::dtype::<f64>(py)));
 /// });
 /// ```
 pub struct PyArrayDescr(PyAny);
@@ -37,10 +39,22 @@ unsafe fn arraydescr_check(op: *mut ffi::PyObject) -> c_int {
     )
 }
 
+/// Returns the type descriptor ("dtype") for a registered type.
+pub fn dtype<T: Element>(py: Python) -> &PyArrayDescr {
+    T::get_dtype(py)
+}
+
 impl PyArrayDescr {
     /// Returns `self` as `*mut PyArray_Descr`.
     pub fn as_dtype_ptr(&self) -> *mut PyArray_Descr {
         self.as_ptr() as _
+    }
+
+    /// Returns `self` as `*mut PyArray_Descr` while increasing the reference count.
+    ///
+    /// Useful in cases where the descriptor is stolen by the API.
+    pub fn into_dtype_ptr(&self) -> *mut PyArray_Descr {
+        self.into_ptr() as _
     }
 
     /// Returns the internal `PyType` that this `dtype` holds.
@@ -58,112 +72,33 @@ impl PyArrayDescr {
         unsafe { PyType::from_type_ptr(self.py(), dtype_type_ptr) }
     }
 
-    /// Returns the data type as `DataType` enum.
-    pub fn get_datatype(&self) -> Option<DataType> {
-        DataType::from_typenum(self.get_typenum())
+    /// Shortcut for creating a descriptor of 'object' type.
+    pub fn object(py: Python) -> &Self {
+        Self::from_npy_type(py, NPY_TYPES::NPY_OBJECT)
+    }
+
+    /// Returns the type descriptor ("dtype") for a registered type.
+    pub fn of<T: Element>(py: Python) -> &Self {
+        T::get_dtype(py)
+    }
+
+    /// Returns true if two type descriptors are equivalent.
+    pub fn is_equiv_to(&self, other: &Self) -> bool {
+        unsafe { PY_ARRAY_API.PyArray_EquivTypes(self.as_dtype_ptr(), other.as_dtype_ptr()) != 0 }
     }
 
     fn from_npy_type(py: Python, npy_type: NPY_TYPES) -> &Self {
         unsafe {
-            let descr = PY_ARRAY_API.PyArray_DescrFromType(npy_type as i32);
+            let descr = PY_ARRAY_API.PyArray_DescrFromType(npy_type as _);
             py.from_owned_ptr(descr as _)
         }
     }
 
-    fn get_typenum(&self) -> std::os::raw::c_int {
+    /// Retrieves the
+    /// [enumerated type](https://numpy.org/doc/stable/reference/c-api/dtype.html#enumerated-types)
+    /// for this type descriptor.
+    pub fn get_typenum(&self) -> c_int {
         unsafe { *self.as_dtype_ptr() }.type_num
-    }
-}
-
-/// Represents numpy data type.
-///
-/// This is an incomplete counterpart of
-/// [Enumerated Types](https://numpy.org/doc/stable/reference/c-api/dtype.html#enumerated-types)
-/// in numpy C-API.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum DataType {
-    Bool,
-    Int8,
-    Int16,
-    Int32,
-    Int64,
-    Uint8,
-    Uint16,
-    Uint32,
-    Uint64,
-    Float32,
-    Float64,
-    Complex32,
-    Complex64,
-    Object,
-}
-
-impl DataType {
-    /// Construct `DataType` from
-    /// [Enumerated Types](https://numpy.org/doc/stable/reference/c-api/dtype.html#enumerated-types).
-    pub fn from_typenum(typenum: c_int) -> Option<Self> {
-        Some(match typenum {
-            x if x == NPY_TYPES::NPY_BOOL as i32 => DataType::Bool,
-            x if x == NPY_TYPES::NPY_BYTE as i32 => DataType::Int8,
-            x if x == NPY_TYPES::NPY_SHORT as i32 => DataType::Int16,
-            x if x == NPY_TYPES::NPY_INT as i32 => DataType::Int32,
-            x if x == NPY_TYPES::NPY_LONG as i32 => return DataType::from_clong(false),
-            x if x == NPY_TYPES::NPY_LONGLONG as i32 => DataType::Int64,
-            x if x == NPY_TYPES::NPY_UBYTE as i32 => DataType::Uint8,
-            x if x == NPY_TYPES::NPY_USHORT as i32 => DataType::Uint16,
-            x if x == NPY_TYPES::NPY_UINT as i32 => DataType::Uint32,
-            x if x == NPY_TYPES::NPY_ULONG as i32 => return DataType::from_clong(true),
-            x if x == NPY_TYPES::NPY_ULONGLONG as i32 => DataType::Uint64,
-            x if x == NPY_TYPES::NPY_FLOAT as i32 => DataType::Float32,
-            x if x == NPY_TYPES::NPY_DOUBLE as i32 => DataType::Float64,
-            x if x == NPY_TYPES::NPY_CFLOAT as i32 => DataType::Complex32,
-            x if x == NPY_TYPES::NPY_CDOUBLE as i32 => DataType::Complex64,
-            x if x == NPY_TYPES::NPY_OBJECT as i32 => DataType::Object,
-            _ => return None,
-        })
-    }
-
-    /// Convert `self` into
-    /// [Enumerated Types](https://numpy.org/doc/stable/reference/c-api/dtype.html#enumerated-types).
-    pub fn into_ctype(self) -> NPY_TYPES {
-        match self {
-            DataType::Bool => NPY_TYPES::NPY_BOOL,
-            DataType::Int8 => NPY_TYPES::NPY_BYTE,
-            DataType::Int16 => NPY_TYPES::NPY_SHORT,
-            DataType::Int32 => NPY_TYPES::NPY_INT,
-            #[cfg(all(target_pointer_width = "64", not(windows)))]
-            DataType::Int64 => NPY_TYPES::NPY_LONG,
-            #[cfg(any(target_pointer_width = "32", windows))]
-            DataType::Int64 => NPY_TYPES::NPY_LONGLONG,
-            DataType::Uint8 => NPY_TYPES::NPY_UBYTE,
-            DataType::Uint16 => NPY_TYPES::NPY_USHORT,
-            DataType::Uint32 => NPY_TYPES::NPY_UINT,
-            DataType::Uint64 => NPY_TYPES::NPY_ULONGLONG,
-            DataType::Float32 => NPY_TYPES::NPY_FLOAT,
-            DataType::Float64 => NPY_TYPES::NPY_DOUBLE,
-            DataType::Complex32 => NPY_TYPES::NPY_CFLOAT,
-            DataType::Complex64 => NPY_TYPES::NPY_CDOUBLE,
-            DataType::Object => NPY_TYPES::NPY_OBJECT,
-        }
-    }
-
-    #[inline(always)]
-    fn from_clong(is_usize: bool) -> Option<Self> {
-        if cfg!(any(target_pointer_width = "32", windows)) {
-            Some(if is_usize {
-                DataType::Uint32
-            } else {
-                DataType::Int32
-            })
-        } else if cfg!(all(target_pointer_width = "64", not(windows))) {
-            Some(if is_usize {
-                DataType::Uint64
-            } else {
-                DataType::Int64
-            })
-        } else {
-            None
-        }
     }
 }
 
@@ -176,11 +111,14 @@ impl DataType {
 ///
 /// # Safety
 ///
-/// A type `T` that implements this trait should be safe when managed in numpy array,
-/// thus implementing this trait is marked unsafe.
-/// This means that all data types except for `DataType::Object` are assumed to be trivially copyable.
-/// Furthermore, it is assumed that for `DataType::Object` the elements are pointers into the Python heap
-/// and that the corresponding `Clone` implemenation will never panic as it only increases the reference count.
+/// A type `T` that implements this trait should be safe when managed in numpy
+/// array, thus implementing this trait is marked unsafe. Data types that don't
+/// contain Python objects (i.e., either the object type itself or record types
+/// containing object-type fields) are assumed to be trivially copyable, which
+/// is reflected in the `IS_COPY` flag. Furthermore, it is assumed that for
+/// the object type the elements are pointers into the Python heap and that the
+/// corresponding `Clone` implemenation will never panic as it only increases
+/// the reference count.
 ///
 /// # Custom element types
 ///
@@ -188,7 +126,7 @@ impl DataType {
 /// on Python's heap using PyO3's [Py](pyo3::Py) type.
 ///
 /// ```
-/// use numpy::{ndarray::Array2, DataType, Element, PyArray, PyArrayDescr, ToPyArray};
+/// use numpy::{ndarray::Array2, Element, PyArray, PyArrayDescr, ToPyArray};
 /// use pyo3::{pyclass, Py, Python};
 ///
 /// #[pyclass]
@@ -201,10 +139,10 @@ impl DataType {
 /// pub struct Wrapper(pub Py<CustomElement>);
 ///
 /// unsafe impl Element for Wrapper {
-///     const DATA_TYPE: DataType = DataType::Object;
+///     const IS_COPY: bool = false;
 ///
-///     fn is_same_type(dtype: &PyArrayDescr) -> bool {
-///         dtype.get_datatype() == Some(DataType::Object)
+///     fn get_dtype(py: Python) -> &PyArrayDescr {
+///         PyArrayDescr::object(py)
 ///     }
 /// }
 ///
@@ -217,74 +155,136 @@ impl DataType {
 /// });
 /// ```
 pub unsafe trait Element: Clone + Send {
-    /// `DataType` corresponding to this type.
-    const DATA_TYPE: DataType;
+    /// Flag that indicates whether this type is trivially copyable.
+    ///
+    /// It should be set to true for all trivially copyable types (like scalar types
+    /// and record/array types only containing trivially copyable fields and elements).
+    ///
+    /// This flag should *always* be set to `false` for object types or record types
+    /// that contain object-type fields.
+    const IS_COPY: bool;
 
-    /// Returns if the give `dtype` is convertible to `Self` in Rust.
-    fn is_same_type(dtype: &PyArrayDescr) -> bool;
+    /// Returns the associated array descriptor ("dtype") for the given type.
+    fn get_dtype(py: Python) -> &PyArrayDescr;
+}
 
-    /// Returns the corresponding
-    /// [Enumerated Type](https://numpy.org/doc/stable/reference/c-api/dtype.html#enumerated-types).
-    #[inline]
-    fn npy_type() -> NPY_TYPES {
-        Self::DATA_TYPE.into_ctype()
-    }
-
-    /// Create `dtype`.
-    fn get_dtype(py: Python) -> &PyArrayDescr {
-        PyArrayDescr::from_npy_type(py, Self::npy_type())
+fn npy_int_type_lookup<T, T0, T1, T2>(npy_types: [NPY_TYPES; 3]) -> NPY_TYPES {
+    // `npy_common.h` defines the integer aliases. In order, it checks:
+    // NPY_BITSOF_LONG, NPY_BITSOF_LONGLONG, NPY_BITSOF_INT, NPY_BITSOF_SHORT, NPY_BITSOF_CHAR
+    // and assigns the alias to the first matching size, so we should check in this order.
+    match size_of::<T>() {
+        x if x == size_of::<T0>() => npy_types[0],
+        x if x == size_of::<T1>() => npy_types[1],
+        x if x == size_of::<T2>() => npy_types[2],
+        _ => panic!("Unable to match integer type descriptor: {:?}", npy_types),
     }
 }
 
-macro_rules! impl_num_element {
-    ($t:ty, $npy_dat_t:ident $(,$npy_types: ident)+) => {
-        unsafe impl Element for $t {
-            const DATA_TYPE: DataType = DataType::$npy_dat_t;
-            fn is_same_type(dtype: &PyArrayDescr) -> bool {
-                $(dtype.get_typenum() == NPY_TYPES::$npy_types as i32 ||)+ false
+fn npy_int_type<T: Bounded + Zero + Sized + PartialEq>() -> NPY_TYPES {
+    let is_unsigned = T::min_value() == T::zero();
+    let bit_width = size_of::<T>() << 3;
+
+    match (is_unsigned, bit_width) {
+        (false, 8) => NPY_TYPES::NPY_BYTE,
+        (false, 16) => NPY_TYPES::NPY_SHORT,
+        (false, 32) => npy_int_type_lookup::<i32, c_long, c_int, c_short>([
+            NPY_TYPES::NPY_LONG,
+            NPY_TYPES::NPY_INT,
+            NPY_TYPES::NPY_SHORT,
+        ]),
+        (false, 64) => npy_int_type_lookup::<i64, c_long, c_longlong, c_int>([
+            NPY_TYPES::NPY_LONG,
+            NPY_TYPES::NPY_LONGLONG,
+            NPY_TYPES::NPY_INT,
+        ]),
+        (true, 8) => NPY_TYPES::NPY_UBYTE,
+        (true, 16) => NPY_TYPES::NPY_USHORT,
+        (true, 32) => npy_int_type_lookup::<u32, c_ulong, c_uint, c_ushort>([
+            NPY_TYPES::NPY_ULONG,
+            NPY_TYPES::NPY_UINT,
+            NPY_TYPES::NPY_USHORT,
+        ]),
+        (true, 64) => npy_int_type_lookup::<u64, c_ulong, c_ulonglong, c_uint>([
+            NPY_TYPES::NPY_ULONG,
+            NPY_TYPES::NPY_ULONGLONG,
+            NPY_TYPES::NPY_UINT,
+        ]),
+        _ => unreachable!(),
+    }
+}
+
+macro_rules! impl_element_scalar {
+    (@impl: $ty:ty, $npy_type:expr $(,#[$meta:meta])*) => {
+        $(#[$meta])*
+        unsafe impl Element for $ty {
+            const IS_COPY: bool = true;
+            fn get_dtype(py: Python) -> &PyArrayDescr {
+                PyArrayDescr::from_npy_type(py, $npy_type)
             }
         }
     };
+    ($ty:ty => $npy_type:ident $(,#[$meta:meta])*) => {
+        impl_element_scalar!(@impl: $ty, NPY_TYPES::$npy_type $(,#[$meta])*);
+    };
+    ($($tys:ty),+) => {
+        $(impl_element_scalar!(@impl: $tys, npy_int_type::<$tys>());)+
+    };
 }
 
-impl_num_element!(bool, Bool, NPY_BOOL);
-impl_num_element!(i8, Int8, NPY_BYTE);
-impl_num_element!(i16, Int16, NPY_SHORT);
-impl_num_element!(u8, Uint8, NPY_UBYTE);
-impl_num_element!(u16, Uint16, NPY_USHORT);
-impl_num_element!(f32, Float32, NPY_FLOAT);
-impl_num_element!(f64, Float64, NPY_DOUBLE);
-impl_num_element!(c32, Complex32, NPY_CFLOAT);
-impl_num_element!(c64, Complex64, NPY_CDOUBLE);
+impl_element_scalar!(bool => NPY_BOOL);
+impl_element_scalar!(i8, i16, i32, i64);
+impl_element_scalar!(u8, u16, u32, u64);
+impl_element_scalar!(f32 => NPY_FLOAT);
+impl_element_scalar!(f64 => NPY_DOUBLE);
+impl_element_scalar!(Complex32 => NPY_CFLOAT,
+    #[doc = "Complex type with `f32` components which maps to `np.csingle` (`np.complex64`)."]);
+impl_element_scalar!(Complex64 => NPY_CDOUBLE,
+    #[doc = "Complex type with `f64` components which maps to `np.cdouble` (`np.complex128`)."]);
 
-cfg_if! {
-    if #[cfg(all(target_pointer_width = "64", windows))] {
-            impl_num_element!(usize, Uint64, NPY_ULONGLONG);
-    } else if #[cfg(all(target_pointer_width = "64", not(windows)))] {
-            impl_num_element!(usize, Uint64, NPY_ULONG, NPY_ULONGLONG);
-    } else if #[cfg(all(target_pointer_width = "32", windows))] {
-            impl_num_element!(usize, Uint32, NPY_UINT, NPY_ULONG);
-    } else if #[cfg(all(target_pointer_width = "32", not(windows)))] {
-            impl_num_element!(usize, Uint32, NPY_UINT);
-    }
-}
-cfg_if! {
-    if #[cfg(any(target_pointer_width = "32", windows))] {
-        impl_num_element!(i32, Int32, NPY_INT, NPY_LONG);
-        impl_num_element!(u32, Uint32, NPY_UINT, NPY_ULONG);
-        impl_num_element!(i64, Int64, NPY_LONGLONG);
-        impl_num_element!(u64, Uint64, NPY_ULONGLONG);
-    } else if #[cfg(all(target_pointer_width = "64", not(windows)))] {
-        impl_num_element!(i32, Int32, NPY_INT);
-        impl_num_element!(u32, Uint32, NPY_UINT);
-        impl_num_element!(i64, Int64, NPY_LONG, NPY_LONGLONG);
-        impl_num_element!(u64, Uint64, NPY_ULONG, NPY_ULONGLONG);
-    }
-}
+#[cfg(any(target_pointer_width = "32", target_pointer_width = "64"))]
+impl_element_scalar!(usize, isize);
 
 unsafe impl Element for PyObject {
-    const DATA_TYPE: DataType = DataType::Object;
-    fn is_same_type(dtype: &PyArrayDescr) -> bool {
-        dtype.get_typenum() == NPY_TYPES::NPY_OBJECT as i32
+    const IS_COPY: bool = false;
+
+    fn get_dtype(py: Python) -> &PyArrayDescr {
+        PyArrayDescr::object(py)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{dtype, Complex32, Complex64, Element};
+
+    #[test]
+    fn test_dtype_names() {
+        fn type_name<T: Element>(py: pyo3::Python) -> &str {
+            dtype::<T>(py).get_type().name().unwrap()
+        }
+        pyo3::Python::with_gil(|py| {
+            assert_eq!(type_name::<bool>(py), "bool_");
+            assert_eq!(type_name::<i8>(py), "int8");
+            assert_eq!(type_name::<i16>(py), "int16");
+            assert_eq!(type_name::<i32>(py), "int32");
+            assert_eq!(type_name::<i64>(py), "int64");
+            assert_eq!(type_name::<u8>(py), "uint8");
+            assert_eq!(type_name::<u16>(py), "uint16");
+            assert_eq!(type_name::<u32>(py), "uint32");
+            assert_eq!(type_name::<u64>(py), "uint64");
+            assert_eq!(type_name::<f32>(py), "float32");
+            assert_eq!(type_name::<f64>(py), "float64");
+            assert_eq!(type_name::<Complex32>(py), "complex64");
+            assert_eq!(type_name::<Complex64>(py), "complex128");
+            #[cfg(target_pointer_width = "32")]
+            {
+                assert_eq!(type_name::<usize>(py), "uint32");
+                assert_eq!(type_name::<isize>(py), "int32");
+            }
+            #[cfg(target_pointer_width = "64")]
+            {
+                assert_eq!(type_name::<usize>(py), "uint64");
+                assert_eq!(type_name::<isize>(py), "int64");
+            }
+        });
     }
 }

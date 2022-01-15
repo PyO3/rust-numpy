@@ -15,8 +15,8 @@ use std::{
 use std::{iter::ExactSizeIterator, marker::PhantomData};
 
 use crate::convert::{ArrayExt, IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
-use crate::dtype::{DataType, Element};
-use crate::error::{FromVecError, NotContiguousError, ShapeError};
+use crate::dtype::Element;
+use crate::error::{DimensionalityError, FromVecError, NotContiguousError, TypeError};
 use crate::slice_container::PySliceContainer;
 
 /// A safe, static-typed interface for
@@ -136,13 +136,21 @@ impl<'a, T: Element, D: Dimension> FromPyObject<'a> for &'a PyArray<T, D> {
             }
             &*(ob as *const PyAny as *const PyArray<T, D>)
         };
-        let dtype = array.dtype();
-        let dim = array.shape().len();
-        if T::is_same_type(dtype) && D::NDIM.map(|n| n == dim).unwrap_or(true) {
-            Ok(array)
-        } else {
-            Err(ShapeError::new(dtype, dim, T::DATA_TYPE, D::NDIM).into())
+
+        let src_dtype = array.dtype();
+        let dst_dtype = T::get_dtype(ob.py());
+        if !src_dtype.is_equiv_to(dst_dtype) {
+            return Err(TypeError::new(src_dtype, dst_dtype).into());
         }
+
+        let src_ndim = array.shape().len();
+        if let Some(dst_ndim) = D::NDIM {
+            if src_ndim != dst_ndim {
+                return Err(DimensionalityError::new(src_ndim, dst_ndim).into());
+            }
+        }
+
+        Ok(array)
     }
 }
 
@@ -160,7 +168,7 @@ impl<T, D> PyArray<T, D> {
     /// pyo3::Python::with_gil(|py| {
     ///    let array = numpy::PyArray::from_vec(py, vec![1, 2, 3i32]);
     ///    let dtype = array.dtype();
-    ///    assert_eq!(dtype.get_datatype().unwrap(), numpy::DataType::Int32);
+    ///    assert!(dtype.is_equiv_to(numpy::dtype::<i32>(py)));
     /// });
     /// ```
     pub fn dtype(&self) -> &crate::PyArrayDescr {
@@ -428,14 +436,13 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         ID: IntoDimension<Dim = D>,
     {
         let dims = dims.into_dimension();
-        let ptr = PY_ARRAY_API.PyArray_New(
+        let ptr = PY_ARRAY_API.PyArray_NewFromDescr(
             PY_ARRAY_API.get_type_object(npyffi::NpyTypes::PyArray_Type),
+            T::get_dtype(py).into_dtype_ptr(),
             dims.ndim_cint(),
             dims.as_dims_ptr(),
-            T::npy_type() as c_int,
             strides as *mut npy_intp, // strides
             ptr::null_mut(),          // data
-            0,                        // itemsize
             flag,                     // flag
             ptr::null_mut(),          // obj
         );
@@ -453,16 +460,15 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         ID: IntoDimension<Dim = D>,
     {
         let dims = dims.into_dimension();
-        let ptr = PY_ARRAY_API.PyArray_New(
+        let ptr = PY_ARRAY_API.PyArray_NewFromDescr(
             PY_ARRAY_API.get_type_object(npyffi::NpyTypes::PyArray_Type),
+            T::get_dtype(py).into_dtype_ptr(),
             dims.ndim_cint(),
             dims.as_dims_ptr(),
-            T::npy_type() as c_int,
-            strides as *mut npy_intp,     // strides
-            data_ptr as *mut c_void,      // data
-            mem::size_of::<T>() as c_int, // itemsize
-            npyffi::NPY_ARRAY_WRITEABLE,  // flag
-            ptr::null_mut(),              // obj
+            strides as *mut npy_intp,    // strides
+            data_ptr as *mut c_void,     // data
+            npyffi::NPY_ARRAY_WRITEABLE, // flag
+            ptr::null_mut(),             // obj
         );
 
         PY_ARRAY_API.PyArray_SetBaseObject(
@@ -569,11 +575,10 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     {
         let dims = dims.into_dimension();
         unsafe {
-            let dtype = T::get_dtype(py);
             let ptr = PY_ARRAY_API.PyArray_Zeros(
                 dims.ndim_cint(),
                 dims.as_dims_ptr(),
-                dtype.into_ptr() as _,
+                T::get_dtype(py).into_dtype_ptr(),
                 if is_fortran { -1 } else { 0 },
             );
             Self::from_owned_ptr(py, ptr)
@@ -847,7 +852,7 @@ impl<T: Element> PyArray<T, Ix1> {
     pub fn from_slice<'py>(py: Python<'py>, slice: &[T]) -> &'py Self {
         unsafe {
             let array = PyArray::new(py, [slice.len()], false);
-            if T::DATA_TYPE != DataType::Object {
+            if T::IS_COPY {
                 array.copy_ptr(slice.as_ptr(), slice.len());
             } else {
                 let data_ptr = array.data();
@@ -1104,10 +1109,9 @@ impl<T: Element, D> PyArray<T, D> {
     /// ```
     pub fn cast<'py, U: Element>(&'py self, is_fortran: bool) -> PyResult<&'py PyArray<U, D>> {
         let ptr = unsafe {
-            let dtype = U::get_dtype(self.py());
             PY_ARRAY_API.PyArray_CastToType(
                 self.as_array_ptr(),
-                dtype.into_ptr() as _,
+                U::get_dtype(self.py()).into_dtype_ptr(),
                 if is_fortran { -1 } else { 0 },
             )
         };
@@ -1193,7 +1197,7 @@ impl<T: Element + AsPrimitive<f64>> PyArray<T, Ix1> {
                 start.as_(),
                 stop.as_(),
                 step.as_(),
-                T::npy_type() as i32,
+                T::get_dtype(py).get_typenum(),
             );
             Self::from_owned_ptr(py, ptr)
         }
@@ -1220,5 +1224,17 @@ mod tests {
             let array = PyArray::from_vec2(py, &[vec![1, 2], vec![3, 4]]).unwrap();
             array.to_dyn().to_owned_array();
         })
+    }
+
+    #[test]
+    fn test_hasobject_flag() {
+        use super::ToPyArray;
+        use pyo3::{py_run, types::PyList, Py, PyAny};
+
+        pyo3::Python::with_gil(|py| {
+            let a = ndarray::Array2::from_shape_fn((2, 3), |(_i, _j)| PyList::empty(py).into());
+            let arr: &PyArray<Py<PyAny>, _> = a.to_pyarray(py);
+            py_run!(py, arr, "assert arr.dtype.hasobject");
+        });
     }
 }

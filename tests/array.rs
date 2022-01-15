@@ -249,7 +249,7 @@ fn dtype_from_py() {
             .downcast()
             .unwrap();
         assert_eq!(&format!("{:?}", dtype), "dtype('uint32')");
-        assert_eq!(dtype.get_datatype().unwrap(), numpy::DataType::Uint32);
+        assert!(dtype.is_equiv_to(numpy::dtype::<u32>(py)));
     })
 }
 
