@@ -6,11 +6,11 @@ use pyo3::{
     types::{IntoPyDict, PyDict},
 };
 
-fn get_np_locals(py: Python<'_>) -> &'_ PyDict {
+fn get_np_locals(py: Python) -> &PyDict {
     [("np", get_array_module(py).unwrap())].into_py_dict(py)
 }
 
-fn not_contiguous_array<'py>(py: Python<'py>) -> &'py PyArray1<i32> {
+fn not_contiguous_array(py: Python) -> &PyArray1<i32> {
     py.eval(
         "np.array([1, 2, 3, 4], dtype='int32')[::2]",
         Some(get_np_locals(py)),
@@ -266,7 +266,7 @@ fn borrow_from_array() {
     #[pymethods]
     impl Owner {
         #[getter]
-        fn array<'py>(this: &'py PyCell<Self>) -> &'py PyArray1<f64> {
+        fn array(this: &PyCell<Self>) -> &PyArray1<f64> {
             let array = &this.borrow().array;
 
             unsafe { PyArray1::borrow_from_array(array, this) }

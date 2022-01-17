@@ -1,0 +1,16 @@
+[package]
+name = "numpy-parallel-example"
+version = "0.1.0"
+authors = ["Yuji Kanagawa <yuji.kngw.80s.revive@gmail.com>"]
+edition = "2018"
+
+[lib]
+name = "rust_parallel"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.15", features = ["extension-module"] }
+numpy = { path = "../.." }
+ndarray = { version = "0.15", features = ["rayon", "blas"] }
+blas-src = { version = "0.8", features = ["openblas"] }
+openblas-src = { version = "0.10", features = ["cblas", "system"] }

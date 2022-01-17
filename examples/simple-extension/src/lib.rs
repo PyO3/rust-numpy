@@ -1,6 +1,6 @@
 use numpy::ndarray::{ArrayD, ArrayViewD, ArrayViewMutD};
 use numpy::{Complex64, IntoPyArray, PyArrayDyn, PyReadonlyArrayDyn};
-use pyo3::prelude::{pymodule, PyModule, PyResult, Python};
+use pyo3::{pymodule, types::PyModule, PyResult, Python};
 
 #[pymodule]
 fn rust_ext(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
@@ -30,7 +30,8 @@ fn rust_ext(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     ) -> &'py PyArrayDyn<f64> {
         let x = x.as_array();
         let y = y.as_array();
-        axpy(a, x, y).into_pyarray(py)
+        let z = axpy(a, x, y);
+        z.into_pyarray(py)
     }
 
     // wrapper of `mult`
