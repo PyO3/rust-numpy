@@ -95,9 +95,7 @@
 <span id="95">95</span>
 <span id="96">96</span>
 <span id="97">97</span>
-</pre><pre class="rust"><code><span class="attribute">#![<span class="ident">allow</span>(<span class="ident">clippy::missing_safety_doc</span>)]</span> <span class="comment">// FIXME</span>
-
-<span class="doccomment">//! `rust-numpy` provides Rust interfaces for [NumPy C APIs](https://numpy.org/doc/stable/reference/c-api),</span>
+</pre><pre class="rust"><code><span class="doccomment">//! `rust-numpy` provides Rust interfaces for [NumPy C APIs](https://numpy.org/doc/stable/reference/c-api),</span>
 <span class="doccomment">//! especially for [ndarray](https://numpy.org/doc/stable/reference/arrays.ndarray.html) class.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! It uses [pyo3](https://github.com/PyO3/pyo3) for rust bindings to cpython, and uses</span>
@@ -126,6 +124,8 @@
 <span class="doccomment">//!     })</span>
 <span class="doccomment">//! }</span>
 <span class="doccomment">//! ```</span>
+<span class="attribute">#![<span class="ident">allow</span>(<span class="ident">clippy::needless_lifetimes</span>)]</span> <span class="comment">// We often want to make the GIL lifetime explicit.</span>
+
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">array</span>;
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">convert</span>;
 <span class="kw">mod</span> <span class="ident">dtype</span>;

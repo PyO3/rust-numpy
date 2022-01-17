@@ -1238,6 +1238,28 @@
 <span id="1238">1238</span>
 <span id="1239">1239</span>
 <span id="1240">1240</span>
+<span id="1241">1241</span>
+<span id="1242">1242</span>
+<span id="1243">1243</span>
+<span id="1244">1244</span>
+<span id="1245">1245</span>
+<span id="1246">1246</span>
+<span id="1247">1247</span>
+<span id="1248">1248</span>
+<span id="1249">1249</span>
+<span id="1250">1250</span>
+<span id="1251">1251</span>
+<span id="1252">1252</span>
+<span id="1253">1253</span>
+<span id="1254">1254</span>
+<span id="1255">1255</span>
+<span id="1256">1256</span>
+<span id="1257">1257</span>
+<span id="1258">1258</span>
+<span id="1259">1259</span>
+<span id="1260">1260</span>
+<span id="1261">1261</span>
+<span id="1262">1262</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Safe interface for NumPy ndarray</span>
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::npyffi</span>::{<span class="self">self</span>, <span class="ident">npy_intp</span>, <span class="ident">NPY_ORDER</span>, <span class="ident">PY_ARRAY_API</span>};
 <span class="kw">use</span> <span class="ident">ndarray</span>::<span class="kw-2">*</span>;
@@ -1484,13 +1506,24 @@
         <span class="kw">unsafe</span> { <span class="ident">Py::from_borrowed_ptr</span>(<span class="self">self</span>.<span class="ident">py</span>(), <span class="self">self</span>.<span class="ident">as_ptr</span>()) }
     }
 
-    <span class="doccomment">/// Constructs `PyArray` from raw python object without incrementing reference counts.</span>
+    <span class="doccomment">/// Constructs `PyArray` from raw Python object without incrementing reference counts.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// # Safety</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// Implementations must ensure the object does not get freed during `&#39;py`</span>
+    <span class="doccomment">/// and ensure that `ptr` is of the correct type.</span>
     <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">from_owned_ptr</span>(<span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>, <span class="ident">ptr</span>: <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">ffi::PyObject</span>) -&gt; <span class="kw-2">&amp;</span><span class="self">Self</span> {
         <span class="ident">py</span>.<span class="ident">from_owned_ptr</span>(<span class="ident">ptr</span>)
     }
 
-    <span class="doccomment">/// Constructs PyArray from raw python object and increments reference counts.</span>
-    <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">from_borrowed_ptr</span>(<span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>, <span class="ident">ptr</span>: <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">ffi::PyObject</span>) -&gt; <span class="kw-2">&amp;</span><span class="self">Self</span> {
+    <span class="doccomment">/// Constructs PyArray from raw Python object and increments reference counts.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// # Safety</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// Implementations must ensure the object does not get freed during `&#39;py`</span>
+    <span class="doccomment">/// and ensure that `ptr` is of the correct type.</span>
+    <span class="doccomment">/// Note that it must be safe to decrement the reference count of ptr.</span>
+    <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">from_borrowed_ptr</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>(<span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>, <span class="ident">ptr</span>: <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">ffi::PyObject</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="self">Self</span> {
         <span class="ident">py</span>.<span class="ident">from_borrowed_ptr</span>(<span class="ident">ptr</span>)
     }
 
@@ -1913,7 +1946,10 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// See [NpyIndex](../convert/trait.NpyIndex.html) for what types you can use as index.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// Passing an invalid index can cause undefined behavior(mostly SIGSEGV).</span>
+    <span class="doccomment">/// # Safety</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// Passing an invalid index is undefined behavior. The element must also have been initialized.</span>
+    <span class="doccomment">/// The elemet must also not be modified by Python code.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// # Example</span>
     <span class="doccomment">/// ```</span>
@@ -1933,6 +1969,11 @@
     }
 
     <span class="doccomment">/// Same as [uget](#method.uget), but returns `&amp;mut T`.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// # Safety</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// Passing an invalid index is undefined behavior. The element must also have been initialized.</span>
+    <span class="doccomment">/// The element must also not be accessed by Python code.</span>
     <span class="attribute">#[<span class="ident">inline</span>(<span class="ident">always</span>)]</span>
     <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">clippy::mut_from_ref</span>)]</span>
     <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">uget_mut</span><span class="op">&lt;</span><span class="ident">Idx</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">index</span>: <span class="ident">Idx</span>) -&gt; <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">T</span>
@@ -1944,6 +1985,9 @@
     }
 
     <span class="doccomment">/// Same as [uget](#method.uget), but returns `*mut T`.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// # Safety</span>
+    <span class="doccomment">/// Passing an invalid index is undefined behavior.</span>
     <span class="attribute">#[<span class="ident">inline</span>(<span class="ident">always</span>)]</span>
     <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">uget_raw</span><span class="op">&lt;</span><span class="ident">Idx</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">index</span>: <span class="ident">Idx</span>) -&gt; <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">T</span>
     <span class="kw">where</span>

@@ -47,10 +47,18 @@
 <span id="47">47</span>
 <span id="48">48</span>
 <span id="49">49</span>
+<span id="50">50</span>
+<span id="51">51</span>
+<span id="52">52</span>
+<span id="53">53</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Low-Level bindings for NumPy C API.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! &lt;https://numpy.org/doc/stable/reference/c-api&gt;</span>
-<span class="attribute">#![<span class="ident">allow</span>(<span class="ident">non_camel_case_types</span>, <span class="ident">clippy::too_many_arguments</span>)]</span>
+<span class="attribute">#![<span class="ident">allow</span>(
+    <span class="ident">non_camel_case_types</span>,
+    <span class="ident">clippy::too_many_arguments</span>,
+    <span class="ident">clippy::missing_safety_doc</span>
+)]</span>
 
 <span class="kw">use</span> <span class="ident">pyo3</span>::{<span class="ident">ffi</span>, <span class="ident">Python</span>};
 <span class="kw">use</span> <span class="ident">std::ffi::CString</span>;
