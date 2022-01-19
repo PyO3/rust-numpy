@@ -1219,7 +1219,7 @@ impl<T: Element + AsPrimitive<f64>> PyArray<T, Ix1> {
                 start.as_(),
                 stop.as_(),
                 step.as_(),
-                T::get_dtype(py).get_typenum(),
+                T::get_dtype(py).num(),
             );
             Self::from_owned_ptr(py, ptr)
         }

@@ -94,10 +94,13 @@ impl PyArrayDescr {
         }
     }
 
-    /// Retrieves the
-    /// [enumerated type](https://numpy.org/doc/stable/reference/c-api/dtype.html#enumerated-types)
-    /// for this type descriptor.
-    pub fn get_typenum(&self) -> c_int {
+    /// Returns a unique number for each of the 21 different built-in
+    /// [enumerated types](https://numpy.org/doc/stable/reference/c-api/dtype.html#enumerated-types).
+    ///
+    /// These are roughly ordered from least-to-most precision.
+    ///
+    /// Equivalent to [`np.dtype.num`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.num.html).
+    pub fn num(&self) -> c_int {
         unsafe { *self.as_dtype_ptr() }.type_num
     }
 }
