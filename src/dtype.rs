@@ -1,10 +1,22 @@
+use std::collections::BTreeMap;
 use std::mem::size_of;
-use std::os::raw::{c_int, c_long, c_longlong, c_short, c_uint, c_ulong, c_ulonglong, c_ushort};
+use std::os::raw::{
+    c_char, c_int, c_long, c_longlong, c_short, c_uint, c_ulong, c_ulonglong, c_ushort,
+};
 
 use num_traits::{Bounded, Zero};
-use pyo3::{ffi, prelude::*, pyobject_native_type_core, types::PyType, AsPyPointer, PyNativeType};
+use pyo3::{
+    ffi::{self, PyTuple_Size},
+    prelude::*,
+    pyobject_native_type_core,
+    types::{PyDict, PyTuple, PyType},
+    AsPyPointer, FromPyObject, FromPyPointer, PyNativeType, PyResult,
+};
 
-use crate::npyffi::{NpyTypes, PyArray_Descr, NPY_TYPES, PY_ARRAY_API};
+use crate::npyffi::{
+    NpyTypes, PyArray_Descr, NPY_ALIGNED_STRUCT, NPY_BYTEORDER_CHAR, NPY_ITEM_HASOBJECT, NPY_TYPES,
+    PY_ARRAY_API,
+};
 
 pub use num_complex::{Complex32, Complex64};
 
@@ -102,6 +114,193 @@ impl PyArrayDescr {
     /// Equivalent to [`np.dtype.num`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.num.html).
     pub fn num(&self) -> c_int {
         unsafe { *self.as_dtype_ptr() }.type_num
+    }
+
+    /// Returns the element size of this data-type object.
+    ///
+    /// Equivalent to [`np.dtype.itemsize`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.itemsize.html).
+    pub fn itemsize(&self) -> usize {
+        unsafe { *self.as_dtype_ptr() }.elsize.max(0) as _
+    }
+
+    /// Returns the required alignment (bytes) of this data-type according to the compiler
+    ///
+    /// Equivalent to [`np.dtype.alignment`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.alignment.html).
+    pub fn alignment(&self) -> usize {
+        unsafe { *self.as_dtype_ptr() }.alignment.max(0) as _
+    }
+
+    /// Returns a character indicating the byte-order of this data-type object.
+    ///
+    /// All built-in data-type objects have byteorder either `=` or `|`.
+    ///
+    /// Equivalent to [`np.dtype.byteorder`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.byteorder.html).
+    pub fn byteorder(&self) -> u8 {
+        unsafe { *self.as_dtype_ptr() }.byteorder.max(0) as _
+    }
+
+    /// Returns a unique character code for each of the 21 different built-in types.
+    ///
+    /// Note: structured data types are categorized as `V` (void).
+    ///
+    /// Equivalent to [`np.dtype.char`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.char.html)
+    pub fn char(&self) -> u8 {
+        unsafe { *self.as_dtype_ptr() }.type_.max(0) as _
+    }
+
+    /// Returns a character code (one of `biufcmMOSUV`) identifying the general kind of data.
+    ///
+    /// Note: structured data types are categorized as `V` (void).
+    ///
+    /// Equivalent to [`np.dtype.kind`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.kind.html)
+    pub fn kind(&self) -> u8 {
+        unsafe { *self.as_dtype_ptr() }.kind.max(0) as _
+    }
+
+    /// Returns bit-flags describing how this data type is to be interpreted.
+    ///
+    /// Equivalent to [`np.dtype.flags`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.flags.html)
+    pub fn flags(&self) -> c_char {
+        unsafe { *self.as_dtype_ptr() }.flags
+    }
+
+    /// Returns the number of dimensions if this data type describes a sub-array, and `0` otherwise.
+    ///
+    /// Equivalent to [`np.dtype.ndim`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.ndim.html)
+    pub fn ndim(&self) -> usize {
+        if !self.has_subarray() {
+            return 0;
+        }
+        unsafe { PyTuple_Size((*((*self.as_dtype_ptr()).subarray)).shape).max(0) as _ }
+    }
+
+    /// Returns dtype for the base element of subarrays, regardless of their dimension or shape.
+    ///
+    /// Equivalent to [`np.dtype.base`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.base.html).
+    pub fn base(&self) -> Option<&PyArrayDescr> {
+        if !self.has_subarray() {
+            return None;
+        }
+        Some(unsafe { Self::from_borrowed_ptr(self.py(), (*self.as_dtype_ptr()).subarray as _) })
+    }
+
+    /// Returns shape tuple of the sub-array if this dtype is a sub-array, and `None` otherwise.
+    ///
+    /// Equivalent to [`np.dtype.shape`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.shape.html)
+    pub fn shape(&self) -> Option<Vec<usize>> {
+        if !self.has_subarray() {
+            return None;
+        }
+        Some(
+            // TODO: can this be done simpler, without the incref?
+            unsafe {
+                PyTuple::from_borrowed_ptr(self.py(), (*(*self.as_dtype_ptr()).subarray).shape)
+            }
+            .extract()
+            .unwrap(), // TODO: unwrap? numpy sort-of guarantees it will be an int tuple
+        )
+    }
+
+    /// Returns `(item_dtype, shape)` if this dtype describes a sub-array, and `None` otherwise.
+    ///
+    /// The `shape` is the fixed shape of the sub-array described by this data type,
+    /// and `item_dtype` the data type of the array.
+    ///
+    /// If a field whose dtype object has this attribute is retrieved, then the extra dimensions
+    /// implied by shape are tacked on to the end of the retrieved array.
+    ///
+    /// Equivalent to [`np.dtype.subdtype`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.subdtype.html)
+    pub fn subdtype(&self) -> Option<(&PyArrayDescr, Vec<usize>)> {
+        self.shape()
+            .and_then(|shape| self.base().map(|base| (base, shape)))
+    }
+
+    /// Returns true if the dtype is a sub-array at the top level.
+    ///
+    /// Equivalent to [`np.dtype.hasobject`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.hasobject.html)
+    pub fn has_object(&self) -> bool {
+        self.flags() & NPY_ITEM_HASOBJECT != 0
+    }
+
+    /// Returns true if the dtype is a struct which maintains field alignment.
+    ///
+    /// This flag is sticky, so when combining multiple structs together, it is preserved
+    /// and produces new dtypes which are also aligned.
+    ///
+    /// Equivalent to [`np.dtype.isalignedstruct`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.isalignedstruct.html)
+    pub fn is_aligned_struct(&self) -> bool {
+        self.flags() & NPY_ALIGNED_STRUCT != 0
+    }
+
+    /// Returns true if the data type is a sub-array.
+    pub fn has_subarray(&self) -> bool {
+        // equivalent to PyDataType_HASSUBARRAY(self)
+        unsafe { !(*self.as_dtype_ptr()).subarray.is_null() }
+    }
+
+    /// Returns true if the data type is a structured type.
+    pub fn has_fields(&self) -> bool {
+        // equivalent to PyDataType_HASFIELDS(self)
+        unsafe { !(*self.as_dtype_ptr()).names.is_null() }
+    }
+
+    /// Returns true if the data type is unsized
+    pub fn is_unsized(&self) -> bool {
+        // equivalent to PyDataType_ISUNSIZED(self)
+        self.itemsize() == 0 && !self.has_fields()
+    }
+
+    /// Returns true if data type byteorder is native, or `None` if not applicable.
+    pub fn is_native_byteorder(&self) -> Option<bool> {
+        // based on PyArray_ISNBO(self->byteorder)
+        match self.byteorder() {
+            b'=' => Some(true),
+            b'|' => None,
+            byteorder if byteorder == NPY_BYTEORDER_CHAR::NPY_NATBYTE as u8 => Some(true),
+            _ => Some(false),
+        }
+    }
+
+    /// Returns an ordered list of field names, or `None` if there are no fields.
+    ///
+    /// The names are ordered according to increasing byte offset.
+    ///
+    /// Equivalent to [`np.dtype.names`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.names.html).
+    pub fn names(&self) -> Option<Vec<&str>> {
+        if !self.has_fields() {
+            return None;
+        }
+        let names = unsafe { PyTuple::from_borrowed_ptr(self.py(), (*self.as_dtype_ptr()).names) };
+        <_>::extract(names).ok()
+    }
+
+    /// Returns a dictionary of fields, or `None` if not a structured type.
+    ///
+    /// The dictionary is indexed by keys that are the names of the fields. Each entry in
+    /// the dictionary is a tuple fully describing the field: `(dtype, offset)`.
+    ///
+    /// Note: titles (the optional 3rd tuple element) are ignored.
+    ///
+    /// Equivalent to [`np.dtype.fields`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.fields.html).
+    pub fn fields(&self) -> Option<BTreeMap<&str, (&PyArrayDescr, usize)>> {
+        if !self.has_fields() {
+            return None;
+        }
+        // TODO: can this be done simpler, without the incref?
+        let dict = unsafe { PyDict::from_borrowed_ptr(self.py(), (*self.as_dtype_ptr()).fields) };
+        let mut fields = BTreeMap::new();
+        (|| -> PyResult<_> {
+            for (k, v) in dict.iter() {
+                // TODO: alternatively, could unwrap everything here
+                let name = <_>::extract(k)?;
+                let tuple = v.downcast::<PyTuple>()?;
+                let dtype = <_>::extract(tuple.as_ref().get_item(0)?)?;
+                let offset = <_>::extract(tuple.as_ref().get_item(1)?)?;
+                fields.insert(name, (dtype, offset));
+            }
+            Ok(fields)
+        })()
+        .ok()
     }
 }
 
