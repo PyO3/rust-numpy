@@ -115,7 +115,7 @@ pub enum NPY_DATETIMEUNIT {
 }
 
 #[repr(u32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum NPY_TYPES {
     NPY_BOOL = 0,
     NPY_BYTE = 1,
