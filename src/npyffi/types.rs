@@ -204,7 +204,7 @@ pub struct npy_stride_sort_item {
 
 #[repr(u8)]
 #[derive(Debug, Clone, Copy)]
-enum NPY_TYPECHAR {
+pub enum NPY_TYPECHAR {
     NPY_BOOLLTR = b'?',
     NPY_BYTELTR = b'b',
     NPY_UBYTELTR = b'B',
@@ -239,7 +239,7 @@ enum NPY_TYPECHAR {
 #[derive(Debug, Clone, Copy)]
 // NPY_TYPEKINDCHAR doesn't exist in the header, but these enum values are not
 // related to NPY_TYPECHAR although being stuffed into it (type kinds, not type codes)
-enum NPY_TYPEKINDCHAR {
+pub enum NPY_TYPEKINDCHAR {
     NPY_GENBOOLLTR = b'b',
     NPY_SIGNEDLTR = b'i',
     NPY_UNSIGNEDLTR = b'u',
