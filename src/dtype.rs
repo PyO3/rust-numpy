@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use std::mem::size_of;
 use std::os::raw::{
     c_char, c_int, c_long, c_longlong, c_short, c_uint, c_ulong, c_ulonglong, c_ushort,
@@ -10,7 +9,7 @@ use pyo3::{
     prelude::*,
     pyobject_native_type_core,
     types::{PyDict, PyTuple, PyType},
-    AsPyPointer, FromPyObject, FromPyPointer, PyNativeType, PyResult,
+    AsPyPointer, FromPyObject, FromPyPointer, PyNativeType,
 };
 
 use crate::npyffi::{
@@ -192,12 +191,12 @@ impl PyArrayDescr {
             return None;
         }
         Some(
-            // TODO: can this be done simpler, without the incref?
+            // Panic-wise: numpy guarantees that shape is a tuple of non-negative integers
             unsafe {
                 PyTuple::from_borrowed_ptr(self.py(), (*(*self.as_dtype_ptr()).subarray).shape)
             }
             .extract()
-            .unwrap(), // TODO: unwrap? numpy sort-of guarantees it will be an int tuple
+            .unwrap(),
         )
     }
 
@@ -271,36 +270,31 @@ impl PyArrayDescr {
             return None;
         }
         let names = unsafe { PyTuple::from_borrowed_ptr(self.py(), (*self.as_dtype_ptr()).names) };
-        <_>::extract(names).ok()
+        FromPyObject::extract(names).ok()
     }
 
-    /// Returns a dictionary of fields, or `None` if not a structured type.
+    /// Returns names, types and offsets of fields, or `None` if not a structured type.
     ///
-    /// The dictionary is indexed by keys that are the names of the fields. Each entry in
-    /// the dictionary is a tuple fully describing the field: `(dtype, offset)`.
+    /// The iterator has entries in the form `(name, (dtype, offset))` so it can be
+    /// collected directly into a map-like structure.
     ///
     /// Note: titles (the optional 3rd tuple element) are ignored.
     ///
     /// Equivalent to [`np.dtype.fields`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.fields.html).
-    pub fn fields(&self) -> Option<BTreeMap<&str, (&PyArrayDescr, usize)>> {
+    pub fn fields(&self) -> Option<impl Iterator<Item = (&str, (&PyArrayDescr, usize))> + '_> {
         if !self.has_fields() {
             return None;
         }
-        // TODO: can this be done simpler, without the incref?
         let dict = unsafe { PyDict::from_borrowed_ptr(self.py(), (*self.as_dtype_ptr()).fields) };
-        let mut fields = BTreeMap::new();
-        (|| -> PyResult<_> {
-            for (k, v) in dict.iter() {
-                // TODO: alternatively, could unwrap everything here
-                let name = <_>::extract(k)?;
-                let tuple = v.downcast::<PyTuple>()?;
-                let dtype = <_>::extract(tuple.as_ref().get_item(0)?)?;
-                let offset = <_>::extract(tuple.as_ref().get_item(1)?)?;
-                fields.insert(name, (dtype, offset));
-            }
-            Ok(fields)
-        })()
-        .ok()
+        // Panic-wise: numpy guarantees that fields are tuples of proper size and type
+        Some(dict.iter().map(|(k, v)| {
+            let name = FromPyObject::extract(k).unwrap();
+            let tuple = v.downcast::<PyTuple>().unwrap();
+            // note: we can't just extract the entire tuple since 3rd element can be a title
+            let dtype = FromPyObject::extract(tuple.as_ref().get_item(0).unwrap()).unwrap();
+            let offset = FromPyObject::extract(tuple.as_ref().get_item(1).unwrap()).unwrap();
+            (name, (dtype, offset))
+        }))
     }
 }
 
