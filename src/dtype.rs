@@ -68,21 +68,6 @@ impl PyArrayDescr {
         self.into_ptr() as _
     }
 
-    /// Returns the internal `PyType` that this `dtype` holds.
-    ///
-    /// # Example
-    /// ```
-    /// pyo3::Python::with_gil(|py| {
-    ///    let array = numpy::PyArray::from_vec(py, vec![0.0, 1.0, 2.0f64]);
-    ///    let dtype = array.dtype();
-    ///    assert_eq!(dtype.get_type().name().unwrap().to_string(), "float64");
-    /// });
-    /// ```
-    pub fn get_type(&self) -> &PyType {
-        let dtype_type_ptr = unsafe { *self.as_dtype_ptr() }.typeobj;
-        unsafe { PyType::from_type_ptr(self.py(), dtype_type_ptr) }
-    }
-
     /// Shortcut for creating a descriptor of 'object' type.
     pub fn object(py: Python) -> &Self {
         Self::from_npy_type(py, NPY_TYPES::NPY_OBJECT)
@@ -103,6 +88,16 @@ impl PyArrayDescr {
             let descr = PY_ARRAY_API.PyArray_DescrFromType(npy_type as _);
             py.from_owned_ptr(descr as _)
         }
+    }
+
+    /// Returns the
+    /// [array scalar](https://numpy.org/doc/stable/reference/arrays.scalars.html)
+    /// corresponding to this dtype.
+    ///
+    /// Equivalent to [`np.dtype.type`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.type.html).
+    pub fn typeobj(&self) -> &PyType {
+        let dtype_type_ptr = unsafe { *self.as_dtype_ptr() }.typeobj;
+        unsafe { PyType::from_type_ptr(self.py(), dtype_type_ptr) }
     }
 
     /// Returns a unique number for each of the 21 different built-in
@@ -455,7 +450,7 @@ mod tests {
     #[test]
     fn test_dtype_names() {
         fn type_name<T: Element>(py: pyo3::Python) -> &str {
-            dtype::<T>(py).get_type().name().unwrap()
+            dtype::<T>(py).typeobj().name().unwrap()
         }
         pyo3::Python::with_gil(|py| {
             assert_eq!(type_name::<bool>(py), "bool_");
