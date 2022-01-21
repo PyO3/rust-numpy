@@ -118,7 +118,7 @@ impl PyArrayDescr {
         unsafe { *self.as_dtype_ptr() }.elsize.max(0) as _
     }
 
-    /// Returns the required alignment (bytes) of this data-type according to the compiler
+    /// Returns the required alignment (bytes) of this data-type according to the compiler.
     ///
     /// Equivalent to [`np.dtype.alignment`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.alignment.html).
     pub fn alignment(&self) -> usize {
@@ -138,7 +138,7 @@ impl PyArrayDescr {
     ///
     /// Note: structured data types are categorized as `V` (void).
     ///
-    /// Equivalent to [`np.dtype.char`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.char.html)
+    /// Equivalent to [`np.dtype.char`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.char.html).
     pub fn char(&self) -> u8 {
         unsafe { *self.as_dtype_ptr() }.type_.max(0) as _
     }
@@ -147,21 +147,21 @@ impl PyArrayDescr {
     ///
     /// Note: structured data types are categorized as `V` (void).
     ///
-    /// Equivalent to [`np.dtype.kind`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.kind.html)
+    /// Equivalent to [`np.dtype.kind`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.kind.html).
     pub fn kind(&self) -> u8 {
         unsafe { *self.as_dtype_ptr() }.kind.max(0) as _
     }
 
     /// Returns bit-flags describing how this data type is to be interpreted.
     ///
-    /// Equivalent to [`np.dtype.flags`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.flags.html)
+    /// Equivalent to [`np.dtype.flags`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.flags.html).
     pub fn flags(&self) -> c_char {
         unsafe { *self.as_dtype_ptr() }.flags
     }
 
     /// Returns the number of dimensions if this data type describes a sub-array, and `0` otherwise.
     ///
-    /// Equivalent to [`np.dtype.ndim`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.ndim.html)
+    /// Equivalent to [`np.dtype.ndim`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.ndim.html).
     pub fn ndim(&self) -> usize {
         if !self.has_subarray() {
             return 0;
@@ -181,7 +181,7 @@ impl PyArrayDescr {
 
     /// Returns shape tuple of the sub-array if this dtype is a sub-array, and `None` otherwise.
     ///
-    /// Equivalent to [`np.dtype.shape`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.shape.html)
+    /// Equivalent to [`np.dtype.shape`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.shape.html).
     pub fn shape(&self) -> Option<Vec<usize>> {
         if !self.has_subarray() {
             return None;
@@ -204,7 +204,7 @@ impl PyArrayDescr {
     /// If a field whose dtype object has this attribute is retrieved, then the extra dimensions
     /// implied by shape are tacked on to the end of the retrieved array.
     ///
-    /// Equivalent to [`np.dtype.subdtype`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.subdtype.html)
+    /// Equivalent to [`np.dtype.subdtype`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.subdtype.html).
     pub fn subdtype(&self) -> Option<(&PyArrayDescr, Vec<usize>)> {
         self.shape()
             .and_then(|shape| self.base().map(|base| (base, shape)))
@@ -212,7 +212,7 @@ impl PyArrayDescr {
 
     /// Returns true if the dtype is a sub-array at the top level.
     ///
-    /// Equivalent to [`np.dtype.hasobject`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.hasobject.html)
+    /// Equivalent to [`np.dtype.hasobject`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.hasobject.html).
     pub fn has_object(&self) -> bool {
         self.flags() & NPY_ITEM_HASOBJECT != 0
     }
@@ -222,7 +222,7 @@ impl PyArrayDescr {
     /// This flag is sticky, so when combining multiple structs together, it is preserved
     /// and produces new dtypes which are also aligned.
     ///
-    /// Equivalent to [`np.dtype.isalignedstruct`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.isalignedstruct.html)
+    /// Equivalent to [`np.dtype.isalignedstruct`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.isalignedstruct.html).
     pub fn is_aligned_struct(&self) -> bool {
         self.flags() & NPY_ALIGNED_STRUCT != 0
     }
@@ -239,7 +239,7 @@ impl PyArrayDescr {
         unsafe { !(*self.as_dtype_ptr()).names.is_null() }
     }
 
-    /// Returns true if the data type is unsized
+    /// Returns true if the data type is unsized.
     pub fn is_unsized(&self) -> bool {
         // equivalent to PyDataType_ISUNSIZED(self)
         self.itemsize() == 0 && !self.has_fields()
