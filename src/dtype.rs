@@ -101,6 +101,12 @@ impl PyArrayDescr {
         unsafe { PyType::from_type_ptr(self.py(), dtype_type_ptr) }
     }
 
+    #[doc(hidden)]
+    #[deprecated(note = "`get_type()` is deprecated, please use `typeobj()` instead")]
+    pub fn get_type(&self) -> &PyType {
+        self.typeobj()
+    }
+
     /// Returns a unique number for each of the 21 different built-in
     /// [enumerated types](https://numpy.org/doc/stable/reference/c-api/dtype.html#enumerated-types).
     ///
