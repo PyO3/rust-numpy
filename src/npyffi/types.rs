@@ -235,10 +235,12 @@ pub enum NPY_TYPECHAR {
     NPY_UINTPLTR = b'P',
 }
 
+// Note: NPY_TYPEKINDCHAR doesn't exist in the header and has been created here artificially
+// because the original C enum contained duplicate values - namely, those related to type kinds.
+// There's also a comment in the C code preceding this block of values and stating that they are
+// related to type kind chars and not type codes.
 #[repr(u8)]
 #[derive(Debug, Clone, Copy)]
-// NPY_TYPEKINDCHAR doesn't exist in the header, but these enum values are not
-// related to NPY_TYPECHAR although being stuffed into it (type kinds, not type codes)
 pub enum NPY_TYPEKINDCHAR {
     NPY_GENBOOLLTR = b'b',
     NPY_SIGNEDLTR = b'i',
