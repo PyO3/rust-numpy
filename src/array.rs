@@ -1238,7 +1238,9 @@ impl<T: Element + AsPrimitive<f64>> PyArray<T, Ix1> {
 
 #[cfg(test)]
 mod tests {
-    use super::PyArray;
+    use super::*;
+
+    use std::ops::Range;
 
     #[test]
     fn test_get_unchecked() {
@@ -1267,6 +1269,38 @@ mod tests {
             let a = ndarray::Array2::from_shape_fn((2, 3), |(_i, _j)| PyList::empty(py).into());
             let arr: &PyArray<Py<PyAny>, _> = a.to_pyarray(py);
             py_run!(py, arr, "assert arr.dtype.hasobject");
+        });
+    }
+
+    struct InsincereIterator(Range<usize>, usize);
+
+    impl Iterator for InsincereIterator {
+        type Item = usize;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            self.0.next()
+        }
+    }
+
+    impl ExactSizeIterator for InsincereIterator {
+        fn len(&self) -> usize {
+            self.1
+        }
+    }
+
+    #[test]
+    #[should_panic]
+    fn from_exact_iter_too_short() {
+        Python::with_gil(|py| {
+            PyArray::from_exact_iter(py, InsincereIterator(0..3, 5));
+        });
+    }
+
+    #[test]
+    #[should_panic]
+    fn from_exact_iter_too_long() {
+        Python::with_gil(|py| {
+            PyArray::from_exact_iter(py, InsincereIterator(0..5, 3));
         });
     }
 }
