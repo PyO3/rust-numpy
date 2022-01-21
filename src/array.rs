@@ -1,22 +1,27 @@
 //! Safe interface for NumPy ndarray
-use crate::npyffi::{self, npy_intp, NPY_ORDER, PY_ARRAY_API};
-use ndarray::*;
-use num_traits::AsPrimitive;
-use pyo3::{
-    ffi, prelude::*, pyobject_native_type_info, pyobject_native_type_named, type_object,
-    types::PyAny, AsPyPointer, PyDowncastError, PyNativeType, PyResult,
-};
 use std::{
     cell::Cell,
+    marker::PhantomData,
     mem,
     os::raw::{c_int, c_void},
     ptr, slice,
 };
-use std::{iter::ExactSizeIterator, marker::PhantomData};
+
+use ndarray::{
+    Array, ArrayBase, ArrayView, ArrayViewMut, Axis, Data, Dim, Dimension, IntoDimension, Ix0, Ix1,
+    Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn, RawData, Shape, ShapeBuilder, StrideShape,
+};
+use num_traits::AsPrimitive;
+use pyo3::{
+    ffi, pyobject_native_type_info, pyobject_native_type_named, type_object, types::PyModule,
+    AsPyPointer, FromPyObject, IntoPy, Py, PyAny, PyDowncastError, PyErr, PyNativeType, PyObject,
+    PyResult, Python, ToPyObject,
+};
 
 use crate::convert::{ArrayExt, IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
 use crate::dtype::Element;
 use crate::error::{DimensionalityError, FromVecError, NotContiguousError, TypeError};
+use crate::npyffi::{self, npy_intp, NPY_ORDER, PY_ARRAY_API};
 use crate::slice_container::PySliceContainer;
 
 /// A safe, static-typed interface for
@@ -919,10 +924,15 @@ impl<T: Element> PyArray<T, Ix1> {
         // NumPy will always zero-initialize object pointers,
         // so the array can be dropped safely if the iterator panics.
         unsafe {
-            let array = Self::new(py, [iter.len()], false);
-            for (i, item) in iter.enumerate() {
-                array.uget_raw([i]).write(item);
+            let len = iter.len();
+            let array = Self::new(py, [len], false);
+            let mut idx = 0;
+            for item in iter {
+                assert!(idx < len);
+                array.uget_raw([idx]).write(item);
+                idx += 1;
             }
+            assert!(idx == len);
             array
         }
     }

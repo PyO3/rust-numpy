@@ -4,6 +4,7 @@
   - Support object arrays ([#216](https://github.com/PyO3/rust-numpy/pull/216))
   - Support borrowing arrays that are part of other Python objects via `PyArray::borrow_from_array` ([#230](https://github.com/PyO3/rust-numpy/pull/216))
   - `PyArray::new` is now `unsafe`, as it produces uninitialized arrays ([#220](https://github.com/PyO3/rust-numpy/pull/220))
+  - `PyArray::from_exact_iter` does not unsoundly trust `ExactSizeIterator::len` any more ([#262](https://github.com/PyO3/rust-numpy/pull/262))
   - `rayon` feature is now removed, and directly specifying the feature via `ndarray` dependency is recommended ([#250](https://github.com/PyO3/rust-numpy/pull/250))
   - Descriptors rework and related changes ([#256](https://github.com/PyO3/rust-numpy/pull/256)):
     - Remove `DataType`
