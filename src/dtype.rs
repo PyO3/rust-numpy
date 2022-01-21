@@ -18,6 +18,7 @@ use crate::npyffi::{
 };
 
 pub use num_complex::{Complex32, Complex64};
+use pyo3::exceptions::{PyIndexError, PyValueError};
 
 /// Binding of [`numpy.dtype`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.html).
 ///
@@ -268,28 +269,32 @@ impl PyArrayDescr {
         FromPyObject::extract(names).ok()
     }
 
-    /// Returns names, types and offsets of fields, or `None` if not a structured type.
+    /// Returns the dtype and offset of a field with a given name.
     ///
-    /// The iterator has entries in the form `(name, (dtype, offset))` so it can be
-    /// collected directly into a map-like structure.
+    /// This method will return an error if the dtype is not structured, or if it doesn't
+    /// contain a field with a given name.
     ///
-    /// Note: titles (the optional 3rd tuple element) are ignored.
+    /// The list of all names can be found via [`PyArrayDescr::names`].
     ///
-    /// Equivalent to [`np.dtype.fields`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.fields.html).
-    pub fn fields(&self) -> Option<impl Iterator<Item = (&str, (&PyArrayDescr, usize))> + '_> {
+    /// Equivalent to retrieving a single item from
+    /// [`np.dtype.fields`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.fields.html).
+    pub fn get_field(&self, name: &str) -> PyResult<(&PyArrayDescr, usize)> {
         if !self.has_fields() {
-            return None;
+            return Err(PyValueError::new_err(
+                "cannot get field information: dtype has no fields",
+            ));
         }
         let dict = unsafe { PyDict::from_borrowed_ptr(self.py(), (*self.as_dtype_ptr()).fields) };
         // Panic-wise: numpy guarantees that fields are tuples of proper size and type
-        Some(dict.iter().map(|(k, v)| {
-            let name = FromPyObject::extract(k).unwrap();
-            let tuple = v.downcast::<PyTuple>().unwrap();
-            // note: we can't just extract the entire tuple since 3rd element can be a title
-            let dtype = FromPyObject::extract(tuple.as_ref().get_item(0).unwrap()).unwrap();
-            let offset = FromPyObject::extract(tuple.as_ref().get_item(1).unwrap()).unwrap();
-            (name, (dtype, offset))
-        }))
+        let tuple = dict
+            .get_item(name)
+            .ok_or_else(|| PyIndexError::new_err(name.to_owned()))?
+            .downcast::<PyTuple>()
+            .unwrap();
+        // (note: we can't just extract the entire tuple since 3rd element can be a title)
+        let dtype = FromPyObject::extract(tuple.as_ref().get_item(0).unwrap()).unwrap();
+        let offset = FromPyObject::extract(tuple.as_ref().get_item(1).unwrap()).unwrap();
+        Ok((dtype, offset))
     }
 }
 
