@@ -16,6 +16,12 @@
     - `i32`, `i64`, `u32` and `u64` are now guaranteed to map to
       `np.int32`, `np.int64`, `np.uint32` and `np.uint64` respectively
     - Remove `cfg_if` dependency
+  - New methods in `PyArrayDescr`, catching up with `np.dtype`:
+    - `num`, `base`, `ndim`, `shape`, `byteorder`, `char`, `kind`, `itemsize`,
+      `alignment`, `flags`, `has_object`, `is_aligned_struct`, `names`
+    - Added `get_field` to query fields of structured dtypes
+    - Additional helper methods: `has_subarray`, `has_fields`, `is_native_byteorder`
+    - Renamed `get_type` to `typeobj`
 
 - v0.15.1
   - Make arrays produced via `IntoPyArray`, i.e. those owning Rust data, writeable ([#235](https://github.com/PyO3/rust-numpy/pull/235))
