@@ -190,21 +190,22 @@ impl PyArrayDescr {
         }
     }
 
-    /// Returns shape tuple of the sub-array if this dtype is a sub-array, and `None` otherwise.
+    /// Returns the shape of the sub-array.
+    ///
+    /// If the dtype is not a sub-array, an empty vector is returned.
     ///
     /// Equivalent to [`np.dtype.shape`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.shape.html).
-    pub fn shape(&self) -> Option<Vec<usize>> {
+    pub fn shape(&self) -> Vec<usize> {
         if !self.has_subarray() {
-            return None;
-        }
-        Some(
+            vec![]
+        } else {
             // Panic-wise: numpy guarantees that shape is a tuple of non-negative integers
             unsafe {
                 PyTuple::from_borrowed_ptr(self.py(), (*(*self.as_dtype_ptr()).subarray).shape)
             }
             .extract()
-            .unwrap(),
-        )
+            .unwrap()
+        }
     }
 
     /// Returns true if the dtype is a sub-array at the top level.
@@ -501,7 +502,7 @@ mod tests {
             assert!(!dt.has_subarray());
             assert!(dt.base().is_equiv_to(dt));
             assert_eq!(dt.ndim(), 0);
-            assert_eq!(dt.shape(), None);
+            assert_eq!(dt.shape(), vec![]);
         });
     }
 
@@ -535,7 +536,7 @@ mod tests {
             assert!(!dt.is_aligned_struct());
             assert!(dt.has_subarray());
             assert_eq!(dt.ndim(), 2);
-            assert_eq!(dt.shape().unwrap(), vec![2, 3]);
+            assert_eq!(dt.shape(), vec![2, 3]);
             assert!(dt.base().is_equiv_to(dtype::<f64>(py)));
         });
     }
@@ -572,7 +573,7 @@ mod tests {
             assert!(dt.is_aligned_struct());
             assert!(!dt.has_subarray());
             assert_eq!(dt.ndim(), 0);
-            assert_eq!(dt.shape(), None);
+            assert_eq!(dt.shape(), vec![]);
             assert!(dt.base().is_equiv_to(dt));
             let x = dt.get_field("x").unwrap();
             assert!(x.0.is_equiv_to(dtype::<u8>(py)));
