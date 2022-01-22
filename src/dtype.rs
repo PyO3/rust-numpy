@@ -441,7 +441,12 @@ unsafe impl Element for PyObject {
 
 #[cfg(test)]
 mod tests {
-    use super::{dtype, Complex32, Complex64, Element};
+    use std::os::raw::c_int;
+
+    use pyo3::{py_run, types::PyDict, PyObject};
+
+    use super::{dtype, Complex32, Complex64, Element, PyArrayDescr};
+    use crate::npyffi::{NPY_ALIGNED_STRUCT, NPY_ITEM_HASOBJECT, NPY_NEEDS_PYAPI, NPY_TYPES};
 
     #[test]
     fn test_dtype_names() {
@@ -472,6 +477,112 @@ mod tests {
                 assert_eq!(type_name::<usize>(py), "uint64");
                 assert_eq!(type_name::<isize>(py), "int64");
             }
+        });
+    }
+
+    #[test]
+    fn test_dtype_methods_scalar() {
+        pyo3::Python::with_gil(|py| {
+            let dt = dtype::<f64>(py);
+
+            assert_eq!(dt.num(), NPY_TYPES::NPY_DOUBLE as c_int);
+            assert_eq!(dt.flags(), 0);
+            assert_eq!(dt.typeobj().name().unwrap(), "float64");
+            assert_eq!(dt.char(), b'd');
+            assert_eq!(dt.kind(), b'f');
+            assert_eq!(dt.byteorder(), b'=');
+            assert_eq!(dt.is_native_byteorder(), Some(true));
+            assert_eq!(dt.itemsize(), 8);
+            assert_eq!(dt.alignment(), 8);
+            assert!(!dt.has_object());
+            assert_eq!(dt.names(), None);
+            assert!(!dt.has_fields());
+            assert!(!dt.is_aligned_struct());
+            assert!(!dt.has_subarray());
+            assert!(dt.base().is_equiv_to(dt));
+            assert_eq!(dt.ndim(), 0);
+            assert_eq!(dt.shape(), None);
+        });
+    }
+
+    #[test]
+    fn test_dtype_methods_subarray() {
+        pyo3::Python::with_gil(|py| {
+            let locals = PyDict::new(py);
+            py_run!(
+                py,
+                *locals,
+                "dtype = __import__('numpy').dtype(('f8', (2, 3)))"
+            );
+            let dt = locals
+                .get_item("dtype")
+                .unwrap()
+                .downcast::<PyArrayDescr>()
+                .unwrap();
+
+            assert_eq!(dt.num(), NPY_TYPES::NPY_VOID as c_int);
+            assert_eq!(dt.flags(), 0);
+            assert_eq!(dt.typeobj().name().unwrap(), "void");
+            assert_eq!(dt.char(), b'V');
+            assert_eq!(dt.kind(), b'V');
+            assert_eq!(dt.byteorder(), b'|');
+            assert_eq!(dt.is_native_byteorder(), None);
+            assert_eq!(dt.itemsize(), 48);
+            assert_eq!(dt.alignment(), 8);
+            assert!(!dt.has_object());
+            assert_eq!(dt.names(), None);
+            assert!(!dt.has_fields());
+            assert!(!dt.is_aligned_struct());
+            assert!(dt.has_subarray());
+            assert_eq!(dt.ndim(), 2);
+            assert_eq!(dt.shape().unwrap(), vec![2, 3]);
+            assert!(dt.base().is_equiv_to(dtype::<f64>(py)));
+        });
+    }
+
+    #[test]
+    fn test_dtype_methods_record() {
+        pyo3::Python::with_gil(|py| {
+            let locals = PyDict::new(py);
+            py_run!(
+                py,
+                *locals,
+                "dtype = __import__('numpy').dtype([('x', 'u1'), ('y', 'f8'), ('z', 'O')], align=True)"
+            );
+            let dt = locals
+                .get_item("dtype")
+                .unwrap()
+                .downcast::<PyArrayDescr>()
+                .unwrap();
+
+            assert_eq!(dt.num(), NPY_TYPES::NPY_VOID as c_int);
+            assert_ne!(dt.flags() & NPY_ITEM_HASOBJECT, 0);
+            assert_ne!(dt.flags() & NPY_NEEDS_PYAPI, 0);
+            assert_ne!(dt.flags() & NPY_ALIGNED_STRUCT, 0);
+            assert_eq!(dt.typeobj().name().unwrap(), "void");
+            assert_eq!(dt.char(), b'V');
+            assert_eq!(dt.kind(), b'V');
+            assert_eq!(dt.byteorder(), b'|');
+            assert_eq!(dt.is_native_byteorder(), None);
+            assert_eq!(dt.itemsize(), 24);
+            assert_eq!(dt.alignment(), 8);
+            assert!(dt.has_object());
+            assert_eq!(dt.names(), Some(vec!["x", "y", "z"]));
+            assert!(dt.has_fields());
+            assert!(dt.is_aligned_struct());
+            assert!(!dt.has_subarray());
+            assert_eq!(dt.ndim(), 0);
+            assert_eq!(dt.shape(), None);
+            assert!(dt.base().is_equiv_to(dt));
+            let x = dt.get_field("x").unwrap();
+            assert!(x.0.is_equiv_to(dtype::<u8>(py)));
+            assert_eq!(x.1, 0);
+            let y = dt.get_field("y").unwrap();
+            assert!(y.0.is_equiv_to(dtype::<f64>(py)));
+            assert_eq!(y.1, 8);
+            let z = dt.get_field("z").unwrap();
+            assert!(z.0.is_equiv_to(dtype::<PyObject>(py)));
+            assert_eq!(z.1, 16);
         });
     }
 }
