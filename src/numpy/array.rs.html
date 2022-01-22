@@ -1305,9 +1305,11 @@
 <span id="1304">1304</span>
 <span id="1305">1305</span>
 <span id="1306">1306</span>
+<span id="1307">1307</span>
+<span id="1308">1308</span>
+<span id="1309">1309</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Safe interface for NumPy ndarray</span>
 <span class="kw">use</span> <span class="ident">std</span>::{
-    <span class="ident">cell::Cell</span>,
     <span class="ident">marker::PhantomData</span>,
     <span class="ident">mem</span>,
     <span class="ident">os::raw</span>::{<span class="ident">c_int</span>, <span class="ident">c_void</span>},
@@ -1316,7 +1318,8 @@
 
 <span class="kw">use</span> <span class="ident">ndarray</span>::{
     <span class="ident">Array</span>, <span class="ident">ArrayBase</span>, <span class="ident">ArrayView</span>, <span class="ident">ArrayViewMut</span>, <span class="ident">Axis</span>, <span class="ident">Data</span>, <span class="ident">Dim</span>, <span class="ident">Dimension</span>, <span class="ident">IntoDimension</span>, <span class="ident">Ix0</span>, <span class="ident">Ix1</span>,
-    <span class="ident">Ix2</span>, <span class="ident">Ix3</span>, <span class="ident">Ix4</span>, <span class="ident">Ix5</span>, <span class="ident">Ix6</span>, <span class="ident">IxDyn</span>, <span class="ident">RawData</span>, <span class="ident">Shape</span>, <span class="ident">ShapeBuilder</span>, <span class="ident">StrideShape</span>,
+    <span class="ident">Ix2</span>, <span class="ident">Ix3</span>, <span class="ident">Ix4</span>, <span class="ident">Ix5</span>, <span class="ident">Ix6</span>, <span class="ident">IxDyn</span>, <span class="ident">RawArrayView</span>, <span class="ident">RawArrayViewMut</span>, <span class="ident">RawData</span>, <span class="ident">Shape</span>, <span class="ident">ShapeBuilder</span>,
+    <span class="ident">StrideShape</span>,
 };
 <span class="kw">use</span> <span class="ident">num_traits::AsPrimitive</span>;
 <span class="kw">use</span> <span class="ident">pyo3</span>::{
@@ -1910,9 +1913,7 @@
 
     <span class="doccomment">/// Returns the immutable view of the internal data of `PyArray` as slice.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// Please consider the use of safe alternatives</span>
-    <span class="doccomment">/// ([`PyReadonlyArray::as_slice`](../struct.PyReadonlyArray.html#method.as_slice)</span>
-    <span class="doccomment">/// , [`as_cell_slice`](#method.as_cell_slice) or [`to_vec`](#method.to_vec)) instead of this.</span>
+    <span class="doccomment">/// Please consider the use of the safe alternative [`PyReadonlyArray::as_slice`].</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// # Safety</span>
     <span class="doccomment">/// If the internal array is not readonly and can be mutated from Python code,</span>
@@ -1925,22 +1926,11 @@
         }
     }
 
-    <span class="doccomment">/// Returns the view of the internal data of `PyArray` as `&amp;[Cell&lt;T&gt;]`.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">as_cell_slice</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span>[<span class="ident">Cell</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>], <span class="ident">NotContiguousError</span><span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_contiguous</span>() {
-            <span class="prelude-val">Err</span>(<span class="ident">NotContiguousError</span>)
-        } <span class="kw">else</span> {
-            <span class="prelude-val">Ok</span>(<span class="kw">unsafe</span> { <span class="ident">slice::from_raw_parts</span>(<span class="self">self</span>.<span class="ident">data</span>() <span class="kw">as</span> <span class="kw">_</span>, <span class="self">self</span>.<span class="ident">len</span>()) })
-        }
-    }
-
     <span class="doccomment">/// Returns the view of the internal data of `PyArray` as mutable slice.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// # Safety</span>
     <span class="doccomment">/// If another reference to the internal data exists(e.g., `&amp;[T]` or `ArrayView`),</span>
     <span class="doccomment">/// it might cause undefined behavior.</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// In such case, please consider the use of [`as_cell_slice`](#method.as_cell_slice),</span>
     <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">as_slice_mut</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;mut</span> [<span class="ident">T</span>], <span class="ident">NotContiguousError</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_contiguous</span>() {
             <span class="prelude-val">Err</span>(<span class="ident">NotContiguousError</span>)
@@ -2130,7 +2120,7 @@
         <span class="ident">res</span>
     }
 
-    <span class="doccomment">/// Returns the internal array as `ArrayViewMut`. See also [`as_array`](#method.as_array).</span>
+    <span class="doccomment">/// Returns the internal array as [`ArrayViewMut`]. See also [`as_array`](#method.as_array).</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// # Safety</span>
     <span class="doccomment">/// If another reference to the internal data exists(e.g., `&amp;[T]` or `ArrayView`),</span>
@@ -2138,6 +2128,22 @@
     <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">as_array_mut</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">ArrayViewMut</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> {
         <span class="kw">let</span> (<span class="ident">shape</span>, <span class="ident">ptr</span>, <span class="ident">inverted_axises</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">ndarray_shape_ptr</span>();
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">ArrayViewMut::from_shape_ptr</span>(<span class="ident">shape</span>, <span class="ident">ptr</span>);
+        <span class="ident">inverted_axises</span>.<span class="ident">invert</span>(<span class="kw-2">&amp;mut</span> <span class="ident">res</span>);
+        <span class="ident">res</span>
+    }
+
+    <span class="doccomment">/// Returns the internal array as [`RawArrayView`] enabling element access via raw pointers</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">as_raw_array</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">RawArrayView</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> (<span class="ident">shape</span>, <span class="ident">ptr</span>, <span class="ident">inverted_axises</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">ndarray_shape_ptr</span>();
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">res</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="ident">RawArrayView::from_shape_ptr</span>(<span class="ident">shape</span>, <span class="ident">ptr</span>) };
+        <span class="ident">inverted_axises</span>.<span class="ident">invert</span>(<span class="kw-2">&amp;mut</span> <span class="ident">res</span>);
+        <span class="ident">res</span>
+    }
+
+    <span class="doccomment">/// Returns the internal array as [`RawArrayViewMut`] enabling element access via raw pointers</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">as_raw_array_mut</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">RawArrayViewMut</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> (<span class="ident">shape</span>, <span class="ident">ptr</span>, <span class="ident">inverted_axises</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">ndarray_shape_ptr</span>();
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">res</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="ident">RawArrayViewMut::from_shape_ptr</span>(<span class="ident">shape</span>, <span class="ident">ptr</span>) };
         <span class="ident">inverted_axises</span>.<span class="ident">invert</span>(<span class="kw-2">&amp;mut</span> <span class="ident">res</span>);
         <span class="ident">res</span>
     }
