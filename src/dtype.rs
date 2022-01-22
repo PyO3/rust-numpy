@@ -236,12 +236,6 @@ impl PyArrayDescr {
         unsafe { !(*self.as_dtype_ptr()).names.is_null() }
     }
 
-    /// Returns true if the data type is unsized.
-    pub fn is_unsized(&self) -> bool {
-        // equivalent to PyDataType_ISUNSIZED(self)
-        self.itemsize() == 0 && !self.has_fields()
-    }
-
     /// Returns true if data type byteorder is native, or `None` if not applicable.
     pub fn is_native_byteorder(&self) -> Option<bool> {
         // based on PyArray_ISNBO(self->byteorder)
