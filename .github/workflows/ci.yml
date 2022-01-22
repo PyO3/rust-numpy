@@ -162,3 +162,34 @@ jobs:
           pip install tox
           tox -c examples/linalg
           tox -c examples/parallel
+
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+          architecture: x64
+      - name: Install numpy
+        run: pip install numpy
+      - uses: Swatinem/rust-cache@v1
+        continue-on-error: true
+      - uses: actions-rs/toolchain@v1
+        with:
+          # TODO: this is pinned to work around a rustc bug in instrumented coverage
+          # https://github.com/taiki-e/cargo-llvm-cov/issues/128
+          toolchain: nightly-2022-01-14
+          override: true
+          profile: minimal
+          components: llvm-tools-preview
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+      - name: Generate code coverage
+        run: cargo llvm-cov --lcov --output-path coverage.lcov
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v2
+        with:
+          file: coverage.lcov
+          fail_ci_if_error: true
