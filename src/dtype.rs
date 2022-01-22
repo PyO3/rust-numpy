@@ -202,20 +202,6 @@ impl PyArrayDescr {
         )
     }
 
-    /// Returns `(item_dtype, shape)` if this dtype describes a sub-array, and `None` otherwise.
-    ///
-    /// The `shape` is the fixed shape of the sub-array described by this data type,
-    /// and `item_dtype` the data type of the array.
-    ///
-    /// If a field whose dtype object has this attribute is retrieved, then the extra dimensions
-    /// implied by shape are tacked on to the end of the retrieved array.
-    ///
-    /// Equivalent to [`np.dtype.subdtype`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.subdtype.html).
-    pub fn subdtype(&self) -> Option<(&PyArrayDescr, Vec<usize>)> {
-        self.shape()
-            .and_then(|shape| self.base().map(|base| (base, shape)))
-    }
-
     /// Returns true if the dtype is a sub-array at the top level.
     ///
     /// Equivalent to [`np.dtype.hasobject`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.hasobject.html).
