@@ -97,6 +97,17 @@ fn as_array() {
 }
 
 #[test]
+fn as_raw_array() {
+    pyo3::Python::with_gil(|py| {
+        let not_contiguous = not_contiguous_array(py);
+        let raw_array_view = not_contiguous.as_raw_array();
+        assert_eq!(unsafe { raw_array_view.deref_into_view()[0] }, 1);
+        let raw_array_view_mut = not_contiguous.as_raw_array_mut();
+        assert_eq!(unsafe { raw_array_view_mut.deref_into_view_mut()[1] }, 3);
+    })
+}
+
+#[test]
 fn as_slice() {
     pyo3::Python::with_gil(|py| {
         let arr = PyArray::<i32, _>::zeros(py, [3, 2, 4], false).readonly();

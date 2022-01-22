@@ -1,6 +1,5 @@
 //! Safe interface for NumPy ndarray
 use std::{
-    cell::Cell,
     marker::PhantomData,
     mem,
     os::raw::{c_int, c_void},
@@ -9,7 +8,8 @@ use std::{
 
 use ndarray::{
     Array, ArrayBase, ArrayView, ArrayViewMut, Axis, Data, Dim, Dimension, IntoDimension, Ix0, Ix1,
-    Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn, RawData, Shape, ShapeBuilder, StrideShape,
+    Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn, RawArrayView, RawArrayViewMut, RawData, Shape, ShapeBuilder,
+    StrideShape,
 };
 use num_traits::AsPrimitive;
 use pyo3::{
@@ -603,9 +603,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
 
     /// Returns the immutable view of the internal data of `PyArray` as slice.
     ///
-    /// Please consider the use of safe alternatives
-    /// ([`PyReadonlyArray::as_slice`](../struct.PyReadonlyArray.html#method.as_slice)
-    /// , [`as_cell_slice`](#method.as_cell_slice) or [`to_vec`](#method.to_vec)) instead of this.
+    /// Please consider the use of the safe alternative [`PyReadonlyArray::as_slice`].
     ///
     /// # Safety
     /// If the internal array is not readonly and can be mutated from Python code,
@@ -618,22 +616,11 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         }
     }
 
-    /// Returns the view of the internal data of `PyArray` as `&[Cell<T>]`.
-    pub fn as_cell_slice(&self) -> Result<&[Cell<T>], NotContiguousError> {
-        if !self.is_contiguous() {
-            Err(NotContiguousError)
-        } else {
-            Ok(unsafe { slice::from_raw_parts(self.data() as _, self.len()) })
-        }
-    }
-
     /// Returns the view of the internal data of `PyArray` as mutable slice.
     ///
     /// # Safety
     /// If another reference to the internal data exists(e.g., `&[T]` or `ArrayView`),
     /// it might cause undefined behavior.
-    ///
-    /// In such case, please consider the use of [`as_cell_slice`](#method.as_cell_slice),
     pub unsafe fn as_slice_mut(&self) -> Result<&mut [T], NotContiguousError> {
         if !self.is_contiguous() {
             Err(NotContiguousError)
@@ -823,7 +810,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         res
     }
 
-    /// Returns the internal array as `ArrayViewMut`. See also [`as_array`](#method.as_array).
+    /// Returns the internal array as [`ArrayViewMut`]. See also [`as_array`](#method.as_array).
     ///
     /// # Safety
     /// If another reference to the internal data exists(e.g., `&[T]` or `ArrayView`),
@@ -831,6 +818,22 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     pub unsafe fn as_array_mut(&self) -> ArrayViewMut<'_, T, D> {
         let (shape, ptr, inverted_axises) = self.ndarray_shape_ptr();
         let mut res = ArrayViewMut::from_shape_ptr(shape, ptr);
+        inverted_axises.invert(&mut res);
+        res
+    }
+
+    /// Returns the internal array as [`RawArrayView`] enabling element access via raw pointers
+    pub fn as_raw_array(&self) -> RawArrayView<T, D> {
+        let (shape, ptr, inverted_axises) = self.ndarray_shape_ptr();
+        let mut res = unsafe { RawArrayView::from_shape_ptr(shape, ptr) };
+        inverted_axises.invert(&mut res);
+        res
+    }
+
+    /// Returns the internal array as [`RawArrayViewMut`] enabling element access via raw pointers
+    pub fn as_raw_array_mut(&self) -> RawArrayViewMut<T, D> {
+        let (shape, ptr, inverted_axises) = self.ndarray_shape_ptr();
+        let mut res = unsafe { RawArrayViewMut::from_shape_ptr(shape, ptr) };
         inverted_axises.invert(&mut res);
         res
     }
