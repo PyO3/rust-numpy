@@ -177,12 +177,17 @@ impl PyArrayDescr {
 
     /// Returns dtype for the base element of subarrays, regardless of their dimension or shape.
     ///
+    /// If the dtype is not a subarray, returns self.
+    ///
     /// Equivalent to [`np.dtype.base`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.base.html).
-    pub fn base(&self) -> Option<&PyArrayDescr> {
+    pub fn base(&self) -> &PyArrayDescr {
         if !self.has_subarray() {
-            return None;
+            self
+        } else {
+            unsafe {
+                Self::from_borrowed_ptr(self.py(), (*(*self.as_dtype_ptr()).subarray).base as _)
+            }
         }
-        Some(unsafe { Self::from_borrowed_ptr(self.py(), (*self.as_dtype_ptr()).subarray as _) })
     }
 
     /// Returns shape tuple of the sub-array if this dtype is a sub-array, and `None` otherwise.
