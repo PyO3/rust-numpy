@@ -25,6 +25,6 @@ def test_conj():
 
 
 def test_extract():
-    x = np.arange(5)
+    x = np.arange(5.0)
     d = { "x": x }
     np.testing.assert_almost_equal(extract(d), 10.0)

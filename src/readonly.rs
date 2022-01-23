@@ -66,7 +66,7 @@ impl<'py, T: Element, D: Dimension> PyReadonlyArray<'py, T, D> {
     ///     assert_eq!(readonly.as_slice().unwrap(), &[0, 1, 2, 3]);
     ///     let locals = [("np", numpy::get_array_module(py).unwrap())].into_py_dict(py);
     ///     let not_contiguous: &PyArray1<i32> = py
-    ///         .eval("np.arange(10)[::2]", Some(locals), None)
+    ///         .eval("np.arange(10, dtype='int32')[::2]", Some(locals), None)
     ///         .unwrap()
     ///         .downcast()
     ///         .unwrap();
