@@ -562,32 +562,6 @@
 <span id="561">561</span>
 <span id="562">562</span>
 <span id="563">563</span>
-<span id="564">564</span>
-<span id="565">565</span>
-<span id="566">566</span>
-<span id="567">567</span>
-<span id="568">568</span>
-<span id="569">569</span>
-<span id="570">570</span>
-<span id="571">571</span>
-<span id="572">572</span>
-<span id="573">573</span>
-<span id="574">574</span>
-<span id="575">575</span>
-<span id="576">576</span>
-<span id="577">577</span>
-<span id="578">578</span>
-<span id="579">579</span>
-<span id="580">580</span>
-<span id="581">581</span>
-<span id="582">582</span>
-<span id="583">583</span>
-<span id="584">584</span>
-<span id="585">585</span>
-<span id="586">586</span>
-<span id="587">587</span>
-<span id="588">588</span>
-<span id="589">589</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::mem::size_of</span>;
 <span class="kw">use</span> <span class="ident">std::os::raw</span>::{
     <span class="ident">c_char</span>, <span class="ident">c_int</span>, <span class="ident">c_long</span>, <span class="ident">c_longlong</span>, <span class="ident">c_short</span>, <span class="ident">c_uint</span>, <span class="ident">c_ulong</span>, <span class="ident">c_ulonglong</span>, <span class="ident">c_ushort</span>,
@@ -882,7 +856,7 @@
 
 <span class="doccomment">/// Represents that a type can be an element of `PyArray`.</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// Currently, only integer/float/complex types are supported.</span>
+<span class="doccomment">/// Currently, only integer/float/complex/object types are supported.</span>
 <span class="doccomment">/// If you come up with a nice implementation for some other types, we&#39;re happy to receive your PR :)</span>
 <span class="doccomment">/// You may refer to the [numpy document](https://numpy.org/doc/stable/reference/c-api/dtype.html#enumerated-types)</span>
 <span class="doccomment">/// for all types that numpy supports.</span>
@@ -900,38 +874,12 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// # Custom element types</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// You can implement this trait to manage arrays of custom element types, but they still need to be stored</span>
-<span class="doccomment">/// on Python&#39;s heap using PyO3&#39;s [Py](pyo3::Py) type.</span>
+<span class="doccomment">/// Note that we cannot safely store `Py&lt;T&gt;` where `T: PyClass`, because the type information would be</span>
+<span class="doccomment">/// eliminated in the resulting NumPy array.</span>
+<span class="doccomment">/// In other words, objects are always treated as `Py&lt;PyAny&gt;` (a.k.a. `PyObject`) by Python code,</span>
+<span class="doccomment">/// and only `Py&lt;PyAny&gt;` can be stored in a type safe manner.</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// ```</span>
-<span class="doccomment">/// use numpy::{ndarray::Array2, Element, PyArray, PyArrayDescr, ToPyArray};</span>
-<span class="doccomment">/// use pyo3::{pyclass, Py, Python};</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// #[pyclass]</span>
-<span class="doccomment">/// pub struct CustomElement;</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// // The transparent wrapper is necessary as one cannot implement</span>
-<span class="doccomment">/// // a foreign trait (`Element`) on a foreign type (`Py`) directly.</span>
-<span class="doccomment">/// #[derive(Clone)]</span>
-<span class="doccomment">/// #[repr(transparent)]</span>
-<span class="doccomment">/// pub struct Wrapper(pub Py&lt;CustomElement&gt;);</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// unsafe impl Element for Wrapper {</span>
-<span class="doccomment">///     const IS_COPY: bool = false;</span>
-<span class="doccomment">///</span>
-<span class="doccomment">///     fn get_dtype(py: Python) -&gt; &amp;PyArrayDescr {</span>
-<span class="doccomment">///         PyArrayDescr::object(py)</span>
-<span class="doccomment">///     }</span>
-<span class="doccomment">/// }</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// Python::with_gil(|py| {</span>
-<span class="doccomment">///     let array = Array2::&lt;Wrapper&gt;::from_shape_fn((2, 3), |(_i, _j)| {</span>
-<span class="doccomment">///         Wrapper(Py::new(py, CustomElement).unwrap())</span>
-<span class="doccomment">///     });</span>
-<span class="doccomment">///</span>
-<span class="doccomment">///     let _array: &amp;PyArray&lt;Wrapper, _&gt; = array.to_pyarray(py);</span>
-<span class="doccomment">/// });</span>
-<span class="doccomment">/// ```</span>
+<span class="doccomment">/// You can however create `ndarray::Array&lt;Py&lt;T&gt;, D&gt;` and turn that into a NumPy array safely and efficiently using [`from_owned_object_array`][crate::PyArray::from_owned_object_array].</span>
 <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">trait</span> <span class="ident">Element</span>: <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">Send</span> {
     <span class="doccomment">/// Flag that indicates whether this type is trivially copyable.</span>
     <span class="doccomment">///</span>

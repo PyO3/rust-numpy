@@ -110,8 +110,6 @@
 <span id="109">109</span>
 <span id="110">110</span>
 <span id="111">111</span>
-<span id="112">112</span>
-<span id="113">113</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">mem</span>, <span class="ident">slice</span>};
 
 <span class="kw">use</span> <span class="ident">ndarray</span>::{<span class="ident">ArrayBase</span>, <span class="ident">Dimension</span>, <span class="ident">OwnedRepr</span>};
@@ -120,8 +118,6 @@
 <span class="kw">use</span> <span class="ident">pyo3::pyclass_slots::PyClassDummySlot</span>;
 <span class="kw">use</span> <span class="ident">pyo3::type_object</span>::{<span class="ident">LazyStaticType</span>, <span class="ident">PyTypeInfo</span>};
 <span class="kw">use</span> <span class="ident">pyo3</span>::{<span class="ident">ffi</span>, <span class="ident">types::PyAny</span>, <span class="ident">PyCell</span>};
-
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::dtype::Element</span>;
 
 <span class="doccomment">/// Utility type to safely store Box&lt;[_]&gt; or Vec&lt;_&gt; on the Python heap</span>
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">PySliceContainer</span> {
@@ -183,7 +179,7 @@
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">A</span>, <span class="ident">D</span><span class="op">&gt;</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">ArrayBase</span><span class="op">&lt;</span><span class="ident">OwnedRepr</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>, <span class="ident">D</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">PySliceContainer</span>
 <span class="kw">where</span>
-    <span class="ident">A</span>: <span class="ident">Element</span>,
+    <span class="ident">A</span>: <span class="ident">Send</span>,
     <span class="ident">D</span>: <span class="ident">Dimension</span>,
 {
     <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">data</span>: <span class="ident">ArrayBase</span><span class="op">&lt;</span><span class="ident">OwnedRepr</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>, <span class="ident">D</span><span class="op">&gt;</span>) -&gt; <span class="self">Self</span> {
