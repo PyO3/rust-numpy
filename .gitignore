@@ -15,3 +15,6 @@ build/
 *.egg-info/
 **/dist/
 __pycache__
+
+# Coverage files
+*.lcov
