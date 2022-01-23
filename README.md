@@ -3,6 +3,8 @@ rust-numpy
 [![Actions Status](https://github.com/PyO3/rust-numpy/workflows/CI/badge.svg)](https://github.com/PyO3/rust-numpy/actions)
 [![Crate](https://img.shields.io/crates/v/numpy.svg)](https://crates.io/crates/numpy)
 [![Minimum rustc 1.48](https://img.shields.io/badge/rustc-1.48+-blue.svg)](https://rust-lang.github.io/rfcs/2495-min-rust-version.html)
+[![Documentation](https://docs.rs/numpy/badge.svg)](https://docs.rs/numpy)
+[![codecov](https://codecov.io/gh/PyO3/rust-numpy/branch/main/graph/badge.svg)](https://codecov.io/gh/PyO3/rust-numpy)
 
 Rust bindings for the NumPy C-API.
 
