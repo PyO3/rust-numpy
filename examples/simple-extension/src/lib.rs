@@ -1,6 +1,10 @@
 use numpy::ndarray::{ArrayD, ArrayViewD, ArrayViewMutD};
-use numpy::{Complex64, IntoPyArray, PyArrayDyn, PyReadonlyArrayDyn};
-use pyo3::{pymodule, types::PyModule, PyResult, Python};
+use numpy::{Complex64, IntoPyArray, PyArray1, PyArrayDyn, PyReadonlyArrayDyn};
+use pyo3::{
+    pymodule,
+    types::{PyDict, PyModule},
+    PyResult, Python,
+};
 
 #[pymodule]
 fn rust_ext(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
@@ -50,6 +54,18 @@ fn rust_ext(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
         x: PyReadonlyArrayDyn<'_, Complex64>,
     ) -> &'py PyArrayDyn<Complex64> {
         conj(x.as_array()).into_pyarray(py)
+    }
+
+    #[pyfn(m)]
+    #[pyo3(name = "extract")]
+    fn extract(d: &PyDict) -> f64 {
+        let x = d
+            .get_item("x")
+            .unwrap()
+            .downcast::<PyArray1<f64>>()
+            .unwrap();
+
+        x.readonly().as_array().sum()
     }
 
     Ok(())
