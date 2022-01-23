@@ -63,7 +63,25 @@
 <span id="62">62</span>
 <span id="63">63</span>
 <span id="64">64</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">super</span>::npy_uint32</span>;
+<span id="65">65</span>
+<span id="66">66</span>
+<span id="67">67</span>
+<span id="68">68</span>
+<span id="69">69</span>
+<span id="70">70</span>
+<span id="71">71</span>
+<span id="72">72</span>
+<span id="73">73</span>
+<span id="74">74</span>
+<span id="75">75</span>
+<span id="76">76</span>
+<span id="77">77</span>
+<span id="78">78</span>
+<span id="79">79</span>
+<span id="80">80</span>
+<span id="81">81</span>
+<span id="82">82</span>
+</pre><pre class="rust"><code><span class="kw">use</span> <span class="kw">super</span>::{<span class="ident">npy_char</span>, <span class="ident">npy_uint32</span>};
 <span class="kw">use</span> <span class="ident">std::os::raw::c_int</span>;
 
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ARRAY_C_CONTIGUOUS</span>: <span class="ident">c_int</span> <span class="op">=</span> <span class="number">0x0001</span>;
@@ -127,6 +145,24 @@
 
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ITER_GLOBAL_FLAGS</span>: <span class="ident">npy_uint32</span> <span class="op">=</span> <span class="number">0x0000ffff</span>;
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ITER_PER_OP_FLAGS</span>: <span class="ident">npy_uint32</span> <span class="op">=</span> <span class="number">0xffff0000</span>;
+
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ITEM_REFCOUNT</span>: <span class="ident">npy_char</span> <span class="op">=</span> <span class="number">0x01</span>;
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ITEM_HASOBJECT</span>: <span class="ident">npy_char</span> <span class="op">=</span> <span class="number">0x01</span>;
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_LIST_PICKLE</span>: <span class="ident">npy_char</span> <span class="op">=</span> <span class="number">0x02</span>;
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ITEM_IS_POINTER</span>: <span class="ident">npy_char</span> <span class="op">=</span> <span class="number">0x04</span>;
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_NEEDS_INIT</span>: <span class="ident">npy_char</span> <span class="op">=</span> <span class="number">0x08</span>;
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_NEEDS_PYAPI</span>: <span class="ident">npy_char</span> <span class="op">=</span> <span class="number">0x10</span>;
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_USE_GETITEM</span>: <span class="ident">npy_char</span> <span class="op">=</span> <span class="number">0x20</span>;
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_USE_SETITEM</span>: <span class="ident">npy_char</span> <span class="op">=</span> <span class="number">0x40</span>;
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ALIGNED_STRUCT</span>: <span class="ident">npy_char</span> <span class="op">=</span> <span class="op">-</span><span class="number">128</span>; <span class="comment">// 0x80</span>
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_FROM_FIELDS</span>: <span class="ident">npy_char</span> <span class="op">=</span>
+    <span class="ident">NPY_NEEDS_INIT</span> <span class="op">|</span> <span class="ident">NPY_LIST_PICKLE</span> <span class="op">|</span> <span class="ident">NPY_ITEM_REFCOUNT</span> <span class="op">|</span> <span class="ident">NPY_NEEDS_PYAPI</span>;
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_OBJECT_DTYPE_FLAGS</span>: <span class="ident">npy_char</span> <span class="op">=</span> <span class="ident">NPY_LIST_PICKLE</span>
+    <span class="op">|</span> <span class="ident">NPY_USE_GETITEM</span>
+    <span class="op">|</span> <span class="ident">NPY_ITEM_IS_POINTER</span>
+    <span class="op">|</span> <span class="ident">NPY_ITEM_REFCOUNT</span>
+    <span class="op">|</span> <span class="ident">NPY_NEEDS_INIT</span>
+    <span class="op">|</span> <span class="ident">NPY_NEEDS_PYAPI</span>;
 </code></pre></div>
 </section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="numpy" data-search-index-js="../../../search-index.js" data-search-js="../../../search.js"></div>
 </body></html>
