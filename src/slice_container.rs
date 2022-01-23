@@ -7,8 +7,6 @@ use pyo3::pyclass_slots::PyClassDummySlot;
 use pyo3::type_object::{LazyStaticType, PyTypeInfo};
 use pyo3::{ffi, types::PyAny, PyCell};
 
-use crate::dtype::Element;
-
 /// Utility type to safely store Box<[_]> or Vec<_> on the Python heap
 pub(crate) struct PySliceContainer {
     ptr: *mut u8,
@@ -69,7 +67,7 @@ impl<T: Send> From<Vec<T>> for PySliceContainer {
 
 impl<A, D> From<ArrayBase<OwnedRepr<A>, D>> for PySliceContainer
 where
-    A: Element,
+    A: Send,
     D: Dimension,
 {
     fn from(data: ArrayBase<OwnedRepr<A>, D>) -> Self {

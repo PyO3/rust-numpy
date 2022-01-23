@@ -292,7 +292,7 @@ impl PyArrayDescr {
 
 /// Represents that a type can be an element of `PyArray`.
 ///
-/// Currently, only integer/float/complex types are supported.
+/// Currently, only integer/float/complex/object types are supported.
 /// If you come up with a nice implementation for some other types, we're happy to receive your PR :)
 /// You may refer to the [numpy document](https://numpy.org/doc/stable/reference/c-api/dtype.html#enumerated-types)
 /// for all types that numpy supports.
@@ -310,38 +310,12 @@ impl PyArrayDescr {
 ///
 /// # Custom element types
 ///
-/// You can implement this trait to manage arrays of custom element types, but they still need to be stored
-/// on Python's heap using PyO3's [Py](pyo3::Py) type.
+/// Note that we cannot safely store `Py<T>` where `T: PyClass`, because the type information would be
+/// eliminated in the resulting NumPy array.
+/// In other words, objects are always treated as `Py<PyAny>` (a.k.a. `PyObject`) by Python code,
+/// and only `Py<PyAny>` can be stored in a type safe manner.
 ///
-/// ```
-/// use numpy::{ndarray::Array2, Element, PyArray, PyArrayDescr, ToPyArray};
-/// use pyo3::{pyclass, Py, Python};
-///
-/// #[pyclass]
-/// pub struct CustomElement;
-///
-/// // The transparent wrapper is necessary as one cannot implement
-/// // a foreign trait (`Element`) on a foreign type (`Py`) directly.
-/// #[derive(Clone)]
-/// #[repr(transparent)]
-/// pub struct Wrapper(pub Py<CustomElement>);
-///
-/// unsafe impl Element for Wrapper {
-///     const IS_COPY: bool = false;
-///
-///     fn get_dtype(py: Python) -> &PyArrayDescr {
-///         PyArrayDescr::object(py)
-///     }
-/// }
-///
-/// Python::with_gil(|py| {
-///     let array = Array2::<Wrapper>::from_shape_fn((2, 3), |(_i, _j)| {
-///         Wrapper(Py::new(py, CustomElement).unwrap())
-///     });
-///
-///     let _array: &PyArray<Wrapper, _> = array.to_pyarray(py);
-/// });
-/// ```
+/// You can however create `ndarray::Array<Py<T>, D>` and turn that into a NumPy array safely and efficiently using [`from_owned_object_array`][crate::PyArray::from_owned_object_array].
 pub unsafe trait Element: Clone + Send {
     /// Flag that indicates whether this type is trivially copyable.
     ///
