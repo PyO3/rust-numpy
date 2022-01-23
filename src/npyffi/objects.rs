@@ -398,3 +398,17 @@ pub struct NpyAuxData {
 
 pub type NpyAuxData_FreeFunc = Option<unsafe extern "C" fn(*mut NpyAuxData)>;
 pub type NpyAuxData_CloneFunc = Option<unsafe extern "C" fn(*mut NpyAuxData) -> *mut NpyAuxData>;
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct PyArray_DatetimeMetaData {
+    pub base: NPY_DATETIMEUNIT,
+    pub num: c_int,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct PyArray_DatetimeDTypeMetaData {
+    pub base: NpyAuxData,
+    pub meta: PyArray_DatetimeMetaData,
+}

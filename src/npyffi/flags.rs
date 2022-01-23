@@ -1,4 +1,4 @@
-use super::npy_uint32;
+use super::{npy_char, npy_uint32};
 use std::os::raw::c_int;
 
 pub const NPY_ARRAY_C_CONTIGUOUS: c_int = 0x0001;
@@ -62,3 +62,21 @@ pub const NPY_ITER_OVERLAP_ASSUME_ELEMENTWISE: npy_uint32 = 0x40000000;
 
 pub const NPY_ITER_GLOBAL_FLAGS: npy_uint32 = 0x0000ffff;
 pub const NPY_ITER_PER_OP_FLAGS: npy_uint32 = 0xffff0000;
+
+pub const NPY_ITEM_REFCOUNT: npy_char = 0x01;
+pub const NPY_ITEM_HASOBJECT: npy_char = 0x01;
+pub const NPY_LIST_PICKLE: npy_char = 0x02;
+pub const NPY_ITEM_IS_POINTER: npy_char = 0x04;
+pub const NPY_NEEDS_INIT: npy_char = 0x08;
+pub const NPY_NEEDS_PYAPI: npy_char = 0x10;
+pub const NPY_USE_GETITEM: npy_char = 0x20;
+pub const NPY_USE_SETITEM: npy_char = 0x40;
+pub const NPY_ALIGNED_STRUCT: npy_char = -128; // 0x80
+pub const NPY_FROM_FIELDS: npy_char =
+    NPY_NEEDS_INIT | NPY_LIST_PICKLE | NPY_ITEM_REFCOUNT | NPY_NEEDS_PYAPI;
+pub const NPY_OBJECT_DTYPE_FLAGS: npy_char = NPY_LIST_PICKLE
+    | NPY_USE_GETITEM
+    | NPY_ITEM_IS_POINTER
+    | NPY_ITEM_REFCOUNT
+    | NPY_NEEDS_INIT
+    | NPY_NEEDS_PYAPI;

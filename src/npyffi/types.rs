@@ -115,7 +115,7 @@ pub enum NPY_DATETIMEUNIT {
 }
 
 #[repr(u32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum NPY_TYPES {
     NPY_BOOL = 0,
     NPY_BYTE = 1,
@@ -200,4 +200,73 @@ pub struct npy_timedeltastruct {
 pub struct npy_stride_sort_item {
     pub perm: npy_intp,
     pub stride: npy_intp,
+}
+
+#[repr(u8)]
+#[derive(Debug, Clone, Copy)]
+pub enum NPY_TYPECHAR {
+    NPY_BOOLLTR = b'?',
+    NPY_BYTELTR = b'b',
+    NPY_UBYTELTR = b'B',
+    NPY_SHORTLTR = b'h',
+    NPY_USHORTLTR = b'H',
+    NPY_INTLTR = b'i',
+    NPY_UINTLTR = b'I',
+    NPY_LONGLTR = b'l',
+    NPY_ULONGLTR = b'L',
+    NPY_LONGLONGLTR = b'q',
+    NPY_ULONGLONGLTR = b'Q',
+    NPY_HALFLTR = b'e',
+    NPY_FLOATLTR = b'f',
+    NPY_DOUBLELTR = b'd',
+    NPY_LONGDOUBLELTR = b'g',
+    NPY_CFLOATLTR = b'F',
+    NPY_CDOUBLELTR = b'D',
+    NPY_CLONGDOUBLELTR = b'G',
+    NPY_OBJECTLTR = b'O',
+    NPY_STRINGLTR = b'S',
+    NPY_STRINGLTR2 = b'a',
+    NPY_UNICODELTR = b'U',
+    NPY_VOIDLTR = b'V',
+    NPY_DATETIMELTR = b'M',
+    NPY_TIMEDELTALTR = b'm',
+    NPY_CHARLTR = b'c',
+    NPY_INTPLTR = b'p',
+    NPY_UINTPLTR = b'P',
+}
+
+// Note: NPY_TYPEKINDCHAR doesn't exist in the header and has been created here artificially
+// because the original C enum contained duplicate values - namely, those related to type kinds.
+// There's also a comment in the C code preceding this block of values and stating that they are
+// related to type kind chars and not type codes.
+#[repr(u8)]
+#[derive(Debug, Clone, Copy)]
+pub enum NPY_TYPEKINDCHAR {
+    NPY_GENBOOLLTR = b'b',
+    NPY_SIGNEDLTR = b'i',
+    NPY_UNSIGNEDLTR = b'u',
+    NPY_FLOATINGLTR = b'f',
+    NPY_COMPLEXLTR = b'c',
+}
+
+#[repr(u8)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum NPY_BYTEORDER_CHAR {
+    NPY_LITTLE = b'<',
+    NPY_BIG = b'>',
+    NPY_NATIVE = b'=',
+    NPY_SWAP = b's',
+    NPY_IGNORE = b'|',
+}
+
+impl NPY_BYTEORDER_CHAR {
+    #[cfg(target_endian = "little")]
+    pub const NPY_NATBYTE: Self = Self::NPY_LITTLE;
+    #[cfg(target_endian = "little")]
+    pub const NPY_OPPBYTE: Self = Self::NPY_BIG;
+
+    #[cfg(target_endian = "big")]
+    pub const NPY_NATBYTE: Self = Self::NPY_BIG;
+    #[cfg(target_endian = "big")]
+    pub const NPY_OPPBYTE: Self = Self::NPY_LITTLE;
 }
