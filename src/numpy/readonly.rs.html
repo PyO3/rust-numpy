@@ -284,7 +284,7 @@
     <span class="doccomment">///     assert_eq!(readonly.as_slice().unwrap(), &amp;[0, 1, 2, 3]);</span>
     <span class="doccomment">///     let locals = [(&quot;np&quot;, numpy::get_array_module(py).unwrap())].into_py_dict(py);</span>
     <span class="doccomment">///     let not_contiguous: &amp;PyArray1&lt;i32&gt; = py</span>
-    <span class="doccomment">///         .eval(&quot;np.arange(10)[::2]&quot;, Some(locals), None)</span>
+    <span class="doccomment">///         .eval(&quot;np.arange(10, dtype=&#39;int32&#39;)[::2]&quot;, Some(locals), None)</span>
     <span class="doccomment">///         .unwrap()</span>
     <span class="doccomment">///         .downcast()</span>
     <span class="doccomment">///         .unwrap();</span>
