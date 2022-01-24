@@ -2,8 +2,7 @@ use ndarray::*;
 use numpy::*;
 use pyo3::{
     prelude::*,
-    types::PyList,
-    types::{IntoPyDict, PyDict},
+    types::{IntoPyDict, PyDict, PyList},
 };
 
 fn get_np_locals(py: Python) -> &PyDict {
@@ -299,4 +298,31 @@ fn borrow_from_array() {
     Python::with_gil(|py| {
         py_run!(py, array, "assert array.shape == (10,)");
     });
+}
+
+#[test]
+fn downcasting_works() {
+    Python::with_gil(|py| {
+        let ob: &PyAny = PyArray::from_slice(py, &[1_i32, 2, 3]);
+
+        assert!(ob.downcast::<PyArray1<i32>>().is_ok());
+    })
+}
+
+#[test]
+fn downcasting_respects_element_type() {
+    Python::with_gil(|py| {
+        let ob: &PyAny = PyArray::from_slice(py, &[1_i32, 2, 3]);
+
+        assert!(ob.downcast::<PyArray1<f64>>().is_err());
+    })
+}
+
+#[test]
+fn downcasting_respects_dimensionality() {
+    Python::with_gil(|py| {
+        let ob: &PyAny = PyArray::from_slice(py, &[1_i32, 2, 3]);
+
+        assert!(ob.downcast::<PyArray2<i32>>().is_err());
+    })
 }

@@ -13,9 +13,9 @@ use ndarray::{
 };
 use num_traits::AsPrimitive;
 use pyo3::{
-    ffi, pyobject_native_type_info, pyobject_native_type_named, type_object, types::PyModule,
-    AsPyPointer, FromPyObject, IntoPy, Py, PyAny, PyDowncastError, PyErr, PyNativeType, PyObject,
-    PyResult, Python, ToPyObject,
+    ffi, pyobject_native_type_named, type_object, types::PyModule, AsPyPointer, FromPyObject,
+    IntoPy, Py, PyAny, PyDowncastError, PyErr, PyNativeType, PyObject, PyResult, PyTypeInfo,
+    Python, ToPyObject,
 };
 
 use crate::convert::{ArrayExt, IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
@@ -110,16 +110,24 @@ pub fn get_array_module(py: Python<'_>) -> PyResult<&PyModule> {
 }
 
 unsafe impl<T, D> type_object::PyLayout<PyArray<T, D>> for npyffi::PyArrayObject {}
+
 impl<T, D> type_object::PySizedLayout<PyArray<T, D>> for npyffi::PyArrayObject {}
 
-pyobject_native_type_info!(
-    PyArray<T, D>,
-    *npyffi::PY_ARRAY_API.get_type_object(npyffi::NpyTypes::PyArray_Type),
-    Some("numpy"),
-    #checkfunction=npyffi::PyArray_Check
-    ; T
-    ; D
-);
+unsafe impl<T: Element, D: Dimension> PyTypeInfo for PyArray<T, D> {
+    type AsRefTarget = Self;
+
+    const NAME: &'static str = "PyArray<T, D>";
+    const MODULE: ::std::option::Option<&'static str> = Some("numpy");
+
+    #[inline]
+    fn type_object_raw(_py: Python) -> *mut ffi::PyTypeObject {
+        unsafe { npyffi::PY_ARRAY_API.get_type_object(npyffi::NpyTypes::PyArray_Type) }
+    }
+
+    fn is_type_of(ob: &PyAny) -> bool {
+        <&Self>::extract(ob).is_ok()
+    }
+}
 
 pyobject_native_type_named!(PyArray<T, D> ; T ; D);
 
@@ -129,12 +137,12 @@ impl<T, D> IntoPy<PyObject> for PyArray<T, D> {
     }
 }
 
-impl<'a, T: Element, D: Dimension> FromPyObject<'a> for &'a PyArray<T, D> {
+impl<'py, T: Element, D: Dimension> FromPyObject<'py> for &'py PyArray<T, D> {
     // here we do type-check three times
     // 1. Checks if the object is PyArray
     // 2. Checks if the data type of the array is T
     // 3. Checks if the dimension is same as D
-    fn extract(ob: &'a PyAny) -> PyResult<Self> {
+    fn extract(ob: &'py PyAny) -> PyResult<Self> {
         let array = unsafe {
             if npyffi::PyArray_Check(ob.as_ptr()) == 0 {
                 return Err(PyDowncastError::new(ob, "PyArray<T, D>").into());
@@ -207,7 +215,7 @@ impl<T, D> PyArray<T, D> {
     ///     assert!(array.is_contiguous());
     ///     let locals = [("np", numpy::get_array_module(py).unwrap())].into_py_dict(py);
     ///     let not_contiguous: &numpy::PyArray1<f32> = py
-    ///         .eval("np.zeros((3, 5))[::2, 4]", Some(locals), None)
+    ///         .eval("np.zeros((3, 5), dtype='float32')[::2, 4]", Some(locals), None)
     ///         .unwrap()
     ///         .downcast()
     ///         .unwrap();

@@ -1,5 +1,5 @@
 import numpy as np
-from rust_ext import axpy, conj, mult
+from rust_ext import axpy, conj, mult, extract
 
 
 def test_axpy():
@@ -22,3 +22,9 @@ def test_mult():
 def test_conj():
     x = np.array([1.0 + 2j, 2.0 + 3j, 3.0 + 4j])
     np.testing.assert_array_almost_equal(conj(x), np.conj(x))
+
+
+def test_extract():
+    x = np.arange(5.0)
+    d = { "x": x }
+    np.testing.assert_almost_equal(extract(d), 10.0)
