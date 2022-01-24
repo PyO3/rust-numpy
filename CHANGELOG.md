@@ -8,22 +8,23 @@
   - `PyArray::from_exact_iter` does not unsoundly trust `ExactSizeIterator::len` any more ([#262](https://github.com/PyO3/rust-numpy/pull/262))
   - `PyArray::as_cell_slice` was removed as it unsoundly interacts with `PyReadonlyArray` allowing safe code to violate aliasing rules ([#260](https://github.com/PyO3/rust-numpy/pull/260))
   - `rayon` feature is now removed, and directly specifying the feature via `ndarray` dependency is recommended ([#250](https://github.com/PyO3/rust-numpy/pull/250))
-  - Descriptors rework and related changes ([#256](https://github.com/PyO3/rust-numpy/pull/256)):
-    - Remove `DataType`
-    - Add the top-level `dtype` function for easy access to registered dtypes
-    - Add `PyArrayDescr::of`, `PyArrayDescr::into_dtype_ptr` and `PyArrayDescr::is_equiv_to`
-    - `Element` trait has been simplified to just `IS_COPY` const and `get_dtype` method
+  - `Element` trait and `PyArrayDescr` changes ([#256](https://github.com/PyO3/rust-numpy/pull/256)):
+    - `Element` trait has been simplified to `get_dtype()` and `IS_COPY`
+    - New `PyArrayDescr` methods: `of`, `into_dtype_ptr`, `is_equiv_to`
+    - Added `numpy::dtype` function
     - `Element` is now implemented for `isize`
-    - `c32` and `c64` aliases have been replaced with `Complex32` and `Complex64`
+    - `c32` / `c64` have been renamed with `Complex32` / `Complex64`
     - `ShapeError` has been split into `TypeError` and `DimensionalityError`
-    - `i32`, `i64`, `u32` and `u64` are now guaranteed to map to
-      `np.int32`, `np.int64`, `np.uint32` and `np.uint64` respectively
-    - Remove `cfg_if` dependency
-  - New methods in `PyArrayDescr`, catching up with `np.dtype`:
+    - `i32`, `i64`, `u32`, `u64` are now guaranteed to map to `np.u?int{32,64}`.
+    - Removed `cfg_if` dependency
+    - Removed `DataType` enum
+  - Added `PyArrayDescr::new` constructor
+    ([#266](https://github.com/PyO3/rust-numpy/pull/266))
+  - New `PyArrayDescr` methods
+    ([#266](https://github.com/PyO3/rust-numpy/pull/261)):
     - `num`, `base`, `ndim`, `shape`, `byteorder`, `char`, `kind`, `itemsize`,
-      `alignment`, `flags`, `has_object`, `is_aligned_struct`, `names`
-    - Added `get_field` to query fields of structured dtypes
-    - Additional helper methods: `has_subarray`, `has_fields`, `is_native_byteorder`
+      `alignment`, `flags`, `has_object`, `is_aligned_struct`, `names`,
+      `get_field`, `has_subarray`, `has_fields`, `is_native_byteorder`
     - Renamed `get_type` to `typeobj`
 
 - v0.15.1
