@@ -35,7 +35,7 @@ pub struct PyArray_Descr {
     pub type_num: c_int,
     pub elsize: c_int,
     pub alignment: c_int,
-    pub subarray: *mut PyArrray_ArrayDescr,
+    pub subarray: *mut PyArray_ArrayDescr,
     pub fields: *mut PyObject,
     pub names: *mut PyObject,
     pub f: *mut PyArray_ArrFuncs,
@@ -46,7 +46,7 @@ pub struct PyArray_Descr {
 
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub struct PyArrray_ArrayDescr {
+pub struct PyArray_ArrayDescr {
     pub base: *mut PyArray_Descr,
     pub shape: *mut PyObject,
 }
