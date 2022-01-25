@@ -450,7 +450,7 @@
     <span class="kw">pub</span> <span class="ident">type_num</span>: <span class="ident">c_int</span>,
     <span class="kw">pub</span> <span class="ident">elsize</span>: <span class="ident">c_int</span>,
     <span class="kw">pub</span> <span class="ident">alignment</span>: <span class="ident">c_int</span>,
-    <span class="kw">pub</span> <span class="ident">subarray</span>: <span class="kw-2">*mut</span> <span class="ident">PyArrray_ArrayDescr</span>,
+    <span class="kw">pub</span> <span class="ident">subarray</span>: <span class="kw-2">*mut</span> <span class="ident">PyArray_ArrayDescr</span>,
     <span class="kw">pub</span> <span class="ident">fields</span>: <span class="kw-2">*mut</span> <span class="ident">PyObject</span>,
     <span class="kw">pub</span> <span class="ident">names</span>: <span class="kw-2">*mut</span> <span class="ident">PyObject</span>,
     <span class="kw">pub</span> <span class="ident">f</span>: <span class="kw-2">*mut</span> <span class="ident">PyArray_ArrFuncs</span>,
@@ -461,7 +461,7 @@
 
 <span class="attribute">#[<span class="ident">repr</span>(<span class="ident">C</span>)]</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">PyArrray_ArrayDescr</span> {
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">PyArray_ArrayDescr</span> {
     <span class="kw">pub</span> <span class="ident">base</span>: <span class="kw-2">*mut</span> <span class="ident">PyArray_Descr</span>,
     <span class="kw">pub</span> <span class="ident">shape</span>: <span class="kw-2">*mut</span> <span class="ident">PyObject</span>,
 }
