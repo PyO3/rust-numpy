@@ -24,9 +24,10 @@ where
     DOUT: Dimension,
     T: Element,
 {
+    let py = array1.py();
     let obj = unsafe {
-        let result = PY_ARRAY_API.PyArray_InnerProduct(array1.as_ptr(), array2.as_ptr());
-        PyAny::from_owned_ptr_or_err(array1.py(), result)?
+        let result = PY_ARRAY_API.PyArray_InnerProduct(py, array1.as_ptr(), array2.as_ptr());
+        PyAny::from_owned_ptr_or_err(py, result)?
     };
     obj.extract()
 }
@@ -55,9 +56,10 @@ where
     DOUT: Dimension,
     T: Element,
 {
+    let py = array1.py();
     let obj = unsafe {
-        let result = PY_ARRAY_API.PyArray_MatrixProduct(array1.as_ptr(), array2.as_ptr());
-        PyAny::from_owned_ptr_or_err(array1.py(), result)?
+        let result = PY_ARRAY_API.PyArray_MatrixProduct(py, array1.as_ptr(), array2.as_ptr());
+        PyAny::from_owned_ptr_or_err(py, result)?
     };
     obj.extract()
 }
@@ -78,8 +80,10 @@ where
         Ok(subscripts) => subscripts.into(),
         Err(_) => std::ffi::CString::new(subscripts).unwrap().into(),
     };
+    let py = arrays[0].py();
     let obj = unsafe {
         let result = PY_ARRAY_API.PyArray_EinsteinSum(
+            py,
             subscripts.as_ptr() as _,
             arrays.len() as _,
             arrays.as_ptr() as _,
@@ -88,7 +92,7 @@ where
             NPY_CASTING::NPY_NO_CASTING,
             std::ptr::null_mut(),
         );
-        PyAny::from_owned_ptr_or_err(arrays[0].py(), result)?
+        PyAny::from_owned_ptr_or_err(py, result)?
     };
     obj.extract()
 }

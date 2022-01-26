@@ -1,9 +1,10 @@
 //! Low-Level binding for [Array API](https://numpy.org/doc/stable/reference/c-api/array.html)
 use libc::FILE;
-use pyo3::ffi::{self, PyObject, PyTypeObject};
+use std::cell::Cell;
 use std::os::raw::*;
-use std::ptr::null_mut;
-use std::sync::atomic::{AtomicPtr, Ordering};
+use std::ptr::null;
+
+use pyo3::ffi::{self, PyObject, PyTypeObject};
 
 use crate::npyffi::*;
 
@@ -23,7 +24,7 @@ const CAPSULE_NAME: &str = "_ARRAY_API";
 /// pyo3::Python::with_gil(|py| {
 ///     let array = PyArray::from_slice(py, &[3, 2, 4]);
 ///     unsafe {
-///         PY_ARRAY_API.PyArray_Sort(array.as_array_ptr(), 0, NPY_SORTKIND::NPY_QUICKSORT);
+///         PY_ARRAY_API.PyArray_Sort(py, array.as_array_ptr(), 0, NPY_SORTKIND::NPY_QUICKSORT);
 ///     }
 ///     assert_eq!(array.readonly().as_slice().unwrap(), &[2, 3, 4]);
 /// })
@@ -32,30 +33,29 @@ pub static PY_ARRAY_API: PyArrayAPI = PyArrayAPI::new();
 
 /// See [PY_ARRAY_API] for more.
 pub struct PyArrayAPI {
-    api: AtomicPtr<*const c_void>,
+    api: Cell<*const *const c_void>,
 }
+
+unsafe impl Send for PyArrayAPI {}
+
+unsafe impl Sync for PyArrayAPI {}
 
 impl PyArrayAPI {
     const fn new() -> Self {
         Self {
-            api: AtomicPtr::new(null_mut()),
+            api: Cell::new(null()),
         }
     }
     #[cold]
-    fn init(&self) -> *const *const c_void {
-        Python::with_gil(|py| {
-            let mut api = self.api.load(Ordering::Relaxed) as *const *const c_void;
-            if api.is_null() {
-                api = get_numpy_api(py, MOD_NAME, CAPSULE_NAME);
-                self.api.store(api as *mut _, Ordering::Release);
-            }
-            api
-        })
+    fn init(&self, py: Python) -> *const *const c_void {
+        let api = get_numpy_api(py, MOD_NAME, CAPSULE_NAME);
+        self.api.set(api);
+        api
     }
-    unsafe fn get(&self, offset: isize) -> *const *const c_void {
-        let mut api = self.api.load(Ordering::Acquire) as *const *const c_void;
+    unsafe fn get(&self, py: Python, offset: isize) -> *const *const c_void {
+        let mut api = self.api.get();
         if api.is_null() {
-            api = self.init();
+            api = self.init(py);
         }
         api.offset(offset)
     }
@@ -331,9 +331,9 @@ macro_rules! impl_array_type {
         pub enum NpyTypes { $($tname),* }
         impl PyArrayAPI {
             /// Get the pointer of the type object that `self` refers.
-            pub unsafe fn get_type_object(&self, ty: NpyTypes) -> *mut PyTypeObject {
+            pub unsafe fn get_type_object(&self, py: Python, ty: NpyTypes) -> *mut PyTypeObject {
                 match ty {
-                    $( NpyTypes::$tname => *(self.get($offset)) as _ ),*
+                    $( NpyTypes::$tname => *(self.get(py, $offset)) as _ ),*
                 }
             }
         }
@@ -384,14 +384,14 @@ impl_array_type! {
 
 /// Checks that `op` is an instance of `PyArray` or not.
 #[allow(non_snake_case)]
-pub unsafe fn PyArray_Check(op: *mut PyObject) -> c_int {
-    ffi::PyObject_TypeCheck(op, PY_ARRAY_API.get_type_object(NpyTypes::PyArray_Type))
+pub unsafe fn PyArray_Check(py: Python, op: *mut PyObject) -> c_int {
+    ffi::PyObject_TypeCheck(op, PY_ARRAY_API.get_type_object(py, NpyTypes::PyArray_Type))
 }
 
 /// Checks that `op` is an exact instance of `PyArray` or not.
 #[allow(non_snake_case)]
-pub unsafe fn PyArray_CheckExact(op: *mut PyObject) -> c_int {
-    (ffi::Py_TYPE(op) == PY_ARRAY_API.get_type_object(NpyTypes::PyArray_Type)) as _
+pub unsafe fn PyArray_CheckExact(py: Python, op: *mut PyObject) -> c_int {
+    (ffi::Py_TYPE(op) == PY_ARRAY_API.get_type_object(py, NpyTypes::PyArray_Type)) as _
 }
 
 // these are under `#if NPY_USE_PYMEM == 1` which seems to be always defined as 1
@@ -406,9 +406,9 @@ mod tests {
 
     #[test]
     fn call_api() {
-        pyo3::Python::with_gil(|_py| unsafe {
+        pyo3::Python::with_gil(|py| unsafe {
             assert_eq!(
-                PY_ARRAY_API.PyArray_MultiplyIntList([1, 2, 3].as_mut_ptr(), 3),
+                PY_ARRAY_API.PyArray_MultiplyIntList(py, [1, 2, 3].as_mut_ptr(), 3),
                 6
             );
         })

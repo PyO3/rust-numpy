@@ -28,8 +28,8 @@ fn get_numpy_api(_py: Python, module: &str, capsule: &str) -> *const *const c_vo
 macro_rules! impl_api {
     [$offset: expr; $fname: ident ( $($arg: ident : $t: ty),* ) $( -> $ret: ty )* ] => {
         #[allow(non_snake_case)]
-        pub unsafe fn $fname(&self, $($arg : $t), *) $( -> $ret )* {
-            let fptr = self.get($offset)
+        pub unsafe fn $fname(&self, py: Python, $($arg : $t), *) $( -> $ret )* {
+            let fptr = self.get(py, $offset)
                            as *const extern fn ($($arg : $t), *) $( -> $ret )*;
             (*fptr)($($arg), *)
         }
