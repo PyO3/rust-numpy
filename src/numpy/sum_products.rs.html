@@ -118,6 +118,10 @@
 <span id="117">117</span>
 <span id="118">118</span>
 <span id="119">119</span>
+<span id="120">120</span>
+<span id="121">121</span>
+<span id="122">122</span>
+<span id="123">123</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::npyffi</span>::{<span class="ident">NPY_CASTING</span>, <span class="ident">NPY_ORDER</span>};
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">Element</span>, <span class="ident">PyArray</span>, <span class="ident">PY_ARRAY_API</span>};
 <span class="kw">use</span> <span class="ident">ndarray</span>::{<span class="ident">Dimension</span>, <span class="ident">IxDyn</span>};
@@ -144,9 +148,10 @@
     <span class="ident">DOUT</span>: <span class="ident">Dimension</span>,
     <span class="ident">T</span>: <span class="ident">Element</span>,
 {
+    <span class="kw">let</span> <span class="ident">py</span> <span class="op">=</span> <span class="ident">array1</span>.<span class="ident">py</span>();
     <span class="kw">let</span> <span class="ident">obj</span> <span class="op">=</span> <span class="kw">unsafe</span> {
-        <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="ident">PY_ARRAY_API</span>.<span class="ident">PyArray_InnerProduct</span>(<span class="ident">array1</span>.<span class="ident">as_ptr</span>(), <span class="ident">array2</span>.<span class="ident">as_ptr</span>());
-        <span class="ident">PyAny::from_owned_ptr_or_err</span>(<span class="ident">array1</span>.<span class="ident">py</span>(), <span class="ident">result</span>)<span class="question-mark">?</span>
+        <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="ident">PY_ARRAY_API</span>.<span class="ident">PyArray_InnerProduct</span>(<span class="ident">py</span>, <span class="ident">array1</span>.<span class="ident">as_ptr</span>(), <span class="ident">array2</span>.<span class="ident">as_ptr</span>());
+        <span class="ident">PyAny::from_owned_ptr_or_err</span>(<span class="ident">py</span>, <span class="ident">result</span>)<span class="question-mark">?</span>
     };
     <span class="ident">obj</span>.<span class="ident">extract</span>()
 }
@@ -175,9 +180,10 @@
     <span class="ident">DOUT</span>: <span class="ident">Dimension</span>,
     <span class="ident">T</span>: <span class="ident">Element</span>,
 {
+    <span class="kw">let</span> <span class="ident">py</span> <span class="op">=</span> <span class="ident">array1</span>.<span class="ident">py</span>();
     <span class="kw">let</span> <span class="ident">obj</span> <span class="op">=</span> <span class="kw">unsafe</span> {
-        <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="ident">PY_ARRAY_API</span>.<span class="ident">PyArray_MatrixProduct</span>(<span class="ident">array1</span>.<span class="ident">as_ptr</span>(), <span class="ident">array2</span>.<span class="ident">as_ptr</span>());
-        <span class="ident">PyAny::from_owned_ptr_or_err</span>(<span class="ident">array1</span>.<span class="ident">py</span>(), <span class="ident">result</span>)<span class="question-mark">?</span>
+        <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="ident">PY_ARRAY_API</span>.<span class="ident">PyArray_MatrixProduct</span>(<span class="ident">py</span>, <span class="ident">array1</span>.<span class="ident">as_ptr</span>(), <span class="ident">array2</span>.<span class="ident">as_ptr</span>());
+        <span class="ident">PyAny::from_owned_ptr_or_err</span>(<span class="ident">py</span>, <span class="ident">result</span>)<span class="question-mark">?</span>
     };
     <span class="ident">obj</span>.<span class="ident">extract</span>()
 }
@@ -198,8 +204,10 @@
         <span class="prelude-val">Ok</span>(<span class="ident">subscripts</span>) =&gt; <span class="ident">subscripts</span>.<span class="ident">into</span>(),
         <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="ident">std::ffi::CString::new</span>(<span class="ident">subscripts</span>).<span class="ident">unwrap</span>().<span class="ident">into</span>(),
     };
+    <span class="kw">let</span> <span class="ident">py</span> <span class="op">=</span> <span class="ident">arrays</span>[<span class="number">0</span>].<span class="ident">py</span>();
     <span class="kw">let</span> <span class="ident">obj</span> <span class="op">=</span> <span class="kw">unsafe</span> {
         <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="ident">PY_ARRAY_API</span>.<span class="ident">PyArray_EinsteinSum</span>(
+            <span class="ident">py</span>,
             <span class="ident">subscripts</span>.<span class="ident">as_ptr</span>() <span class="kw">as</span> <span class="kw">_</span>,
             <span class="ident">arrays</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="kw">_</span>,
             <span class="ident">arrays</span>.<span class="ident">as_ptr</span>() <span class="kw">as</span> <span class="kw">_</span>,
@@ -208,7 +216,7 @@
             <span class="ident">NPY_CASTING::NPY_NO_CASTING</span>,
             <span class="ident">std::ptr::null_mut</span>(),
         );
-        <span class="ident">PyAny::from_owned_ptr_or_err</span>(<span class="ident">arrays</span>[<span class="number">0</span>].<span class="ident">py</span>(), <span class="ident">result</span>)<span class="question-mark">?</span>
+        <span class="ident">PyAny::from_owned_ptr_or_err</span>(<span class="ident">py</span>, <span class="ident">result</span>)<span class="question-mark">?</span>
     };
     <span class="ident">obj</span>.<span class="ident">extract</span>()
 }

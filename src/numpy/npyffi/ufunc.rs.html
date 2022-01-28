@@ -102,22 +102,15 @@
 <span id="101">101</span>
 <span id="102">102</span>
 <span id="103">103</span>
-<span id="104">104</span>
-<span id="105">105</span>
-<span id="106">106</span>
-<span id="107">107</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Low-Level binding for [UFunc API](https://numpy.org/doc/stable/reference/c-api/ufunc.html)</span>
 
+<span class="kw">use</span> <span class="ident">std::cell::Cell</span>;
 <span class="kw">use</span> <span class="ident">std::os::raw</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident">std::ptr::null_mut</span>;
-<span class="kw">use</span> <span class="ident">std::sync::atomic</span>::{<span class="ident">AtomicPtr</span>, <span class="ident">Ordering</span>};
+<span class="kw">use</span> <span class="ident">std::ptr::null</span>;
 
 <span class="kw">use</span> <span class="ident">pyo3::ffi::PyObject</span>;
-<span class="kw">use</span> <span class="ident">pyo3::Python</span>;
 
-<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::get_numpy_api</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::objects</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::types</span>::<span class="kw-2">*</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::npyffi</span>::<span class="kw-2">*</span>;
 
 <span class="kw">const</span> <span class="ident">MOD_NAME</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;numpy.core.umath&quot;</span>;
 <span class="kw">const</span> <span class="ident">CAPSULE_NAME</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;_UFUNC_API&quot;</span>;
@@ -127,30 +120,29 @@
 <span class="kw">pub</span> <span class="kw">static</span> <span class="ident">PY_UFUNC_API</span>: <span class="ident">PyUFuncAPI</span> <span class="op">=</span> <span class="ident">PyUFuncAPI::new</span>();
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">PyUFuncAPI</span> {
-    <span class="ident">api</span>: <span class="ident">AtomicPtr</span><span class="op">&lt;</span><span class="kw-2">*const</span> <span class="ident">c_void</span><span class="op">&gt;</span>,
+    <span class="ident">api</span>: <span class="ident">Cell</span><span class="op">&lt;</span><span class="kw-2">*const</span> <span class="kw-2">*const</span> <span class="ident">c_void</span><span class="op">&gt;</span>,
 }
+
+<span class="kw">unsafe</span> <span class="kw">impl</span> <span class="ident">Send</span> <span class="kw">for</span> <span class="ident">PyUFuncAPI</span> {}
+
+<span class="kw">unsafe</span> <span class="kw">impl</span> <span class="ident">Sync</span> <span class="kw">for</span> <span class="ident">PyUFuncAPI</span> {}
 
 <span class="kw">impl</span> <span class="ident">PyUFuncAPI</span> {
     <span class="kw">const</span> <span class="kw">fn</span> <span class="ident">new</span>() -&gt; <span class="self">Self</span> {
         <span class="self">Self</span> {
-            <span class="ident">api</span>: <span class="ident">AtomicPtr::new</span>(<span class="ident">null_mut</span>()),
+            <span class="ident">api</span>: <span class="ident">Cell::new</span>(<span class="ident">null</span>()),
         }
     }
     <span class="attribute">#[<span class="ident">cold</span>]</span>
-    <span class="kw">fn</span> <span class="ident">init</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">*const</span> <span class="kw-2">*const</span> <span class="ident">c_void</span> {
-        <span class="ident">Python::with_gil</span>(<span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">api</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">api</span>.<span class="ident">load</span>(<span class="ident">Ordering::Relaxed</span>) <span class="kw">as</span> <span class="kw-2">*const</span> <span class="kw-2">*const</span> <span class="ident">c_void</span>;
-            <span class="kw">if</span> <span class="ident">api</span>.<span class="ident">is_null</span>() {
-                <span class="ident">api</span> <span class="op">=</span> <span class="ident">get_numpy_api</span>(<span class="ident">py</span>, <span class="ident">MOD_NAME</span>, <span class="ident">CAPSULE_NAME</span>);
-                <span class="self">self</span>.<span class="ident">api</span>.<span class="ident">store</span>(<span class="ident">api</span> <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="kw">_</span>, <span class="ident">Ordering::Release</span>);
-            }
-            <span class="ident">api</span>
-        })
+    <span class="kw">fn</span> <span class="ident">init</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">py</span>: <span class="ident">Python</span>) -&gt; <span class="kw-2">*const</span> <span class="kw-2">*const</span> <span class="ident">c_void</span> {
+        <span class="kw">let</span> <span class="ident">api</span> <span class="op">=</span> <span class="ident">get_numpy_api</span>(<span class="ident">py</span>, <span class="ident">MOD_NAME</span>, <span class="ident">CAPSULE_NAME</span>);
+        <span class="self">self</span>.<span class="ident">api</span>.<span class="ident">set</span>(<span class="ident">api</span>);
+        <span class="ident">api</span>
     }
-    <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">offset</span>: <span class="ident">isize</span>) -&gt; <span class="kw-2">*const</span> <span class="kw-2">*const</span> <span class="ident">c_void</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">api</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">api</span>.<span class="ident">load</span>(<span class="ident">Ordering::Acquire</span>) <span class="kw">as</span> <span class="kw-2">*const</span> <span class="kw-2">*const</span> <span class="ident">c_void</span>;
+    <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">py</span>: <span class="ident">Python</span>, <span class="ident">offset</span>: <span class="ident">isize</span>) -&gt; <span class="kw-2">*const</span> <span class="kw-2">*const</span> <span class="ident">c_void</span> {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">api</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">api</span>.<span class="ident">get</span>();
         <span class="kw">if</span> <span class="ident">api</span>.<span class="ident">is_null</span>() {
-            <span class="ident">api</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">init</span>();
+            <span class="ident">api</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">init</span>(<span class="ident">py</span>);
         }
         <span class="ident">api</span>.<span class="ident">offset</span>(<span class="ident">offset</span>)
     }

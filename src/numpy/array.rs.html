@@ -1360,6 +1360,15 @@
 <span id="1359">1359</span>
 <span id="1360">1360</span>
 <span id="1361">1361</span>
+<span id="1362">1362</span>
+<span id="1363">1363</span>
+<span id="1364">1364</span>
+<span id="1365">1365</span>
+<span id="1366">1366</span>
+<span id="1367">1367</span>
+<span id="1368">1368</span>
+<span id="1369">1369</span>
+<span id="1370">1370</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Safe interface for NumPy ndarray</span>
 <span class="kw">use</span> <span class="ident">std</span>::{
     <span class="ident">marker::PhantomData</span>,
@@ -1482,8 +1491,8 @@
     <span class="kw">const</span> <span class="ident">MODULE</span>: <span class="ident">::std::option::Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span><span class="op">&gt;</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="string">&quot;numpy&quot;</span>);
 
     <span class="attribute">#[<span class="ident">inline</span>]</span>
-    <span class="kw">fn</span> <span class="ident">type_object_raw</span>(<span class="ident">_py</span>: <span class="ident">Python</span>) -&gt; <span class="kw-2">*mut</span> <span class="ident">ffi::PyTypeObject</span> {
-        <span class="kw">unsafe</span> { <span class="ident">npyffi::PY_ARRAY_API</span>.<span class="ident">get_type_object</span>(<span class="ident">npyffi::NpyTypes::PyArray_Type</span>) }
+    <span class="kw">fn</span> <span class="ident">type_object_raw</span>(<span class="ident">py</span>: <span class="ident">Python</span>) -&gt; <span class="kw-2">*mut</span> <span class="ident">ffi::PyTypeObject</span> {
+        <span class="kw">unsafe</span> { <span class="ident">npyffi::PY_ARRAY_API</span>.<span class="ident">get_type_object</span>(<span class="ident">py</span>, <span class="ident">npyffi::NpyTypes::PyArray_Type</span>) }
     }
 
     <span class="kw">fn</span> <span class="ident">is_type_of</span>(<span class="ident">ob</span>: <span class="kw-2">&amp;</span><span class="ident">PyAny</span>) -&gt; <span class="ident">bool</span> {
@@ -1506,7 +1515,7 @@
     <span class="comment">// 3. Checks if the dimension is same as D</span>
     <span class="kw">fn</span> <span class="ident">extract</span>(<span class="ident">ob</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyAny</span>) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">array</span> <span class="op">=</span> <span class="kw">unsafe</span> {
-            <span class="kw">if</span> <span class="ident">npyffi::PyArray_Check</span>(<span class="ident">ob</span>.<span class="ident">as_ptr</span>()) <span class="op">==</span> <span class="number">0</span> {
+            <span class="kw">if</span> <span class="ident">npyffi::PyArray_Check</span>(<span class="ident">ob</span>.<span class="ident">py</span>(), <span class="ident">ob</span>.<span class="ident">as_ptr</span>()) <span class="op">==</span> <span class="number">0</span> {
                 <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PyDowncastError::new</span>(<span class="ident">ob</span>, <span class="string">&quot;PyArray&lt;T, D&gt;&quot;</span>).<span class="ident">into</span>());
             }
             <span class="kw-2">&amp;</span><span class="kw-2">*</span>(<span class="ident">ob</span> <span class="kw">as</span> <span class="kw-2">*const</span> <span class="ident">PyAny</span> <span class="kw">as</span> <span class="kw-2">*const</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span>)
@@ -1738,7 +1747,6 @@
     }
 
     <span class="kw">fn</span> <span class="ident">ndarray_shape_ptr</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; (<span class="ident">StrideShape</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>, <span class="kw-2">*mut</span> <span class="ident">T</span>, <span class="ident">InvertedAxises</span>) {
-        <span class="kw">const</span> <span class="ident">ERR_MSG</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;PyArray::ndarray_shape: dimension mismatching&quot;</span>;
         <span class="kw">let</span> <span class="ident">shape_slice</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">shape</span>();
         <span class="kw">let</span> <span class="ident">shape</span>: <span class="ident">Shape</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Dim</span>(<span class="self">self</span>.<span class="ident">dims</span>()).<span class="ident">into</span>();
         <span class="kw">let</span> <span class="ident">sizeof_t</span> <span class="op">=</span> <span class="ident">mem::size_of</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>();
@@ -1762,7 +1770,8 @@
                 <span class="ident">new_strides</span>[<span class="ident">i</span>] <span class="op">=</span> <span class="ident">strides</span>[<span class="ident">i</span>] <span class="kw">as</span> <span class="ident">usize</span> <span class="op">/</span> <span class="ident">sizeof_t</span>;
             }
         }
-        <span class="kw">let</span> <span class="ident">st</span> <span class="op">=</span> <span class="ident">D::from_dimension</span>(<span class="kw-2">&amp;</span><span class="ident">Dim</span>(<span class="ident">new_strides</span>)).<span class="ident">expect</span>(<span class="ident">ERR_MSG</span>);
+        <span class="kw">let</span> <span class="ident">st</span> <span class="op">=</span> <span class="ident">D::from_dimension</span>(<span class="kw-2">&amp;</span><span class="ident">Dim</span>(<span class="ident">new_strides</span>))
+            .<span class="ident">expect</span>(<span class="string">&quot;PyArray::ndarray_shape: dimension mismatching&quot;</span>);
         (<span class="ident">shape</span>.<span class="ident">strides</span>(<span class="ident">st</span>), <span class="ident">data_ptr</span>, <span class="ident">InvertedAxises</span>(<span class="ident">inverted_axises</span>))
     }
 
@@ -1823,7 +1832,8 @@
     {
         <span class="kw">let</span> <span class="ident">dims</span> <span class="op">=</span> <span class="ident">dims</span>.<span class="ident">into_dimension</span>();
         <span class="kw">let</span> <span class="ident">ptr</span> <span class="op">=</span> <span class="ident">PY_ARRAY_API</span>.<span class="ident">PyArray_NewFromDescr</span>(
-            <span class="ident">PY_ARRAY_API</span>.<span class="ident">get_type_object</span>(<span class="ident">npyffi::NpyTypes::PyArray_Type</span>),
+            <span class="ident">py</span>,
+            <span class="ident">PY_ARRAY_API</span>.<span class="ident">get_type_object</span>(<span class="ident">py</span>, <span class="ident">npyffi::NpyTypes::PyArray_Type</span>),
             <span class="ident">T::get_dtype</span>(<span class="ident">py</span>).<span class="ident">into_dtype_ptr</span>(),
             <span class="ident">dims</span>.<span class="ident">ndim_cint</span>(),
             <span class="ident">dims</span>.<span class="ident">as_dims_ptr</span>(),
@@ -1847,7 +1857,8 @@
     {
         <span class="kw">let</span> <span class="ident">dims</span> <span class="op">=</span> <span class="ident">dims</span>.<span class="ident">into_dimension</span>();
         <span class="kw">let</span> <span class="ident">ptr</span> <span class="op">=</span> <span class="ident">PY_ARRAY_API</span>.<span class="ident">PyArray_NewFromDescr</span>(
-            <span class="ident">PY_ARRAY_API</span>.<span class="ident">get_type_object</span>(<span class="ident">npyffi::NpyTypes::PyArray_Type</span>),
+            <span class="ident">py</span>,
+            <span class="ident">PY_ARRAY_API</span>.<span class="ident">get_type_object</span>(<span class="ident">py</span>, <span class="ident">npyffi::NpyTypes::PyArray_Type</span>),
             <span class="ident">T::get_dtype</span>(<span class="ident">py</span>).<span class="ident">into_dtype_ptr</span>(),
             <span class="ident">dims</span>.<span class="ident">ndim_cint</span>(),
             <span class="ident">dims</span>.<span class="ident">as_dims_ptr</span>(),
@@ -1858,6 +1869,7 @@
         );
 
         <span class="ident">PY_ARRAY_API</span>.<span class="ident">PyArray_SetBaseObject</span>(
+            <span class="ident">py</span>,
             <span class="ident">ptr</span> <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="ident">npyffi::PyArrayObject</span>,
             <span class="ident">container</span> <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="ident">ffi::PyObject</span>,
         );
@@ -1962,6 +1974,7 @@
         <span class="kw">let</span> <span class="ident">dims</span> <span class="op">=</span> <span class="ident">dims</span>.<span class="ident">into_dimension</span>();
         <span class="kw">unsafe</span> {
             <span class="kw">let</span> <span class="ident">ptr</span> <span class="op">=</span> <span class="ident">PY_ARRAY_API</span>.<span class="ident">PyArray_Zeros</span>(
+                <span class="ident">py</span>,
                 <span class="ident">dims</span>.<span class="ident">ndim_cint</span>(),
                 <span class="ident">dims</span>.<span class="ident">as_dims_ptr</span>(),
                 <span class="ident">T::get_dtype</span>(<span class="ident">py</span>).<span class="ident">into_dtype_ptr</span>(),
@@ -2408,7 +2421,7 @@
     <span class="doccomment">/// });</span>
     <span class="doccomment">/// ```</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">resize</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">new_elems</span>: <span class="ident">usize</span>) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">resize_</span>([<span class="ident">new_elems</span>], <span class="number">1</span>, <span class="ident">NPY_ORDER::NPY_ANYORDER</span>)
+        <span class="self">self</span>.<span class="ident">resize_</span>(<span class="self">self</span>.<span class="ident">py</span>(), [<span class="ident">new_elems</span>], <span class="number">1</span>, <span class="ident">NPY_ORDER::NPY_ANYORDER</span>)
     }
 
     <span class="doccomment">/// Iterates all elements of this array.</span>
@@ -2421,6 +2434,7 @@
 
     <span class="kw">fn</span> <span class="ident">resize_</span><span class="op">&lt;</span><span class="ident">D</span>: <span class="ident">IntoDimension</span><span class="op">&gt;</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
+        <span class="ident">py</span>: <span class="ident">Python</span>,
         <span class="ident">dims</span>: <span class="ident">D</span>,
         <span class="ident">check_ref</span>: <span class="ident">c_int</span>,
         <span class="ident">order</span>: <span class="ident">NPY_ORDER</span>,
@@ -2429,6 +2443,7 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">np_dims</span> <span class="op">=</span> <span class="ident">dims</span>.<span class="ident">to_npy_dims</span>();
         <span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="kw">unsafe</span> {
             <span class="ident">PY_ARRAY_API</span>.<span class="ident">PyArray_Resize</span>(
+                <span class="ident">py</span>,
                 <span class="self">self</span>.<span class="ident">as_array_ptr</span>(),
                 <span class="kw-2">&amp;mut</span> <span class="ident">np_dims</span> <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="ident">npyffi::PyArray_Dims</span>,
                 <span class="ident">check_ref</span>,
@@ -2537,7 +2552,7 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">copy_to</span><span class="op">&lt;</span><span class="ident">U</span>: <span class="ident">Element</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">U</span>, <span class="ident">D</span><span class="op">&gt;</span>) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">self_ptr</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">as_array_ptr</span>();
         <span class="kw">let</span> <span class="ident">other_ptr</span> <span class="op">=</span> <span class="ident">other</span>.<span class="ident">as_array_ptr</span>();
-        <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="ident">PY_ARRAY_API</span>.<span class="ident">PyArray_CopyInto</span>(<span class="ident">other_ptr</span>, <span class="ident">self_ptr</span>) };
+        <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="ident">PY_ARRAY_API</span>.<span class="ident">PyArray_CopyInto</span>(<span class="self">self</span>.<span class="ident">py</span>(), <span class="ident">other_ptr</span>, <span class="ident">self_ptr</span>) };
         <span class="kw">if</span> <span class="ident">result</span> <span class="op">==</span> <span class="op">-</span><span class="number">1</span> {
             <span class="prelude-val">Err</span>(<span class="ident">PyErr::fetch</span>(<span class="self">self</span>.<span class="ident">py</span>()))
         } <span class="kw">else</span> {
@@ -2559,6 +2574,7 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">cast</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">U</span>: <span class="ident">Element</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="self">self</span>, <span class="ident">is_fortran</span>: <span class="ident">bool</span>) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">U</span>, <span class="ident">D</span><span class="op">&gt;</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">ptr</span> <span class="op">=</span> <span class="kw">unsafe</span> {
             <span class="ident">PY_ARRAY_API</span>.<span class="ident">PyArray_CastToType</span>(
+                <span class="self">self</span>.<span class="ident">py</span>(),
                 <span class="self">self</span>.<span class="ident">as_array_ptr</span>(),
                 <span class="ident">U::get_dtype</span>(<span class="self">self</span>.<span class="ident">py</span>()).<span class="ident">into_dtype_ptr</span>(),
                 <span class="kw">if</span> <span class="ident">is_fortran</span> { <span class="op">-</span><span class="number">1</span> } <span class="kw">else</span> { <span class="number">0</span> },
@@ -2612,6 +2628,7 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">np_dims</span> <span class="op">=</span> <span class="ident">dims</span>.<span class="ident">to_npy_dims</span>();
         <span class="kw">let</span> <span class="ident">ptr</span> <span class="op">=</span> <span class="kw">unsafe</span> {
             <span class="ident">PY_ARRAY_API</span>.<span class="ident">PyArray_Newshape</span>(
+                <span class="self">self</span>.<span class="ident">py</span>(),
                 <span class="self">self</span>.<span class="ident">as_array_ptr</span>(),
                 <span class="kw-2">&amp;mut</span> <span class="ident">np_dims</span> <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="ident">npyffi::PyArray_Dims</span>,
                 <span class="ident">order</span>,
@@ -2643,6 +2660,7 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">arange</span>(<span class="ident">py</span>: <span class="ident">Python</span>, <span class="ident">start</span>: <span class="ident">T</span>, <span class="ident">stop</span>: <span class="ident">T</span>, <span class="ident">step</span>: <span class="ident">T</span>) -&gt; <span class="kw-2">&amp;</span><span class="self">Self</span> {
         <span class="kw">unsafe</span> {
             <span class="kw">let</span> <span class="ident">ptr</span> <span class="op">=</span> <span class="ident">PY_ARRAY_API</span>.<span class="ident">PyArray_Arange</span>(
+                <span class="ident">py</span>,
                 <span class="ident">start</span>.<span class="ident">as_</span>(),
                 <span class="ident">stop</span>.<span class="ident">as_</span>(),
                 <span class="ident">step</span>.<span class="ident">as_</span>(),

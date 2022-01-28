@@ -613,6 +613,10 @@
 <span id="612">612</span>
 <span id="613">613</span>
 <span id="614">614</span>
+<span id="615">615</span>
+<span id="616">616</span>
+<span id="617">617</span>
+<span id="618">618</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Wrapper of [Array Iterator API](https://numpy.org/doc/stable/reference/c-api/iterator.html).</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This module exposes two iterators:</span>
@@ -810,8 +814,10 @@
     <span class="doccomment">/// Creates an iterator from this builder.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">build</span>(<span class="self">self</span>) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">NpySingleIter</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">I</span><span class="op">&gt;</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">array_ptr</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">array</span>.<span class="ident">as_array_ptr</span>();
+        <span class="kw">let</span> <span class="ident">py</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">array</span>.<span class="ident">py</span>();
         <span class="kw">let</span> <span class="ident">iter_ptr</span> <span class="op">=</span> <span class="kw">unsafe</span> {
             <span class="ident">PY_ARRAY_API</span>.<span class="ident">NpyIter_New</span>(
+                <span class="ident">py</span>,
                 <span class="ident">array_ptr</span>,
                 <span class="self">self</span>.<span class="ident">flags</span>,
                 <span class="ident">NPY_ORDER::NPY_ANYORDER</span>,
@@ -819,7 +825,6 @@
                 <span class="ident">ptr::null_mut</span>(),
             )
         };
-        <span class="kw">let</span> <span class="ident">py</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">array</span>.<span class="ident">py</span>();
         <span class="kw">let</span> <span class="ident">readonly_array_ptr</span> <span class="op">=</span> <span class="kw">if</span> <span class="self">self</span>.<span class="ident">was_writable</span> {
             <span class="prelude-val">Some</span>(<span class="ident">array_ptr</span>)
         } <span class="kw">else</span> {
@@ -883,7 +888,7 @@
     <span class="ident">return_type</span>: <span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
     <span class="ident">mode</span>: <span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>,
     <span class="ident">readonly_array_ptr</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">*mut</span> <span class="ident">PyArrayObject</span><span class="op">&gt;</span>,
-    <span class="ident">_py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>,
+    <span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">I</span><span class="op">&gt;</span> <span class="ident">NpySingleIter</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">I</span><span class="op">&gt;</span> {
@@ -899,21 +904,22 @@
             }
         };
 
-        <span class="kw">let</span> <span class="ident">iternext</span> <span class="op">=</span>
-            <span class="kw">match</span> <span class="kw">unsafe</span> { <span class="ident">PY_ARRAY_API</span>.<span class="ident">NpyIter_GetIterNext</span>(<span class="ident">iterator</span>.<span class="ident">as_mut</span>(), <span class="ident">ptr::null_mut</span>()) } {
-                <span class="prelude-val">Some</span>(<span class="ident">ptr</span>) =&gt; <span class="ident">ptr</span>,
-                <span class="prelude-val">None</span> =&gt; {
-                    <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PyErr::fetch</span>(<span class="ident">py</span>));
-                }
-            };
-        <span class="kw">let</span> <span class="ident">dataptr</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="ident">PY_ARRAY_API</span>.<span class="ident">NpyIter_GetDataPtrArray</span>(<span class="ident">iterator</span>.<span class="ident">as_mut</span>()) };
+        <span class="kw">let</span> <span class="ident">iternext</span> <span class="op">=</span> <span class="kw">match</span> <span class="kw">unsafe</span> {
+            <span class="ident">PY_ARRAY_API</span>.<span class="ident">NpyIter_GetIterNext</span>(<span class="ident">py</span>, <span class="ident">iterator</span>.<span class="ident">as_mut</span>(), <span class="ident">ptr::null_mut</span>())
+        } {
+            <span class="prelude-val">Some</span>(<span class="ident">ptr</span>) =&gt; <span class="ident">ptr</span>,
+            <span class="prelude-val">None</span> =&gt; {
+                <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PyErr::fetch</span>(<span class="ident">py</span>));
+            }
+        };
+        <span class="kw">let</span> <span class="ident">dataptr</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="ident">PY_ARRAY_API</span>.<span class="ident">NpyIter_GetDataPtrArray</span>(<span class="ident">py</span>, <span class="ident">iterator</span>.<span class="ident">as_mut</span>()) };
 
         <span class="kw">if</span> <span class="ident">dataptr</span>.<span class="ident">is_null</span>() {
-            <span class="kw">unsafe</span> { <span class="ident">PY_ARRAY_API</span>.<span class="ident">NpyIter_Deallocate</span>(<span class="ident">iterator</span>.<span class="ident">as_mut</span>()) };
+            <span class="kw">unsafe</span> { <span class="ident">PY_ARRAY_API</span>.<span class="ident">NpyIter_Deallocate</span>(<span class="ident">py</span>, <span class="ident">iterator</span>.<span class="ident">as_mut</span>()) };
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PyErr::fetch</span>(<span class="ident">py</span>));
         }
 
-        <span class="kw">let</span> <span class="ident">iter_size</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="ident">PY_ARRAY_API</span>.<span class="ident">NpyIter_GetIterSize</span>(<span class="ident">iterator</span>.<span class="ident">as_mut</span>()) };
+        <span class="kw">let</span> <span class="ident">iter_size</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="ident">PY_ARRAY_API</span>.<span class="ident">NpyIter_GetIterSize</span>(<span class="ident">py</span>, <span class="ident">iterator</span>.<span class="ident">as_mut</span>()) };
 
         <span class="prelude-val">Ok</span>(<span class="self">Self</span> {
             <span class="ident">iterator</span>,
@@ -924,7 +930,7 @@
             <span class="ident">return_type</span>: <span class="ident">PhantomData</span>,
             <span class="ident">mode</span>: <span class="ident">PhantomData</span>,
             <span class="ident">readonly_array_ptr</span>,
-            <span class="ident">_py</span>: <span class="ident">py</span>,
+            <span class="ident">py</span>,
         })
     }
 
@@ -945,7 +951,7 @@
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">I</span><span class="op">&gt;</span> <span class="ident">Drop</span> <span class="kw">for</span> <span class="ident">NpySingleIter</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">I</span><span class="op">&gt;</span> {
     <span class="kw">fn</span> <span class="ident">drop</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) {
-        <span class="kw">let</span> <span class="ident">_success</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="ident">PY_ARRAY_API</span>.<span class="ident">NpyIter_Deallocate</span>(<span class="self">self</span>.<span class="ident">iterator</span>.<span class="ident">as_mut</span>()) };
+        <span class="kw">let</span> <span class="ident">_success</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="ident">PY_ARRAY_API</span>.<span class="ident">NpyIter_Deallocate</span>(<span class="self">self</span>.<span class="ident">py</span>, <span class="self">self</span>.<span class="ident">iterator</span>.<span class="ident">as_mut</span>()) };
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">ptr</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">readonly_array_ptr</span> {
             <span class="kw">unsafe</span> {
                 (<span class="kw-2">*</span><span class="ident">ptr</span>).<span class="ident">flags</span> <span class="op">|</span><span class="op">=</span> <span class="ident">NPY_ARRAY_WRITEABLE</span>;
@@ -1066,6 +1072,7 @@
 
         <span class="kw">let</span> <span class="ident">iter_ptr</span> <span class="op">=</span> <span class="kw">unsafe</span> {
             <span class="ident">PY_ARRAY_API</span>.<span class="ident">NpyIter_MultiNew</span>(
+                <span class="ident">py</span>,
                 <span class="ident">arrays</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">i32</span>,
                 <span class="ident">arrays</span>.<span class="ident">as_mut_ptr</span>(),
                 <span class="ident">flags</span>,
@@ -1116,7 +1123,7 @@
     <span class="ident">marker</span>: <span class="ident">PhantomData</span><span class="op">&lt;</span>(<span class="ident">T</span>, <span class="ident">S</span>)<span class="op">&gt;</span>,
     <span class="ident">arrays</span>: <span class="ident">Box</span><span class="op">&lt;</span>[<span class="kw-2">*mut</span> <span class="ident">PyArrayObject</span>]<span class="op">&gt;</span>,
     <span class="ident">was_writables</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>,
-    <span class="ident">_py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>,
+    <span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">S</span>: <span class="ident">MultiIterModeWithManyArrays</span><span class="op">&gt;</span> <span class="ident">NpyMultiIter</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">S</span><span class="op">&gt;</span> {
@@ -1133,21 +1140,22 @@
             }
         };
 
-        <span class="kw">let</span> <span class="ident">iternext</span> <span class="op">=</span>
-            <span class="kw">match</span> <span class="kw">unsafe</span> { <span class="ident">PY_ARRAY_API</span>.<span class="ident">NpyIter_GetIterNext</span>(<span class="ident">iterator</span>.<span class="ident">as_mut</span>(), <span class="ident">ptr::null_mut</span>()) } {
-                <span class="prelude-val">Some</span>(<span class="ident">ptr</span>) =&gt; <span class="ident">ptr</span>,
-                <span class="prelude-val">None</span> =&gt; {
-                    <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PyErr::fetch</span>(<span class="ident">py</span>));
-                }
-            };
-        <span class="kw">let</span> <span class="ident">dataptr</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="ident">PY_ARRAY_API</span>.<span class="ident">NpyIter_GetDataPtrArray</span>(<span class="ident">iterator</span>.<span class="ident">as_mut</span>()) };
+        <span class="kw">let</span> <span class="ident">iternext</span> <span class="op">=</span> <span class="kw">match</span> <span class="kw">unsafe</span> {
+            <span class="ident">PY_ARRAY_API</span>.<span class="ident">NpyIter_GetIterNext</span>(<span class="ident">py</span>, <span class="ident">iterator</span>.<span class="ident">as_mut</span>(), <span class="ident">ptr::null_mut</span>())
+        } {
+            <span class="prelude-val">Some</span>(<span class="ident">ptr</span>) =&gt; <span class="ident">ptr</span>,
+            <span class="prelude-val">None</span> =&gt; {
+                <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PyErr::fetch</span>(<span class="ident">py</span>));
+            }
+        };
+        <span class="kw">let</span> <span class="ident">dataptr</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="ident">PY_ARRAY_API</span>.<span class="ident">NpyIter_GetDataPtrArray</span>(<span class="ident">py</span>, <span class="ident">iterator</span>.<span class="ident">as_mut</span>()) };
 
         <span class="kw">if</span> <span class="ident">dataptr</span>.<span class="ident">is_null</span>() {
-            <span class="kw">unsafe</span> { <span class="ident">PY_ARRAY_API</span>.<span class="ident">NpyIter_Deallocate</span>(<span class="ident">iterator</span>.<span class="ident">as_mut</span>()) };
+            <span class="kw">unsafe</span> { <span class="ident">PY_ARRAY_API</span>.<span class="ident">NpyIter_Deallocate</span>(<span class="ident">py</span>, <span class="ident">iterator</span>.<span class="ident">as_mut</span>()) };
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PyErr::fetch</span>(<span class="ident">py</span>));
         }
 
-        <span class="kw">let</span> <span class="ident">iter_size</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="ident">PY_ARRAY_API</span>.<span class="ident">NpyIter_GetIterSize</span>(<span class="ident">iterator</span>.<span class="ident">as_mut</span>()) };
+        <span class="kw">let</span> <span class="ident">iter_size</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="ident">PY_ARRAY_API</span>.<span class="ident">NpyIter_GetIterSize</span>(<span class="ident">py</span>, <span class="ident">iterator</span>.<span class="ident">as_mut</span>()) };
 
         <span class="prelude-val">Ok</span>(<span class="self">Self</span> {
             <span class="ident">iterator</span>,
@@ -1158,14 +1166,14 @@
             <span class="ident">marker</span>: <span class="ident">PhantomData</span>,
             <span class="ident">arrays</span>,
             <span class="ident">was_writables</span>,
-            <span class="ident">_py</span>: <span class="ident">py</span>,
+            <span class="ident">py</span>,
         })
     }
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">S</span>: <span class="ident">MultiIterModeWithManyArrays</span><span class="op">&gt;</span> <span class="ident">Drop</span> <span class="kw">for</span> <span class="ident">NpyMultiIter</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">S</span><span class="op">&gt;</span> {
     <span class="kw">fn</span> <span class="ident">drop</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) {
-        <span class="kw">let</span> <span class="ident">_success</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="ident">PY_ARRAY_API</span>.<span class="ident">NpyIter_Deallocate</span>(<span class="self">self</span>.<span class="ident">iterator</span>.<span class="ident">as_mut</span>()) };
+        <span class="kw">let</span> <span class="ident">_success</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="ident">PY_ARRAY_API</span>.<span class="ident">NpyIter_Deallocate</span>(<span class="self">self</span>.<span class="ident">py</span>, <span class="self">self</span>.<span class="ident">iterator</span>.<span class="ident">as_mut</span>()) };
         <span class="kw">for</span> (<span class="ident">array_ptr</span>, <span class="kw-2">&amp;</span><span class="ident">was_writable</span>) <span class="kw">in</span> <span class="self">self</span>.<span class="ident">arrays</span>.<span class="ident">iter</span>().<span class="ident">zip</span>(<span class="self">self</span>.<span class="ident">was_writables</span>.<span class="ident">iter</span>()) {
             <span class="kw">if</span> <span class="ident">was_writable</span> {
                 <span class="kw">unsafe</span> { (<span class="kw-2">*</span><span class="kw-2">*</span><span class="ident">array_ptr</span>).<span class="ident">flags</span> <span class="op">|</span><span class="op">=</span> <span class="ident">NPY_ARRAY_WRITEABLE</span> };

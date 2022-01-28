@@ -417,10 +417,11 @@
 <span id="416">416</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Low-Level binding for [Array API](https://numpy.org/doc/stable/reference/c-api/array.html)</span>
 <span class="kw">use</span> <span class="ident">libc::FILE</span>;
-<span class="kw">use</span> <span class="ident">pyo3::ffi</span>::{<span class="self">self</span>, <span class="ident">PyObject</span>, <span class="ident">PyTypeObject</span>};
+<span class="kw">use</span> <span class="ident">std::cell::Cell</span>;
 <span class="kw">use</span> <span class="ident">std::os::raw</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident">std::ptr::null_mut</span>;
-<span class="kw">use</span> <span class="ident">std::sync::atomic</span>::{<span class="ident">AtomicPtr</span>, <span class="ident">Ordering</span>};
+<span class="kw">use</span> <span class="ident">std::ptr::null</span>;
+
+<span class="kw">use</span> <span class="ident">pyo3::ffi</span>::{<span class="self">self</span>, <span class="ident">PyObject</span>, <span class="ident">PyTypeObject</span>};
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::npyffi</span>::<span class="kw-2">*</span>;
 
@@ -440,7 +441,7 @@
 <span class="doccomment">/// pyo3::Python::with_gil(|py| {</span>
 <span class="doccomment">///     let array = PyArray::from_slice(py, &amp;[3, 2, 4]);</span>
 <span class="doccomment">///     unsafe {</span>
-<span class="doccomment">///         PY_ARRAY_API.PyArray_Sort(array.as_array_ptr(), 0, NPY_SORTKIND::NPY_QUICKSORT);</span>
+<span class="doccomment">///         PY_ARRAY_API.PyArray_Sort(py, array.as_array_ptr(), 0, NPY_SORTKIND::NPY_QUICKSORT);</span>
 <span class="doccomment">///     }</span>
 <span class="doccomment">///     assert_eq!(array.readonly().as_slice().unwrap(), &amp;[2, 3, 4]);</span>
 <span class="doccomment">/// })</span>
@@ -449,30 +450,29 @@
 
 <span class="doccomment">/// See [PY_ARRAY_API] for more.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">PyArrayAPI</span> {
-    <span class="ident">api</span>: <span class="ident">AtomicPtr</span><span class="op">&lt;</span><span class="kw-2">*const</span> <span class="ident">c_void</span><span class="op">&gt;</span>,
+    <span class="ident">api</span>: <span class="ident">Cell</span><span class="op">&lt;</span><span class="kw-2">*const</span> <span class="kw-2">*const</span> <span class="ident">c_void</span><span class="op">&gt;</span>,
 }
+
+<span class="kw">unsafe</span> <span class="kw">impl</span> <span class="ident">Send</span> <span class="kw">for</span> <span class="ident">PyArrayAPI</span> {}
+
+<span class="kw">unsafe</span> <span class="kw">impl</span> <span class="ident">Sync</span> <span class="kw">for</span> <span class="ident">PyArrayAPI</span> {}
 
 <span class="kw">impl</span> <span class="ident">PyArrayAPI</span> {
     <span class="kw">const</span> <span class="kw">fn</span> <span class="ident">new</span>() -&gt; <span class="self">Self</span> {
         <span class="self">Self</span> {
-            <span class="ident">api</span>: <span class="ident">AtomicPtr::new</span>(<span class="ident">null_mut</span>()),
+            <span class="ident">api</span>: <span class="ident">Cell::new</span>(<span class="ident">null</span>()),
         }
     }
     <span class="attribute">#[<span class="ident">cold</span>]</span>
-    <span class="kw">fn</span> <span class="ident">init</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">*const</span> <span class="kw-2">*const</span> <span class="ident">c_void</span> {
-        <span class="ident">Python::with_gil</span>(<span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">api</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">api</span>.<span class="ident">load</span>(<span class="ident">Ordering::Relaxed</span>) <span class="kw">as</span> <span class="kw-2">*const</span> <span class="kw-2">*const</span> <span class="ident">c_void</span>;
-            <span class="kw">if</span> <span class="ident">api</span>.<span class="ident">is_null</span>() {
-                <span class="ident">api</span> <span class="op">=</span> <span class="ident">get_numpy_api</span>(<span class="ident">py</span>, <span class="ident">MOD_NAME</span>, <span class="ident">CAPSULE_NAME</span>);
-                <span class="self">self</span>.<span class="ident">api</span>.<span class="ident">store</span>(<span class="ident">api</span> <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="kw">_</span>, <span class="ident">Ordering::Release</span>);
-            }
-            <span class="ident">api</span>
-        })
+    <span class="kw">fn</span> <span class="ident">init</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">py</span>: <span class="ident">Python</span>) -&gt; <span class="kw-2">*const</span> <span class="kw-2">*const</span> <span class="ident">c_void</span> {
+        <span class="kw">let</span> <span class="ident">api</span> <span class="op">=</span> <span class="ident">get_numpy_api</span>(<span class="ident">py</span>, <span class="ident">MOD_NAME</span>, <span class="ident">CAPSULE_NAME</span>);
+        <span class="self">self</span>.<span class="ident">api</span>.<span class="ident">set</span>(<span class="ident">api</span>);
+        <span class="ident">api</span>
     }
-    <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">offset</span>: <span class="ident">isize</span>) -&gt; <span class="kw-2">*const</span> <span class="kw-2">*const</span> <span class="ident">c_void</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">api</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">api</span>.<span class="ident">load</span>(<span class="ident">Ordering::Acquire</span>) <span class="kw">as</span> <span class="kw-2">*const</span> <span class="kw-2">*const</span> <span class="ident">c_void</span>;
+    <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">py</span>: <span class="ident">Python</span>, <span class="ident">offset</span>: <span class="ident">isize</span>) -&gt; <span class="kw-2">*const</span> <span class="kw-2">*const</span> <span class="ident">c_void</span> {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">api</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">api</span>.<span class="ident">get</span>();
         <span class="kw">if</span> <span class="ident">api</span>.<span class="ident">is_null</span>() {
-            <span class="ident">api</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">init</span>();
+            <span class="ident">api</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">init</span>(<span class="ident">py</span>);
         }
         <span class="ident">api</span>.<span class="ident">offset</span>(<span class="ident">offset</span>)
     }
@@ -748,9 +748,9 @@
         <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">NpyTypes</span> { $(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">tname</span>),<span class="op">*</span> }
         <span class="kw">impl</span> <span class="ident">PyArrayAPI</span> {
             <span class="doccomment">/// Get the pointer of the type object that `self` refers.</span>
-            <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">get_type_object</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">ty</span>: <span class="ident">NpyTypes</span>) -&gt; <span class="kw-2">*mut</span> <span class="ident">PyTypeObject</span> {
+            <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">get_type_object</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">py</span>: <span class="ident">Python</span>, <span class="ident">ty</span>: <span class="ident">NpyTypes</span>) -&gt; <span class="kw-2">*mut</span> <span class="ident">PyTypeObject</span> {
                 <span class="kw">match</span> <span class="ident">ty</span> {
-                    $( <span class="ident">NpyTypes</span>::<span class="macro-nonterminal">$</span><span class="macro-nonterminal">tname</span> =&gt; <span class="kw-2">*</span>(<span class="self">self</span>.<span class="ident">get</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">offset</span>)) <span class="kw">as</span> <span class="kw">_</span> ),<span class="op">*</span>
+                    $( <span class="ident">NpyTypes</span>::<span class="macro-nonterminal">$</span><span class="macro-nonterminal">tname</span> =&gt; <span class="kw-2">*</span>(<span class="self">self</span>.<span class="ident">get</span>(<span class="ident">py</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">offset</span>)) <span class="kw">as</span> <span class="kw">_</span> ),<span class="op">*</span>
                 }
             }
         }
@@ -801,14 +801,14 @@
 
 <span class="doccomment">/// Checks that `op` is an instance of `PyArray` or not.</span>
 <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">non_snake_case</span>)]</span>
-<span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">PyArray_Check</span>(<span class="ident">op</span>: <span class="kw-2">*mut</span> <span class="ident">PyObject</span>) -&gt; <span class="ident">c_int</span> {
-    <span class="ident">ffi::PyObject_TypeCheck</span>(<span class="ident">op</span>, <span class="ident">PY_ARRAY_API</span>.<span class="ident">get_type_object</span>(<span class="ident">NpyTypes::PyArray_Type</span>))
+<span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">PyArray_Check</span>(<span class="ident">py</span>: <span class="ident">Python</span>, <span class="ident">op</span>: <span class="kw-2">*mut</span> <span class="ident">PyObject</span>) -&gt; <span class="ident">c_int</span> {
+    <span class="ident">ffi::PyObject_TypeCheck</span>(<span class="ident">op</span>, <span class="ident">PY_ARRAY_API</span>.<span class="ident">get_type_object</span>(<span class="ident">py</span>, <span class="ident">NpyTypes::PyArray_Type</span>))
 }
 
 <span class="doccomment">/// Checks that `op` is an exact instance of `PyArray` or not.</span>
 <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">non_snake_case</span>)]</span>
-<span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">PyArray_CheckExact</span>(<span class="ident">op</span>: <span class="kw-2">*mut</span> <span class="ident">PyObject</span>) -&gt; <span class="ident">c_int</span> {
-    (<span class="ident">ffi::Py_TYPE</span>(<span class="ident">op</span>) <span class="op">==</span> <span class="ident">PY_ARRAY_API</span>.<span class="ident">get_type_object</span>(<span class="ident">NpyTypes::PyArray_Type</span>)) <span class="kw">as</span> <span class="kw">_</span>
+<span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">PyArray_CheckExact</span>(<span class="ident">py</span>: <span class="ident">Python</span>, <span class="ident">op</span>: <span class="kw-2">*mut</span> <span class="ident">PyObject</span>) -&gt; <span class="ident">c_int</span> {
+    (<span class="ident">ffi::Py_TYPE</span>(<span class="ident">op</span>) <span class="op">==</span> <span class="ident">PY_ARRAY_API</span>.<span class="ident">get_type_object</span>(<span class="ident">py</span>, <span class="ident">NpyTypes::PyArray_Type</span>)) <span class="kw">as</span> <span class="kw">_</span>
 }
 
 <span class="comment">// these are under `#if NPY_USE_PYMEM == 1` which seems to be always defined as 1</span>
@@ -823,9 +823,9 @@
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">call_api</span>() {
-        <span class="ident">pyo3::Python::with_gil</span>(<span class="op">|</span><span class="ident">_py</span><span class="op">|</span> <span class="kw">unsafe</span> {
+        <span class="ident">pyo3::Python::with_gil</span>(<span class="op">|</span><span class="ident">py</span><span class="op">|</span> <span class="kw">unsafe</span> {
             <span class="macro">assert_eq!</span>(
-                <span class="ident">PY_ARRAY_API</span>.<span class="ident">PyArray_MultiplyIntList</span>([<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>].<span class="ident">as_mut_ptr</span>(), <span class="number">3</span>),
+                <span class="ident">PY_ARRAY_API</span>.<span class="ident">PyArray_MultiplyIntList</span>(<span class="ident">py</span>, [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>].<span class="ident">as_mut_ptr</span>(), <span class="number">3</span>),
                 <span class="number">6</span>
             );
         })
