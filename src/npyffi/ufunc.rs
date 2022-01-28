@@ -1,15 +1,12 @@
 //! Low-Level binding for [UFunc API](https://numpy.org/doc/stable/reference/c-api/ufunc.html)
 
+use std::cell::Cell;
 use std::os::raw::*;
-use std::ptr::null_mut;
-use std::sync::atomic::{AtomicPtr, Ordering};
+use std::ptr::null;
 
 use pyo3::ffi::PyObject;
-use pyo3::Python;
 
-use super::get_numpy_api;
-use super::objects::*;
-use super::types::*;
+use crate::npyffi::*;
 
 const MOD_NAME: &str = "numpy.core.umath";
 const CAPSULE_NAME: &str = "_UFUNC_API";
@@ -19,30 +16,29 @@ const CAPSULE_NAME: &str = "_UFUNC_API";
 pub static PY_UFUNC_API: PyUFuncAPI = PyUFuncAPI::new();
 
 pub struct PyUFuncAPI {
-    api: AtomicPtr<*const c_void>,
+    api: Cell<*const *const c_void>,
 }
+
+unsafe impl Send for PyUFuncAPI {}
+
+unsafe impl Sync for PyUFuncAPI {}
 
 impl PyUFuncAPI {
     const fn new() -> Self {
         Self {
-            api: AtomicPtr::new(null_mut()),
+            api: Cell::new(null()),
         }
     }
     #[cold]
-    fn init(&self) -> *const *const c_void {
-        Python::with_gil(|py| {
-            let mut api = self.api.load(Ordering::Relaxed) as *const *const c_void;
-            if api.is_null() {
-                api = get_numpy_api(py, MOD_NAME, CAPSULE_NAME);
-                self.api.store(api as *mut _, Ordering::Release);
-            }
-            api
-        })
+    fn init(&self, py: Python) -> *const *const c_void {
+        let api = get_numpy_api(py, MOD_NAME, CAPSULE_NAME);
+        self.api.set(api);
+        api
     }
-    unsafe fn get(&self, offset: isize) -> *const *const c_void {
-        let mut api = self.api.load(Ordering::Acquire) as *const *const c_void;
+    unsafe fn get(&self, py: Python, offset: isize) -> *const *const c_void {
+        let mut api = self.api.get();
         if api.is_null() {
-            api = self.init();
+            api = self.init(py);
         }
         api.offset(offset)
     }

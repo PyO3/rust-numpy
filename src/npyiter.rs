@@ -195,8 +195,10 @@ impl<'py, T: Element, I: IterMode> NpySingleIterBuilder<'py, T, I> {
     /// Creates an iterator from this builder.
     pub fn build(self) -> PyResult<NpySingleIter<'py, T, I>> {
         let array_ptr = self.array.as_array_ptr();
+        let py = self.array.py();
         let iter_ptr = unsafe {
             PY_ARRAY_API.NpyIter_New(
+                py,
                 array_ptr,
                 self.flags,
                 NPY_ORDER::NPY_ANYORDER,
@@ -204,7 +206,6 @@ impl<'py, T: Element, I: IterMode> NpySingleIterBuilder<'py, T, I> {
                 ptr::null_mut(),
             )
         };
-        let py = self.array.py();
         let readonly_array_ptr = if self.was_writable {
             Some(array_ptr)
         } else {
@@ -268,7 +269,7 @@ pub struct NpySingleIter<'py, T, I> {
     return_type: PhantomData<T>,
     mode: PhantomData<I>,
     readonly_array_ptr: Option<*mut PyArrayObject>,
-    _py: Python<'py>,
+    py: Python<'py>,
 }
 
 impl<'py, T, I> NpySingleIter<'py, T, I> {
@@ -284,21 +285,22 @@ impl<'py, T, I> NpySingleIter<'py, T, I> {
             }
         };
 
-        let iternext =
-            match unsafe { PY_ARRAY_API.NpyIter_GetIterNext(iterator.as_mut(), ptr::null_mut()) } {
-                Some(ptr) => ptr,
-                None => {
-                    return Err(PyErr::fetch(py));
-                }
-            };
-        let dataptr = unsafe { PY_ARRAY_API.NpyIter_GetDataPtrArray(iterator.as_mut()) };
+        let iternext = match unsafe {
+            PY_ARRAY_API.NpyIter_GetIterNext(py, iterator.as_mut(), ptr::null_mut())
+        } {
+            Some(ptr) => ptr,
+            None => {
+                return Err(PyErr::fetch(py));
+            }
+        };
+        let dataptr = unsafe { PY_ARRAY_API.NpyIter_GetDataPtrArray(py, iterator.as_mut()) };
 
         if dataptr.is_null() {
-            unsafe { PY_ARRAY_API.NpyIter_Deallocate(iterator.as_mut()) };
+            unsafe { PY_ARRAY_API.NpyIter_Deallocate(py, iterator.as_mut()) };
             return Err(PyErr::fetch(py));
         }
 
-        let iter_size = unsafe { PY_ARRAY_API.NpyIter_GetIterSize(iterator.as_mut()) };
+        let iter_size = unsafe { PY_ARRAY_API.NpyIter_GetIterSize(py, iterator.as_mut()) };
 
         Ok(Self {
             iterator,
@@ -309,7 +311,7 @@ impl<'py, T, I> NpySingleIter<'py, T, I> {
             return_type: PhantomData,
             mode: PhantomData,
             readonly_array_ptr,
-            _py: py,
+            py,
         })
     }
 
@@ -330,7 +332,7 @@ impl<'py, T, I> NpySingleIter<'py, T, I> {
 
 impl<'py, T, I> Drop for NpySingleIter<'py, T, I> {
     fn drop(&mut self) {
-        let _success = unsafe { PY_ARRAY_API.NpyIter_Deallocate(self.iterator.as_mut()) };
+        let _success = unsafe { PY_ARRAY_API.NpyIter_Deallocate(self.py, self.iterator.as_mut()) };
         if let Some(ptr) = self.readonly_array_ptr {
             unsafe {
                 (*ptr).flags |= NPY_ARRAY_WRITEABLE;
@@ -451,6 +453,7 @@ impl<'py, T: Element, S: MultiIterModeWithManyArrays> NpyMultiIterBuilder<'py, T
 
         let iter_ptr = unsafe {
             PY_ARRAY_API.NpyIter_MultiNew(
+                py,
                 arrays.len() as i32,
                 arrays.as_mut_ptr(),
                 flags,
@@ -501,7 +504,7 @@ pub struct NpyMultiIter<'py, T, S: MultiIterModeWithManyArrays> {
     marker: PhantomData<(T, S)>,
     arrays: Box<[*mut PyArrayObject]>,
     was_writables: Vec<bool>,
-    _py: Python<'py>,
+    py: Python<'py>,
 }
 
 impl<'py, T, S: MultiIterModeWithManyArrays> NpyMultiIter<'py, T, S> {
@@ -518,21 +521,22 @@ impl<'py, T, S: MultiIterModeWithManyArrays> NpyMultiIter<'py, T, S> {
             }
         };
 
-        let iternext =
-            match unsafe { PY_ARRAY_API.NpyIter_GetIterNext(iterator.as_mut(), ptr::null_mut()) } {
-                Some(ptr) => ptr,
-                None => {
-                    return Err(PyErr::fetch(py));
-                }
-            };
-        let dataptr = unsafe { PY_ARRAY_API.NpyIter_GetDataPtrArray(iterator.as_mut()) };
+        let iternext = match unsafe {
+            PY_ARRAY_API.NpyIter_GetIterNext(py, iterator.as_mut(), ptr::null_mut())
+        } {
+            Some(ptr) => ptr,
+            None => {
+                return Err(PyErr::fetch(py));
+            }
+        };
+        let dataptr = unsafe { PY_ARRAY_API.NpyIter_GetDataPtrArray(py, iterator.as_mut()) };
 
         if dataptr.is_null() {
-            unsafe { PY_ARRAY_API.NpyIter_Deallocate(iterator.as_mut()) };
+            unsafe { PY_ARRAY_API.NpyIter_Deallocate(py, iterator.as_mut()) };
             return Err(PyErr::fetch(py));
         }
 
-        let iter_size = unsafe { PY_ARRAY_API.NpyIter_GetIterSize(iterator.as_mut()) };
+        let iter_size = unsafe { PY_ARRAY_API.NpyIter_GetIterSize(py, iterator.as_mut()) };
 
         Ok(Self {
             iterator,
@@ -543,14 +547,14 @@ impl<'py, T, S: MultiIterModeWithManyArrays> NpyMultiIter<'py, T, S> {
             marker: PhantomData,
             arrays,
             was_writables,
-            _py: py,
+            py,
         })
     }
 }
 
 impl<'py, T, S: MultiIterModeWithManyArrays> Drop for NpyMultiIter<'py, T, S> {
     fn drop(&mut self) {
-        let _success = unsafe { PY_ARRAY_API.NpyIter_Deallocate(self.iterator.as_mut()) };
+        let _success = unsafe { PY_ARRAY_API.NpyIter_Deallocate(self.py, self.iterator.as_mut()) };
         for (array_ptr, &was_writable) in self.arrays.iter().zip(self.was_writables.iter()) {
             if was_writable {
                 unsafe { (**array_ptr).flags |= NPY_ARRAY_WRITEABLE };

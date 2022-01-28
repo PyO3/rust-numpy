@@ -6,11 +6,12 @@ use std::ptr;
 
 use num_traits::{Bounded, Zero};
 use pyo3::{
+    exceptions::{PyIndexError, PyValueError},
     ffi::{self, PyTuple_Size},
-    prelude::*,
-    pyobject_native_type_core,
+    pyobject_native_type_extract, pyobject_native_type_named,
     types::{PyDict, PyTuple, PyType},
-    AsPyPointer, FromPyObject, FromPyPointer, PyNativeType,
+    AsPyPointer, FromPyObject, FromPyPointer, IntoPyPointer, PyAny, PyNativeType, PyObject,
+    PyResult, PyTypeInfo, Python, ToPyObject,
 };
 
 use crate::npyffi::{
@@ -19,7 +20,6 @@ use crate::npyffi::{
 };
 
 pub use num_complex::{Complex32, Complex64};
-use pyo3::exceptions::{PyIndexError, PyValueError};
 
 /// Binding of [`numpy.dtype`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.html).
 ///
@@ -38,19 +38,30 @@ use pyo3::exceptions::{PyIndexError, PyValueError};
 /// ```
 pub struct PyArrayDescr(PyAny);
 
-pyobject_native_type_core!(
-    PyArrayDescr,
-    *PY_ARRAY_API.get_type_object(NpyTypes::PyArrayDescr_Type),
-    #module=Some("numpy"),
-    #checkfunction=arraydescr_check
-);
+pyobject_native_type_named!(PyArrayDescr);
 
-unsafe fn arraydescr_check(op: *mut ffi::PyObject) -> c_int {
-    ffi::PyObject_TypeCheck(
-        op,
-        PY_ARRAY_API.get_type_object(NpyTypes::PyArrayDescr_Type),
-    )
+unsafe impl PyTypeInfo for PyArrayDescr {
+    type AsRefTarget = Self;
+
+    const NAME: &'static str = "PyArrayDescr";
+    const MODULE: ::std::option::Option<&'static str> = Some("numpy");
+
+    #[inline]
+    fn type_object_raw(py: Python) -> *mut ffi::PyTypeObject {
+        unsafe { PY_ARRAY_API.get_type_object(py, NpyTypes::PyArrayDescr_Type) }
+    }
+
+    fn is_type_of(ob: &PyAny) -> bool {
+        unsafe {
+            ffi::PyObject_TypeCheck(
+                ob.as_ptr(),
+                PY_ARRAY_API.get_type_object(ob.py(), NpyTypes::PyArrayDescr_Type),
+            ) > 0
+        }
+    }
 }
+
+pyobject_native_type_extract!(PyArrayDescr);
 
 /// Returns the type descriptor ("dtype") for a registered type.
 pub fn dtype<T: Element>(py: Python) -> &PyArrayDescr {
@@ -70,7 +81,7 @@ impl PyArrayDescr {
         let mut descr: *mut PyArray_Descr = ptr::null_mut();
         unsafe {
             // None is an invalid input here and is not converted to NPY_DEFAULT_TYPE
-            PY_ARRAY_API.PyArray_DescrConverter2(obj.as_ptr(), &mut descr as *mut _);
+            PY_ARRAY_API.PyArray_DescrConverter2(py, obj.as_ptr(), &mut descr as *mut _);
             py.from_owned_ptr_or_err(descr as _)
         }
     }
@@ -99,12 +110,15 @@ impl PyArrayDescr {
 
     /// Returns true if two type descriptors are equivalent.
     pub fn is_equiv_to(&self, other: &Self) -> bool {
-        unsafe { PY_ARRAY_API.PyArray_EquivTypes(self.as_dtype_ptr(), other.as_dtype_ptr()) != 0 }
+        unsafe {
+            PY_ARRAY_API.PyArray_EquivTypes(self.py(), self.as_dtype_ptr(), other.as_dtype_ptr())
+                != 0
+        }
     }
 
     fn from_npy_type(py: Python, npy_type: NPY_TYPES) -> &Self {
         unsafe {
-            let descr = PY_ARRAY_API.PyArray_DescrFromType(npy_type as _);
+            let descr = PY_ARRAY_API.PyArray_DescrFromType(py, npy_type as _);
             py.from_owned_ptr(descr as _)
         }
     }
