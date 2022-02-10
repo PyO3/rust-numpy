@@ -40,6 +40,7 @@ mod slice_container;
 mod sum_products;
 
 pub use ndarray;
+pub use pyo3;
 
 pub use crate::array::{
     get_array_module, PyArray, PyArray0, PyArray1, PyArray2, PyArray3, PyArray4, PyArray5,
