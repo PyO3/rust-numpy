@@ -68,10 +68,6 @@ jobs:
           with open("Cargo.toml", "w") as f:
             toml.dump(cargo_toml, f)
         shell: python
-      - name: Build without default features
-        run: cargo build --no-default-features
-      - name: Build with default features
-        run: cargo build
       - name: Test
         run: |
             pip install numpy
@@ -80,13 +76,12 @@ jobs:
         if: ${{ !startsWith(matrix.python-version, 'pypy') }}
       - name: Test example
         run: |
-          pip install tox
-          tox -c examples/simple-extension
+          pip install nox
+          nox -f examples/simple-extension/noxfile.py
     env:
       CARGO_TERM_VERBOSE: true
       CARGO_BUILD_TARGET: ${{ matrix.platform.rust-target }}
       RUST_BACKTRACE: 1
-      TOX_TESTENV_PASSENV: CARGO_BUILD_TARGET
 
   check-msrv:
     runs-on: ubuntu-latest
@@ -135,9 +130,8 @@ jobs:
         shell: python
       - name: Test example
         run: |
-          pip install tox
-          tox
-        working-directory: examples/simple-extension
+          pip install nox
+          nox -f examples/simple-extension/noxfile.py
 
   examples:
     runs-on: ubuntu-latest
@@ -159,9 +153,9 @@ jobs:
         continue-on-error: true
       - name: Test examples
         run: |
-          pip install tox
-          tox -c examples/linalg
-          tox -c examples/parallel
+          pip install nox
+          nox -f examples/linalg/noxfile.py
+          nox -f examples/parallel/noxfile.py
 
   coverage:
     runs-on: ubuntu-latest
