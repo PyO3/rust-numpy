@@ -68,10 +68,6 @@ jobs:
           with open("Cargo.toml", "w") as f:
             toml.dump(cargo_toml, f)
         shell: python
-      - name: Build without default features
-        run: cargo build --no-default-features
-      - name: Build with default features
-        run: cargo build
       - name: Test
         run: |
             pip install numpy
