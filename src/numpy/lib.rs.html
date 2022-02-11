@@ -96,6 +96,7 @@
 <span id="95">95</span>
 <span id="96">96</span>
 <span id="97">97</span>
+<span id="98">98</span>
 </pre><pre class="rust"><code><span class="doccomment">//! `rust-numpy` provides Rust interfaces for [NumPy C APIs](https://numpy.org/doc/stable/reference/c-api),</span>
 <span class="doccomment">//! especially for [ndarray](https://numpy.org/doc/stable/reference/arrays.ndarray.html) class.</span>
 <span class="doccomment">//!</span>
@@ -138,6 +139,7 @@
 <span class="kw">mod</span> <span class="ident">sum_products</span>;
 
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">ndarray</span>;
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">pyo3</span>;
 
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::array</span>::{
     <span class="ident">get_array_module</span>, <span class="ident">PyArray</span>, <span class="ident">PyArray0</span>, <span class="ident">PyArray1</span>, <span class="ident">PyArray2</span>, <span class="ident">PyArray3</span>, <span class="ident">PyArray4</span>, <span class="ident">PyArray5</span>,
