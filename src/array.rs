@@ -358,46 +358,25 @@ impl<T, D> PyArray<T, D> {
     }
 }
 
-enum InvertedAxes {
-    Short(u32),
-    Long(Vec<usize>),
-}
+struct InvertedAxes(u32);
 
 impl InvertedAxes {
     fn new(len: usize) -> Self {
-        if len <= 32 {
-            Self::Short(0)
-        } else {
-            Self::Long(Vec::new())
-        }
+        assert!(len <= 32, "Only dimensionalities of up to 32 are supported");
+        Self(0)
     }
 
     fn push(&mut self, axis: usize) {
-        match self {
-            Self::Short(axes) => {
-                debug_assert!(axis < 32);
-                *axes |= 1 << axis;
-            }
-            Self::Long(axes) => {
-                axes.push(axis);
-            }
-        }
+        debug_assert!(axis < 32);
+        self.0 |= 1 << axis;
     }
 
-    fn invert<S: RawData, D: Dimension>(self, array: &mut ArrayBase<S, D>) {
-        match self {
-            Self::Short(mut axes) => {
-                while axes != 0 {
-                    let axis = axes.trailing_zeros() as usize;
-                    axes &= !(1 << axis);
-                    array.invert_axis(Axis(axis));
-                }
-            }
-            Self::Long(axes) => {
-                for axis in axes {
-                    array.invert_axis(Axis(axis));
-                }
-            }
+    fn invert<S: RawData, D: Dimension>(mut self, array: &mut ArrayBase<S, D>) {
+        while self.0 != 0 {
+            let axis = self.0.trailing_zeros() as usize;
+            self.0 &= !(1 << axis);
+
+            array.invert_axis(Axis(axis));
         }
     }
 }
