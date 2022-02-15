@@ -134,7 +134,12 @@ where
             _ => {
                 // if the array is not contiguous, copy all elements by `ArrayBase::iter`.
                 let dim = self.raw_dim();
-                let strides = NpyStrides::from_dim(&dim, mem::size_of::<A>());
+                let strides = NpyStrides::new::<_, A>(
+                    dim.default_strides()
+                        .slice()
+                        .iter()
+                        .map(|&x| x as npyffi::npy_intp),
+                );
                 unsafe {
                     let array = PyArray::<A, _>::new_(py, dim, strides.as_ptr(), 0);
                     let data_ptr = array.data();
@@ -173,10 +178,7 @@ where
     D: Dimension,
 {
     fn npy_strides(&self) -> NpyStrides {
-        NpyStrides::new(
-            self.strides().iter().map(|&x| x as npyffi::npy_intp),
-            mem::size_of::<A>(),
-        )
+        NpyStrides::new::<_, A>(self.strides().iter().map(|&x| x as npyffi::npy_intp))
     }
 
     fn order(&self) -> Option<Order> {
@@ -190,40 +192,27 @@ where
     }
 }
 
-/// Numpy strides with short array optimization
-pub(crate) enum NpyStrides {
-    Short([npyffi::npy_intp; 8]),
-    Long(Vec<npyffi::npy_intp>),
-}
+/// An array of strides sufficiently large for [any NumPy array][NPY_MAXDIMS]
+///
+/// [NPY_MAXDIMS]: https://github.com/numpy/numpy/blob/4c60b3263ac50e5e72f6a909e156314fc3c9cba0/numpy/core/include/numpy/ndarraytypes.h#L40
+pub(crate) struct NpyStrides([npyffi::npy_intp; 32]);
 
 impl NpyStrides {
     pub(crate) fn as_ptr(&self) -> *const npy_intp {
-        match self {
-            NpyStrides::Short(inner) => inner.as_ptr(),
-            NpyStrides::Long(inner) => inner.as_ptr(),
-        }
+        self.0.as_ptr()
     }
-    fn from_dim<D: Dimension>(dim: &D, type_size: usize) -> Self {
-        Self::new(
-            dim.default_strides()
-                .slice()
-                .iter()
-                .map(|&x| x as npyffi::npy_intp),
-            type_size,
-        )
-    }
-    fn new(strides: impl ExactSizeIterator<Item = npyffi::npy_intp>, type_size: usize) -> Self {
-        let len = strides.len();
-        let type_size = type_size as npyffi::npy_intp;
-        if len <= 8 {
-            let mut res = [0; 8];
-            for (i, s) in strides.enumerate() {
-                res[i] = s * type_size;
-            }
-            NpyStrides::Short(res)
-        } else {
-            NpyStrides::Long(strides.map(|n| n as npyffi::npy_intp * type_size).collect())
+
+    fn new<S, A>(strides: S) -> Self
+    where
+        S: Iterator<Item = npyffi::npy_intp>,
+    {
+        let type_size = mem::size_of::<A>() as npyffi::npy_intp;
+        let mut res = [0; 32];
+        for (i, s) in strides.enumerate() {
+            *res.get_mut(i)
+                .expect("Only dimensionalities of up to 32 are supported") = s * type_size;
         }
+        Self(res)
     }
 }
 
