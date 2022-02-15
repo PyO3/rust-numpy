@@ -293,17 +293,6 @@
 <span id="292">292</span>
 <span id="293">293</span>
 <span id="294">294</span>
-<span id="295">295</span>
-<span id="296">296</span>
-<span id="297">297</span>
-<span id="298">298</span>
-<span id="299">299</span>
-<span id="300">300</span>
-<span id="301">301</span>
-<span id="302">302</span>
-<span id="303">303</span>
-<span id="304">304</span>
-<span id="305">305</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Defines conversion traits between rust types and numpy data types.</span>
 
 <span class="kw">use</span> <span class="ident">ndarray</span>::{<span class="ident">ArrayBase</span>, <span class="ident">Data</span>, <span class="ident">Dimension</span>, <span class="ident">IntoDimension</span>, <span class="ident">Ix1</span>, <span class="ident">OwnedRepr</span>};
@@ -440,7 +429,12 @@
             <span class="kw">_</span> =&gt; {
                 <span class="comment">// if the array is not contiguous, copy all elements by `ArrayBase::iter`.</span>
                 <span class="kw">let</span> <span class="ident">dim</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">raw_dim</span>();
-                <span class="kw">let</span> <span class="ident">strides</span> <span class="op">=</span> <span class="ident">NpyStrides::from_dim</span>(<span class="kw-2">&amp;</span><span class="ident">dim</span>, <span class="ident">mem::size_of</span>::<span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>());
+                <span class="kw">let</span> <span class="ident">strides</span> <span class="op">=</span> <span class="ident">NpyStrides::new</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">A</span><span class="op">&gt;</span>(
+                    <span class="ident">dim</span>.<span class="ident">default_strides</span>()
+                        .<span class="ident">slice</span>()
+                        .<span class="ident">iter</span>()
+                        .<span class="ident">map</span>(<span class="op">|</span><span class="kw-2">&amp;</span><span class="ident">x</span><span class="op">|</span> <span class="ident">x</span> <span class="kw">as</span> <span class="ident">npyffi::npy_intp</span>),
+                );
                 <span class="kw">unsafe</span> {
                     <span class="kw">let</span> <span class="ident">array</span> <span class="op">=</span> <span class="ident">PyArray</span>::<span class="op">&lt;</span><span class="ident">A</span>, <span class="kw">_</span><span class="op">&gt;</span><span class="ident">::new_</span>(<span class="ident">py</span>, <span class="ident">dim</span>, <span class="ident">strides</span>.<span class="ident">as_ptr</span>(), <span class="number">0</span>);
                     <span class="kw">let</span> <span class="ident">data_ptr</span> <span class="op">=</span> <span class="ident">array</span>.<span class="ident">data</span>();
@@ -479,10 +473,7 @@
     <span class="ident">D</span>: <span class="ident">Dimension</span>,
 {
     <span class="kw">fn</span> <span class="ident">npy_strides</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">NpyStrides</span> {
-        <span class="ident">NpyStrides::new</span>(
-            <span class="self">self</span>.<span class="ident">strides</span>().<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="kw-2">&amp;</span><span class="ident">x</span><span class="op">|</span> <span class="ident">x</span> <span class="kw">as</span> <span class="ident">npyffi::npy_intp</span>),
-            <span class="ident">mem::size_of</span>::<span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>(),
-        )
+        <span class="ident">NpyStrides::new</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">A</span><span class="op">&gt;</span>(<span class="self">self</span>.<span class="ident">strides</span>().<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="kw-2">&amp;</span><span class="ident">x</span><span class="op">|</span> <span class="ident">x</span> <span class="kw">as</span> <span class="ident">npyffi::npy_intp</span>))
     }
 
     <span class="kw">fn</span> <span class="ident">order</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Order</span><span class="op">&gt;</span> {
@@ -496,40 +487,27 @@
     }
 }
 
-<span class="doccomment">/// Numpy strides with short array optimization</span>
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">enum</span> <span class="ident">NpyStrides</span> {
-    <span class="ident">Short</span>([<span class="ident">npyffi::npy_intp</span>; <span class="number">8</span>]),
-    <span class="ident">Long</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">npyffi::npy_intp</span><span class="op">&gt;</span>),
-}
+<span class="doccomment">/// An array of strides sufficiently large for [any NumPy array][NPY_MAXDIMS]</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// [NPY_MAXDIMS]: https://github.com/numpy/numpy/blob/4c60b3263ac50e5e72f6a909e156314fc3c9cba0/numpy/core/include/numpy/ndarraytypes.h#L40</span>
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">NpyStrides</span>([<span class="ident">npyffi::npy_intp</span>; <span class="number">32</span>]);
 
 <span class="kw">impl</span> <span class="ident">NpyStrides</span> {
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">as_ptr</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">*const</span> <span class="ident">npy_intp</span> {
-        <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">NpyStrides::Short</span>(<span class="ident">inner</span>) =&gt; <span class="ident">inner</span>.<span class="ident">as_ptr</span>(),
-            <span class="ident">NpyStrides::Long</span>(<span class="ident">inner</span>) =&gt; <span class="ident">inner</span>.<span class="ident">as_ptr</span>(),
-        }
+        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">as_ptr</span>()
     }
-    <span class="kw">fn</span> <span class="ident">from_dim</span><span class="op">&lt;</span><span class="ident">D</span>: <span class="ident">Dimension</span><span class="op">&gt;</span>(<span class="ident">dim</span>: <span class="kw-2">&amp;</span><span class="ident">D</span>, <span class="ident">type_size</span>: <span class="ident">usize</span>) -&gt; <span class="self">Self</span> {
-        <span class="ident"><span class="self">Self</span>::new</span>(
-            <span class="ident">dim</span>.<span class="ident">default_strides</span>()
-                .<span class="ident">slice</span>()
-                .<span class="ident">iter</span>()
-                .<span class="ident">map</span>(<span class="op">|</span><span class="kw-2">&amp;</span><span class="ident">x</span><span class="op">|</span> <span class="ident">x</span> <span class="kw">as</span> <span class="ident">npyffi::npy_intp</span>),
-            <span class="ident">type_size</span>,
-        )
-    }
-    <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">strides</span>: <span class="kw">impl</span> <span class="ident">ExactSizeIterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="ident">npyffi::npy_intp</span><span class="op">&gt;</span>, <span class="ident">type_size</span>: <span class="ident">usize</span>) -&gt; <span class="self">Self</span> {
-        <span class="kw">let</span> <span class="ident">len</span> <span class="op">=</span> <span class="ident">strides</span>.<span class="ident">len</span>();
-        <span class="kw">let</span> <span class="ident">type_size</span> <span class="op">=</span> <span class="ident">type_size</span> <span class="kw">as</span> <span class="ident">npyffi::npy_intp</span>;
-        <span class="kw">if</span> <span class="ident">len</span> <span class="op">&lt;</span><span class="op">=</span> <span class="number">8</span> {
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">res</span> <span class="op">=</span> [<span class="number">0</span>; <span class="number">8</span>];
-            <span class="kw">for</span> (<span class="ident">i</span>, <span class="ident">s</span>) <span class="kw">in</span> <span class="ident">strides</span>.<span class="ident">enumerate</span>() {
-                <span class="ident">res</span>[<span class="ident">i</span>] <span class="op">=</span> <span class="ident">s</span> <span class="op">*</span> <span class="ident">type_size</span>;
-            }
-            <span class="ident">NpyStrides::Short</span>(<span class="ident">res</span>)
-        } <span class="kw">else</span> {
-            <span class="ident">NpyStrides::Long</span>(<span class="ident">strides</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">n</span><span class="op">|</span> <span class="ident">n</span> <span class="kw">as</span> <span class="ident">npyffi::npy_intp</span> <span class="op">*</span> <span class="ident">type_size</span>).<span class="ident">collect</span>())
+
+    <span class="kw">fn</span> <span class="ident">new</span><span class="op">&lt;</span><span class="ident">S</span>, <span class="ident">A</span><span class="op">&gt;</span>(<span class="ident">strides</span>: <span class="ident">S</span>) -&gt; <span class="self">Self</span>
+    <span class="kw">where</span>
+        <span class="ident">S</span>: <span class="ident">Iterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="ident">npyffi::npy_intp</span><span class="op">&gt;</span>,
+    {
+        <span class="kw">let</span> <span class="ident">type_size</span> <span class="op">=</span> <span class="ident">mem::size_of</span>::<span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>() <span class="kw">as</span> <span class="ident">npyffi::npy_intp</span>;
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">res</span> <span class="op">=</span> [<span class="number">0</span>; <span class="number">32</span>];
+        <span class="kw">for</span> (<span class="ident">i</span>, <span class="ident">s</span>) <span class="kw">in</span> <span class="ident">strides</span>.<span class="ident">enumerate</span>() {
+            <span class="kw-2">*</span><span class="ident">res</span>.<span class="ident">get_mut</span>(<span class="ident">i</span>)
+                .<span class="ident">expect</span>(<span class="string">&quot;Only dimensionalities of up to 32 are supported&quot;</span>) <span class="op">=</span> <span class="ident">s</span> <span class="op">*</span> <span class="ident">type_size</span>;
         }
+        <span class="self">Self</span>(<span class="ident">res</span>)
     }
 }
 
