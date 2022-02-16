@@ -1,30 +1,31 @@
 //! Defines error types.
 
+use std::error::Error;
 use std::fmt;
 
-use pyo3::{exceptions as exc, PyErr, PyErrArguments, PyObject, Python, ToPyObject};
+use pyo3::{exceptions::PyTypeError, PyErr, PyErrArguments, PyObject, Python, ToPyObject};
 
 use crate::dtype::PyArrayDescr;
 
 macro_rules! impl_pyerr {
-    ($err_type: ty) => {
-        impl std::error::Error for $err_type {}
+    ($err_type:ty) => {
+        impl Error for $err_type {}
 
         impl PyErrArguments for $err_type {
             fn arguments(self, py: Python) -> PyObject {
-                format!("{}", self).to_object(py)
+                self.to_string().to_object(py)
             }
         }
 
-        impl std::convert::From<$err_type> for PyErr {
+        impl From<$err_type> for PyErr {
             fn from(err: $err_type) -> PyErr {
-                exc::PyTypeError::new_err(err)
+                PyTypeError::new_err(err)
             }
         }
     };
 }
 
-/// Represents that dimensionalities of the given arrays don't match.
+/// Represents that dimensionalities of the given arrays do not match.
 #[derive(Debug)]
 pub struct DimensionalityError {
     from: usize,
@@ -39,14 +40,17 @@ impl DimensionalityError {
 
 impl fmt::Display for DimensionalityError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let Self { from, to } = self;
-        write!(f, "dimensionality mismatch:\n from={}, to={}", from, to)
+        write!(
+            f,
+            "dimensionality mismatch:\n from={}, to={}",
+            self.from, self.to
+        )
     }
 }
 
 impl_pyerr!(DimensionalityError);
 
-/// Represents that types of the given arrays don't match.
+/// Represents that types of the given arrays do not match.
 #[derive(Debug)]
 pub struct TypeError {
     from: String,
@@ -69,46 +73,44 @@ impl TypeError {
 
 impl fmt::Display for TypeError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let Self { from, to } = self;
-        write!(f, "type mismatch:\n from={}, to={}", from, to)
+        write!(f, "type mismatch:\n from={}, to={}", self.from, self.to)
     }
 }
 
 impl_pyerr!(TypeError);
 
-/// Represents that given vec cannot be treated as array.
+/// Represents that given `Vec` cannot be treated as an array.
 #[derive(Debug)]
 pub struct FromVecError {
-    len1: usize,
-    len2: usize,
+    len: usize,
+    exp_len: usize,
 }
 
 impl FromVecError {
-    pub(crate) fn new(len1: usize, len2: usize) -> Self {
-        FromVecError { len1, len2 }
+    pub(crate) fn new(len: usize, exp_len: usize) -> Self {
+        Self { len, exp_len }
     }
 }
 
 impl fmt::Display for FromVecError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let FromVecError { len1, len2 } = self;
         write!(
             f,
-            "Invalid lenension as an array\n Expected the same length {}, but found {}",
-            len1, len2
+            "invalid length: {}, but expected {}",
+            self.len, self.exp_len
         )
     }
 }
 
 impl_pyerr!(FromVecError);
 
-/// Represents that the array is not contiguous.
+/// Represents that the given array is not contiguous.
 #[derive(Debug)]
 pub struct NotContiguousError;
 
 impl fmt::Display for NotContiguousError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "The given array is not contiguous",)
+        write!(f, "The given array is not contiguous")
     }
 }
 

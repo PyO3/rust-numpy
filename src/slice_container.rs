@@ -5,9 +5,9 @@ use pyo3::class::impl_::{PyClassImpl, ThreadCheckerStub};
 use pyo3::pyclass::PyClass;
 use pyo3::pyclass_slots::PyClassDummySlot;
 use pyo3::type_object::{LazyStaticType, PyTypeInfo};
-use pyo3::{ffi, types::PyAny, PyCell};
+use pyo3::{ffi, types::PyAny, PyCell, Python};
 
-/// Utility type to safely store Box<[_]> or Vec<_> on the Python heap
+/// Utility type to safely store `Box<[_]>` or `Vec<_>` on the Python heap
 pub(crate) struct PySliceContainer {
     ptr: *mut u8,
     len: usize,
@@ -24,7 +24,7 @@ impl<T: Send> From<Box<[T]>> for PySliceContainer {
         }
 
         // FIXME(adamreichold): Use `Box::into_raw` when
-        // `*mut [T]::{as_mut_ptr, len}` become stable and compatible with out MSRV.
+        // `*mut [T]::{as_mut_ptr, len}` become stable and compatible with our MSRV.
         let ptr = data.as_ptr() as *mut u8;
         let len = data.len();
         let cap = 0;
@@ -104,7 +104,7 @@ unsafe impl PyTypeInfo for PySliceContainer {
     const MODULE: Option<&'static str> = Some("_rust_numpy");
 
     #[inline]
-    fn type_object_raw(py: pyo3::Python) -> *mut ffi::PyTypeObject {
+    fn type_object_raw(py: Python) -> *mut ffi::PyTypeObject {
         static TYPE_OBJECT: LazyStaticType = LazyStaticType::new();
         TYPE_OBJECT.get_or_init::<Self>(py)
     }
