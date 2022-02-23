@@ -28,10 +28,9 @@ Rust bindings for the NumPy C-API.
 
 ### Write a Python module in Rust
 
-Please see the [simple-extension](https://github.com/PyO3/rust-numpy/tree/main/examples/simple-extension)
-directory for the complete example.
+Please see the [simple](examples/simple) example for how to get started.
 
-Also, we have an example project with [ndarray-linalg](https://github.com/PyO3/rust-numpy/tree/main/examples/linalg).
+There are also examples using [ndarray-linalg](examples/linalg) and [rayon](examples/parallel).
 
 ```toml
 [lib]
@@ -46,22 +45,23 @@ numpy = "0.15"
 ```rust
 use numpy::ndarray::{ArrayD, ArrayViewD, ArrayViewMutD};
 use numpy::{IntoPyArray, PyArrayDyn, PyReadonlyArrayDyn};
-use pyo3::prelude::{pymodule, PyModule, PyResult, Python};
+use pyo3::{pymodule, types::PyModule, PyResult, Python};
 
 #[pymodule]
 fn rust_ext(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
-    // immutable example
+    // example using immutable borrows producing a new array
     fn axpy(a: f64, x: ArrayViewD<'_, f64>, y: ArrayViewD<'_, f64>) -> ArrayD<f64> {
         a * &x + &y
     }
 
-    // mutable example (no return)
+    // example using a mutable borrow to modify an array in-place
     fn mult(a: f64, mut x: ArrayViewMutD<'_, f64>) {
         x *= a;
     }
 
     // wrapper of `axpy`
-    #[pyfn(m, "axpy")]
+    #[pyfn(m)]
+    #[pyo3(name = "axpy")]
     fn axpy_py<'py>(
         py: Python<'py>,
         a: f64,
@@ -74,7 +74,8 @@ fn rust_ext(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     }
 
     // wrapper of `mult`
-    #[pyfn(m, "mult")]
+    #[pyfn(m)]
+    #[pyo3(name = "mult")]
     fn mult_py(_py: Python<'_>, a: f64, x: &PyArrayDyn<f64>) -> PyResult<()> {
         let x = unsafe { x.as_array_mut() };
         mult(a, x);
@@ -98,23 +99,24 @@ numpy = "0.15"
 
 ```rust
 use numpy::PyArray1;
-use pyo3::prelude::{PyResult, Python};
-use pyo3::types::IntoPyDict;
+use pyo3::{types::IntoPyDict, PyResult, Python};
 
 fn main() -> PyResult<()> {
     Python::with_gil(|py| {
         let np = py.import("numpy")?;
         let locals = [("np", np)].into_py_dict(py);
+
         let pyarray: &PyArray1<i32> = py
             .eval("np.absolute(np.array([-1, -2, -3], dtype='int32'))", Some(locals), None)?
             .extract()?;
+
         let readonly = pyarray.readonly();
         let slice = readonly.as_slice()?;
         assert_eq!(slice, &[1, 2, 3]);
+
         Ok(())
     })
 }
-
 ```
 
 ## Dependency on ndarray
@@ -150,5 +152,6 @@ and [pull requests](https://github.com/PyO3/rust-numpy/pulls).
 
 PyO3's [Contributing.md](https://github.com/PyO3/pyo3/blob/main/Contributing.md)
 is a nice guide for starting.
+
 Also, we have a [Gitter](https://gitter.im/PyO3/Lobby) channel for communicating.
 

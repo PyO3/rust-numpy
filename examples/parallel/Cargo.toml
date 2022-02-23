@@ -1,5 +1,5 @@
 [package]
-name = "numpy-parallel-example"
+name = "rust-parallel"
 version = "0.1.0"
 authors = ["Yuji Kanagawa <yuji.kngw.80s.revive@gmail.com>"]
 edition = "2018"

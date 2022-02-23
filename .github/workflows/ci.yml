@@ -77,7 +77,7 @@ jobs:
       - name: Test example
         run: |
           pip install nox
-          nox -f examples/simple-extension/noxfile.py
+          nox -f examples/simple/noxfile.py
     env:
       CARGO_TERM_VERBOSE: true
       CARGO_BUILD_TARGET: ${{ matrix.platform.rust-target }}
@@ -99,7 +99,7 @@ jobs:
           default: true
       - uses: Swatinem/rust-cache@v1
         with:
-          working-directory: examples/simple-extension
+          working-directory: examples/simple
         continue-on-error: true
       - name: Install toml
         run: pip install toml
@@ -112,11 +112,11 @@ jobs:
           cargo_toml["workspace"] = {}
           with open("Cargo.toml", "w") as f:
             toml.dump(cargo_toml, f)
-        working-directory: examples/simple-extension
+        working-directory: examples/simple
         shell: python
       - name: Generate lockfile
         run: cargo generate-lockfile
-        working-directory: examples/simple-extension
+        working-directory: examples/simple
       - name: Unify dependencies on ndarray to 0.13.1
         run: |
           import toml
@@ -126,12 +126,12 @@ jobs:
             if pkg["name"] == "ndarray" and pkg["version"] != "0.13.1":
               pkg_id = pkg["name"] + ":" + pkg["version"]
               subprocess.run(["cargo", "update", "--package", pkg_id, "--precise", "0.13.1"], check=True)
-        working-directory: examples/simple-extension
+        working-directory: examples/simple
         shell: python
       - name: Test example
         run: |
           pip install nox
-          nox -f examples/simple-extension/noxfile.py
+          nox -f examples/simple/noxfile.py
 
   examples:
     runs-on: ubuntu-latest
