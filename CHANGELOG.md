@@ -6,6 +6,7 @@
   - Support borrowing arrays that are part of other Python objects via `PyArray::borrow_from_array` ([#230](https://github.com/PyO3/rust-numpy/pull/216))
   - Fixed downcasting ignoring element type and dimensionality ([#265](https://github.com/PyO3/rust-numpy/pull/265))
   - `PyArray::new` is now `unsafe`, as it produces uninitialized arrays ([#220](https://github.com/PyO3/rust-numpy/pull/220))
+  - `PyArray::iter`, `NpySingleIterBuilder::readwrite` and `NpyMultiIterBuilder::add_readwrite` are now `unsafe`, as they allow aliasing mutable references to be created ([#278/](https://github.com/PyO3/rust-numpy/pull/278))
   - `PyArray::from_exact_iter` does not unsoundly trust `ExactSizeIterator::len` any more ([#262](https://github.com/PyO3/rust-numpy/pull/262))
   - `PyArray::as_cell_slice` was removed as it unsoundly interacts with `PyReadonlyArray` allowing safe code to violate aliasing rules ([#260](https://github.com/PyO3/rust-numpy/pull/260))
   - `rayon` feature is now removed, and directly specifying the feature via `ndarray` dependency is recommended ([#250](https://github.com/PyO3/rust-numpy/pull/250))
@@ -19,10 +20,8 @@
     - `i32`, `i64`, `u32`, `u64` are now guaranteed to map to `np.u?int{32,64}`.
     - Removed `cfg_if` dependency
     - Removed `DataType` enum
-  - Added `PyArrayDescr::new` constructor
-    ([#266](https://github.com/PyO3/rust-numpy/pull/266))
-  - New `PyArrayDescr` methods
-    ([#266](https://github.com/PyO3/rust-numpy/pull/261)):
+  - Added `PyArrayDescr::new` constructor ([#266](https://github.com/PyO3/rust-numpy/pull/266))
+  - New `PyArrayDescr` methods ([#266](https://github.com/PyO3/rust-numpy/pull/261)):
     - `num`, `base`, `ndim`, `shape`, `byteorder`, `char`, `kind`, `itemsize`,
       `alignment`, `flags`, `has_object`, `is_aligned_struct`, `names`,
       `get_field`, `has_subarray`, `has_fields`, `is_native_byteorder`

@@ -28,7 +28,7 @@ fn mutable_iter() -> PyResult<()> {
     let data = array![[0.0, 1.0], [2.0, 3.0], [4.0, 5.0]];
     pyo3::Python::with_gil(|py| {
         let arr = PyArray::from_array(py, &data);
-        let iter = NpySingleIterBuilder::readwrite(arr).build()?;
+        let iter = unsafe { NpySingleIterBuilder::readwrite(arr).build()? };
         for elem in iter {
             *elem *= 2.0;
         }
@@ -71,10 +71,12 @@ fn multiiter_rw() -> PyResult<()> {
     pyo3::Python::with_gil(|py| {
         let arr1 = PyArray::from_array(py, &data1);
         let arr2 = PyArray::from_array(py, &data2);
-        let iter = NpyMultiIterBuilder::new()
-            .add_readonly(arr1.readonly())
-            .add_readwrite(arr2)
-            .build()?;
+        let iter = unsafe {
+            NpyMultiIterBuilder::new()
+                .add_readonly(arr1.readonly())
+                .add_readwrite(arr2)
+                .build()?
+        };
 
         for (x, y) in iter {
             *y = *x * 2.0;

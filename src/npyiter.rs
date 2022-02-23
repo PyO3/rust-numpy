@@ -174,7 +174,12 @@ impl<'py, T: Element> NpySingleIterBuilder<'py, T, Readonly> {
 
 impl<'py, T: Element> NpySingleIterBuilder<'py, T, ReadWrite> {
     /// Makes a new builder for a writable iterator.
-    pub fn readwrite<D: ndarray::Dimension>(array: &'py PyArray<T, D>) -> Self {
+    ///
+    /// # Safety
+    ///
+    /// The iterator will produce mutable references into the array which must not be
+    /// aliased by other references for the life time of the iterator.
+    pub unsafe fn readwrite<D: ndarray::Dimension>(array: &'py PyArray<T, D>) -> Self {
         Self {
             flags: NPY_ITER_READWRITE,
             array: array.to_dyn(),
@@ -230,7 +235,7 @@ impl<'py, T: Element, I: IterMode> NpySingleIterBuilder<'py, T, I> {
 /// use numpy::NpySingleIterBuilder;
 /// pyo3::Python::with_gil(|py| {
 ///     let array = numpy::PyArray::arange(py, 0, 10, 1);
-///     let iter = NpySingleIterBuilder::readwrite(array).build().unwrap();
+///     let iter = unsafe { NpySingleIterBuilder::readwrite(array).build().unwrap() };
 ///     for (i, elem) in iter.enumerate() {
 ///         assert_eq!(*elem, i as i64);
 ///         *elem = *elem * 2;  // elements are mutable
@@ -242,8 +247,7 @@ impl<'py, T: Element, I: IterMode> NpySingleIterBuilder<'py, T, I> {
 /// # use numpy::NpySingleIterBuilder;
 /// # pyo3::Python::with_gil(|py| {
 /// #   let array = numpy::PyArray::arange(py, 0, 10, 1);
-/// #   let iter = NpySingleIterBuilder::readwrite(array).build().unwrap();
-///     for (i, elem) in array.iter().unwrap().enumerate() {
+///     for (i, elem) in unsafe { array.iter().unwrap().enumerate() } {
 ///         assert_eq!(*elem, i as i64);
 ///         *elem = *elem * 2;  // elements are mutable
 ///     }
@@ -416,7 +420,12 @@ impl<'py, T: Element, S: MultiIterMode> NpyMultiIterBuilder<'py, T, S> {
     }
 
     /// Adds a writable array to the resulting iterator.
-    pub fn add_readwrite<D: ndarray::Dimension>(
+    ///
+    /// # Safety
+    ///
+    /// The iterator will produce mutable references into the array which must not be
+    /// aliased by other references for the life time of the iterator.
+    pub unsafe fn add_readwrite<D: ndarray::Dimension>(
         mut self,
         array: &'py PyArray<T, D>,
     ) -> NpyMultiIterBuilder<'py, T, RW<S>> {
@@ -483,12 +492,14 @@ impl<'py, T: Element, S: MultiIterModeWithManyArrays> NpyMultiIterBuilder<'py, T
 ///     let array1 = numpy::PyArray::arange(py, 0, 10, 1);
 ///     let array2 = numpy::PyArray::arange(py, 10, 20, 1);
 ///     let array3 = numpy::PyArray::arange(py, 10, 30, 2);
-///     let iter = NpyMultiIterBuilder::new()
-///         .add_readonly(array1.readonly())
-///         .add_readwrite(array2)
-///         .add_readonly(array3.readonly())
-///         .build()
-///          .unwrap();
+///     let iter = unsafe {
+///         NpyMultiIterBuilder::new()
+///             .add_readonly(array1.readonly())
+///             .add_readwrite(array2)
+///             .add_readonly(array3.readonly())
+///             .build()
+///             .unwrap()
+///     };
 ///     for (i, j, k) in iter {
 ///         assert_eq!(*i + *j, *k);
 ///         *j += *i + *k;  // The third element is only mutable.
