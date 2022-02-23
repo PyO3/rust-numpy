@@ -1,4 +1,5 @@
-//! Safe interface for NumPy ndarray
+//! Safe interface for NumPy's ndarray class
+
 use std::{
     marker::PhantomData,
     mem,
@@ -22,6 +23,7 @@ use crate::convert::{ArrayExt, IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
 use crate::dtype::Element;
 use crate::error::{DimensionalityError, FromVecError, NotContiguousError, TypeError};
 use crate::npyffi::{self, npy_intp, NPY_ORDER, PY_ARRAY_API};
+use crate::readonly::PyReadonlyArray;
 use crate::slice_container::PySliceContainer;
 
 /// A safe, static-typed interface for
@@ -104,7 +106,7 @@ pub type PyArray6<T> = PyArray<T, Ix6>;
 /// Dynamic-dimensional array.
 pub type PyArrayDyn<T> = PyArray<T, IxDyn>;
 
-/// Returns a array module.
+/// Returns a handle to NumPy's multiarray module.
 pub fn get_array_module(py: Python<'_>) -> PyResult<&PyModule> {
     PyModule::import(py, npyffi::array::MOD_NAME)
 }
@@ -200,7 +202,7 @@ impl<T, D> PyArray<T, D> {
     }
 
     /// Returns a temporally unwriteable reference of the array.
-    pub fn readonly(&self) -> crate::PyReadonlyArray<T, D> {
+    pub fn readonly(&self) -> PyReadonlyArray<T, D> {
         self.into()
     }
 

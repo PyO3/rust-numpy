@@ -1,33 +1,39 @@
-//! `rust-numpy` provides Rust interfaces for [NumPy C APIs](https://numpy.org/doc/stable/reference/c-api),
-//! especially for [ndarray](https://numpy.org/doc/stable/reference/arrays.ndarray.html) class.
+//! This crate provides Rust interfaces for [NumPy C APIs][c-api],
+//! especially for the [ndarray][ndarray] class.
 //!
-//! It uses [pyo3](https://github.com/PyO3/pyo3) for rust bindings to cpython, and uses
-//! [ndarray](https://github.com/bluss/ndarray) for rust side matrix library.
+//! It uses [`pyo3`] for Rust bindings to CPython, and uses
+//! [`ndarray`] as the Rust matrix library.
 //!
-//! For numpy dependency, it calls `import numpy.core` internally. So you just need numpy
-//! installed by `pip install numpy` or other ways in your python environment.
-//! You can use both system environment and `virtualenv`.
+//! To resolve its dependency on NumPy, it calls `import numpy.core` internally.
+//! This means that this crate should work if you can use NumPy in your Python environment,
+//! e.g. after installing it by `pip install numpy`. It does not matter whether you use
+//! the system environment or a dedicated virtual environment.
 //!
-//! This library loads numpy module automatically. So if numpy is not installed, it simply panics,
-//! instead of returing a result.
+//! Loading NumPy is done automatically and on demand. So if it is not installed, the functions
+//! provided by this crate will panic instead of returning a result.
 //!
 //! # Example
 //!
 //! ```
-//! #[macro_use]
-//! extern crate ndarray;
+//! use numpy::pyo3::Python;
+//! use numpy::ndarray::array;
 //! use numpy::{ToPyArray, PyArray};
-//! fn main() {
-//!     pyo3::Python::with_gil(|py| {
-//!         let py_array = array![[1i64, 2], [3, 4]].to_pyarray(py);
-//!         assert_eq!(
-//!             py_array.readonly().as_array(),
-//!             array![[1i64, 2], [3, 4]]
-//!         );
-//!     })
-//! }
+//!
+//! Python::with_gil(|py| {
+//!     let py_array = array![[1i64, 2], [3, 4]].to_pyarray(py);
+//!
+//!     assert_eq!(
+//!         py_array.readonly().as_array(),
+//!         array![[1i64, 2], [3, 4]]
+//!     );
+//! })
 //! ```
-#![allow(clippy::needless_lifetimes)] // We often want to make the GIL lifetime explicit.
+//!
+//! [c-api]: https://numpy.org/doc/stable/reference/c-api
+//! [ndarray]: https://numpy.org/doc/stable/reference/arrays.ndarray.html
+
+// We often want to make the GIL lifetime explicit.
+#![allow(clippy::needless_lifetimes)]
 
 pub mod array;
 pub mod convert;
@@ -63,25 +69,31 @@ pub use ndarray::{array, Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};
 #[cfg(doctest)]
 mod doctest {
     macro_rules! doc_comment {
-        ($x: expr, $modname: ident) => {
-            #[doc = $x]
-            mod $modname {}
+        ($doc_string:expr, $mod_name:ident) => {
+            #[doc = $doc_string]
+            mod $mod_name {}
         };
     }
     doc_comment!(include_str!("../README.md"), readme);
 }
 
-/// Create a [PyArray](./array/struct.PyArray.html) with one, two or three dimensions.
-/// This macro is backed by
-/// [`ndarray::array`](https://docs.rs/ndarray/latest/ndarray/macro.array.html).
+/// Create a [`PyArray`] with one, two or three dimensions.
+///
+/// This macro is backed by [`ndarray::array`].
 ///
 /// # Example
+///
 /// ```
-/// pyo3::Python::with_gil(|py| {
-///     let array = numpy::pyarray![py, [1, 2], [3, 4]];
+/// use numpy::pyo3::Python;
+/// use numpy::ndarray::array;
+/// use numpy::pyarray;
+///
+/// Python::with_gil(|py| {
+///     let array = pyarray![py, [1, 2], [3, 4]];
+///
 ///     assert_eq!(
 ///         array.readonly().as_array(),
-///         ndarray::array![[1, 2], [3, 4]]
+///         array![[1, 2], [3, 4]]
 ///     );
 /// });
 #[macro_export]
