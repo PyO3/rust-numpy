@@ -607,6 +607,52 @@
 <span id="606">606</span>
 <span id="607">607</span>
 <span id="608">608</span>
+<span id="609">609</span>
+<span id="610">610</span>
+<span id="611">611</span>
+<span id="612">612</span>
+<span id="613">613</span>
+<span id="614">614</span>
+<span id="615">615</span>
+<span id="616">616</span>
+<span id="617">617</span>
+<span id="618">618</span>
+<span id="619">619</span>
+<span id="620">620</span>
+<span id="621">621</span>
+<span id="622">622</span>
+<span id="623">623</span>
+<span id="624">624</span>
+<span id="625">625</span>
+<span id="626">626</span>
+<span id="627">627</span>
+<span id="628">628</span>
+<span id="629">629</span>
+<span id="630">630</span>
+<span id="631">631</span>
+<span id="632">632</span>
+<span id="633">633</span>
+<span id="634">634</span>
+<span id="635">635</span>
+<span id="636">636</span>
+<span id="637">637</span>
+<span id="638">638</span>
+<span id="639">639</span>
+<span id="640">640</span>
+<span id="641">641</span>
+<span id="642">642</span>
+<span id="643">643</span>
+<span id="644">644</span>
+<span id="645">645</span>
+<span id="646">646</span>
+<span id="647">647</span>
+<span id="648">648</span>
+<span id="649">649</span>
+<span id="650">650</span>
+<span id="651">651</span>
+<span id="652">652</span>
+<span id="653">653</span>
+<span id="654">654</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::mem::size_of</span>;
 <span class="kw">use</span> <span class="ident">std::os::raw</span>::{
     <span class="ident">c_char</span>, <span class="ident">c_int</span>, <span class="ident">c_long</span>, <span class="ident">c_longlong</span>, <span class="ident">c_short</span>, <span class="ident">c_uint</span>, <span class="ident">c_ulong</span>, <span class="ident">c_ulonglong</span>, <span class="ident">c_ushort</span>,
@@ -630,21 +676,28 @@
 
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">num_complex</span>::{<span class="ident">Complex32</span>, <span class="ident">Complex64</span>};
 
-<span class="doccomment">/// Binding of [`numpy.dtype`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.html).</span>
+<span class="doccomment">/// Binding of [`numpy.dtype`][dtype].</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// # Example</span>
+<span class="doccomment">///</span>
 <span class="doccomment">/// ```</span>
-<span class="doccomment">/// use pyo3::types::IntoPyDict;</span>
-<span class="doccomment">/// pyo3::Python::with_gil(|py| {</span>
-<span class="doccomment">///     let locals = [(&quot;np&quot;, numpy::get_array_module(py).unwrap())].into_py_dict(py);</span>
-<span class="doccomment">///     let dtype: &amp;numpy::PyArrayDescr = py</span>
+<span class="doccomment">/// use numpy::{dtype, get_array_module, PyArrayDescr};</span>
+<span class="doccomment">/// use numpy::pyo3::{types::IntoPyDict, Python};</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// Python::with_gil(|py| {</span>
+<span class="doccomment">///     let locals = [(&quot;np&quot;, get_array_module(py).unwrap())].into_py_dict(py);</span>
+<span class="doccomment">///</span>
+<span class="doccomment">///     let dt: &amp;PyArrayDescr = py</span>
 <span class="doccomment">///         .eval(&quot;np.array([1, 2, 3.0]).dtype&quot;, Some(locals), None)</span>
 <span class="doccomment">///         .unwrap()</span>
 <span class="doccomment">///         .downcast()</span>
 <span class="doccomment">///         .unwrap();</span>
-<span class="doccomment">///     assert!(dtype.is_equiv_to(numpy::dtype::&lt;f64&gt;(py)));</span>
+<span class="doccomment">///</span>
+<span class="doccomment">///     assert!(dt.is_equiv_to(dtype::&lt;f64&gt;(py)));</span>
 <span class="doccomment">/// });</span>
 <span class="doccomment">/// ```</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// [dtype]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.html</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">PyArrayDescr</span>(<span class="ident">PyAny</span>);
 
 <span class="macro">pyobject_native_type_named!</span>(<span class="ident">PyArrayDescr</span>);
@@ -678,9 +731,11 @@
 }
 
 <span class="kw">impl</span> <span class="ident">PyArrayDescr</span> {
-    <span class="doccomment">/// Creates a new dtype object from an arbitrary object.</span>
+    <span class="doccomment">/// Creates a new type descriptor (&quot;dtype&quot;) object from an arbitrary object.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// Equivalent to invoking the constructor of `np.dtype`.</span>
+    <span class="doccomment">/// Equivalent to invoking the constructor of [`numpy.dtype`][dtype].</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// [dtype]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.html</span>
     <span class="attribute">#[<span class="ident">inline</span>]</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>: <span class="ident">ToPyObject</span> <span class="op">+</span> <span class="question-mark">?</span><span class="ident">Sized</span><span class="op">&gt;</span>(<span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>, <span class="ident">obj</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="self">Self</span><span class="op">&gt;</span> {
         <span class="ident"><span class="self">Self</span>::new_impl</span>(<span class="ident">py</span>, <span class="ident">obj</span>.<span class="ident">to_object</span>(<span class="ident">py</span>))
@@ -707,12 +762,12 @@
         <span class="self">self</span>.<span class="ident">into_ptr</span>() <span class="kw">as</span> <span class="kw">_</span>
     }
 
-    <span class="doccomment">/// Shortcut for creating a descriptor of &#39;object&#39; type.</span>
+    <span class="doccomment">/// Shortcut for creating a type descriptor of `object` type.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">object</span>(<span class="ident">py</span>: <span class="ident">Python</span>) -&gt; <span class="kw-2">&amp;</span><span class="self">Self</span> {
         <span class="ident"><span class="self">Self</span>::from_npy_type</span>(<span class="ident">py</span>, <span class="ident">NPY_TYPES::NPY_OBJECT</span>)
     }
 
-    <span class="doccomment">/// Returns the type descriptor (&quot;dtype&quot;) for a registered type.</span>
+    <span class="doccomment">/// Returns the type descriptor for a registered type.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">of</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Element</span><span class="op">&gt;</span>(<span class="ident">py</span>: <span class="ident">Python</span>) -&gt; <span class="kw-2">&amp;</span><span class="self">Self</span> {
         <span class="ident">T::get_dtype</span>(<span class="ident">py</span>)
     }
@@ -732,11 +787,12 @@
         }
     }
 
-    <span class="doccomment">/// Returns the</span>
-    <span class="doccomment">/// [array scalar](https://numpy.org/doc/stable/reference/arrays.scalars.html)</span>
-    <span class="doccomment">/// corresponding to this dtype.</span>
+    <span class="doccomment">/// Returns the [array scalar][arrays-scalars] corresponding to this type descriptor.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// Equivalent to [`np.dtype.type`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.type.html).</span>
+    <span class="doccomment">/// Equivalent to [`numpy.dtype.type`][dtype-type].</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// [arrays-scalars]: https://numpy.org/doc/stable/reference/arrays.scalars.html</span>
+    <span class="doccomment">/// [dtype-type]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.type.html</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">typeobj</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="ident">PyType</span> {
         <span class="kw">let</span> <span class="ident">dtype_type_ptr</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="kw-2">*</span><span class="self">self</span>.<span class="ident">as_dtype_ptr</span>() }.<span class="ident">typeobj</span>;
         <span class="kw">unsafe</span> { <span class="ident">PyType::from_type_ptr</span>(<span class="self">self</span>.<span class="ident">py</span>(), <span class="ident">dtype_type_ptr</span>) }
@@ -749,66 +805,83 @@
     }
 
     <span class="doccomment">/// Returns a unique number for each of the 21 different built-in</span>
-    <span class="doccomment">/// [enumerated types](https://numpy.org/doc/stable/reference/c-api/dtype.html#enumerated-types).</span>
+    <span class="doccomment">/// [enumerated types][enumerated-types].</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// These are roughly ordered from least-to-most precision.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// Equivalent to [`np.dtype.num`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.num.html).</span>
+    <span class="doccomment">/// Equivalent to [`numpy.dtype.num`][dtype-num].</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// [enumerated-types]: https://numpy.org/doc/stable/reference/c-api/dtype.html#enumerated-types</span>
+    <span class="doccomment">/// [dtype-num]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.num.html</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">num</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">c_int</span> {
         <span class="kw">unsafe</span> { <span class="kw-2">*</span><span class="self">self</span>.<span class="ident">as_dtype_ptr</span>() }.<span class="ident">type_num</span>
     }
 
-    <span class="doccomment">/// Returns the element size of this data-type object.</span>
+    <span class="doccomment">/// Returns the element size of this type descriptor.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// Equivalent to [`np.dtype.itemsize`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.itemsize.html).</span>
+    <span class="doccomment">/// Equivalent to [`numpy.dtype.itemsize`][dtype-itemsize].</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// [dtype-itemsiize]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.itemsize.html</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">itemsize</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">usize</span> {
         <span class="kw">unsafe</span> { <span class="kw-2">*</span><span class="self">self</span>.<span class="ident">as_dtype_ptr</span>() }.<span class="ident">elsize</span>.<span class="ident">max</span>(<span class="number">0</span>) <span class="kw">as</span> <span class="kw">_</span>
     }
 
-    <span class="doccomment">/// Returns the required alignment (bytes) of this data-type according to the compiler.</span>
+    <span class="doccomment">/// Returns the required alignment (bytes) of this type descriptor according to the compiler.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// Equivalent to [`np.dtype.alignment`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.alignment.html).</span>
+    <span class="doccomment">/// Equivalent to [`numpy.dtype.alignment`][dtype-alignment].</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// [dtype-alignment]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.alignment.html</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">alignment</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">usize</span> {
         <span class="kw">unsafe</span> { <span class="kw-2">*</span><span class="self">self</span>.<span class="ident">as_dtype_ptr</span>() }.<span class="ident">alignment</span>.<span class="ident">max</span>(<span class="number">0</span>) <span class="kw">as</span> <span class="kw">_</span>
     }
 
-    <span class="doccomment">/// Returns a character indicating the byte-order of this data-type object.</span>
+    <span class="doccomment">/// Returns an ASCII character indicating the byte-order of this type descriptor object.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// All built-in data-type objects have byteorder either `=` or `|`.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// Equivalent to [`np.dtype.byteorder`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.byteorder.html).</span>
+    <span class="doccomment">/// Equivalent to [`numpy.dtype.byteorder`][dtype-byteorder].</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// [dtype-byteorder]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.byteorder.html</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">byteorder</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">u8</span> {
         <span class="kw">unsafe</span> { <span class="kw-2">*</span><span class="self">self</span>.<span class="ident">as_dtype_ptr</span>() }.<span class="ident">byteorder</span>.<span class="ident">max</span>(<span class="number">0</span>) <span class="kw">as</span> <span class="kw">_</span>
     }
 
-    <span class="doccomment">/// Returns a unique character code for each of the 21 different built-in types.</span>
+    <span class="doccomment">/// Returns a unique ASCII character for each of the 21 different built-in types.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// Note: structured data types are categorized as `V` (void).</span>
+    <span class="doccomment">/// Note that structured data types are categorized as `V` (void).</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// Equivalent to [`np.dtype.char`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.char.html).</span>
+    <span class="doccomment">/// Equivalent to [`numpy.dtype.char`][dtype-char].</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// [dtype-char]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.char.html</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">char</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">u8</span> {
         <span class="kw">unsafe</span> { <span class="kw-2">*</span><span class="self">self</span>.<span class="ident">as_dtype_ptr</span>() }.<span class="ident">type_</span>.<span class="ident">max</span>(<span class="number">0</span>) <span class="kw">as</span> <span class="kw">_</span>
     }
 
-    <span class="doccomment">/// Returns a character code (one of `biufcmMOSUV`) identifying the general kind of data.</span>
+    <span class="doccomment">/// Returns an ASCII character (one of `biufcmMOSUV`) identifying the general kind of data.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// Note: structured data types are categorized as `V` (void).</span>
+    <span class="doccomment">/// Note that structured data types are categorized as `V` (void).</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// Equivalent to [`np.dtype.kind`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.kind.html).</span>
+    <span class="doccomment">/// Equivalent to [`numpy.dtype.kind`][dtype-kind].</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// [dtype-kind]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.kind.html</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">kind</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">u8</span> {
         <span class="kw">unsafe</span> { <span class="kw-2">*</span><span class="self">self</span>.<span class="ident">as_dtype_ptr</span>() }.<span class="ident">kind</span>.<span class="ident">max</span>(<span class="number">0</span>) <span class="kw">as</span> <span class="kw">_</span>
     }
 
-    <span class="doccomment">/// Returns bit-flags describing how this data type is to be interpreted.</span>
+    <span class="doccomment">/// Returns bit-flags describing how this type descriptor is to be interpreted.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// Equivalent to [`np.dtype.flags`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.flags.html).</span>
+    <span class="doccomment">/// Equivalent to [`numpy.dtype.flags`][dtype-flags].</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// [dtype-flags]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.flags.html</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">flags</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">c_char</span> {
         <span class="kw">unsafe</span> { <span class="kw-2">*</span><span class="self">self</span>.<span class="ident">as_dtype_ptr</span>() }.<span class="ident">flags</span>
     }
 
-    <span class="doccomment">/// Returns the number of dimensions if this data type describes a sub-array, and `0` otherwise.</span>
+    <span class="doccomment">/// Returns the number of dimensions if this type descriptor represents a sub-array, and zero otherwise.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// Equivalent to [`np.dtype.ndim`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.ndim.html).</span>
+    <span class="doccomment">/// Equivalent to [`numpy.dtype.ndim`][dtype-ndim].</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// [dtype-ndim]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.ndim.html</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">ndim</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">usize</span> {
         <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">has_subarray</span>() {
             <span class="kw">return</span> <span class="number">0</span>;
@@ -816,11 +889,13 @@
         <span class="kw">unsafe</span> { <span class="ident">PyTuple_Size</span>((<span class="kw-2">*</span>((<span class="kw-2">*</span><span class="self">self</span>.<span class="ident">as_dtype_ptr</span>()).<span class="ident">subarray</span>)).<span class="ident">shape</span>).<span class="ident">max</span>(<span class="number">0</span>) <span class="kw">as</span> <span class="kw">_</span> }
     }
 
-    <span class="doccomment">/// Returns dtype for the base element of subarrays, regardless of their dimension or shape.</span>
+    <span class="doccomment">/// Returns the type descriptor for the base element of subarrays, regardless of their dimension or shape.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// If the dtype is not a subarray, returns self.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// Equivalent to [`np.dtype.base`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.base.html).</span>
+    <span class="doccomment">/// Equivalent to [`numpy.dtype.base`][dtype-base].</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// [dtype-base]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.base.html</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">base</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="ident">PyArrayDescr</span> {
         <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">has_subarray</span>() {
             <span class="self">self</span>
@@ -835,12 +910,14 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// If the dtype is not a sub-array, an empty vector is returned.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// Equivalent to [`np.dtype.shape`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.shape.html).</span>
+    <span class="doccomment">/// Equivalent to [`numpy.dtype.shape`][dtype-shape].</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// [dtype-shape]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.shape.html</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">shape</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">has_subarray</span>() {
-            <span class="macro">vec!</span>[]
+            <span class="ident">Vec::new</span>()
         } <span class="kw">else</span> {
-            <span class="comment">// Panic-wise: numpy guarantees that shape is a tuple of non-negative integers</span>
+            <span class="comment">// NumPy guarantees that shape is a tuple of non-negative integers so this should never panic.</span>
             <span class="kw">unsafe</span> {
                 <span class="ident">PyTuple::from_borrowed_ptr</span>(<span class="self">self</span>.<span class="ident">py</span>(), (<span class="kw-2">*</span>(<span class="kw-2">*</span><span class="self">self</span>.<span class="ident">as_dtype_ptr</span>()).<span class="ident">subarray</span>).<span class="ident">shape</span>)
             }
@@ -849,43 +926,46 @@
         }
     }
 
-    <span class="doccomment">/// Returns true if the dtype is a sub-array at the top level.</span>
+    <span class="doccomment">/// Returns true if the type descriptor contains any reference-counted objects in any fields or sub-dtypes.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// Equivalent to [`np.dtype.hasobject`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.hasobject.html).</span>
+    <span class="doccomment">/// Equivalent to [`numpy.dtype.hasobject`][dtype-hasobject].</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// [dtype-hasobject]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.hasobject.html</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">has_object</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> {
         <span class="self">self</span>.<span class="ident">flags</span>() <span class="op">&amp;</span> <span class="ident">NPY_ITEM_HASOBJECT</span> <span class="op">!</span><span class="op">=</span> <span class="number">0</span>
     }
 
-    <span class="doccomment">/// Returns true if the dtype is a struct which maintains field alignment.</span>
+    <span class="doccomment">/// Returns true if the type descriptor is a struct which maintains field alignment.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// This flag is sticky, so when combining multiple structs together, it is preserved</span>
     <span class="doccomment">/// and produces new dtypes which are also aligned.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// Equivalent to [`np.dtype.isalignedstruct`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.isalignedstruct.html).</span>
+    <span class="doccomment">/// Equivalent to [`numpy.dtype.isalignedstruct`][dtype-isalignedstruct].</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// [dtype-isalignedstruct]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.isalignedstruct.html</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_aligned_struct</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> {
         <span class="self">self</span>.<span class="ident">flags</span>() <span class="op">&amp;</span> <span class="ident">NPY_ALIGNED_STRUCT</span> <span class="op">!</span><span class="op">=</span> <span class="number">0</span>
     }
 
-    <span class="doccomment">/// Returns true if the data type is a sub-array.</span>
+    <span class="doccomment">/// Returns true if the type descriptor is a sub-array.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">has_subarray</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> {
         <span class="comment">// equivalent to PyDataType_HASSUBARRAY(self)</span>
         <span class="kw">unsafe</span> { <span class="op">!</span>(<span class="kw-2">*</span><span class="self">self</span>.<span class="ident">as_dtype_ptr</span>()).<span class="ident">subarray</span>.<span class="ident">is_null</span>() }
     }
 
-    <span class="doccomment">/// Returns true if the data type is a structured type.</span>
+    <span class="doccomment">/// Returns true if the type descriptor is a structured type.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">has_fields</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> {
         <span class="comment">// equivalent to PyDataType_HASFIELDS(self)</span>
         <span class="kw">unsafe</span> { <span class="op">!</span>(<span class="kw-2">*</span><span class="self">self</span>.<span class="ident">as_dtype_ptr</span>()).<span class="ident">names</span>.<span class="ident">is_null</span>() }
     }
 
-    <span class="doccomment">/// Returns true if data type byteorder is native, or `None` if not applicable.</span>
+    <span class="doccomment">/// Returns true if type descriptor byteorder is native, or `None` if not applicable.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_native_byteorder</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span> {
         <span class="comment">// based on PyArray_ISNBO(self-&gt;byteorder)</span>
         <span class="kw">match</span> <span class="self">self</span>.<span class="ident">byteorder</span>() {
             <span class="string">b&#39;=&#39;</span> =&gt; <span class="prelude-val">Some</span>(<span class="bool-val">true</span>),
             <span class="string">b&#39;|&#39;</span> =&gt; <span class="prelude-val">None</span>,
-            <span class="ident">byteorder</span> <span class="kw">if</span> <span class="ident">byteorder</span> <span class="op">==</span> <span class="ident">NPY_BYTEORDER_CHAR::NPY_NATBYTE</span> <span class="kw">as</span> <span class="ident">u8</span> =&gt; <span class="prelude-val">Some</span>(<span class="bool-val">true</span>),
-            <span class="kw">_</span> =&gt; <span class="prelude-val">Some</span>(<span class="bool-val">false</span>),
+            <span class="ident">byteorder</span> =&gt; <span class="prelude-val">Some</span>(<span class="ident">byteorder</span> <span class="op">==</span> <span class="ident">NPY_BYTEORDER_CHAR::NPY_NATBYTE</span> <span class="kw">as</span> <span class="ident">u8</span>),
         }
     }
 
@@ -893,7 +973,9 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// The names are ordered according to increasing byte offset.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// Equivalent to [`np.dtype.names`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.names.html).</span>
+    <span class="doccomment">/// Equivalent to [`numpy.dtype.names`][dtype-names].</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// [dtype-names]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.names.html</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">names</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span><span class="op">&gt;</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">has_fields</span>() {
             <span class="kw">return</span> <span class="prelude-val">None</span>;
@@ -902,29 +984,30 @@
         <span class="ident">FromPyObject::extract</span>(<span class="ident">names</span>).<span class="ident">ok</span>()
     }
 
-    <span class="doccomment">/// Returns the dtype and offset of a field with a given name.</span>
+    <span class="doccomment">/// Returns the type descriptor and offset of the field with the given name.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// This method will return an error if the dtype is not structured, or if it doesn&#39;t</span>
-    <span class="doccomment">/// contain a field with a given name.</span>
+    <span class="doccomment">/// This method will return an error if this type descriptor is not structured,</span>
+    <span class="doccomment">/// or if it does not contain a field with a given name.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// The list of all names can be found via [`PyArrayDescr::names`].</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// Equivalent to retrieving a single item from</span>
-    <span class="doccomment">/// [`np.dtype.fields`](https://numpy.org/doc/stable/reference/generated/numpy.dtype.fields.html).</span>
+    <span class="doccomment">/// Equivalent to retrieving a single item from [`numpy.dtype.fields`][dtype-fields].</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// [dtype-fields]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.fields.html</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_field</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span>(<span class="kw-2">&amp;</span><span class="ident">PyArrayDescr</span>, <span class="ident">usize</span>)<span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">has_fields</span>() {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PyValueError::new_err</span>(
-                <span class="string">&quot;cannot get field information: dtype has no fields&quot;</span>,
+                <span class="string">&quot;cannot get field information: type descriptor has no fields&quot;</span>,
             ));
         }
         <span class="kw">let</span> <span class="ident">dict</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="ident">PyDict::from_borrowed_ptr</span>(<span class="self">self</span>.<span class="ident">py</span>(), (<span class="kw-2">*</span><span class="self">self</span>.<span class="ident">as_dtype_ptr</span>()).<span class="ident">fields</span>) };
-        <span class="comment">// Panic-wise: numpy guarantees that fields are tuples of proper size and type</span>
+        <span class="comment">// NumPy guarantees that fields are tuples of proper size and type, so this should never panic.</span>
         <span class="kw">let</span> <span class="ident">tuple</span> <span class="op">=</span> <span class="ident">dict</span>
             .<span class="ident">get_item</span>(<span class="ident">name</span>)
             .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">PyIndexError::new_err</span>(<span class="ident">name</span>.<span class="ident">to_owned</span>()))<span class="question-mark">?</span>
             .<span class="ident">downcast</span>::<span class="op">&lt;</span><span class="ident">PyTuple</span><span class="op">&gt;</span>()
             .<span class="ident">unwrap</span>();
-        <span class="comment">// (note: we can&#39;t just extract the entire tuple since 3rd element can be a title)</span>
+        <span class="comment">// Note that we cannot just extract the entire tuple since the third element can be a title.</span>
         <span class="kw">let</span> <span class="ident">dtype</span> <span class="op">=</span> <span class="ident">FromPyObject::extract</span>(<span class="ident">tuple</span>.<span class="ident">as_ref</span>().<span class="ident">get_item</span>(<span class="number">0</span>).<span class="ident">unwrap</span>()).<span class="ident">unwrap</span>();
         <span class="kw">let</span> <span class="ident">offset</span> <span class="op">=</span> <span class="ident">FromPyObject::extract</span>(<span class="ident">tuple</span>.<span class="ident">as_ref</span>().<span class="ident">get_item</span>(<span class="number">1</span>).<span class="ident">unwrap</span>()).<span class="ident">unwrap</span>();
         <span class="prelude-val">Ok</span>((<span class="ident">dtype</span>, <span class="ident">offset</span>))
@@ -933,14 +1016,12 @@
 
 <span class="doccomment">/// Represents that a type can be an element of `PyArray`.</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// Currently, only integer/float/complex/object types are supported.</span>
-<span class="doccomment">/// If you come up with a nice implementation for some other types, we&#39;re happy to receive your PR :)</span>
-<span class="doccomment">/// You may refer to the [numpy document](https://numpy.org/doc/stable/reference/c-api/dtype.html#enumerated-types)</span>
-<span class="doccomment">/// for all types that numpy supports.</span>
+<span class="doccomment">/// Currently, only integer/float/complex/object types are supported. The [NumPy documentation][enumerated-types]</span>
+<span class="doccomment">/// list the other built-in types which we are not yet implemented.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// # Safety</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// A type `T` that implements this trait should be safe when managed in numpy</span>
+<span class="doccomment">/// A type `T` that implements this trait should be safe when managed by a NumPy</span>
 <span class="doccomment">/// array, thus implementing this trait is marked unsafe. Data types that don&#39;t</span>
 <span class="doccomment">/// contain Python objects (i.e., either the object type itself or record types</span>
 <span class="doccomment">/// containing object-type fields) are assumed to be trivially copyable, which</span>
@@ -956,7 +1037,10 @@
 <span class="doccomment">/// In other words, objects are always treated as `Py&lt;PyAny&gt;` (a.k.a. `PyObject`) by Python code,</span>
 <span class="doccomment">/// and only `Py&lt;PyAny&gt;` can be stored in a type safe manner.</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// You can however create `ndarray::Array&lt;Py&lt;T&gt;, D&gt;` and turn that into a NumPy array safely and efficiently using [`from_owned_object_array`][crate::PyArray::from_owned_object_array].</span>
+<span class="doccomment">/// You can however create [`Array&lt;Py&lt;T&gt;, D&gt;`][ndarray::Array] and turn that into a NumPy array</span>
+<span class="doccomment">/// safely and efficiently using [`from_owned_object_array`][crate::PyArray::from_owned_object_array].</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// [enumerated-types]: https://numpy.org/doc/stable/reference/c-api/dtype.html#enumerated-types</span>
 <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">trait</span> <span class="ident">Element</span>: <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">Send</span> {
     <span class="doccomment">/// Flag that indicates whether this type is trivially copyable.</span>
     <span class="doccomment">///</span>
@@ -967,7 +1051,7 @@
     <span class="doccomment">/// that contain object-type fields.</span>
     <span class="kw">const</span> <span class="ident">IS_COPY</span>: <span class="ident">bool</span>;
 
-    <span class="doccomment">/// Returns the associated array descriptor (&quot;dtype&quot;) for the given type.</span>
+    <span class="doccomment">/// Returns the associated type descriptor (&quot;dtype&quot;) for the given element type.</span>
     <span class="kw">fn</span> <span class="ident">get_dtype</span>(<span class="ident">py</span>: <span class="ident">Python</span>) -&gt; <span class="kw-2">&amp;</span><span class="ident">PyArrayDescr</span>;
 }
 
@@ -1035,14 +1119,17 @@
 }
 
 <span class="macro">impl_element_scalar!</span>(<span class="ident">bool</span> =&gt; <span class="ident">NPY_BOOL</span>);
+
 <span class="macro">impl_element_scalar!</span>(<span class="ident">i8</span>, <span class="ident">i16</span>, <span class="ident">i32</span>, <span class="ident">i64</span>);
 <span class="macro">impl_element_scalar!</span>(<span class="ident">u8</span>, <span class="ident">u16</span>, <span class="ident">u32</span>, <span class="ident">u64</span>);
+
 <span class="macro">impl_element_scalar!</span>(<span class="ident">f32</span> =&gt; <span class="ident">NPY_FLOAT</span>);
 <span class="macro">impl_element_scalar!</span>(<span class="ident">f64</span> =&gt; <span class="ident">NPY_DOUBLE</span>);
+
 <span class="macro">impl_element_scalar!</span>(<span class="ident">Complex32</span> =&gt; <span class="ident">NPY_CFLOAT</span>,
-    <span class="attribute">#[<span class="ident">doc</span> <span class="op">=</span> <span class="string">&quot;Complex type with `f32` components which maps to `np.csingle` (`np.complex64`).&quot;</span>]</span>);
+    <span class="attribute">#[<span class="ident">doc</span> <span class="op">=</span> <span class="string">&quot;Complex type with `f32` components which maps to `numpy.csingle` (`numpy.complex64`).&quot;</span>]</span>);
 <span class="macro">impl_element_scalar!</span>(<span class="ident">Complex64</span> =&gt; <span class="ident">NPY_CDOUBLE</span>,
-    <span class="attribute">#[<span class="ident">doc</span> <span class="op">=</span> <span class="string">&quot;Complex type with `f64` components which maps to `np.cdouble` (`np.complex128`).&quot;</span>]</span>);
+    <span class="attribute">#[<span class="ident">doc</span> <span class="op">=</span> <span class="string">&quot;Complex type with `f64` components which maps to `numpy.cdouble` (`numpy.complex128`).&quot;</span>]</span>);
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">target_pointer_width</span> <span class="op">=</span> <span class="string">&quot;32&quot;</span>, <span class="ident">target_pointer_width</span> <span class="op">=</span> <span class="string">&quot;64&quot;</span>))]</span>
 <span class="macro">impl_element_scalar!</span>(<span class="ident">usize</span>, <span class="ident">isize</span>);
@@ -1057,33 +1144,35 @@
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">tests</span> {
-    <span class="kw">use</span> <span class="ident">std::os::raw::c_int</span>;
+    <span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
 
-    <span class="kw">use</span> <span class="ident">pyo3</span>::{<span class="ident">py_run</span>, <span class="ident">types::PyDict</span>, <span class="ident">PyObject</span>};
+    <span class="kw">use</span> <span class="ident">pyo3::py_run</span>;
 
-    <span class="kw">use</span> <span class="kw">super</span>::{<span class="ident">dtype</span>, <span class="ident">Complex32</span>, <span class="ident">Complex64</span>, <span class="ident">Element</span>, <span class="ident">PyArrayDescr</span>};
-    <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::npyffi</span>::{<span class="ident">NPY_ALIGNED_STRUCT</span>, <span class="ident">NPY_ITEM_HASOBJECT</span>, <span class="ident">NPY_NEEDS_PYAPI</span>, <span class="ident">NPY_TYPES</span>};
+    <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::npyffi::NPY_NEEDS_PYAPI</span>;
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">test_dtype_new</span>() {
-        <span class="ident">pyo3::Python::with_gil</span>(<span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
+        <span class="ident">Python::with_gil</span>(<span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
             <span class="macro">assert_eq!</span>(<span class="ident">PyArrayDescr::new</span>(<span class="ident">py</span>, <span class="string">&quot;float64&quot;</span>).<span class="ident">unwrap</span>(), <span class="ident">dtype</span>::<span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span>(<span class="ident">py</span>));
-            <span class="kw">let</span> <span class="ident">d</span> <span class="op">=</span> <span class="ident">PyArrayDescr::new</span>(<span class="ident">py</span>, [(<span class="string">&quot;a&quot;</span>, <span class="string">&quot;O&quot;</span>), (<span class="string">&quot;b&quot;</span>, <span class="string">&quot;?&quot;</span>)].<span class="ident">as_ref</span>()).<span class="ident">unwrap</span>();
-            <span class="macro">assert_eq!</span>(<span class="ident">d</span>.<span class="ident">names</span>(), <span class="prelude-val">Some</span>(<span class="macro">vec!</span>[<span class="string">&quot;a&quot;</span>, <span class="string">&quot;b&quot;</span>]));
-            <span class="macro">assert!</span>(<span class="ident">d</span>.<span class="ident">has_object</span>());
-            <span class="macro">assert_eq!</span>(<span class="ident">d</span>.<span class="ident">get_field</span>(<span class="string">&quot;a&quot;</span>).<span class="ident">unwrap</span>().<span class="number">0</span>, <span class="ident">dtype</span>::<span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span>(<span class="ident">py</span>));
-            <span class="macro">assert_eq!</span>(<span class="ident">d</span>.<span class="ident">get_field</span>(<span class="string">&quot;b&quot;</span>).<span class="ident">unwrap</span>().<span class="number">0</span>, <span class="ident">dtype</span>::<span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>(<span class="ident">py</span>));
+
+            <span class="kw">let</span> <span class="ident">dt</span> <span class="op">=</span> <span class="ident">PyArrayDescr::new</span>(<span class="ident">py</span>, [(<span class="string">&quot;a&quot;</span>, <span class="string">&quot;O&quot;</span>), (<span class="string">&quot;b&quot;</span>, <span class="string">&quot;?&quot;</span>)].<span class="ident">as_ref</span>()).<span class="ident">unwrap</span>();
+            <span class="macro">assert_eq!</span>(<span class="ident">dt</span>.<span class="ident">names</span>(), <span class="prelude-val">Some</span>(<span class="macro">vec!</span>[<span class="string">&quot;a&quot;</span>, <span class="string">&quot;b&quot;</span>]));
+            <span class="macro">assert!</span>(<span class="ident">dt</span>.<span class="ident">has_object</span>());
+            <span class="macro">assert_eq!</span>(<span class="ident">dt</span>.<span class="ident">get_field</span>(<span class="string">&quot;a&quot;</span>).<span class="ident">unwrap</span>().<span class="number">0</span>, <span class="ident">dtype</span>::<span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span>(<span class="ident">py</span>));
+            <span class="macro">assert_eq!</span>(<span class="ident">dt</span>.<span class="ident">get_field</span>(<span class="string">&quot;b&quot;</span>).<span class="ident">unwrap</span>().<span class="number">0</span>, <span class="ident">dtype</span>::<span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>(<span class="ident">py</span>));
+
             <span class="macro">assert!</span>(<span class="ident">PyArrayDescr::new</span>(<span class="ident">py</span>, <span class="kw-2">&amp;</span><span class="number">123_usize</span>).<span class="ident">is_err</span>());
         });
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">test_dtype_names</span>() {
-        <span class="kw">fn</span> <span class="ident">type_name</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Element</span><span class="op">&gt;</span>(<span class="ident">py</span>: <span class="ident">pyo3::Python</span>) -&gt; <span class="kw-2">&amp;</span><span class="ident">str</span> {
+        <span class="kw">fn</span> <span class="ident">type_name</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Element</span><span class="op">&gt;</span>(<span class="ident">py</span>: <span class="ident">Python</span>) -&gt; <span class="kw-2">&amp;</span><span class="ident">str</span> {
             <span class="ident">dtype</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">py</span>).<span class="ident">typeobj</span>().<span class="ident">name</span>().<span class="ident">unwrap</span>()
         }
-        <span class="ident">pyo3::Python::with_gil</span>(<span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
+        <span class="ident">Python::with_gil</span>(<span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
             <span class="macro">assert_eq!</span>(<span class="ident">type_name</span>::<span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>(<span class="ident">py</span>), <span class="string">&quot;bool_&quot;</span>);
+
             <span class="macro">assert_eq!</span>(<span class="ident">type_name</span>::<span class="op">&lt;</span><span class="ident">i8</span><span class="op">&gt;</span>(<span class="ident">py</span>), <span class="string">&quot;int8&quot;</span>);
             <span class="macro">assert_eq!</span>(<span class="ident">type_name</span>::<span class="op">&lt;</span><span class="ident">i16</span><span class="op">&gt;</span>(<span class="ident">py</span>), <span class="string">&quot;int16&quot;</span>);
             <span class="macro">assert_eq!</span>(<span class="ident">type_name</span>::<span class="op">&lt;</span><span class="ident">i32</span><span class="op">&gt;</span>(<span class="ident">py</span>), <span class="string">&quot;int32&quot;</span>);
@@ -1094,13 +1183,16 @@
             <span class="macro">assert_eq!</span>(<span class="ident">type_name</span>::<span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>(<span class="ident">py</span>), <span class="string">&quot;uint64&quot;</span>);
             <span class="macro">assert_eq!</span>(<span class="ident">type_name</span>::<span class="op">&lt;</span><span class="ident">f32</span><span class="op">&gt;</span>(<span class="ident">py</span>), <span class="string">&quot;float32&quot;</span>);
             <span class="macro">assert_eq!</span>(<span class="ident">type_name</span>::<span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span>(<span class="ident">py</span>), <span class="string">&quot;float64&quot;</span>);
+
             <span class="macro">assert_eq!</span>(<span class="ident">type_name</span>::<span class="op">&lt;</span><span class="ident">Complex32</span><span class="op">&gt;</span>(<span class="ident">py</span>), <span class="string">&quot;complex64&quot;</span>);
             <span class="macro">assert_eq!</span>(<span class="ident">type_name</span>::<span class="op">&lt;</span><span class="ident">Complex64</span><span class="op">&gt;</span>(<span class="ident">py</span>), <span class="string">&quot;complex128&quot;</span>);
+
             <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">target_pointer_width</span> <span class="op">=</span> <span class="string">&quot;32&quot;</span>)]</span>
             {
                 <span class="macro">assert_eq!</span>(<span class="ident">type_name</span>::<span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>(<span class="ident">py</span>), <span class="string">&quot;uint32&quot;</span>);
                 <span class="macro">assert_eq!</span>(<span class="ident">type_name</span>::<span class="op">&lt;</span><span class="ident">isize</span><span class="op">&gt;</span>(<span class="ident">py</span>), <span class="string">&quot;int32&quot;</span>);
             }
+
             <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">target_pointer_width</span> <span class="op">=</span> <span class="string">&quot;64&quot;</span>)]</span>
             {
                 <span class="macro">assert_eq!</span>(<span class="ident">type_name</span>::<span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>(<span class="ident">py</span>), <span class="string">&quot;uint64&quot;</span>);
@@ -1111,7 +1203,7 @@
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">test_dtype_methods_scalar</span>() {
-        <span class="ident">pyo3::Python::with_gil</span>(<span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
+        <span class="ident">Python::with_gil</span>(<span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
             <span class="kw">let</span> <span class="ident">dt</span> <span class="op">=</span> <span class="ident">dtype</span>::<span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span>(<span class="ident">py</span>);
 
             <span class="macro">assert_eq!</span>(<span class="ident">dt</span>.<span class="ident">num</span>(), <span class="ident">NPY_TYPES::NPY_DOUBLE</span> <span class="kw">as</span> <span class="ident">c_int</span>);
@@ -1136,7 +1228,7 @@
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">test_dtype_methods_subarray</span>() {
-        <span class="ident">pyo3::Python::with_gil</span>(<span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
+        <span class="ident">Python::with_gil</span>(<span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
             <span class="kw">let</span> <span class="ident">locals</span> <span class="op">=</span> <span class="ident">PyDict::new</span>(<span class="ident">py</span>);
             <span class="macro">py_run!</span>(
                 <span class="ident">py</span>,
@@ -1171,7 +1263,7 @@
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">test_dtype_methods_record</span>() {
-        <span class="ident">pyo3::Python::with_gil</span>(<span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
+        <span class="ident">Python::with_gil</span>(<span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
             <span class="kw">let</span> <span class="ident">locals</span> <span class="op">=</span> <span class="ident">PyDict::new</span>(<span class="ident">py</span>);
             <span class="macro">py_run!</span>(
                 <span class="ident">py</span>,
