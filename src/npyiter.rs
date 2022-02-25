@@ -285,7 +285,6 @@ impl<'py, T: Element, I: IterMode> NpySingleIterBuilder<'py, T, I> {
 pub struct NpySingleIter<'py, T, I> {
     iterator: ptr::NonNull<NpyIter>,
     iternext: unsafe extern "C" fn(*mut NpyIter) -> c_int,
-    empty: bool,
     iter_size: npy_intp,
     dataptr: *mut *mut c_char,
     return_type: PhantomData<T>,
@@ -324,7 +323,6 @@ impl<'py, T, I> NpySingleIter<'py, T, I> {
             iterator,
             iternext,
             iter_size,
-            empty: iter_size == 0,
             dataptr,
             return_type: PhantomData,
             mode: PhantomData,
@@ -334,7 +332,7 @@ impl<'py, T, I> NpySingleIter<'py, T, I> {
     }
 
     fn iternext(&mut self) -> Option<*mut T> {
-        if self.empty {
+        if self.iter_size == 0 {
             None
         } else {
             // Note: This pointer is correct and doesn't need to be updated,
@@ -342,7 +340,10 @@ impl<'py, T, I> NpySingleIter<'py, T, I> {
             // and then transforming that into a reference, the value that dataptr
             // points to is being updated by iternext to point to the next value.
             let ret = unsafe { *self.dataptr as *mut T };
-            self.empty = unsafe { (self.iternext)(self.iterator.as_mut()) } == 0;
+            let empty = unsafe { (self.iternext)(self.iterator.as_mut()) } == 0;
+            debug_assert_ne!(self.iter_size, 0);
+            self.iter_size -= 1;
+            debug_assert!(self.iter_size > 0 || empty);
             Some(ret)
         }
     }
@@ -368,7 +369,13 @@ impl<'py, T: 'py> Iterator for NpySingleIter<'py, T, Readonly> {
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        (self.iter_size as usize, Some(self.iter_size as usize))
+        (self.len(), Some(self.len()))
+    }
+}
+
+impl<'py, T: 'py> ExactSizeIterator for NpySingleIter<'py, T, Readonly> {
+    fn len(&self) -> usize {
+        self.iter_size as usize
     }
 }
 
@@ -380,7 +387,13 @@ impl<'py, T: 'py> Iterator for NpySingleIter<'py, T, ReadWrite> {
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        (self.iter_size as usize, Some(self.iter_size as usize))
+        (self.len(), Some(self.len()))
+    }
+}
+
+impl<'py, T: 'py> ExactSizeIterator for NpySingleIter<'py, T, ReadWrite> {
+    fn len(&self) -> usize {
+        self.iter_size as usize
     }
 }
 
@@ -528,7 +541,6 @@ impl<'py, T: Element, S: MultiIterModeWithManyArrays> NpyMultiIterBuilder<'py, T
 pub struct NpyMultiIter<'py, T, S: MultiIterModeWithManyArrays> {
     iterator: ptr::NonNull<NpyIter>,
     iternext: unsafe extern "C" fn(*mut NpyIter) -> c_int,
-    empty: bool,
     iter_size: npy_intp,
     dataptr: *mut *mut c_char,
     marker: PhantomData<(T, S)>,
@@ -568,7 +580,6 @@ impl<'py, T, S: MultiIterModeWithManyArrays> NpyMultiIter<'py, T, S> {
             iterator,
             iternext,
             iter_size,
-            empty: iter_size == 0,
             dataptr,
             marker: PhantomData,
             arrays,
@@ -596,7 +607,7 @@ macro_rules! impl_multi_iter {
             type Item = ($($ty,)+);
 
             fn next(&mut self) -> Option<Self::Item> {
-                if self.empty {
+                if self.iter_size == 0 {
                     None
                 } else {
                     // Note: This pointer is correct and doesn't need to be updated,
@@ -605,13 +616,22 @@ macro_rules! impl_multi_iter {
                     // points to is being updated by iternext to point to the next value.
                     let ($($ptr,)+) = unsafe { $expand::<T>(self.dataptr) };
                     let retval = Some(unsafe { $deref });
-                    self.empty = unsafe { (self.iternext)(self.iterator.as_mut()) } == 0;
+                    let empty = unsafe { (self.iternext)(self.iterator.as_mut()) } == 0;
+                    debug_assert_ne!(self.iter_size, 0);
+                    self.iter_size -= 1;
+                    debug_assert!(self.iter_size > 0 || empty);
                     retval
                 }
             }
 
             fn size_hint(&self) -> (usize, Option<usize>) {
-                (self.iter_size as usize, Some(self.iter_size as usize))
+                (self.len(), Some(self.len()))
+            }
+        }
+
+        impl<'py, T: 'py> ExactSizeIterator for NpyMultiIter<'py, T, $structure> {
+            fn len(&self) -> usize {
+                self.iter_size as usize
             }
         }
     };
