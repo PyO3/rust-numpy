@@ -7,10 +7,6 @@ def test_axpy():
     y = np.array([3.0, 3.0, 3.0])
     z = axpy(3.0, x, y)
     np.testing.assert_array_almost_equal(z, np.array([6.0, 9.0, 12.0]))
-    x = np.array([1.0, 2.0, 3.0, 4.0])
-    y = np.array([3.0, 3.0, 3.0, 3.0])
-    z = axpy(3.0, x, y)
-    np.testing.assert_array_almost_equal(z, np.array([6.0, 9.0, 12.0, 15.0]))
 
 
 def test_mult():
@@ -26,5 +22,5 @@ def test_conj():
 
 def test_extract():
     x = np.arange(5.0)
-    d = { "x": x }
+    d = {"x": x}
     np.testing.assert_almost_equal(extract(d), 10.0)

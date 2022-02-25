@@ -8,17 +8,17 @@ use pyo3::{
 
 #[pymodule]
 fn rust_ext(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
-    // immutable example
+    // example using immutable borrows producing a new array
     fn axpy(a: f64, x: ArrayViewD<'_, f64>, y: ArrayViewD<'_, f64>) -> ArrayD<f64> {
         a * &x + &y
     }
 
-    // mutable example (no return)
+    // example using a mutable borrow to modify an array in-place
     fn mult(a: f64, mut x: ArrayViewMutD<'_, f64>) {
         x *= a;
     }
 
-    // complex example
+    // example using complex numbers
     fn conj(x: ArrayViewD<'_, Complex64>) -> ArrayD<Complex64> {
         x.map(|c| c.conj())
     }
@@ -56,8 +56,8 @@ fn rust_ext(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
         conj(x.as_array()).into_pyarray(py)
     }
 
+    // example of how to extract an array from a dictionary
     #[pyfn(m)]
-    #[pyo3(name = "extract")]
     fn extract(d: &PyDict) -> f64 {
         let x = d
             .get_item("x")

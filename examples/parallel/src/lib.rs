@@ -1,7 +1,7 @@
 // We need to link `blas_src` directly, c.f. https://github.com/rust-ndarray/ndarray#how-to-enable-blas-integration
 extern crate blas_src;
 
-use ndarray::Zip;
+use numpy::ndarray::Zip;
 use numpy::{IntoPyArray, PyArray1, PyReadonlyArray1, PyReadonlyArray2};
 use pyo3::{pymodule, types::PyModule, PyResult, Python};
 
