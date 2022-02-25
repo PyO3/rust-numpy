@@ -3,6 +3,12 @@
 //! This module exposes two iterators:
 //! [NpySingleIter](./struct.NpySingleIter.html) and
 //! [NpyMultiIter](./struct.NpyMultiIter.html).
+#![deprecated(
+    note = "The wrappers of the array iterator API are deprecated, please use ndarray's iterators like `Lanes` and `Zip` instead."
+)]
+
+use pyo3::{prelude::*, PyNativeType};
+
 use crate::npyffi::{
     array::PY_ARRAY_API,
     npy_intp, npy_uint32,
@@ -14,7 +20,6 @@ use crate::npyffi::{
     NPY_ITER_ZEROSIZE_OK,
 };
 use crate::{Element, PyArray, PyArrayDyn, PyReadonlyArray};
-use pyo3::{prelude::*, PyNativeType};
 
 use std::marker::PhantomData;
 use std::os::raw::*;

@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use ndarray::array;
 use numpy::{NpyMultiIterBuilder, NpySingleIterBuilder, PyArray};
 use pyo3::PyResult;
