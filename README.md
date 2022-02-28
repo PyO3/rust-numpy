@@ -15,8 +15,8 @@ Rust bindings for the NumPy C-API.
 ## Requirements
 - Rust >= 1.48.0
   - Basically, our MSRV follows the one of [PyO3](https://github.com/PyO3/pyo3)
-- Python >= 3.6
-  - Python 3.5 support is dropped from 0.13
+- Python >= 3.7
+  - Python 3.6 support was dropped from 0.16
 - Some Rust libraries
   - [ndarray](https://github.com/rust-ndarray/ndarray) for Rust-side matrix library
   - [PyO3](https://github.com/PyO3/pyo3) for Python bindings
@@ -70,16 +70,16 @@ fn rust_ext(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     ) -> &'py PyArrayDyn<f64> {
         let x = x.as_array();
         let y = y.as_array();
-        axpy(a, x, y).into_pyarray(py)
+        let z = axpy(a, x, y);
+        z.into_pyarray(py)
     }
 
     // wrapper of `mult`
     #[pyfn(m)]
     #[pyo3(name = "mult")]
-    fn mult_py(_py: Python<'_>, a: f64, x: &PyArrayDyn<f64>) -> PyResult<()> {
+    fn mult_py(_py: Python<'_>, a: f64, x: &PyArrayDyn<f64>) {
         let x = unsafe { x.as_array_mut() };
         mult(a, x);
-        Ok(())
     }
 
     Ok(())

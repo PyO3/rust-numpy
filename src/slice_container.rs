@@ -1,11 +1,13 @@
 use std::{mem, slice};
 
 use ndarray::{ArrayBase, Dimension, OwnedRepr};
-use pyo3::class::impl_::{PyClassImpl, ThreadCheckerStub};
-use pyo3::pyclass::PyClass;
-use pyo3::pyclass_slots::PyClassDummySlot;
-use pyo3::type_object::{LazyStaticType, PyTypeInfo};
-use pyo3::{ffi, types::PyAny, PyCell, Python};
+use pyo3::{
+    ffi,
+    impl_::pyclass::{PyClassDummySlot, PyClassImpl, PyClassItems, ThreadCheckerStub},
+    pyclass::PyClass,
+    type_object::{LazyStaticType, PyTypeInfo},
+    PyAny, PyCell, Python,
+};
 
 /// Utility type to safely store `Box<[_]>` or `Vec<_>` on the Python heap
 pub(crate) struct PySliceContainer {
@@ -95,6 +97,8 @@ impl PyClassImpl for PySliceContainer {
     type BaseType = PyAny;
     type Layout = PyCell<Self>;
     type ThreadChecker = ThreadCheckerStub<Self>;
+
+    fn for_all_items(_visitor: &mut dyn FnMut(&PyClassItems)) {}
 }
 
 unsafe impl PyTypeInfo for PySliceContainer {

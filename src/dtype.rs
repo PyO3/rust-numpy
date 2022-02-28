@@ -498,13 +498,15 @@ mod tests {
     #[test]
     fn test_dtype_new() {
         Python::with_gil(|py| {
-            assert_eq!(PyArrayDescr::new(py, "float64").unwrap(), dtype::<f64>(py));
+            assert!(PyArrayDescr::new(py, "float64")
+                .unwrap()
+                .is(dtype::<f64>(py)));
 
             let dt = PyArrayDescr::new(py, [("a", "O"), ("b", "?")].as_ref()).unwrap();
             assert_eq!(dt.names(), Some(vec!["a", "b"]));
             assert!(dt.has_object());
-            assert_eq!(dt.get_field("a").unwrap().0, dtype::<PyObject>(py));
-            assert_eq!(dt.get_field("b").unwrap().0, dtype::<bool>(py));
+            assert!(dt.get_field("a").unwrap().0.is(dtype::<PyObject>(py)));
+            assert!(dt.get_field("b").unwrap().0.is(dtype::<bool>(py)));
 
             assert!(PyArrayDescr::new(py, &123_usize).is_err());
         });

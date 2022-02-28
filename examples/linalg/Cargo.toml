@@ -9,6 +9,6 @@ name = "rust_linalg"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { version = "0.15", features = ["extension-module"] }
+pyo3 = { version = "0.16", features = ["extension-module"] }
 numpy = { path = "../.." }
 ndarray-linalg = { version = "0.14.1", features = ["openblas-system"] }
