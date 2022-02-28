@@ -2311,7 +2311,7 @@
     <span class="doccomment">///</span>
     <span class="doccomment">///     let pyarray = PyArray::from_owned_object_array(py, array);</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">///     assert!(pyarray.readonly().get(0).unwrap().as_ref(py).is_instance::&lt;CustomElement&gt;().unwrap());</span>
+    <span class="doccomment">///     assert!(pyarray.readonly().get(0).unwrap().as_ref(py).is_instance_of::&lt;CustomElement&gt;().unwrap());</span>
     <span class="doccomment">/// });</span>
     <span class="doccomment">/// ```</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_owned_object_array</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>, <span class="ident">arr</span>: <span class="ident">Array</span><span class="op">&lt;</span><span class="ident">Py</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">D</span><span class="op">&gt;</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="self">Self</span> {

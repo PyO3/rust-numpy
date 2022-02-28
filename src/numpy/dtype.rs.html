@@ -653,6 +653,8 @@
 <span id="652">652</span>
 <span id="653">653</span>
 <span id="654">654</span>
+<span id="655">655</span>
+<span id="656">656</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::mem::size_of</span>;
 <span class="kw">use</span> <span class="ident">std::os::raw</span>::{
     <span class="ident">c_char</span>, <span class="ident">c_int</span>, <span class="ident">c_long</span>, <span class="ident">c_longlong</span>, <span class="ident">c_short</span>, <span class="ident">c_uint</span>, <span class="ident">c_ulong</span>, <span class="ident">c_ulonglong</span>, <span class="ident">c_ushort</span>,
@@ -1153,13 +1155,15 @@
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">test_dtype_new</span>() {
         <span class="ident">Python::with_gil</span>(<span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
-            <span class="macro">assert_eq!</span>(<span class="ident">PyArrayDescr::new</span>(<span class="ident">py</span>, <span class="string">&quot;float64&quot;</span>).<span class="ident">unwrap</span>(), <span class="ident">dtype</span>::<span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span>(<span class="ident">py</span>));
+            <span class="macro">assert!</span>(<span class="ident">PyArrayDescr::new</span>(<span class="ident">py</span>, <span class="string">&quot;float64&quot;</span>)
+                .<span class="ident">unwrap</span>()
+                .<span class="ident">is</span>(<span class="ident">dtype</span>::<span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span>(<span class="ident">py</span>)));
 
             <span class="kw">let</span> <span class="ident">dt</span> <span class="op">=</span> <span class="ident">PyArrayDescr::new</span>(<span class="ident">py</span>, [(<span class="string">&quot;a&quot;</span>, <span class="string">&quot;O&quot;</span>), (<span class="string">&quot;b&quot;</span>, <span class="string">&quot;?&quot;</span>)].<span class="ident">as_ref</span>()).<span class="ident">unwrap</span>();
             <span class="macro">assert_eq!</span>(<span class="ident">dt</span>.<span class="ident">names</span>(), <span class="prelude-val">Some</span>(<span class="macro">vec!</span>[<span class="string">&quot;a&quot;</span>, <span class="string">&quot;b&quot;</span>]));
             <span class="macro">assert!</span>(<span class="ident">dt</span>.<span class="ident">has_object</span>());
-            <span class="macro">assert_eq!</span>(<span class="ident">dt</span>.<span class="ident">get_field</span>(<span class="string">&quot;a&quot;</span>).<span class="ident">unwrap</span>().<span class="number">0</span>, <span class="ident">dtype</span>::<span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span>(<span class="ident">py</span>));
-            <span class="macro">assert_eq!</span>(<span class="ident">dt</span>.<span class="ident">get_field</span>(<span class="string">&quot;b&quot;</span>).<span class="ident">unwrap</span>().<span class="number">0</span>, <span class="ident">dtype</span>::<span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>(<span class="ident">py</span>));
+            <span class="macro">assert!</span>(<span class="ident">dt</span>.<span class="ident">get_field</span>(<span class="string">&quot;a&quot;</span>).<span class="ident">unwrap</span>().<span class="number">0</span>.<span class="ident">is</span>(<span class="ident">dtype</span>::<span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span>(<span class="ident">py</span>)));
+            <span class="macro">assert!</span>(<span class="ident">dt</span>.<span class="ident">get_field</span>(<span class="string">&quot;b&quot;</span>).<span class="ident">unwrap</span>().<span class="number">0</span>.<span class="ident">is</span>(<span class="ident">dtype</span>::<span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>(<span class="ident">py</span>)));
 
             <span class="macro">assert!</span>(<span class="ident">PyArrayDescr::new</span>(<span class="ident">py</span>, <span class="kw-2">&amp;</span><span class="number">123_usize</span>).<span class="ident">is_err</span>());
         });
