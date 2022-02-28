@@ -38,8 +38,8 @@ name = "rust_ext"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { version = "0.15", features = ["extension-module"] }
-numpy = "0.15"
+pyo3 = { version = "0.16", features = ["extension-module"] }
+numpy = "0.16"
 ```
 
 ```rust
@@ -93,8 +93,8 @@ fn rust_ext(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
 name = "numpy-test"
 
 [dependencies]
-pyo3 = { version = "0.15", features = ["auto-initialize"] }
-numpy = "0.15"
+pyo3 = { version = "0.16", features = ["auto-initialize"] }
+numpy = "0.16"
 ```
 
 ```rust
@@ -132,7 +132,7 @@ on anything but that exact range. It can therefore be necessary to manually unif
 For example, if you specify the following dependencies
 
 ```toml
-numpy = "0.15"
+numpy = "0.16"
 ndarray = "0.13"
 ```
 

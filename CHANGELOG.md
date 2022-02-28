@@ -1,6 +1,8 @@
 # Changelog
 
 - Unreleased
+
+- v0.16.0
   - Bump PyO3 version to 0.16 ([#259](https://github.com/PyO3/rust-numpy/pull/212))
   - Support object arrays ([#216](https://github.com/PyO3/rust-numpy/pull/216))
   - Support borrowing arrays that are part of other Python objects via `PyArray::borrow_from_array` ([#230](https://github.com/PyO3/rust-numpy/pull/216))
