@@ -394,12 +394,6 @@ pub unsafe fn PyArray_CheckExact(py: Python, op: *mut PyObject) -> c_int {
     (ffi::Py_TYPE(op) == PY_ARRAY_API.get_type_object(py, NpyTypes::PyArray_Type)) as _
 }
 
-// these are under `#if NPY_USE_PYMEM == 1` which seems to be always defined as 1
-pub use pyo3::ffi::{
-    PyMem_RawFree as PyArray_free, PyMem_RawMalloc as PyArray_malloc,
-    PyMem_RawRealloc as PyArray_realloc,
-};
-
 #[cfg(test)]
 mod tests {
     use super::PY_ARRAY_API;
