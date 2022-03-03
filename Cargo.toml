@@ -1,11 +1,11 @@
 [package]
 name = "numpy"
-version = "0.15.1"
+version = "0.16.0"
 authors = [
     "The rust-numpy Project Developers",
     "PyO3 Project and Contributors <https://github.com/PyO3>"
 ]
-description = "Rust bindings of NumPy C-API"
+description = "PyO3-based Rust bindings of the NumPy C-API"
 documentation = "https://docs.rs/numpy"
 edition = "2018"
 rust-version = "1.48"
