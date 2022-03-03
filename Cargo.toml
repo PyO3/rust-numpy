@@ -21,9 +21,6 @@ num-traits = "0.2"
 ndarray = ">= 0.13, < 0.16"
 pyo3 = { version = "0.16", default-features = false }
 
-[build-dependencies]
-pyo3-build-config = "0.16"
-
 [dev-dependencies]
 pyo3 = { version = "0.16", features = ["auto-initialize"] }
 
