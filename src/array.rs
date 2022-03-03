@@ -20,9 +20,10 @@ use pyo3::{
 };
 
 use crate::convert::{ArrayExt, IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
-use crate::dtype::Element;
+use crate::dtype::{Element, PyArrayDescr};
 use crate::error::{DimensionalityError, FromVecError, NotContiguousError, TypeError};
 use crate::npyffi::{self, npy_intp, NPY_ORDER, PY_ARRAY_API};
+use crate::npyiter::{NpySingleIter, NpySingleIterBuilder, ReadWrite};
 use crate::readonly::PyReadonlyArray;
 use crate::slice_container::PySliceContainer;
 
@@ -186,7 +187,7 @@ impl<T, D> PyArray<T, D> {
     ///    assert!(dtype.is_equiv_to(numpy::dtype::<i32>(py)));
     /// });
     /// ```
-    pub fn dtype(&self) -> &crate::PyArrayDescr {
+    pub fn dtype(&self) -> &PyArrayDescr {
         let descr_ptr = unsafe { (*self.as_array_ptr()).descr };
         unsafe { pyo3::FromPyPointer::from_borrowed_ptr(self.py(), descr_ptr as _) }
     }
@@ -1073,10 +1074,13 @@ impl<T: Element> PyArray<T, Ix1> {
 
     /// Iterates all elements of this array.
     /// See [NpySingleIter](../npyiter/struct.NpySingleIter.html) for more.
-    pub fn iter<'py>(
-        &'py self,
-    ) -> PyResult<crate::NpySingleIter<'py, T, crate::npyiter::ReadWrite>> {
-        crate::NpySingleIterBuilder::readwrite(self).build()
+    ///
+    /// # Safety
+    ///
+    /// The iterator will produce mutable references into the array which must not be
+    /// aliased by other references for the life time of the iterator.
+    pub unsafe fn iter<'py>(&'py self) -> PyResult<NpySingleIter<'py, T, ReadWrite>> {
+        NpySingleIterBuilder::readwrite(self).build()
     }
 
     fn resize_<D: IntoDimension>(
