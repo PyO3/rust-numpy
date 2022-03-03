@@ -1,9 +1,14 @@
 //! Low-Level binding for [Array API](https://numpy.org/doc/stable/reference/c-api/array.html)
-use libc::FILE;
+//!
+//! Note that NumPy's low-level allocation functions `PyArray_{malloc,realloc,free}` are not part of this module.
+//! The reason is that they would be re-exports of the `PyMem_Raw{Malloc,Realloc,Free}` functions from PyO3,
+//! but those are not unconditionally exported, i.e. they are not available when using the limited Python C-API.
+
 use std::cell::Cell;
 use std::os::raw::*;
 use std::ptr::null;
 
+use libc::FILE;
 use pyo3::ffi::{self, PyObject, PyTypeObject};
 
 use crate::npyffi::*;
@@ -393,12 +398,6 @@ pub unsafe fn PyArray_Check(py: Python, op: *mut PyObject) -> c_int {
 pub unsafe fn PyArray_CheckExact(py: Python, op: *mut PyObject) -> c_int {
     (ffi::Py_TYPE(op) == PY_ARRAY_API.get_type_object(py, NpyTypes::PyArray_Type)) as _
 }
-
-// these are under `#if NPY_USE_PYMEM == 1` which seems to be always defined as 1
-pub use pyo3::ffi::{
-    PyMem_RawFree as PyArray_free, PyMem_RawMalloc as PyArray_malloc,
-    PyMem_RawRealloc as PyArray_realloc,
-};
 
 #[cfg(test)]
 mod tests {
