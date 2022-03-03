@@ -1,6 +1,8 @@
+#![allow(deprecated)]
+
 use ndarray::array;
-use numpy::{NpyMultiIterBuilder, NpySingleIterBuilder, PyArray};
-use pyo3::PyResult;
+use numpy::{pyarray, NpyMultiIterBuilder, NpySingleIterBuilder, PyArray};
+use pyo3::{PyResult, Python};
 
 macro_rules! assert_approx_eq {
     ($x: expr, $y: expr) => {
@@ -93,4 +95,49 @@ fn multiiter_rw() -> PyResult<()> {
 
         Ok(())
     })
+}
+
+#[test]
+fn single_iter_size_hint_len() {
+    Python::with_gil(|py| {
+        let arr = pyarray![py, [0, 1], [2, 3], [4, 5]];
+
+        let mut iter = NpySingleIterBuilder::readonly(arr.readonly())
+            .build()
+            .unwrap();
+
+        for len in (1..=6).rev() {
+            assert_eq!(iter.len(), len);
+            assert_eq!(iter.size_hint(), (len, Some(len)));
+            assert!(iter.next().is_some());
+        }
+
+        assert_eq!(iter.len(), 0);
+        assert_eq!(iter.size_hint(), (0, Some(0)));
+        assert!(iter.next().is_none());
+    });
+}
+
+#[test]
+fn multi_iter_size_hint_len() {
+    Python::with_gil(|py| {
+        let arr1 = pyarray![py, [0, 1], [2, 3], [4, 5]];
+        let arr2 = pyarray![py, [0, 0], [0, 0], [0, 0]];
+
+        let mut iter = NpyMultiIterBuilder::new()
+            .add_readonly(arr1.readonly())
+            .add_readonly(arr2.readonly())
+            .build()
+            .unwrap();
+
+        for len in (1..=6).rev() {
+            assert_eq!(iter.len(), len);
+            assert_eq!(iter.size_hint(), (len, Some(len)));
+            assert!(iter.next().is_some());
+        }
+
+        assert_eq!(iter.len(), 0);
+        assert_eq!(iter.size_hint(), (0, Some(0)));
+        assert!(iter.next().is_none());
+    });
 }

@@ -1,8 +1,11 @@
 //! Readonly arrays
-use crate::npyffi::NPY_ARRAY_WRITEABLE;
-use crate::{Element, NotContiguousError, NpyIndex, PyArray};
 use ndarray::{ArrayView, Dimension, Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};
 use pyo3::{prelude::*, types::PyAny, AsPyPointer};
+
+use crate::npyffi::NPY_ARRAY_WRITEABLE;
+#[allow(deprecated)]
+use crate::npyiter::{NpySingleIter, NpySingleIterBuilder, Readonly};
+use crate::{Element, NotContiguousError, NpyIndex, PyArray};
 
 /// Readonly reference of [`PyArray`](../array/struct.PyArray.html).
 ///
@@ -135,8 +138,12 @@ impl<'py, T: Element, D: Dimension> PyReadonlyArray<'py, T, D> {
 
     /// Iterates all elements of this array.
     /// See [NpySingleIter](../npyiter/struct.NpySingleIter.html) for more.
-    pub fn iter(self) -> PyResult<crate::NpySingleIter<'py, T, crate::npyiter::Readonly>> {
-        crate::NpySingleIterBuilder::readonly(self).build()
+    #[deprecated(
+        note = "The wrappers of the array iterator API are deprecated, please use ndarray's `ArrayBase::iter` instead."
+    )]
+    #[allow(deprecated)]
+    pub fn iter(self) -> PyResult<NpySingleIter<'py, T, Readonly>> {
+        NpySingleIterBuilder::readonly(self).build()
     }
 
     pub(crate) fn destruct(self) -> (&'py PyArray<T, D>, bool) {

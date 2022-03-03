@@ -7,6 +7,7 @@
   - Fixed downcasting ignoring element type and dimensionality ([#265](https://github.com/PyO3/rust-numpy/pull/265))
   - `PyArray::new` is now `unsafe`, as it produces uninitialized arrays ([#220](https://github.com/PyO3/rust-numpy/pull/220))
   - `PyArray::iter`, `NpySingleIterBuilder::readwrite` and `NpyMultiIterBuilder::add_readwrite` are now `unsafe`, as they allow aliasing mutable references to be created ([#278/](https://github.com/PyO3/rust-numpy/pull/278))
+  - The `npyiter` module is deprecated as rust-ndarray's facilities for iteration are more flexible and performant ([#280](https://github.com/PyO3/rust-numpy/pull/280))
   - `PyArray::from_exact_iter` does not unsoundly trust `ExactSizeIterator::len` any more ([#262](https://github.com/PyO3/rust-numpy/pull/262))
   - `PyArray::as_cell_slice` was removed as it unsoundly interacts with `PyReadonlyArray` allowing safe code to violate aliasing rules ([#260](https://github.com/PyO3/rust-numpy/pull/260))
   - `rayon` feature is now removed, and directly specifying the feature via `ndarray` dependency is recommended ([#250](https://github.com/PyO3/rust-numpy/pull/250))

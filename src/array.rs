@@ -23,6 +23,7 @@ use crate::convert::{ArrayExt, IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
 use crate::dtype::{Element, PyArrayDescr};
 use crate::error::{DimensionalityError, FromVecError, NotContiguousError, TypeError};
 use crate::npyffi::{self, npy_intp, NPY_ORDER, PY_ARRAY_API};
+#[allow(deprecated)]
 use crate::npyiter::{NpySingleIter, NpySingleIterBuilder, ReadWrite};
 use crate::readonly::PyReadonlyArray;
 use crate::slice_container::PySliceContainer;
@@ -1079,6 +1080,10 @@ impl<T: Element> PyArray<T, Ix1> {
     ///
     /// The iterator will produce mutable references into the array which must not be
     /// aliased by other references for the life time of the iterator.
+    #[deprecated(
+        note = "The wrappers of the array iterator API are deprecated, please use ndarray's `ArrayBase::iter_mut` instead."
+    )]
+    #[allow(deprecated)]
     pub unsafe fn iter<'py>(&'py self) -> PyResult<NpySingleIter<'py, T, ReadWrite>> {
         NpySingleIterBuilder::readwrite(self).build()
     }
