@@ -1,4 +1,4 @@
-use numpy::{array, dot, einsum, inner, pyarray, Ix2, PyArray1};
+use numpy::{array, dot, einsum, inner, pyarray, PyArray0, PyArray1, PyArray2};
 use pyo3::Python;
 
 #[test]
@@ -6,11 +6,11 @@ fn test_dot() {
     Python::with_gil(|py| {
         let a = pyarray![py, [1, 0], [0, 1]];
         let b = pyarray![py, [4, 1], [2, 2]];
-        let c = dot(a, b).unwrap();
+        let c: &PyArray2<_> = dot(a, b).unwrap();
         assert_eq!(c.readonly().as_array(), array![[4, 1], [2, 2]]);
 
         let a = pyarray![py, 1, 2, 3];
-        let err = dot::<_, _, _, Ix2>(a, b).unwrap_err();
+        let err = dot::<_, _, _, &PyArray2<_>>(a, b).unwrap_err();
         assert!(err.to_string().contains("not aligned"), "{}", err);
     });
 }
@@ -20,16 +20,16 @@ fn test_inner() {
     Python::with_gil(|py| {
         let a = pyarray![py, 1, 2, 3];
         let b = pyarray![py, 0, 1, 0];
-        let c = inner(a, b).unwrap();
+        let c: &PyArray0<_> = inner(a, b).unwrap();
         assert_eq!(c.readonly().as_array(), ndarray::arr0(2));
 
         let a = pyarray![py, [1, 0], [0, 1]];
         let b = pyarray![py, [4, 1], [2, 2]];
-        let c = inner(a, b).unwrap();
+        let c: &PyArray2<_> = inner(a, b).unwrap();
         assert_eq!(c.readonly().as_array(), array![[4, 2], [1, 2]]);
 
         let a = pyarray![py, 1, 2, 3];
-        let err = inner::<_, _, _, Ix2>(a, b).unwrap_err();
+        let err = inner::<_, _, _, &PyArray2<_>>(a, b).unwrap_err();
         assert!(err.to_string().contains("not aligned"), "{}", err);
     });
 }
