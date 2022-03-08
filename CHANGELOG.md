@@ -1,6 +1,8 @@
 # Changelog
 
 - Unreleased
+
+- v0.16.1
   - Fix build when PyO3's `multiple-pymethods` feature is used. ([#288](https://github.com/PyO3/rust-numpy/pull/288))
 
 - v0.16.0
