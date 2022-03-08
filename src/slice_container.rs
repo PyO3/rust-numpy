@@ -1,15 +1,10 @@
 use std::{mem, slice};
 
 use ndarray::{ArrayBase, Dimension, OwnedRepr};
-use pyo3::{
-    ffi,
-    impl_::pyclass::{PyClassDummySlot, PyClassImpl, PyClassItems, ThreadCheckerStub},
-    pyclass::PyClass,
-    type_object::{LazyStaticType, PyTypeInfo},
-    PyAny, PyCell, Python,
-};
+use pyo3::pyclass;
 
 /// Utility type to safely store `Box<[_]>` or `Vec<_>` on the Python heap
+#[pyclass]
 pub(crate) struct PySliceContainer {
     ptr: *mut u8,
     len: usize,
@@ -82,34 +77,5 @@ impl Drop for PySliceContainer {
         unsafe {
             (self.drop)(self.ptr, self.len, self.cap);
         }
-    }
-}
-
-impl PyClass for PySliceContainer {
-    type Dict = PyClassDummySlot;
-    type WeakRef = PyClassDummySlot;
-    type BaseNativeType = PyAny;
-}
-
-impl PyClassImpl for PySliceContainer {
-    const DOC: &'static str = "Memory store for a PyArray backed by a Box<[_]> or a Vec<_> \0";
-
-    type BaseType = PyAny;
-    type Layout = PyCell<Self>;
-    type ThreadChecker = ThreadCheckerStub<Self>;
-
-    fn for_all_items(_visitor: &mut dyn FnMut(&PyClassItems)) {}
-}
-
-unsafe impl PyTypeInfo for PySliceContainer {
-    type AsRefTarget = PyCell<Self>;
-
-    const NAME: &'static str = "PySliceContainer";
-    const MODULE: Option<&'static str> = Some("_rust_numpy");
-
-    #[inline]
-    fn type_object_raw(py: Python) -> *mut ffi::PyTypeObject {
-        static TYPE_OBJECT: LazyStaticType = LazyStaticType::new();
-        TYPE_OBJECT.get_or_init::<Self>(py)
     }
 }

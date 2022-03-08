@@ -121,7 +121,7 @@ unsafe impl<T: Element, D: Dimension> PyTypeInfo for PyArray<T, D> {
     type AsRefTarget = Self;
 
     const NAME: &'static str = "PyArray<T, D>";
-    const MODULE: ::std::option::Option<&'static str> = Some("numpy");
+    const MODULE: Option<&'static str> = Some("numpy");
 
     #[inline]
     fn type_object_raw(py: Python) -> *mut ffi::PyTypeObject {
