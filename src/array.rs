@@ -1133,8 +1133,10 @@ impl<T: Element> PyArray<T, Ix2> {
     /// ```
     pub fn from_vec2<'py>(py: Python<'py>, v: &[Vec<T>]) -> Result<&'py Self, FromVecError> {
         let last_len = v.last().map_or(0, |v| v.len());
-        if v.iter().any(|v| v.len() != last_len) {
-            return Err(FromVecError::new(v.len(), last_len));
+        for v in v {
+            if v.len() != last_len {
+                return Err(FromVecError::new(v.len(), last_len));
+            }
         }
         let dims = [v.len(), last_len];
         unsafe {
@@ -1171,12 +1173,18 @@ impl<T: Element> PyArray<T, Ix3> {
     /// ```
     pub fn from_vec3<'py>(py: Python<'py>, v: &[Vec<Vec<T>>]) -> Result<&'py Self, FromVecError> {
         let len2 = v.last().map_or(0, |v| v.len());
-        if v.iter().any(|v| v.len() != len2) {
-            return Err(FromVecError::new(v.len(), len2));
+        for v in v {
+            if v.len() != len2 {
+                return Err(FromVecError::new(v.len(), len2));
+            }
         }
         let len3 = v.last().map_or(0, |v| v.last().map_or(0, |v| v.len()));
-        if v.iter().any(|v| v.iter().any(|v| v.len() != len3)) {
-            return Err(FromVecError::new(v.len(), len3));
+        for v in v {
+            for v in v {
+                if v.len() != len3 {
+                    return Err(FromVecError::new(v.len(), len3));
+                }
+            }
         }
         let dims = [v.len(), len2, len3];
         unsafe {
