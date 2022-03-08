@@ -51,7 +51,7 @@ unsafe impl PyTypeInfo for PyArrayDescr {
     type AsRefTarget = Self;
 
     const NAME: &'static str = "PyArrayDescr";
-    const MODULE: ::std::option::Option<&'static str> = Some("numpy");
+    const MODULE: Option<&'static str> = Some("numpy");
 
     #[inline]
     fn type_object_raw(py: Python) -> *mut ffi::PyTypeObject {

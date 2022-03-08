@@ -1,11 +1,12 @@
 # Changelog
 
 - Unreleased
+  - Fix build when PyO3's `multiple-pymethods` feature is used. ([#288](https://github.com/PyO3/rust-numpy/pull/288))
 
 - v0.16.0
-  - Bump PyO3 version to 0.16 ([#259](https://github.com/PyO3/rust-numpy/pull/212))
+  - Bump PyO3 version to 0.16 ([#259](https://github.com/PyO3/rust-numpy/pull/259))
   - Support object arrays ([#216](https://github.com/PyO3/rust-numpy/pull/216))
-  - Support borrowing arrays that are part of other Python objects via `PyArray::borrow_from_array` ([#230](https://github.com/PyO3/rust-numpy/pull/216))
+  - Support borrowing arrays that are part of other Python objects via `PyArray::borrow_from_array` ([#230](https://github.com/PyO3/rust-numpy/pull/230))
   - Fixed downcasting ignoring element type and dimensionality ([#265](https://github.com/PyO3/rust-numpy/pull/265))
   - `PyArray::new` is now `unsafe`, as it produces uninitialized arrays ([#220](https://github.com/PyO3/rust-numpy/pull/220))
   - `PyArray::iter`, `NpySingleIterBuilder::readwrite` and `NpyMultiIterBuilder::add_readwrite` are now `unsafe`, as they allow aliasing mutable references to be created ([#278/](https://github.com/PyO3/rust-numpy/pull/278))
