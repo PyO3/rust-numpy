@@ -133,13 +133,10 @@ where
 /// Return the Einstein summation convention of given tensors.
 ///
 /// This is usually invoked via the the [`einsum!`] macro.
-pub fn einsum_impl<'py, T, DOUT>(
-    subscripts: &str,
-    arrays: &[&'py PyArray<T, IxDyn>],
-) -> PyResult<&'py PyArray<T, DOUT>>
+pub fn einsum<'py, T, OUT>(subscripts: &str, arrays: &[&'py PyArray<T, IxDyn>]) -> PyResult<OUT>
 where
-    DOUT: Dimension,
     T: Element,
+    OUT: ArrayOrScalar<'py, T>,
 {
     let subscripts = match CStr::from_bytes_with_nul(subscripts.as_bytes()) {
         Ok(subscripts) => Cow::Borrowed(subscripts),
@@ -173,13 +170,13 @@ where
 /// ```
 /// use pyo3::Python;
 /// use ndarray::array;
-/// use numpy::{einsum, pyarray, PyArray};
+/// use numpy::{einsum, pyarray, PyArray, PyArray2};
 ///
 /// Python::with_gil(|py| {
 ///     let tensor = PyArray::arange(py, 0, 2 * 3 * 4, 1).reshape([2, 3, 4]).unwrap();
 ///     let another_tensor = pyarray![py, [20, 30], [40, 50], [60, 70]];
 ///
-///     let result = einsum!("ijk,ji->ik", tensor, another_tensor).unwrap();
+///     let result: &PyArray2<_> = einsum!("ijk,ji->ik", tensor, another_tensor).unwrap();
 ///
 ///     assert_eq!(
 ///         result.readonly().as_array(),
@@ -193,6 +190,6 @@ where
 macro_rules! einsum {
     ($subscripts:literal $(,$array:ident)+ $(,)*) => {{
         let arrays = [$($array.to_dyn(),)+];
-        $crate::einsum_impl(concat!($subscripts, "\0"), &arrays)
+        $crate::einsum(concat!($subscripts, "\0"), &arrays)
     }};
 }

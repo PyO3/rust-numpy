@@ -62,22 +62,22 @@ fn test_einsum() {
         let b = pyarray![py, 0, 1, 2, 3, 4];
         let c = pyarray![py, [0, 1, 2], [3, 4, 5]];
 
-        assert_eq!(einsum!("ii", a).unwrap().item(), 60);
-        assert_eq!(
-            einsum!("ii->i", a).unwrap().readonly().as_array(),
-            array![0, 6, 12, 18, 24],
-        );
-        assert_eq!(
-            einsum!("ij->i", a).unwrap().readonly().as_array(),
-            array![10, 35, 60, 85, 110],
-        );
-        assert_eq!(
-            einsum!("ji", c).unwrap().readonly().as_array(),
-            array![[0, 3], [1, 4], [2, 5]],
-        );
-        assert_eq!(
-            einsum!("ij,j", a, b).unwrap().readonly().as_array(),
-            array![30, 80, 130, 180, 230],
-        );
+        let d: &PyArray0<_> = einsum!("ii", a).unwrap();
+        assert_eq!(d.item(), 60);
+
+        let d: i32 = einsum!("ii", a).unwrap();
+        assert_eq!(d, 60);
+
+        let d: &PyArray1<_> = einsum!("ii->i", a).unwrap();
+        assert_eq!(d.readonly().as_array(), array![0, 6, 12, 18, 24]);
+
+        let d: &PyArray1<_> = einsum!("ij->i", a).unwrap();
+        assert_eq!(d.readonly().as_array(), array![10, 35, 60, 85, 110]);
+
+        let d: &PyArray2<_> = einsum!("ji", c).unwrap();
+        assert_eq!(d.readonly().as_array(), array![[0, 3], [1, 4], [2, 5]]);
+
+        let d: &PyArray1<_> = einsum!("ij,j", a, b).unwrap();
+        assert_eq!(d.readonly().as_array(), array![30, 80, 130, 180, 230]);
     });
 }
