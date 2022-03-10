@@ -12,6 +12,18 @@ fn test_dot() {
         let a = pyarray![py, 1, 2, 3];
         let err = dot::<_, _, _, &PyArray2<_>>(a, b).unwrap_err();
         assert!(err.to_string().contains("not aligned"), "{}", err);
+
+        let a = pyarray![py, 1, 2, 3];
+        let b = pyarray![py, 0, 1, 0];
+        let c: &PyArray0<_> = dot(a, b).unwrap();
+        assert_eq!(c.item(), 2);
+        let c: i32 = dot(a, b).unwrap();
+        assert_eq!(c, 2);
+
+        let a = pyarray![py, 1.0, 2.0, 3.0];
+        let b = pyarray![py, 0.0, 0.0, 0.0];
+        let c: f64 = dot(a, b).unwrap();
+        assert_eq!(c, 0.0);
     });
 }
 
@@ -21,7 +33,14 @@ fn test_inner() {
         let a = pyarray![py, 1, 2, 3];
         let b = pyarray![py, 0, 1, 0];
         let c: &PyArray0<_> = inner(a, b).unwrap();
-        assert_eq!(c.readonly().as_array(), ndarray::arr0(2));
+        assert_eq!(c.item(), 2);
+        let c: i32 = inner(a, b).unwrap();
+        assert_eq!(c, 2);
+
+        let a = pyarray![py, 1.0, 2.0, 3.0];
+        let b = pyarray![py, 0.0, 0.0, 0.0];
+        let c: f64 = inner(a, b).unwrap();
+        assert_eq!(c, 0.0);
 
         let a = pyarray![py, [1, 0], [0, 1]];
         let b = pyarray![py, [4, 1], [2, 2]];
@@ -43,10 +62,7 @@ fn test_einsum() {
         let b = pyarray![py, 0, 1, 2, 3, 4];
         let c = pyarray![py, [0, 1, 2], [3, 4, 5]];
 
-        assert_eq!(
-            einsum!("ii", a).unwrap().readonly().as_array(),
-            ndarray::arr0(60)
-        );
+        assert_eq!(einsum!("ii", a).unwrap().item(), 60);
         assert_eq!(
             einsum!("ii->i", a).unwrap().readonly().as_array(),
             array![0, 6, 12, 18, 24],
