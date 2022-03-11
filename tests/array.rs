@@ -8,7 +8,7 @@ use numpy::{
 use pyo3::{
     py_run, pyclass, pymethods,
     types::{IntoPyDict, PyDict, PyList},
-    Py, PyAny, PyCell, PyResult, Python,
+    IntoPy, Py, PyAny, PyCell, PyResult, Python,
 };
 
 fn get_np_locals(py: Python) -> &PyDict {
@@ -38,6 +38,13 @@ fn new_c_order() {
 
         let size = size_of::<f64>() as isize;
         assert!(arr.strides() == [dims[1] as isize * size, size]);
+
+        assert_eq!(arr.shape(), &dims);
+        assert_eq!(arr.len(), 3 * 5);
+
+        assert!(arr.is_contiguous());
+        assert!(arr.is_c_contiguous());
+        assert!(!arr.is_fortran_contiguous());
     });
 }
 
@@ -52,7 +59,14 @@ fn new_fortran_order() {
         assert!(arr.dims() == dims);
 
         let size = size_of::<f64>() as isize;
-        assert!(arr.strides() == [size, dims[0] as isize * size],);
+        assert!(arr.strides() == [size, dims[0] as isize * size]);
+
+        assert_eq!(arr.shape(), &dims);
+        assert_eq!(arr.len(), 3 * 5);
+
+        assert!(arr.is_contiguous());
+        assert!(!arr.is_c_contiguous());
+        assert!(arr.is_fortran_contiguous());
     });
 }
 
@@ -238,6 +252,21 @@ fn extract_as_dyn() {
 }
 
 #[test]
+fn extract_fail_by_check() {
+    Python::with_gil(|py| {
+        let locals = get_np_locals(py);
+        let pyarray: PyResult<&PyArray2<i32>> =
+            py.eval("[1, 2, 3]", Some(locals), None).unwrap().extract();
+
+        let err = pyarray.unwrap_err();
+        assert_eq!(
+            err.to_string(),
+            "TypeError: 'list' object cannot be converted to 'PyArray<T, D>'"
+        );
+    });
+}
+
+#[test]
 fn extract_fail_by_dim() {
     Python::with_gil(|py| {
         let locals = get_np_locals(py);
@@ -374,5 +403,47 @@ fn downcasting_respects_dimensionality() {
         let ob: &PyAny = PyArray::from_slice(py, &[1_i32, 2, 3]);
 
         assert!(ob.downcast::<PyArray2<i32>>().is_err());
+    });
+}
+
+#[test]
+fn into_py_works() {
+    let arr: Py<PyArray1<_>> = Python::with_gil(|py| {
+        let arr = PyArray::from_slice(py, &[1_i32, 2, 3]);
+
+        arr.into_py(py)
+    });
+
+    Python::with_gil(|py| {
+        let arr: &PyArray1<_> = arr.as_ref(py);
+
+        assert_eq!(arr.readonly().as_slice().unwrap(), &[1, 2, 3]);
+    });
+}
+
+#[test]
+fn to_owned_works() {
+    let arr: Py<PyArray1<_>> = Python::with_gil(|py| {
+        let arr = PyArray::from_slice(py, &[1_i32, 2, 3]);
+
+        arr.to_owned()
+    });
+
+    Python::with_gil(|py| {
+        let arr: &PyArray1<_> = arr.as_ref(py);
+
+        assert_eq!(arr.readonly().as_slice().unwrap(), &[1, 2, 3]);
+    });
+}
+
+#[test]
+fn copy_to_works() {
+    pyo3::Python::with_gil(|py| {
+        let arr1 = PyArray::arange(py, 2.0, 5.0, 1.0);
+        let arr2 = unsafe { PyArray::<i64, _>::new(py, [3], false) };
+
+        arr1.copy_to(arr2).unwrap();
+
+        assert_eq!(arr2.readonly().as_slice().unwrap(), &[2, 3, 4]);
     });
 }
