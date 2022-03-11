@@ -1,7 +1,7 @@
 //! Defines conversion traits between Rust types and NumPy data types.
 #![deny(missing_docs)]
 
-use std::{mem, os::raw::c_int};
+use std::{mem, os::raw::c_int, ptr};
 
 use ndarray::{ArrayBase, Data, Dimension, IntoDimension, Ix1, OwnedRepr};
 use pyo3::Python;
@@ -143,12 +143,12 @@ where
         let len = self.len();
         match self.order() {
             Some(order) if A::IS_COPY => {
-                // if the array is contiguous, copy it by `copy_ptr`.
+                // if the array is contiguous, copy it by `copy_nonoverlapping`.
                 let strides = self.npy_strides();
                 unsafe {
                     let array =
                         PyArray::new_(py, self.raw_dim(), strides.as_ptr(), order.to_flag());
-                    array.copy_ptr(self.as_ptr(), len);
+                    ptr::copy_nonoverlapping(self.as_ptr(), array.data(), len);
                     array
                 }
             }

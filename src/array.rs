@@ -356,10 +356,6 @@ impl<T, D> PyArray<T, D> {
         let ptr = self.as_array_ptr();
         (*ptr).data as *mut _
     }
-
-    pub(crate) unsafe fn copy_ptr(&self, other: *const T, len: usize) {
-        ptr::copy_nonoverlapping(other, self.data(), len)
-    }
 }
 
 struct InvertedAxes(u32);
@@ -959,7 +955,7 @@ impl<T: Element> PyArray<T, Ix1> {
         unsafe {
             let array = PyArray::new(py, [slice.len()], false);
             if T::IS_COPY {
-                array.copy_ptr(slice.as_ptr(), slice.len());
+                ptr::copy_nonoverlapping(slice.as_ptr(), array.data(), slice.len());
             } else {
                 let data_ptr = array.data();
                 for (i, item) in slice.iter().enumerate() {
