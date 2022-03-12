@@ -1097,16 +1097,15 @@ impl<T: Element> PyArray<T, Ix2> {
     /// ```
     pub fn from_vec2<'py>(py: Python<'py>, v: &[Vec<T>]) -> Result<&'py Self, FromVecError> {
         let len2 = v.first().map_or(0, |v| v.len());
-        for v in v {
-            if v.len() != len2 {
-                return Err(FromVecError::new(v.len(), len2));
-            }
-        }
         let dims = [v.len(), len2];
+        // SAFETY: The result of `Self::new` is always safe to drop.
         unsafe {
             let array = Self::new(py, dims, false);
             let mut data_ptr = array.data();
             for v in v {
+                if v.len() != len2 {
+                    return Err(FromVecError::new(v.len(), len2));
+                }
                 if T::IS_COPY {
                     ptr::copy_nonoverlapping(v.as_ptr(), data_ptr, len2);
                     data_ptr = data_ptr.add(len2);
@@ -1144,25 +1143,20 @@ impl<T: Element> PyArray<T, Ix3> {
     /// ```
     pub fn from_vec3<'py>(py: Python<'py>, v: &[Vec<Vec<T>>]) -> Result<&'py Self, FromVecError> {
         let len2 = v.first().map_or(0, |v| v.len());
-        for v in v {
-            if v.len() != len2 {
-                return Err(FromVecError::new(v.len(), len2));
-            }
-        }
         let len3 = v.first().map_or(0, |v| v.first().map_or(0, |v| v.len()));
-        for v in v {
-            for v in v {
-                if v.len() != len3 {
-                    return Err(FromVecError::new(v.len(), len3));
-                }
-            }
-        }
         let dims = [v.len(), len2, len3];
+        // SAFETY: The result of `Self::new` is always safe to drop.
         unsafe {
             let array = Self::new(py, dims, false);
             let mut data_ptr = array.data();
             for v in v {
+                if v.len() != len2 {
+                    return Err(FromVecError::new(v.len(), len2));
+                }
                 for v in v {
+                    if v.len() != len3 {
+                        return Err(FromVecError::new(v.len(), len3));
+                    }
                     if T::IS_COPY {
                         ptr::copy_nonoverlapping(v.as_ptr(), data_ptr, len3);
                         data_ptr = data_ptr.add(len3);
