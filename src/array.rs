@@ -952,8 +952,18 @@ impl<T: Element> PyArray<T, Ix1> {
     /// });
     /// ```
     pub fn from_slice<'py>(py: Python<'py>, slice: &[T]) -> &'py Self {
-        let data = slice.to_vec();
-        data.into_pyarray(py)
+        unsafe {
+            let array = PyArray::new(py, [slice.len()], false);
+            if T::IS_COPY {
+                ptr::copy_nonoverlapping(slice.as_ptr(), array.data(), slice.len());
+            } else {
+                let data_ptr = array.data();
+                for (i, item) in slice.iter().enumerate() {
+                    data_ptr.add(i).write(item.clone());
+                }
+            }
+            array
+        }
     }
 
     /// Construct one-dimension PyArray
@@ -969,7 +979,7 @@ impl<T: Element> PyArray<T, Ix1> {
     /// });
     /// ```
     pub fn from_vec<'py>(py: Python<'py>, vec: Vec<T>) -> &'py Self {
-        IntoPyArray::into_pyarray(vec, py)
+        vec.into_pyarray(py)
     }
 
     /// Construct one-dimension PyArray from a type which implements
