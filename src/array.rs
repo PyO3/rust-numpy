@@ -957,9 +957,10 @@ impl<T: Element> PyArray<T, Ix1> {
             if T::IS_COPY {
                 ptr::copy_nonoverlapping(slice.as_ptr(), array.data(), slice.len());
             } else {
-                let data_ptr = array.data();
-                for (i, item) in slice.iter().enumerate() {
-                    data_ptr.add(i).write(item.clone());
+                let mut data_ptr = array.data();
+                for item in slice {
+                    data_ptr.write(item.clone());
+                    data_ptr = data_ptr.add(1);
                 }
             }
             array
