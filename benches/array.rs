@@ -5,7 +5,7 @@ use test::{black_box, Bencher};
 
 use std::ops::Range;
 
-use numpy::PyArray1;
+use numpy::{PyArray1, PyArray2, PyArray3};
 use pyo3::{Python, ToPyObject};
 
 struct Iter(Range<usize>);
@@ -132,6 +132,56 @@ fn from_object_slice_medium(bencher: &mut Bencher) {
 #[bench]
 fn from_object_slice_large(bencher: &mut Bencher) {
     from_object_slice(bencher, 2_usize.pow(15));
+}
+
+fn from_vec2(bencher: &mut Bencher, size: usize) {
+    let vec2 = vec![vec![0; size]; size];
+
+    iter_with_gil(bencher, |py| {
+        let vec2 = black_box(&vec2);
+
+        PyArray2::from_vec2(py, vec2).unwrap();
+    });
+}
+
+#[bench]
+fn from_vec2_small(bencher: &mut Bencher) {
+    from_vec2(bencher, 2_usize.pow(3));
+}
+
+#[bench]
+fn from_vec2_medium(bencher: &mut Bencher) {
+    from_vec2(bencher, 2_usize.pow(5));
+}
+
+#[bench]
+fn from_vec2_large(bencher: &mut Bencher) {
+    from_vec2(bencher, 2_usize.pow(8));
+}
+
+fn from_vec3(bencher: &mut Bencher, size: usize) {
+    let vec3 = vec![vec![vec![0; size]; size]; size];
+
+    iter_with_gil(bencher, |py| {
+        let vec3 = black_box(&vec3);
+
+        PyArray3::from_vec3(py, vec3).unwrap();
+    });
+}
+
+#[bench]
+fn from_vec3_small(bencher: &mut Bencher) {
+    from_vec3(bencher, 2_usize.pow(2));
+}
+
+#[bench]
+fn from_vec3_medium(bencher: &mut Bencher) {
+    from_vec3(bencher, 2_usize.pow(4));
+}
+
+#[bench]
+fn from_vec3_large(bencher: &mut Bencher) {
+    from_vec3(bencher, 2_usize.pow(5));
 }
 
 fn iter_with_gil(bencher: &mut Bencher, mut f: impl FnMut(Python)) {
