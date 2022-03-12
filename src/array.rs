@@ -1106,9 +1106,14 @@ impl<T: Element> PyArray<T, Ix2> {
             let array = Self::new(py, dims, false);
             let mut data_ptr = array.data();
             for v in v {
-                for v in v {
-                    data_ptr.write(v.clone());
-                    data_ptr = data_ptr.add(1);
+                if T::IS_COPY {
+                    ptr::copy_nonoverlapping(v.as_ptr(), data_ptr, len2);
+                    data_ptr = data_ptr.add(len2);
+                } else {
+                    for v in v {
+                        data_ptr.write(v.clone());
+                        data_ptr = data_ptr.add(1);
+                    }
                 }
             }
             Ok(array)
@@ -1157,9 +1162,14 @@ impl<T: Element> PyArray<T, Ix3> {
             let mut data_ptr = array.data();
             for v in v {
                 for v in v {
-                    for v in v {
-                        data_ptr.write(v.clone());
-                        data_ptr = data_ptr.add(1);
+                    if T::IS_COPY {
+                        ptr::copy_nonoverlapping(v.as_ptr(), data_ptr, len3);
+                        data_ptr = data_ptr.add(len3);
+                    } else {
+                        for v in v {
+                            data_ptr.write(v.clone());
+                            data_ptr = data_ptr.add(1);
+                        }
                     }
                 }
             }
