@@ -1095,18 +1095,20 @@ impl<T: Element> PyArray<T, Ix2> {
     /// });
     /// ```
     pub fn from_vec2<'py>(py: Python<'py>, v: &[Vec<T>]) -> Result<&'py Self, FromVecError> {
-        let last_len = v.last().map_or(0, |v| v.len());
+        let len2 = v.first().map_or(0, |v| v.len());
         for v in v {
-            if v.len() != last_len {
-                return Err(FromVecError::new(v.len(), last_len));
+            if v.len() != len2 {
+                return Err(FromVecError::new(v.len(), len2));
             }
         }
-        let dims = [v.len(), last_len];
+        let dims = [v.len(), len2];
         unsafe {
             let array = Self::new(py, dims, false);
-            for (y, vy) in v.iter().enumerate() {
-                for (x, vyx) in vy.iter().enumerate() {
-                    array.uget_raw([y, x]).write(vyx.clone());
+            let mut data_ptr = array.data();
+            for v in v {
+                for v in v {
+                    data_ptr.write(v.clone());
+                    data_ptr = data_ptr.add(1);
                 }
             }
             Ok(array)
@@ -1135,13 +1137,13 @@ impl<T: Element> PyArray<T, Ix3> {
     /// });
     /// ```
     pub fn from_vec3<'py>(py: Python<'py>, v: &[Vec<Vec<T>>]) -> Result<&'py Self, FromVecError> {
-        let len2 = v.last().map_or(0, |v| v.len());
+        let len2 = v.first().map_or(0, |v| v.len());
         for v in v {
             if v.len() != len2 {
                 return Err(FromVecError::new(v.len(), len2));
             }
         }
-        let len3 = v.last().map_or(0, |v| v.last().map_or(0, |v| v.len()));
+        let len3 = v.first().map_or(0, |v| v.first().map_or(0, |v| v.len()));
         for v in v {
             for v in v {
                 if v.len() != len3 {
@@ -1152,10 +1154,12 @@ impl<T: Element> PyArray<T, Ix3> {
         let dims = [v.len(), len2, len3];
         unsafe {
             let array = Self::new(py, dims, false);
-            for (z, vz) in v.iter().enumerate() {
-                for (y, vzy) in vz.iter().enumerate() {
-                    for (x, vzyx) in vzy.iter().enumerate() {
-                        array.uget_raw([z, y, x]).write(vzyx.clone());
+            let mut data_ptr = array.data();
+            for v in v {
+                for v in v {
+                    for v in v {
+                        data_ptr.write(v.clone());
+                        data_ptr = data_ptr.add(1);
                     }
                 }
             }
