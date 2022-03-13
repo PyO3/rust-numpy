@@ -19,12 +19,10 @@ impl Iterator for Iter {
 }
 
 fn from_iter(bencher: &mut Bencher, size: usize) {
-    bencher.iter(|| {
+    iter_with_gil(bencher, |py| {
         let iter = black_box(Iter(0..size));
 
-        Python::with_gil(|py| {
-            PyArray1::from_iter(py, iter);
-        });
+        PyArray1::from_iter(py, iter);
     });
 }
 
@@ -64,12 +62,10 @@ impl ExactSizeIterator for ExactIter {
 }
 
 fn from_exact_iter(bencher: &mut Bencher, size: usize) {
-    bencher.iter(|| {
+    iter_with_gil(bencher, |py| {
         let iter = black_box(ExactIter(0..size));
 
-        Python::with_gil(|py| {
-            PyArray1::from_exact_iter(py, iter);
-        });
+        PyArray1::from_exact_iter(py, iter);
     });
 }
 
@@ -91,12 +87,10 @@ fn from_exact_iter_large(bencher: &mut Bencher) {
 fn from_slice(bencher: &mut Bencher, size: usize) {
     let vec = (0..size).collect::<Vec<_>>();
 
-    bencher.iter(|| {
+    iter_with_gil(bencher, |py| {
         let slice = black_box(&vec);
 
-        Python::with_gil(|py| {
-            PyArray1::from_slice(py, slice);
-        });
+        PyArray1::from_slice(py, slice);
     });
 }
 
@@ -118,12 +112,10 @@ fn from_slice_large(bencher: &mut Bencher) {
 fn from_object_slice(bencher: &mut Bencher, size: usize) {
     let vec = Python::with_gil(|py| (0..size).map(|val| val.to_object(py)).collect::<Vec<_>>());
 
-    bencher.iter(|| {
+    iter_with_gil(bencher, |py| {
         let slice = black_box(&vec);
 
-        Python::with_gil(|py| {
-            PyArray1::from_slice(py, slice);
-        });
+        PyArray1::from_slice(py, slice);
     });
 }
 
@@ -140,4 +132,14 @@ fn from_object_slice_medium(bencher: &mut Bencher) {
 #[bench]
 fn from_object_slice_large(bencher: &mut Bencher) {
     from_object_slice(bencher, 2_usize.pow(15));
+}
+
+fn iter_with_gil(bencher: &mut Bencher, mut f: impl FnMut(Python)) {
+    Python::with_gil(|py| {
+        bencher.iter(|| {
+            let pool = unsafe { py.new_pool() };
+
+            f(pool.python());
+        });
+    });
 }
