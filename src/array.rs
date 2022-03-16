@@ -401,7 +401,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         let mut inverted_axes = InvertedAxes::new(strides.len());
 
         for i in 0..strides.len() {
-            // TODO(kngwyu): Replace this hacky negative strides support with
+            // FIXME(kngwyu): Replace this hacky negative strides support with
             // a proper constructor, when it's implemented.
             // See https://github.com/rust-ndarray/ndarray/issues/842 for more.
             if strides[i] < 0 {

@@ -1,41 +1,51 @@
-//! Defines conversion traits between rust types and numpy data types.
+//! Defines conversion traits between Rust types and NumPy data types.
+#![deny(missing_docs)]
+
+use std::{mem, os::raw::c_int};
 
 use ndarray::{ArrayBase, Data, Dimension, IntoDimension, Ix1, OwnedRepr};
 use pyo3::Python;
 
-use std::{mem, os::raw::c_int};
+use crate::array::PyArray;
+use crate::dtype::Element;
+use crate::npyffi::{self, npy_intp};
+use crate::sealed::Sealed;
 
-use crate::{
-    npyffi::{self, npy_intp},
-    Element, PyArray,
-};
-
-/// Conversion trait from some rust types to `PyArray`.
+/// Conversion trait from owning Rust types into [`PyArray`].
 ///
-/// This trait takes `self`, which means **it holds a pointer to Rust heap, until `resize` or other
-/// destructive method is called**.
+/// This trait takes ownership of `self`, which means it holds a pointer into the Rust heap.
 ///
-/// In addition, if you construct `PyArray` via this method,
-/// **you cannot use some destructive methods like `resize`.**
+/// In addition, some destructive methods like `resize` cannot be used with NumPy arrays constructed using this trait.
 ///
 /// # Example
+///
 /// ```
 /// use numpy::{PyArray, IntoPyArray};
-/// pyo3::Python::with_gil(|py| {
+/// use pyo3::Python;
+///
+/// Python::with_gil(|py| {
 ///     let py_array = vec![1, 2, 3].into_pyarray(py);
+///
 ///     assert_eq!(py_array.readonly().as_slice().unwrap(), &[1, 2, 3]);
-///     assert!(py_array.resize(100).is_err()); // You can't resize owned-by-rust array.
+///
+///     // Array cannot be resized when its data is owned by Rust.
+///     assert!(py_array.resize(100).is_err());
 /// });
 /// ```
 pub trait IntoPyArray {
+    /// The element type of resulting array.
     type Item: Element;
+    /// The dimension type of the resulting array.
     type Dim: Dimension;
-    fn into_pyarray<'py>(self, _: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim>;
+
+    /// Consumes `self` and moves its data into a NumPy array.
+    fn into_pyarray<'py>(self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim>;
 }
 
 impl<T: Element> IntoPyArray for Box<[T]> {
     type Item = T;
     type Dim = Ix1;
+
     fn into_pyarray<'py>(self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
         let dims = [self.len()];
         let strides = [mem::size_of::<T>() as npy_intp];
@@ -47,6 +57,7 @@ impl<T: Element> IntoPyArray for Box<[T]> {
 impl<T: Element> IntoPyArray for Vec<T> {
     type Item = T;
     type Dim = Ix1;
+
     fn into_pyarray<'py>(self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
         let dims = [self.len()];
         let strides = [mem::size_of::<T>() as npy_intp];
@@ -62,49 +73,58 @@ where
 {
     type Item = A;
     type Dim = D;
+
     fn into_pyarray<'py>(self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
         PyArray::from_owned_array(py, self)
     }
 }
 
-/// Conversion trait from rust types to `PyArray`.
+/// Conversion trait from borrowing Rust types to [`PyArray`].
 ///
-/// This trait takes `&self`, which means **it allocates in Python heap and then copies
-/// elements there**.
-/// # Example
+/// This trait takes `&self` by reference, which means it allocates in Python heap and then copies the elements there.
+///
+/// # Examples
+///
 /// ```
 /// use numpy::{PyArray, ToPyArray};
-/// pyo3::Python::with_gil(|py| {
+/// use pyo3::Python;
+///
+/// Python::with_gil(|py| {
 ///     let py_array = vec![1, 2, 3].to_pyarray(py);
+///
 ///     assert_eq!(py_array.readonly().as_slice().unwrap(), &[1, 2, 3]);
 /// });
 /// ```
 ///
-/// This method converts a not-contiguous array to C-order contiguous array.
-/// # Example
+/// Due to copying the elments, this method converts non-contiguous arrays to C-order contiguous arrays.
+///
 /// ```
 /// use numpy::{PyArray, ToPyArray};
 /// use ndarray::{arr3, s};
-/// pyo3::Python::with_gil(|py| {
-///     let a = arr3(&[[[ 1,  2,  3], [ 4,  5,  6]],
-///                    [[ 7,  8,  9], [10, 11, 12]]]);
-///     let slice = a.slice(s![.., 0..1, ..]);
-///     let sliced = arr3(&[[[ 1,  2,  3]],
-///                         [[ 7,  8,  9]]]);
-///     let py_slice = slice.to_pyarray(py);
-///     assert_eq!(py_slice.readonly().as_array(), sliced);
-///     pyo3::py_run!(py, py_slice, "assert py_slice.flags['C_CONTIGUOUS']");
+/// use pyo3::Python;
+///
+/// Python::with_gil(|py| {
+///     let array = arr3(&[[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]]);
+///     let py_array = array.slice(s![.., 0..1, ..]).to_pyarray(py);
+///
+///     assert_eq!(py_array.readonly().as_array(), arr3(&[[[1, 2, 3]], [[7, 8, 9]]]));
+///     assert!(py_array.is_c_contiguous());
 /// });
 /// ```
 pub trait ToPyArray {
+    /// The element type of resulting array.
     type Item: Element;
+    /// The dimension type of the resulting array.
     type Dim: Dimension;
-    fn to_pyarray<'py>(&self, _: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim>;
+
+    /// Copies the content pointed to by `&self` into a newly allocated NumPy array.
+    fn to_pyarray<'py>(&self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim>;
 }
 
 impl<T: Element> ToPyArray for [T] {
     type Item = T;
     type Dim = Ix1;
+
     fn to_pyarray<'py>(&self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
         PyArray::from_slice(py, self)
     }
@@ -118,6 +138,7 @@ where
 {
     type Item = A;
     type Dim = D;
+
     fn to_pyarray<'py>(&self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
         let len = self.len();
         match self.order() {
@@ -216,79 +237,74 @@ impl NpyStrides {
     }
 }
 
-/// Utility trait to specify the dimention of array
-pub trait ToNpyDims: Dimension {
+/// Utility trait to specify the dimensions of an array.
+pub trait ToNpyDims: Dimension + Sealed {
+    #[doc(hidden)]
     fn ndim_cint(&self) -> c_int {
         self.ndim() as c_int
     }
+    #[doc(hidden)]
     fn as_dims_ptr(&self) -> *mut npyffi::npy_intp {
         self.slice().as_ptr() as *mut npyffi::npy_intp
     }
+    #[doc(hidden)]
     fn to_npy_dims(&self) -> npyffi::PyArray_Dims {
         npyffi::PyArray_Dims {
             ptr: self.as_dims_ptr(),
             len: self.ndim_cint(),
         }
     }
-    fn __private__(&self) -> PrivateMarker;
 }
 
-impl<D: Dimension> ToNpyDims for D {
-    fn __private__(&self) -> PrivateMarker {
-        PrivateMarker
-    }
-}
+impl<D> ToNpyDims for D where D: Dimension {}
 
-/// Types that can be used to index an array.
+/// Trait implemented by types that can be used to index an array.
 ///
-/// See
-/// [IntoDimension](https://docs.rs/ndarray/latest/ndarray/dimension/conversion/trait.IntoDimension.html)
-/// for what types you can use as `NpyIndex`.
+/// This is equivalent to [`ndarray::NdIndex`] but accounts for
+/// NumPy strides being in units of bytes instead of elements.
 ///
-/// But basically, you can use
-/// - [tuple](https://doc.rust-lang.org/nightly/std/primitive.tuple.html)
-/// - [array](https://doc.rust-lang.org/nightly/std/primitive.array.html)
-/// - [slice](https://doc.rust-lang.org/nightly/std/primitive.slice.html)
-// Since Numpy's strides is byte offset, we can't use ndarray::NdIndex directly here.
-pub trait NpyIndex: IntoDimension {
+/// All types which implement [`IntoDimension`] implement this trait as well.
+/// This includes at least
+/// - [tuple](https://doc.rust-lang.org/stable/std/primitive.tuple.html)
+/// - [array](https://doc.rust-lang.org/stable/std/primitive.array.html)
+/// - [slice](https://doc.rust-lang.org/stable/std/primitive.slice.html)
+pub trait NpyIndex: IntoDimension + Sealed {
+    #[doc(hidden)]
     fn get_checked<T>(self, dims: &[usize], strides: &[isize]) -> Option<isize>;
+    #[doc(hidden)]
     fn get_unchecked<T>(self, strides: &[isize]) -> isize;
-    fn __private__(self) -> PrivateMarker;
 }
+
+impl<D: IntoDimension> Sealed for D {}
 
 impl<D: IntoDimension> NpyIndex for D {
     fn get_checked<T>(self, dims: &[usize], strides: &[isize]) -> Option<isize> {
-        let indices_ = self.into_dimension();
-        let indices = indices_.slice();
+        let indices = self.into_dimension();
+        let indices = indices.slice();
+
         if indices.len() != dims.len() {
             return None;
         }
         if indices.iter().zip(dims).any(|(i, d)| i >= d) {
             return None;
         }
-        Some(get_unchecked_impl(
-            indices,
-            strides,
-            mem::size_of::<T>() as isize,
-        ))
+
+        Some(get_unchecked_impl::<T>(indices, strides))
     }
+
     fn get_unchecked<T>(self, strides: &[isize]) -> isize {
-        let indices_ = self.into_dimension();
-        let indices = indices_.slice();
-        get_unchecked_impl(indices, strides, mem::size_of::<T>() as isize)
-    }
-    fn __private__(self) -> PrivateMarker {
-        PrivateMarker
+        let indices = self.into_dimension();
+        let indices = indices.slice();
+        get_unchecked_impl::<T>(indices, strides)
     }
 }
 
-fn get_unchecked_impl(indices: &[usize], strides: &[isize], size: isize) -> isize {
+fn get_unchecked_impl<T>(indices: &[usize], strides: &[isize]) -> isize {
+    let size = mem::size_of::<T>() as isize;
+
     indices
         .iter()
         .zip(strides)
         .map(|(&i, stride)| stride * i as isize / size)
         .sum()
 }
-
-#[doc(hidden)]
-pub struct PrivateMarker;
