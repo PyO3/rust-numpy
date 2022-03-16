@@ -1,6 +1,7 @@
 # Changelog
 
 - Unreleased
+  - Fix build on platforms where `c_char` is `u8` like Linux/AArch64. ([#296](https://github.com/PyO3/rust-numpy/pull/296))
 
 - v0.16.1
   - Fix build when PyO3's `multiple-pymethods` feature is used. ([#288](https://github.com/PyO3/rust-numpy/pull/288))
