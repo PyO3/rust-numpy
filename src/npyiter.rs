@@ -37,6 +37,7 @@ use crate::npyffi::{
     NPY_ITER_ZEROSIZE_OK,
 };
 use crate::readonly::PyReadonlyArray;
+use crate::sealed::Sealed;
 
 /// Flags for constructing an iterator.
 ///
@@ -89,23 +90,8 @@ impl NpyIterFlag {
 mod itermode {
     use super::*;
 
-    pub struct PrivateGuard;
-    macro_rules! private_decl {
-        () => {
-            fn __private__() -> PrivateGuard;
-        };
-    }
-    macro_rules! private_impl {
-        () => {
-            fn __private__() -> PrivateGuard {
-                PrivateGuard
-            }
-        };
-    }
-
     /// A combinator type that represents the mode of an iterator.
-    pub trait MultiIterMode {
-        private_decl!();
+    pub trait MultiIterMode: Sealed {
         type Pre: MultiIterMode;
         const FLAG: npy_uint32 = 0;
         fn flags() -> Vec<npy_uint32> {
@@ -120,7 +106,6 @@ mod itermode {
     }
 
     impl MultiIterMode for () {
-        private_impl!();
         type Pre = ();
     }
 
@@ -130,14 +115,16 @@ mod itermode {
     /// Represents the iterator mode where the last array is readwrite.
     pub struct RW<S: MultiIterMode>(PhantomData<S>);
 
+    impl<S: MultiIterMode> Sealed for RO<S> {}
+
     impl<S: MultiIterMode> MultiIterMode for RO<S> {
-        private_impl!();
         type Pre = S;
         const FLAG: npy_uint32 = NPY_ITER_READONLY;
     }
 
+    impl<S: MultiIterMode> Sealed for RW<S> {}
+
     impl<S: MultiIterMode> MultiIterMode for RW<S> {
-        private_impl!();
         type Pre = S;
         const FLAG: npy_uint32 = NPY_ITER_READWRITE;
     }

@@ -78,6 +78,10 @@ mod doctest {
     doc_comment!(include_str!("../README.md"), readme);
 }
 
+mod sealed {
+    pub trait Sealed {}
+}
+
 /// Create a [`PyArray`] with one, two or three dimensions.
 ///
 /// This macro is backed by [`ndarray::array`].
