@@ -461,12 +461,31 @@ fn to_owned_works() {
 
 #[test]
 fn copy_to_works() {
-    pyo3::Python::with_gil(|py| {
+    Python::with_gil(|py| {
         let arr1 = PyArray::arange(py, 2.0, 5.0, 1.0);
         let arr2 = unsafe { PyArray::<i64, _>::new(py, [3], false) };
 
         arr1.copy_to(arr2).unwrap();
 
         assert_eq!(arr2.readonly().as_slice().unwrap(), &[2, 3, 4]);
+    });
+}
+
+#[test]
+fn get_works() {
+    Python::with_gil(|py| {
+        let array = pyarray![py, [[1, 2], [3, 4]], [[5, 6], [7, 8]], [[9, 10], [11, 12]]];
+
+        unsafe {
+            assert_eq!(array.get([0, 0, 0]), Some(&1));
+            assert_eq!(array.get([2, 1, 1]), Some(&12));
+            assert_eq!(array.get([0, 0, 2]), None);
+            assert_eq!(array.get([0, 2, 0]), None);
+            assert_eq!(array.get([3, 0, 0]), None);
+
+            assert_eq!(*array.uget([1, 0, 0]), 5);
+            assert_eq!(*array.uget_mut([0, 1, 0]), 3);
+            assert_eq!(*array.uget_raw([0, 0, 1]), 2);
+        }
     });
 }

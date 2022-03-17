@@ -20,6 +20,16 @@ fn to_pyarray_vec() {
 }
 
 #[test]
+fn to_pyarray_boxed_slice() {
+    Python::with_gil(|py| {
+        let arr = vec![1, 2, 3].into_boxed_slice().to_pyarray(py);
+
+        assert_eq!(arr.shape(), [3]);
+        assert_eq!(arr.readonly().as_slice().unwrap(), &[1, 2, 3])
+    });
+}
+
+#[test]
 fn to_pyarray_array() {
     Python::with_gil(|py| {
         let arr = Array3::<f64>::zeros((3, 4, 2));
@@ -31,7 +41,7 @@ fn to_pyarray_array() {
             .map(|dim| dim * size_of::<f64>() as isize)
             .collect::<Vec<_>>();
 
-        let py_arr = arr.to_pyarray(py);
+        let py_arr = PyArray::from_array(py, &arr);
 
         assert_eq!(py_arr.shape(), shape.as_slice());
         assert_eq!(py_arr.strides(), strides.as_slice());
@@ -113,6 +123,15 @@ fn usize_dtype() {
 fn into_pyarray_vec() {
     Python::with_gil(|py| {
         let arr = vec![1, 2, 3].into_pyarray(py);
+
+        assert_eq!(arr.readonly().as_slice().unwrap(), &[1, 2, 3])
+    });
+}
+
+#[test]
+fn into_pyarray_boxed_slice() {
+    Python::with_gil(|py| {
+        let arr = vec![1, 2, 3].into_boxed_slice().into_pyarray(py);
 
         assert_eq!(arr.readonly().as_slice().unwrap(), &[1, 2, 3])
     });
