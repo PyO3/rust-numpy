@@ -65,6 +65,7 @@ fn long_iter_to_pyarray() {
 #[test]
 fn exact_iter_to_pyarray() {
     Python::with_gil(|py| {
+        #[allow(deprecated)]
         let arr = PyArray::from_exact_iter(py, 0_u32..512);
 
         assert_eq!(

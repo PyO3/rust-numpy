@@ -984,34 +984,45 @@ impl<T: Element> PyArray<T, Ix1> {
     /// # Example
     /// ```
     /// use numpy::PyArray;
-    /// use std::collections::BTreeSet;
-    /// let vec = vec![1, 2, 3, 4, 5];
-    /// pyo3::Python::with_gil(|py| {
-    ///     let pyarray = PyArray::from_exact_iter(py, vec.iter().map(|&x| x));
+    /// use pyo3::Python;
+    ///
+    /// Python::with_gil(|py| {
+    ///     let pyarray = PyArray::from_exact_iter(py, [1, 2, 3, 4, 5].into_iter().copied());
     ///     assert_eq!(pyarray.readonly().as_slice().unwrap(), &[1, 2, 3, 4, 5]);
     /// });
     /// ```
-    pub fn from_exact_iter(py: Python<'_>, iter: impl ExactSizeIterator<Item = T>) -> &Self {
-        let data = iter.collect::<Box<[_]>>();
-        data.into_pyarray(py)
+    #[deprecated(
+        note = "`from_exact_iter` is deprecated as it does not provide any benefit over `from_iter`."
+    )]
+    #[inline(always)]
+    pub fn from_exact_iter<I>(py: Python<'_>, iter: I) -> &Self
+    where
+        I: IntoIterator<Item = T>,
+        I::IntoIter: ExactSizeIterator,
+    {
+        Self::from_iter(py, iter)
     }
 
-    /// Construct one-dimension PyArray from a type which implements
-    /// [`IntoIterator`](https://doc.rust-lang.org/std/iter/trait.IntoIterator.html).
+    /// Construct one-dimension PyArray from a type which implements [`IntoIterator`].
     ///
-    /// If no reliable [`size_hint`](https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.size_hint) is available,
+    /// If no reliable [`size_hint`][Iterator::size_hint] is available,
     /// this method can allocate memory multiple time, which can hurt performance.
     ///
     /// # Example
+    ///
     /// ```
     /// use numpy::PyArray;
-    /// let set: std::collections::BTreeSet<u32> = [4, 3, 2, 5, 1].into_iter().cloned().collect();
-    /// pyo3::Python::with_gil(|py| {
-    ///     let pyarray = PyArray::from_iter(py, set);
-    ///     assert_eq!(pyarray.readonly().as_slice().unwrap(), &[1, 2, 3, 4, 5]);
+    /// use pyo3::Python;
+    ///
+    /// Python::with_gil(|py| {
+    ///     let pyarray = PyArray::from_iter(py, "abcde".chars().map(u32::from));
+    ///     assert_eq!(pyarray.readonly().as_slice().unwrap(), &[97, 98, 99, 100, 101]);
     /// });
     /// ```
-    pub fn from_iter(py: Python<'_>, iter: impl IntoIterator<Item = T>) -> &Self {
+    pub fn from_iter<I>(py: Python<'_>, iter: I) -> &Self
+    where
+        I: IntoIterator<Item = T>,
+    {
         let data = iter.into_iter().collect::<Vec<_>>();
         data.into_pyarray(py)
     }

@@ -65,6 +65,7 @@ fn from_exact_iter(bencher: &mut Bencher, size: usize) {
     iter_with_gil(bencher, |py| {
         let iter = black_box(ExactIter(0..size));
 
+        #[allow(deprecated)]
         PyArray1::from_exact_iter(py, iter);
     });
 }
