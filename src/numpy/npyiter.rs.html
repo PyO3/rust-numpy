@@ -652,19 +652,6 @@
 <span id="650">650</span>
 <span id="651">651</span>
 <span id="652">652</span>
-<span id="653">653</span>
-<span id="654">654</span>
-<span id="655">655</span>
-<span id="656">656</span>
-<span id="657">657</span>
-<span id="658">658</span>
-<span id="659">659</span>
-<span id="660">660</span>
-<span id="661">661</span>
-<span id="662">662</span>
-<span id="663">663</span>
-<span id="664">664</span>
-<span id="665">665</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Wrapper of the [array iterator API][iterator].</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This module exposes two iterators: [`NpySingleIter`] and [`NpyMultiIter`].</span>
@@ -704,6 +691,7 @@
     <span class="ident">NPY_ITER_ZEROSIZE_OK</span>,
 };
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::readonly::PyReadonlyArray</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::sealed::Sealed</span>;
 
 <span class="doccomment">/// Flags for constructing an iterator.</span>
 <span class="doccomment">///</span>
@@ -756,23 +744,8 @@
 <span class="kw">mod</span> <span class="ident">itermode</span> {
     <span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
 
-    <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">PrivateGuard</span>;
-    <span class="macro">macro_rules!</span> <span class="ident">private_decl</span> {
-        () =&gt; {
-            <span class="kw">fn</span> <span class="ident">__private__</span>() -&gt; <span class="ident">PrivateGuard</span>;
-        };
-    }
-    <span class="macro">macro_rules!</span> <span class="ident">private_impl</span> {
-        () =&gt; {
-            <span class="kw">fn</span> <span class="ident">__private__</span>() -&gt; <span class="ident">PrivateGuard</span> {
-                <span class="ident">PrivateGuard</span>
-            }
-        };
-    }
-
     <span class="doccomment">/// A combinator type that represents the mode of an iterator.</span>
-    <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">MultiIterMode</span> {
-        <span class="macro">private_decl!</span>();
+    <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">MultiIterMode</span>: <span class="ident">Sealed</span> {
         <span class="kw">type</span> <span class="ident">Pre</span>: <span class="ident">MultiIterMode</span>;
         <span class="kw">const</span> <span class="ident">FLAG</span>: <span class="ident">npy_uint32</span> <span class="op">=</span> <span class="number">0</span>;
         <span class="kw">fn</span> <span class="ident">flags</span>() -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">npy_uint32</span><span class="op">&gt;</span> {
@@ -787,7 +760,6 @@
     }
 
     <span class="kw">impl</span> <span class="ident">MultiIterMode</span> <span class="kw">for</span> () {
-        <span class="macro">private_impl!</span>();
         <span class="kw">type</span> <span class="ident">Pre</span> <span class="op">=</span> ();
     }
 
@@ -797,14 +769,16 @@
     <span class="doccomment">/// Represents the iterator mode where the last array is readwrite.</span>
     <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">RW</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">MultiIterMode</span><span class="op">&gt;</span>(<span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span>);
 
+    <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">MultiIterMode</span><span class="op">&gt;</span> <span class="ident">Sealed</span> <span class="kw">for</span> <span class="ident">RO</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span> {}
+
     <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">MultiIterMode</span><span class="op">&gt;</span> <span class="ident">MultiIterMode</span> <span class="kw">for</span> <span class="ident">RO</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span> {
-        <span class="macro">private_impl!</span>();
         <span class="kw">type</span> <span class="ident">Pre</span> <span class="op">=</span> <span class="ident">S</span>;
         <span class="kw">const</span> <span class="ident">FLAG</span>: <span class="ident">npy_uint32</span> <span class="op">=</span> <span class="ident">NPY_ITER_READONLY</span>;
     }
 
+    <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">MultiIterMode</span><span class="op">&gt;</span> <span class="ident">Sealed</span> <span class="kw">for</span> <span class="ident">RW</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span> {}
+
     <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">MultiIterMode</span><span class="op">&gt;</span> <span class="ident">MultiIterMode</span> <span class="kw">for</span> <span class="ident">RW</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span> {
-        <span class="macro">private_impl!</span>();
         <span class="kw">type</span> <span class="ident">Pre</span> <span class="op">=</span> <span class="ident">S</span>;
         <span class="kw">const</span> <span class="ident">FLAG</span>: <span class="ident">npy_uint32</span> <span class="op">=</span> <span class="ident">NPY_ITER_READWRITE</span>;
     }

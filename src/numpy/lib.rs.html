@@ -111,6 +111,10 @@
 <span id="109">109</span>
 <span id="110">110</span>
 <span id="111">111</span>
+<span id="112">112</span>
+<span id="113">113</span>
+<span id="114">114</span>
+<span id="115">115</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This crate provides Rust interfaces for [NumPy C APIs][c-api],</span>
 <span class="doccomment">//! especially for the [ndarray][ndarray] class.</span>
 <span class="doccomment">//!</span>
@@ -189,6 +193,10 @@
         };
     }
     <span class="macro">doc_comment!</span>(<span class="macro">include_str!</span>(<span class="string">&quot;../README.md&quot;</span>), <span class="ident">readme</span>);
+}
+
+<span class="kw">mod</span> <span class="ident">sealed</span> {
+    <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Sealed</span> {}
 }
 
 <span class="doccomment">/// Create a [`PyArray`] with one, two or three dimensions.</span>
