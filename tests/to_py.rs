@@ -63,6 +63,18 @@ fn long_iter_to_pyarray() {
 }
 
 #[test]
+fn exact_iter_to_pyarray() {
+    Python::with_gil(|py| {
+        let arr = PyArray::from_exact_iter(py, 0_u32..512);
+
+        assert_eq!(
+            arr.readonly().as_slice().unwrap(),
+            (0_u32..512).collect::<Vec<_>>(),
+        );
+    });
+}
+
+#[test]
 fn from_small_array() {
     macro_rules! small_array_test {
         ($($t:ty)+) => {

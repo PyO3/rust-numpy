@@ -356,10 +356,6 @@ impl<T, D> PyArray<T, D> {
         let ptr = self.as_array_ptr();
         (*ptr).data as *mut _
     }
-
-    pub(crate) unsafe fn copy_ptr(&self, other: *const T, len: usize) {
-        ptr::copy_nonoverlapping(other, self.data(), len)
-    }
 }
 
 struct InvertedAxes(u32);
@@ -959,7 +955,7 @@ impl<T: Element> PyArray<T, Ix1> {
         unsafe {
             let array = PyArray::new(py, [slice.len()], false);
             if T::IS_COPY {
-                array.copy_ptr(slice.as_ptr(), slice.len());
+                ptr::copy_nonoverlapping(slice.as_ptr(), array.data(), slice.len());
             } else {
                 let data_ptr = array.data();
                 for (i, item) in slice.iter().enumerate() {
@@ -983,7 +979,7 @@ impl<T: Element> PyArray<T, Ix1> {
     /// });
     /// ```
     pub fn from_vec<'py>(py: Python<'py>, vec: Vec<T>) -> &'py Self {
-        IntoPyArray::into_pyarray(vec, py)
+        vec.into_pyarray(py)
     }
 
     /// Construct one-dimension PyArray from a type which implements
@@ -1000,20 +996,8 @@ impl<T: Element> PyArray<T, Ix1> {
     /// });
     /// ```
     pub fn from_exact_iter(py: Python<'_>, iter: impl ExactSizeIterator<Item = T>) -> &Self {
-        // NumPy will always zero-initialize object pointers,
-        // so the array can be dropped safely if the iterator panics.
-        unsafe {
-            let len = iter.len();
-            let array = Self::new(py, [len], false);
-            let mut idx = 0;
-            for item in iter {
-                assert!(idx < len);
-                array.uget_raw([idx]).write(item);
-                idx += 1;
-            }
-            assert!(idx == len);
-            array
-        }
+        let data = iter.collect::<Box<[_]>>();
+        data.into_pyarray(py)
     }
 
     /// Construct one-dimension PyArray from a type which implements
@@ -1032,29 +1016,8 @@ impl<T: Element> PyArray<T, Ix1> {
     /// });
     /// ```
     pub fn from_iter(py: Python<'_>, iter: impl IntoIterator<Item = T>) -> &Self {
-        let iter = iter.into_iter();
-        let (min_len, max_len) = iter.size_hint();
-        let mut capacity = max_len.unwrap_or_else(|| min_len.max(512 / mem::size_of::<T>()));
-        unsafe {
-            // NumPy will always zero-initialize object pointers,
-            // so the array can be dropped safely if the iterator panics.
-            let array = Self::new(py, [capacity], false);
-            let mut length = 0;
-            for (i, item) in iter.enumerate() {
-                length += 1;
-                if length > capacity {
-                    capacity *= 2;
-                    array
-                        .resize(capacity)
-                        .expect("PyArray::from_iter: Failed to allocate memory");
-                }
-                array.uget_raw([i]).write(item);
-            }
-            if capacity > length {
-                array.resize(length).unwrap()
-            }
-            array
-        }
+        let data = iter.into_iter().collect::<Vec<_>>();
+        data.into_pyarray(py)
     }
 
     /// Extends or trancates the length of 1 dimension PyArray.
@@ -1339,8 +1302,6 @@ impl<T: Element + AsPrimitive<f64>> PyArray<T, Ix1> {
 mod tests {
     use super::*;
 
-    use std::ops::Range;
-
     #[test]
     fn test_get_unchecked() {
         pyo3::Python::with_gil(|py| {
@@ -1368,38 +1329,6 @@ mod tests {
             let a = ndarray::Array2::from_shape_fn((2, 3), |(_i, _j)| PyList::empty(py).into());
             let arr: &PyArray<Py<PyAny>, _> = a.to_pyarray(py);
             py_run!(py, arr, "assert arr.dtype.hasobject");
-        });
-    }
-
-    struct InsincereIterator(Range<usize>, usize);
-
-    impl Iterator for InsincereIterator {
-        type Item = usize;
-
-        fn next(&mut self) -> Option<Self::Item> {
-            self.0.next()
-        }
-    }
-
-    impl ExactSizeIterator for InsincereIterator {
-        fn len(&self) -> usize {
-            self.1
-        }
-    }
-
-    #[test]
-    #[should_panic]
-    fn from_exact_iter_too_short() {
-        Python::with_gil(|py| {
-            PyArray::from_exact_iter(py, InsincereIterator(0..3, 5));
-        });
-    }
-
-    #[test]
-    #[should_panic]
-    fn from_exact_iter_too_long() {
-        Python::with_gil(|py| {
-            PyArray::from_exact_iter(py, InsincereIterator(0..5, 3));
         });
     }
 }
