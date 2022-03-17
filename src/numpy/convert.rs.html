@@ -313,7 +313,7 @@
 </pre><pre class="rust"><code><span class="doccomment">//! Defines conversion traits between Rust types and NumPy data types.</span>
 <span class="attribute">#![<span class="ident">deny</span>(<span class="ident">missing_docs</span>)]</span>
 
-<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">mem</span>, <span class="ident">os::raw::c_int</span>};
+<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">mem</span>, <span class="ident">os::raw::c_int</span>, <span class="ident">ptr</span>};
 
 <span class="kw">use</span> <span class="ident">ndarray</span>::{<span class="ident">ArrayBase</span>, <span class="ident">Data</span>, <span class="ident">Dimension</span>, <span class="ident">IntoDimension</span>, <span class="ident">Ix1</span>, <span class="ident">OwnedRepr</span>};
 <span class="kw">use</span> <span class="ident">pyo3::Python</span>;
@@ -455,12 +455,12 @@
         <span class="kw">let</span> <span class="ident">len</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">len</span>();
         <span class="kw">match</span> <span class="self">self</span>.<span class="ident">order</span>() {
             <span class="prelude-val">Some</span>(<span class="ident">order</span>) <span class="kw">if</span> <span class="ident">A::IS_COPY</span> =&gt; {
-                <span class="comment">// if the array is contiguous, copy it by `copy_ptr`.</span>
+                <span class="comment">// if the array is contiguous, copy it by `copy_nonoverlapping`.</span>
                 <span class="kw">let</span> <span class="ident">strides</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">npy_strides</span>();
                 <span class="kw">unsafe</span> {
                     <span class="kw">let</span> <span class="ident">array</span> <span class="op">=</span>
                         <span class="ident">PyArray::new_</span>(<span class="ident">py</span>, <span class="self">self</span>.<span class="ident">raw_dim</span>(), <span class="ident">strides</span>.<span class="ident">as_ptr</span>(), <span class="ident">order</span>.<span class="ident">to_flag</span>());
-                    <span class="ident">array</span>.<span class="ident">copy_ptr</span>(<span class="self">self</span>.<span class="ident">as_ptr</span>(), <span class="ident">len</span>);
+                    <span class="ident">ptr::copy_nonoverlapping</span>(<span class="self">self</span>.<span class="ident">as_ptr</span>(), <span class="ident">array</span>.<span class="ident">data</span>(), <span class="ident">len</span>);
                     <span class="ident">array</span>
                 }
             }
