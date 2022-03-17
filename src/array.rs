@@ -954,15 +954,8 @@ impl<T: Element> PyArray<T, Ix1> {
     pub fn from_slice<'py>(py: Python<'py>, slice: &[T]) -> &'py Self {
         unsafe {
             let array = PyArray::new(py, [slice.len()], false);
-            if T::IS_COPY {
-                ptr::copy_nonoverlapping(slice.as_ptr(), array.data(), slice.len());
-            } else {
-                let mut data_ptr = array.data();
-                for item in slice {
-                    data_ptr.write(item.clone());
-                    data_ptr = data_ptr.add(1);
-                }
-            }
+            let mut data_ptr = array.data();
+            clone_elements(slice, &mut data_ptr);
             array
         }
     }
@@ -1106,15 +1099,7 @@ impl<T: Element> PyArray<T, Ix2> {
                 if v.len() != len2 {
                     return Err(FromVecError::new(v.len(), len2));
                 }
-                if T::IS_COPY {
-                    ptr::copy_nonoverlapping(v.as_ptr(), data_ptr, len2);
-                    data_ptr = data_ptr.add(len2);
-                } else {
-                    for v in v {
-                        data_ptr.write(v.clone());
-                        data_ptr = data_ptr.add(1);
-                    }
-                }
+                clone_elements(v, &mut data_ptr);
             }
             Ok(array)
         }
@@ -1157,15 +1142,7 @@ impl<T: Element> PyArray<T, Ix3> {
                     if v.len() != len3 {
                         return Err(FromVecError::new(v.len(), len3));
                     }
-                    if T::IS_COPY {
-                        ptr::copy_nonoverlapping(v.as_ptr(), data_ptr, len3);
-                        data_ptr = data_ptr.add(len3);
-                    } else {
-                        for v in v {
-                            data_ptr.write(v.clone());
-                            data_ptr = data_ptr.add(1);
-                        }
-                    }
+                    clone_elements(v, &mut data_ptr);
                 }
             }
             Ok(array)
@@ -1303,6 +1280,18 @@ impl<T: Element + AsPrimitive<f64>> PyArray<T, Ix1> {
                 T::get_dtype(py).num(),
             );
             Self::from_owned_ptr(py, ptr)
+        }
+    }
+}
+
+unsafe fn clone_elements<T: Element>(elems: &[T], data_ptr: &mut *mut T) {
+    if T::IS_COPY {
+        ptr::copy_nonoverlapping(elems.as_ptr(), *data_ptr, elems.len());
+        *data_ptr = data_ptr.add(elems.len());
+    } else {
+        for elem in elems {
+            data_ptr.write(elem.clone());
+            *data_ptr = data_ptr.add(1);
         }
     }
 }
