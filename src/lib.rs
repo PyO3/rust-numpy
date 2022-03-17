@@ -82,6 +82,10 @@ mod sealed {
     pub trait Sealed {}
 }
 
+#[cold]
+#[inline(always)]
+fn cold() {}
+
 /// Create a [`PyArray`] with one, two or three dimensions.
 ///
 /// This macro is backed by [`ndarray::array`].

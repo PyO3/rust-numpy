@@ -19,6 +19,7 @@ use pyo3::{
     Python, ToPyObject,
 };
 
+use crate::cold;
 use crate::convert::{ArrayExt, IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
 use crate::dtype::{Element, PyArrayDescr};
 use crate::error::{DimensionalityError, FromVecError, NotContiguousError, TypeError};
@@ -972,6 +973,7 @@ impl<T: Element> PyArray<T, Ix1> {
     ///     assert_eq!(pyarray.readonly().as_slice().unwrap(), &[1, 2, 3, 4, 5]);
     /// });
     /// ```
+    #[inline(always)]
     pub fn from_vec<'py>(py: Python<'py>, vec: Vec<T>) -> &'py Self {
         vec.into_pyarray(py)
     }
@@ -1097,6 +1099,7 @@ impl<T: Element> PyArray<T, Ix2> {
             let mut data_ptr = array.data();
             for v in v {
                 if v.len() != len2 {
+                    cold();
                     return Err(FromVecError::new(v.len(), len2));
                 }
                 clone_elements(v, &mut data_ptr);
@@ -1136,10 +1139,12 @@ impl<T: Element> PyArray<T, Ix3> {
             let mut data_ptr = array.data();
             for v in v {
                 if v.len() != len2 {
+                    cold();
                     return Err(FromVecError::new(v.len(), len2));
                 }
                 for v in v {
                     if v.len() != len3 {
+                        cold();
                         return Err(FromVecError::new(v.len(), len3));
                     }
                     clone_elements(v, &mut data_ptr);
