@@ -59,8 +59,9 @@
 //! });
 //! ```
 //!
-//! The second example shows that non-overlapping and interleaved views which do not alias
-//! are currently not supported due to over-approximating which borrows are in conflict.
+//! The second example shows that while non-overlapping views are supported,
+//! interleaved views which do not touch are currently not supported
+//! due to over-approximating which borrows are in conflict.
 //!
 //! ```rust
 //! # use std::panic::{catch_unwind, AssertUnwindSafe};
@@ -77,13 +78,8 @@
 //!     let view3 = py.eval("array[::2]", None, Some(locals)).unwrap().downcast::<PyArray1<f64>>().unwrap();
 //!     let view4 = py.eval("array[1::2]", None, Some(locals)).unwrap().downcast::<PyArray1<f64>>().unwrap();
 //!
-//!     // Will fail at runtime even though `view1` and `view2`
-//!     // do not overlap as they are based on the same array.
-//!     let res = catch_unwind(AssertUnwindSafe(|| {
-//!         let _view1 = view1.readwrite();
-//!         let _view2 = view2.readwrite();
-//!     }));
-//!     assert!(res.is_err());
+//!     let _view1 = view1.readwrite();
+//!     let _view2 = view2.readwrite();
 //!
 //!     // Will fail at runtime even though `view3` and `view4`
 //!     // interleave as they are based on the same array.
@@ -129,23 +125,22 @@
 //!
 //! # Limitations
 //!
-//! Note that the current implementation of this is an over-approximation: It will consider all borrows potentially conflicting
-//! if the initial arrays have the same object at the end of their [base object chain][base].
-//! For example, creating two views of the same underlying array by slicing will always yield potentially conflicting borrows
-//! even if the slice indices are chosen so that the two views do not actually share any elements by splitting the array into
-//! non-overlapping parts of by interleaving along one of its axes.
+//! Note that the current implementation of this is an over-approximation: It will consider overlapping borrows
+//! potentially conflicting if the initial arrays have the same object at the end of their [base object chain][base].
+//! For example, creating two views of the same underlying array by slicing can yield potentially conflicting borrows
+//! even if the slice indices are chosen so that the two views do not actually share any elements by interleaving along one of its axes.
 //!
 //! This does limit the set of programs that can be written using safe Rust in way similar to rustc itself
 //! which ensures that all accepted programs are memory safe but does not necessarily accept all memory safe programs.
-//! The plan is to refine this checking to correctly handle more involved cases like non-overlapping and interleaved
-//! views into the same array and until then the unsafe method [`PyArray::as_array_mut`] can be used as an escape hatch.
+//! The plan is to refine this checking to correctly handle more involved cases like interleaved views
+//! into the same array and until then the unsafe method [`PyArray::as_array_mut`] can be used as an escape hatch.
 //!
 //! [base]: https://numpy.org/doc/stable/reference/c-api/types-and-structures.html#c.NPY_AO.base
 #![deny(missing_docs)]
 
 use std::cell::UnsafeCell;
 use std::collections::hash_map::{Entry, HashMap};
-use std::ops::Deref;
+use std::ops::{Deref, Range};
 
 use ndarray::{ArrayView, ArrayViewMut, Dimension, Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};
 use pyo3::{FromPyObject, PyAny, PyResult};
@@ -157,7 +152,27 @@ use crate::dtype::Element;
 use crate::error::{BorrowError, NotContiguousError};
 use crate::npyffi::{self, PyArrayObject, NPY_ARRAY_WRITEABLE};
 
-struct BorrowFlags(UnsafeCell<Option<HashMap<usize, isize>>>);
+#[derive(PartialEq, Eq, Hash)]
+struct BorrowKey {
+    range: Range<usize>,
+}
+
+impl BorrowKey {
+    fn conflicts(&self, other: &Self) -> bool {
+        debug_assert!(self.range.start <= self.range.end);
+        debug_assert!(other.range.start <= other.range.end);
+
+        if other.range.start >= self.range.end || other.range.end <= self.range.start {
+            return false;
+        }
+
+        true
+    }
+}
+
+type BorrowFlagsInner = HashMap<usize, HashMap<BorrowKey, isize>>;
+
+struct BorrowFlags(UnsafeCell<Option<BorrowFlagsInner>>);
 
 unsafe impl Sync for BorrowFlags {}
 
@@ -167,12 +182,20 @@ impl BorrowFlags {
     }
 
     #[allow(clippy::mut_from_ref)]
-    unsafe fn get(&self) -> &mut HashMap<usize, isize> {
+    unsafe fn get(&self) -> &mut BorrowFlagsInner {
         (*self.0.get()).get_or_insert_with(HashMap::new)
     }
 
-    fn acquire<T, D>(&self, array: &PyArray<T, D>) -> Result<(), BorrowError> {
+    fn acquire<T, D>(&self, array: &PyArray<T, D>) -> Result<(), BorrowError>
+    where
+        T: Element,
+        D: Dimension,
+    {
         let address = base_address(array);
+
+        let key = BorrowKey {
+            range: data_range(array),
+        };
 
         // SAFETY: Access to `&PyArray<T, D>` implies holding the GIL
         // and we are not calling into user code which might re-enter this function.
@@ -180,43 +203,79 @@ impl BorrowFlags {
 
         match borrow_flags.entry(address) {
             Entry::Occupied(entry) => {
-                let readers = entry.into_mut();
+                let same_base = entry.into_mut();
 
-                let new_readers = readers.wrapping_add(1);
+                if let Some(readers) = same_base.get_mut(&key) {
+                    let new_readers = readers.wrapping_add(1);
 
-                if new_readers <= 0 {
-                    cold();
-                    return Err(BorrowError::AlreadyBorrowed);
+                    if new_readers <= 0 {
+                        cold();
+                        return Err(BorrowError::AlreadyBorrowed);
+                    }
+
+                    *readers = new_readers;
+                } else {
+                    if same_base
+                        .iter()
+                        .any(|(other, readers)| key.conflicts(other) && *readers < 0)
+                    {
+                        cold();
+                        return Err(BorrowError::AlreadyBorrowed);
+                    }
+
+                    same_base.insert(key, 1);
                 }
-
-                *readers = new_readers;
             }
             Entry::Vacant(entry) => {
-                entry.insert(1);
+                let mut same_base = HashMap::new();
+                same_base.insert(key, 1);
+                entry.insert(same_base);
             }
         }
 
         Ok(())
     }
 
-    fn release<T, D>(&self, array: &PyArray<T, D>) {
+    fn release<T, D>(&self, array: &PyArray<T, D>)
+    where
+        T: Element,
+        D: Dimension,
+    {
         let address = base_address(array);
+
+        let key = BorrowKey {
+            range: data_range(array),
+        };
 
         // SAFETY: Access to `&PyArray<T, D>` implies holding the GIL
         // and we are not calling into user code which might re-enter this function.
         let borrow_flags = unsafe { BORROW_FLAGS.get() };
 
-        let readers = borrow_flags.get_mut(&address).unwrap();
+        let same_base = borrow_flags.get_mut(&address).unwrap();
+
+        let readers = same_base.get_mut(&key).unwrap();
 
         *readers -= 1;
 
         if *readers == 0 {
-            borrow_flags.remove(&address).unwrap();
+            if same_base.len() > 1 {
+                same_base.remove(&key).unwrap();
+            } else {
+                borrow_flags.remove(&address).unwrap();
+            }
         }
     }
 
-    fn acquire_mut<T, D>(&self, array: &PyArray<T, D>) -> Result<(), BorrowError> {
+    fn acquire_mut<T, D>(&self, array: &PyArray<T, D>) -> Result<(), BorrowError>
+    where
+        T: Element,
+        D: Dimension,
+    {
         let address = base_address(array);
+
+        let key = BorrowKey {
+            range: data_range(array),
+        };
 
         // SAFETY: Access to `&PyArray<T, D>` implies holding the GIL
         // and we are not calling into user code which might re-enter this function.
@@ -224,31 +283,59 @@ impl BorrowFlags {
 
         match borrow_flags.entry(address) {
             Entry::Occupied(entry) => {
-                let writers = entry.into_mut();
+                let same_base = entry.into_mut();
 
-                if *writers != 0 {
-                    cold();
-                    return Err(BorrowError::AlreadyBorrowed);
+                if let Some(writers) = same_base.get_mut(&key) {
+                    if *writers != 0 {
+                        cold();
+                        return Err(BorrowError::AlreadyBorrowed);
+                    }
+
+                    *writers = -1;
+                } else {
+                    if same_base
+                        .iter()
+                        .any(|(other, writers)| key.conflicts(other) && *writers != 0)
+                    {
+                        cold();
+                        return Err(BorrowError::AlreadyBorrowed);
+                    }
+
+                    same_base.insert(key, -1);
                 }
-
-                *writers = -1;
             }
             Entry::Vacant(entry) => {
-                entry.insert(-1);
+                let mut same_base = HashMap::new();
+                same_base.insert(key, -1);
+                entry.insert(same_base);
             }
         }
 
         Ok(())
     }
 
-    fn release_mut<T, D>(&self, array: &PyArray<T, D>) {
+    fn release_mut<T, D>(&self, array: &PyArray<T, D>)
+    where
+        T: Element,
+        D: Dimension,
+    {
         let address = base_address(array);
+
+        let key = BorrowKey {
+            range: data_range(array),
+        };
 
         // SAFETY: Access to `&PyArray<T, D>` implies holding the GIL
         // and we are not calling into user code which might re-enter this function.
-        let borrow_flags = unsafe { self.get() };
+        let borrow_flags = unsafe { BORROW_FLAGS.get() };
 
-        borrow_flags.remove(&address).unwrap();
+        let same_base = borrow_flags.get_mut(&address).unwrap();
+
+        if same_base.len() > 1 {
+            same_base.remove(&key).unwrap();
+        } else {
+            borrow_flags.remove(&address);
+        }
     }
 }
 
@@ -260,7 +347,10 @@ static BORROW_FLAGS: BorrowFlags = BorrowFlags::new();
 /// i.e. that only shared references into the interior of the array can be created safely.
 ///
 /// See the [module-level documentation](self) for more.
-pub struct PyReadonlyArray<'py, T, D>(&'py PyArray<T, D>);
+pub struct PyReadonlyArray<'py, T, D>(&'py PyArray<T, D>)
+where
+    T: Element,
+    D: Dimension;
 
 /// Read-only borrow of a one-dimensional array.
 pub type PyReadonlyArray1<'py, T> = PyReadonlyArray<'py, T, Ix1>;
@@ -283,7 +373,11 @@ pub type PyReadonlyArray6<'py, T> = PyReadonlyArray<'py, T, Ix6>;
 /// Read-only borrow of an array whose dimensionality is determined at runtime.
 pub type PyReadonlyArrayDyn<'py, T> = PyReadonlyArray<'py, T, IxDyn>;
 
-impl<'py, T, D> Deref for PyReadonlyArray<'py, T, D> {
+impl<'py, T, D> Deref for PyReadonlyArray<'py, T, D>
+where
+    T: Element,
+    D: Dimension,
+{
     type Target = PyArray<T, D>;
 
     fn deref(&self) -> &Self::Target {
@@ -343,7 +437,11 @@ where
     }
 }
 
-impl<'a, T, D> Drop for PyReadonlyArray<'a, T, D> {
+impl<'a, T, D> Drop for PyReadonlyArray<'a, T, D>
+where
+    T: Element,
+    D: Dimension,
+{
     fn drop(&mut self) {
         BORROW_FLAGS.release(self.0);
     }
@@ -355,7 +453,10 @@ impl<'a, T, D> Drop for PyReadonlyArray<'a, T, D> {
 /// i.e. that only a single exclusive reference into the interior of the array can be created safely.
 ///
 /// See the [module-level documentation](self) for more.
-pub struct PyReadwriteArray<'py, T, D>(&'py PyArray<T, D>);
+pub struct PyReadwriteArray<'py, T, D>(&'py PyArray<T, D>)
+where
+    T: Element,
+    D: Dimension;
 
 /// Read-write borrow of a one-dimensional array.
 pub type PyReadwriteArray1<'py, T> = PyReadwriteArray<'py, T, Ix1>;
@@ -378,7 +479,11 @@ pub type PyReadwriteArray6<'py, T> = PyReadwriteArray<'py, T, Ix6>;
 /// Read-write borrow of an array whose dimensionality is determined at runtime.
 pub type PyReadwriteArrayDyn<'py, T> = PyReadwriteArray<'py, T, IxDyn>;
 
-impl<'py, T, D> Deref for PyReadwriteArray<'py, T, D> {
+impl<'py, T, D> Deref for PyReadwriteArray<'py, T, D>
+where
+    T: Element,
+    D: Dimension,
+{
     type Target = PyReadonlyArray<'py, T, D>;
 
     fn deref(&self) -> &Self::Target {
@@ -468,14 +573,16 @@ where
     }
 }
 
-impl<'a, T, D> Drop for PyReadwriteArray<'a, T, D> {
+impl<'a, T, D> Drop for PyReadwriteArray<'a, T, D>
+where
+    T: Element,
+    D: Dimension,
+{
     fn drop(&mut self) {
         BORROW_FLAGS.release_mut(self.0);
     }
 }
 
-// FIXME(adamreichold): This is a coarse approximation and needs to be refined,
-// i.e. borrows of non-overlapping views into the same base should not be considered conflicting.
 fn base_address<T, D>(array: &PyArray<T, D>) -> usize {
     let py = array.py();
     let mut array = array.as_array_ptr();
@@ -493,6 +600,34 @@ fn base_address<T, D>(array: &PyArray<T, D>) -> usize {
     }
 }
 
+// FIXME(adamreichold): This is a coarse approximation and needs to be refined,
+// i.e. borrows of interleaved views into the same base should not be considered conflicting.
+fn data_range<T, D>(array: &PyArray<T, D>) -> Range<usize>
+where
+    T: Element,
+    D: Dimension,
+{
+    let data = unsafe { (*array.as_array_ptr()).data };
+
+    let mut start = 0;
+    let mut end = 0;
+
+    for (&dim, &stride) in array.shape().iter().zip(array.strides()) {
+        let offset = (dim as isize) * stride;
+
+        if offset >= 0 {
+            end += offset;
+        } else {
+            start += offset;
+        }
+    }
+
+    let start = unsafe { data.offset(start) } as usize;
+    let end = unsafe { data.offset(end) } as usize;
+
+    Range { start, end }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -500,7 +635,7 @@ mod tests {
     use ndarray::Array;
     use pyo3::{types::IntoPyDict, Python};
 
-    use crate::array::{PyArray1, PyArray2};
+    use crate::array::{PyArray1, PyArray2, PyArray3};
     use crate::convert::IntoPyArray;
 
     #[test]
@@ -513,6 +648,10 @@ mod tests {
 
             let base_address = base_address(array);
             assert_eq!(base_address, array as *const _ as usize);
+
+            let data_range = data_range(array);
+            assert_eq!(data_range.start, unsafe { array.data() } as usize);
+            assert_eq!(data_range.end, unsafe { array.data().add(15) } as usize);
         });
     }
 
@@ -527,6 +666,10 @@ mod tests {
             let base_address = base_address(array);
             assert_ne!(base_address, array as *const _ as usize);
             assert_eq!(base_address, base as usize);
+
+            let data_range = data_range(array);
+            assert_eq!(data_range.start, unsafe { array.data() } as usize);
+            assert_eq!(data_range.end, unsafe { array.data().add(15) } as usize);
         });
     }
 
@@ -549,6 +692,10 @@ mod tests {
             let base_address = base_address(view);
             assert_ne!(base_address, view as *const _ as usize);
             assert_eq!(base_address, base as usize);
+
+            let data_range = data_range(view);
+            assert_eq!(data_range.start, unsafe { view.data() } as usize);
+            assert_eq!(data_range.end, unsafe { view.data().add(12) } as usize);
         });
     }
 
@@ -575,6 +722,10 @@ mod tests {
             assert_ne!(base_address, view as *const _ as usize);
             assert_ne!(base_address, array as *const _ as usize);
             assert_eq!(base_address, base as usize);
+
+            let data_range = data_range(view);
+            assert_eq!(data_range.start, unsafe { view.data() } as usize);
+            assert_eq!(data_range.end, unsafe { view.data().add(12) } as usize);
         });
     }
 
@@ -610,6 +761,10 @@ mod tests {
             assert_ne!(base_address, view2 as *const _ as usize);
             assert_ne!(base_address, view1 as *const _ as usize);
             assert_eq!(base_address, base as usize);
+
+            let data_range = data_range(view2);
+            assert_eq!(data_range.start, unsafe { view2.data() } as usize);
+            assert_eq!(data_range.end, unsafe { view2.data().add(6) } as usize);
         });
     }
 
@@ -649,6 +804,36 @@ mod tests {
             assert_ne!(base_address, view1 as *const _ as usize);
             assert_ne!(base_address, array as *const _ as usize);
             assert_eq!(base_address, base as usize);
+
+            let data_range = data_range(view2);
+            assert_eq!(data_range.start, unsafe { view2.data() } as usize);
+            assert_eq!(data_range.end, unsafe { view2.data().add(6) } as usize);
+        });
+    }
+
+    #[test]
+    fn view_with_negative_strides() {
+        Python::with_gil(|py| {
+            let array = PyArray::<f64, _>::zeros(py, (1, 2, 3), false);
+
+            let locals = [("array", array)].into_py_dict(py);
+            let view = py
+                .eval("array[::-1,:,::-1]", None, Some(locals))
+                .unwrap()
+                .downcast::<PyArray3<f64>>()
+                .unwrap();
+            assert_ne!(view as *const _ as usize, array as *const _ as usize);
+
+            let base = unsafe { (*view.as_array_ptr()).base };
+            assert_eq!(base as usize, array as *const _ as usize);
+
+            let base_address = base_address(view);
+            assert_ne!(base_address, view as *const _ as usize);
+            assert_eq!(base_address, base as usize);
+
+            let data_range = data_range(view);
+            assert_eq!(data_range.start, unsafe { view.data().offset(-9) } as usize);
+            assert_eq!(data_range.end, unsafe { view.data().offset(6) } as usize);
         });
     }
 }
