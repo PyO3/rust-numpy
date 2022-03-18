@@ -87,6 +87,17 @@ jobs:
       CARGO_BUILD_TARGET: ${{ matrix.platform.rust-target }}
       RUST_BACKTRACE: 1
 
+  cross-build:
+    runs-on: ubuntu-latest
+    needs: [lint, check-msrv, examples]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: messense/maturin-action@v1
+        with:
+          target: aarch64
+          manylinux: auto
+          args: --manifest-path examples/simple/Cargo.toml --no-sdist
+
   check-msrv:
     runs-on: ubuntu-latest
     steps:
