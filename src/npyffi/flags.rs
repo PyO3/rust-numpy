@@ -71,7 +71,8 @@ pub const NPY_NEEDS_INIT: npy_char = 0x08;
 pub const NPY_NEEDS_PYAPI: npy_char = 0x10;
 pub const NPY_USE_GETITEM: npy_char = 0x20;
 pub const NPY_USE_SETITEM: npy_char = 0x40;
-pub const NPY_ALIGNED_STRUCT: npy_char = -128; // 0x80
+#[allow(overflowing_literals)]
+pub const NPY_ALIGNED_STRUCT: npy_char = 0x80;
 pub const NPY_FROM_FIELDS: npy_char =
     NPY_NEEDS_INIT | NPY_LIST_PICKLE | NPY_ITEM_REFCOUNT | NPY_NEEDS_PYAPI;
 pub const NPY_OBJECT_DTYPE_FLAGS: npy_char = NPY_LIST_PICKLE
