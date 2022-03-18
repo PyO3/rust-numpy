@@ -1,6 +1,8 @@
 # Changelog
 
 - Unreleased
+
+- v0.16.2
   - Fix build on platforms where `c_char` is `u8` like Linux/AArch64. ([#296](https://github.com/PyO3/rust-numpy/pull/296))
 
 - v0.16.1
