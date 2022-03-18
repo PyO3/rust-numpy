@@ -174,34 +174,38 @@ fn is_instance() {
 #[test]
 fn from_vec2() {
     Python::with_gil(|py| {
-        let vec2 = vec![vec![1, 2, 3]; 2];
+        let pyarray = PyArray::from_vec2(py, &[vec![1, 2, 3], vec![4, 5, 6]]).unwrap();
 
-        let pyarray = PyArray::from_vec2(py, &vec2).unwrap();
-
-        assert_eq!(pyarray.readonly().as_array(), array![[1, 2, 3], [1, 2, 3]]);
+        assert_eq!(pyarray.readonly().as_array(), array![[1, 2, 3], [4, 5, 6]]);
     });
 }
 
 #[test]
 fn from_vec2_ragged() {
     Python::with_gil(|py| {
-        let pyarray = PyArray::from_vec2(py, &[vec![1], vec![2, 3]]);
+        let pyarray = PyArray::from_vec2(py, &[vec![1, 2, 3], vec![4, 5]]);
 
         let err = pyarray.unwrap_err();
-        assert_eq!(err.to_string(), "invalid length: 1, but expected 2");
+        assert_eq!(err.to_string(), "invalid length: 2, but expected 3");
     });
 }
 
 #[test]
 fn from_vec3() {
     Python::with_gil(|py| {
-        let vec3 = vec![vec![vec![1, 2]; 2]; 2];
-
-        let pyarray = PyArray::from_vec3(py, &vec3).unwrap();
+        let pyarray = PyArray::from_vec3(
+            py,
+            &[
+                vec![vec![1, 2], vec![3, 4]],
+                vec![vec![5, 6], vec![7, 8]],
+                vec![vec![9, 10], vec![11, 12]],
+            ],
+        )
+        .unwrap();
 
         assert_eq!(
             pyarray.readonly().as_array(),
-            array![[[1, 2], [1, 2]], [[1, 2], [1, 2]]]
+            array![[[1, 2], [3, 4]], [[5, 6], [7, 8]], [[9, 10], [11, 12]]]
         );
     });
 }
@@ -209,7 +213,26 @@ fn from_vec3() {
 #[test]
 fn from_vec3_ragged() {
     Python::with_gil(|py| {
-        let pyarray = PyArray::from_vec3(py, &[vec![vec![1], vec![2, 3]]]);
+        let pyarray = PyArray::from_vec3(
+            py,
+            &[
+                vec![vec![1, 2], vec![3, 4]],
+                vec![vec![5, 6], vec![7, 8]],
+                vec![vec![9, 10], vec![11]],
+            ],
+        );
+
+        let err = pyarray.unwrap_err();
+        assert_eq!(err.to_string(), "invalid length: 1, but expected 2");
+
+        let pyarray = PyArray::from_vec3(
+            py,
+            &[
+                vec![vec![1, 2], vec![3, 4]],
+                vec![vec![5, 6], vec![7, 8]],
+                vec![vec![9, 10]],
+            ],
+        );
 
         let err = pyarray.unwrap_err();
         assert_eq!(err.to_string(), "invalid length: 1, but expected 2");
@@ -438,12 +461,31 @@ fn to_owned_works() {
 
 #[test]
 fn copy_to_works() {
-    pyo3::Python::with_gil(|py| {
+    Python::with_gil(|py| {
         let arr1 = PyArray::arange(py, 2.0, 5.0, 1.0);
         let arr2 = unsafe { PyArray::<i64, _>::new(py, [3], false) };
 
         arr1.copy_to(arr2).unwrap();
 
         assert_eq!(arr2.readonly().as_slice().unwrap(), &[2, 3, 4]);
+    });
+}
+
+#[test]
+fn get_works() {
+    Python::with_gil(|py| {
+        let array = pyarray![py, [[1, 2], [3, 4]], [[5, 6], [7, 8]], [[9, 10], [11, 12]]];
+
+        unsafe {
+            assert_eq!(array.get([0, 0, 0]), Some(&1));
+            assert_eq!(array.get([2, 1, 1]), Some(&12));
+            assert_eq!(array.get([0, 0, 2]), None);
+            assert_eq!(array.get([0, 2, 0]), None);
+            assert_eq!(array.get([3, 0, 0]), None);
+
+            assert_eq!(*array.uget([1, 0, 0]), 5);
+            assert_eq!(*array.uget_mut([0, 1, 0]), 3);
+            assert_eq!(*array.uget_raw([0, 0, 1]), 2);
+        }
     });
 }

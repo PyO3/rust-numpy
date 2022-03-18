@@ -163,9 +163,10 @@ where
                 );
                 unsafe {
                     let array = PyArray::<A, _>::new_(py, dim, strides.as_ptr(), 0);
-                    let data_ptr = array.data();
-                    for (i, item) in self.iter().enumerate() {
-                        data_ptr.add(i).write(item.clone());
+                    let mut data_ptr = array.data();
+                    for item in self.iter() {
+                        data_ptr.write(item.clone());
+                        data_ptr = data_ptr.add(1);
                     }
                     array
                 }

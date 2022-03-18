@@ -19,6 +19,7 @@ use pyo3::{
     Python, ToPyObject,
 };
 
+use crate::cold;
 use crate::convert::{ArrayExt, IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
 use crate::dtype::{Element, PyArrayDescr};
 use crate::error::{DimensionalityError, FromVecError, NotContiguousError, TypeError};
@@ -954,14 +955,8 @@ impl<T: Element> PyArray<T, Ix1> {
     pub fn from_slice<'py>(py: Python<'py>, slice: &[T]) -> &'py Self {
         unsafe {
             let array = PyArray::new(py, [slice.len()], false);
-            if T::IS_COPY {
-                ptr::copy_nonoverlapping(slice.as_ptr(), array.data(), slice.len());
-            } else {
-                let data_ptr = array.data();
-                for (i, item) in slice.iter().enumerate() {
-                    data_ptr.add(i).write(item.clone());
-                }
-            }
+            let mut data_ptr = array.data();
+            clone_elements(slice, &mut data_ptr);
             array
         }
     }
@@ -978,6 +973,7 @@ impl<T: Element> PyArray<T, Ix1> {
     ///     assert_eq!(pyarray.readonly().as_slice().unwrap(), &[1, 2, 3, 4, 5]);
     /// });
     /// ```
+    #[inline(always)]
     pub fn from_vec<'py>(py: Python<'py>, vec: Vec<T>) -> &'py Self {
         vec.into_pyarray(py)
     }
@@ -988,34 +984,45 @@ impl<T: Element> PyArray<T, Ix1> {
     /// # Example
     /// ```
     /// use numpy::PyArray;
-    /// use std::collections::BTreeSet;
-    /// let vec = vec![1, 2, 3, 4, 5];
-    /// pyo3::Python::with_gil(|py| {
-    ///     let pyarray = PyArray::from_exact_iter(py, vec.iter().map(|&x| x));
+    /// use pyo3::Python;
+    ///
+    /// Python::with_gil(|py| {
+    ///     let pyarray = PyArray::from_exact_iter(py, [1, 2, 3, 4, 5].into_iter().copied());
     ///     assert_eq!(pyarray.readonly().as_slice().unwrap(), &[1, 2, 3, 4, 5]);
     /// });
     /// ```
-    pub fn from_exact_iter(py: Python<'_>, iter: impl ExactSizeIterator<Item = T>) -> &Self {
-        let data = iter.collect::<Box<[_]>>();
-        data.into_pyarray(py)
+    #[deprecated(
+        note = "`from_exact_iter` is deprecated as it does not provide any benefit over `from_iter`."
+    )]
+    #[inline(always)]
+    pub fn from_exact_iter<I>(py: Python<'_>, iter: I) -> &Self
+    where
+        I: IntoIterator<Item = T>,
+        I::IntoIter: ExactSizeIterator,
+    {
+        Self::from_iter(py, iter)
     }
 
-    /// Construct one-dimension PyArray from a type which implements
-    /// [`IntoIterator`](https://doc.rust-lang.org/std/iter/trait.IntoIterator.html).
+    /// Construct one-dimension PyArray from a type which implements [`IntoIterator`].
     ///
-    /// If no reliable [`size_hint`](https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.size_hint) is available,
+    /// If no reliable [`size_hint`][Iterator::size_hint] is available,
     /// this method can allocate memory multiple time, which can hurt performance.
     ///
     /// # Example
+    ///
     /// ```
     /// use numpy::PyArray;
-    /// let set: std::collections::BTreeSet<u32> = [4, 3, 2, 5, 1].into_iter().cloned().collect();
-    /// pyo3::Python::with_gil(|py| {
-    ///     let pyarray = PyArray::from_iter(py, set);
-    ///     assert_eq!(pyarray.readonly().as_slice().unwrap(), &[1, 2, 3, 4, 5]);
+    /// use pyo3::Python;
+    ///
+    /// Python::with_gil(|py| {
+    ///     let pyarray = PyArray::from_iter(py, "abcde".chars().map(u32::from));
+    ///     assert_eq!(pyarray.readonly().as_slice().unwrap(), &[97, 98, 99, 100, 101]);
     /// });
     /// ```
-    pub fn from_iter(py: Python<'_>, iter: impl IntoIterator<Item = T>) -> &Self {
+    pub fn from_iter<I>(py: Python<'_>, iter: I) -> &Self
+    where
+        I: IntoIterator<Item = T>,
+    {
         let data = iter.into_iter().collect::<Vec<_>>();
         data.into_pyarray(py)
     }
@@ -1095,19 +1102,18 @@ impl<T: Element> PyArray<T, Ix2> {
     /// });
     /// ```
     pub fn from_vec2<'py>(py: Python<'py>, v: &[Vec<T>]) -> Result<&'py Self, FromVecError> {
-        let last_len = v.last().map_or(0, |v| v.len());
-        for v in v {
-            if v.len() != last_len {
-                return Err(FromVecError::new(v.len(), last_len));
-            }
-        }
-        let dims = [v.len(), last_len];
+        let len2 = v.first().map_or(0, |v| v.len());
+        let dims = [v.len(), len2];
+        // SAFETY: The result of `Self::new` is always safe to drop.
         unsafe {
             let array = Self::new(py, dims, false);
-            for (y, vy) in v.iter().enumerate() {
-                for (x, vyx) in vy.iter().enumerate() {
-                    array.uget_raw([y, x]).write(vyx.clone());
+            let mut data_ptr = array.data();
+            for v in v {
+                if v.len() != len2 {
+                    cold();
+                    return Err(FromVecError::new(v.len(), len2));
                 }
+                clone_elements(v, &mut data_ptr);
             }
             Ok(array)
         }
@@ -1135,28 +1141,24 @@ impl<T: Element> PyArray<T, Ix3> {
     /// });
     /// ```
     pub fn from_vec3<'py>(py: Python<'py>, v: &[Vec<Vec<T>>]) -> Result<&'py Self, FromVecError> {
-        let len2 = v.last().map_or(0, |v| v.len());
-        for v in v {
-            if v.len() != len2 {
-                return Err(FromVecError::new(v.len(), len2));
-            }
-        }
-        let len3 = v.last().map_or(0, |v| v.last().map_or(0, |v| v.len()));
-        for v in v {
-            for v in v {
-                if v.len() != len3 {
-                    return Err(FromVecError::new(v.len(), len3));
-                }
-            }
-        }
+        let len2 = v.first().map_or(0, |v| v.len());
+        let len3 = v.first().map_or(0, |v| v.first().map_or(0, |v| v.len()));
         let dims = [v.len(), len2, len3];
+        // SAFETY: The result of `Self::new` is always safe to drop.
         unsafe {
             let array = Self::new(py, dims, false);
-            for (z, vz) in v.iter().enumerate() {
-                for (y, vzy) in vz.iter().enumerate() {
-                    for (x, vzyx) in vzy.iter().enumerate() {
-                        array.uget_raw([z, y, x]).write(vzyx.clone());
+            let mut data_ptr = array.data();
+            for v in v {
+                if v.len() != len2 {
+                    cold();
+                    return Err(FromVecError::new(v.len(), len2));
+                }
+                for v in v {
+                    if v.len() != len3 {
+                        cold();
+                        return Err(FromVecError::new(v.len(), len3));
                     }
+                    clone_elements(v, &mut data_ptr);
                 }
             }
             Ok(array)
@@ -1294,6 +1296,18 @@ impl<T: Element + AsPrimitive<f64>> PyArray<T, Ix1> {
                 T::get_dtype(py).num(),
             );
             Self::from_owned_ptr(py, ptr)
+        }
+    }
+}
+
+unsafe fn clone_elements<T: Element>(elems: &[T], data_ptr: &mut *mut T) {
+    if T::IS_COPY {
+        ptr::copy_nonoverlapping(elems.as_ptr(), *data_ptr, elems.len());
+        *data_ptr = data_ptr.add(elems.len());
+    } else {
+        for elem in elems {
+            data_ptr.write(elem.clone());
+            *data_ptr = data_ptr.add(1);
         }
     }
 }
