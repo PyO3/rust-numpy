@@ -82,6 +82,7 @@
 <span id="80">80</span>
 <span id="81">81</span>
 <span id="82">82</span>
+<span id="83">83</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="kw">super</span>::{<span class="ident">npy_char</span>, <span class="ident">npy_uint32</span>};
 <span class="kw">use</span> <span class="ident">std::os::raw::c_int</span>;
 
@@ -155,7 +156,8 @@
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_NEEDS_PYAPI</span>: <span class="ident">npy_char</span> <span class="op">=</span> <span class="number">0x10</span>;
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_USE_GETITEM</span>: <span class="ident">npy_char</span> <span class="op">=</span> <span class="number">0x20</span>;
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_USE_SETITEM</span>: <span class="ident">npy_char</span> <span class="op">=</span> <span class="number">0x40</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ALIGNED_STRUCT</span>: <span class="ident">npy_char</span> <span class="op">=</span> <span class="op">-</span><span class="number">128</span>; <span class="comment">// 0x80</span>
+<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">overflowing_literals</span>)]</span>
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ALIGNED_STRUCT</span>: <span class="ident">npy_char</span> <span class="op">=</span> <span class="number">0x80</span>;
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_FROM_FIELDS</span>: <span class="ident">npy_char</span> <span class="op">=</span>
     <span class="ident">NPY_NEEDS_INIT</span> <span class="op">|</span> <span class="ident">NPY_LIST_PICKLE</span> <span class="op">|</span> <span class="ident">NPY_ITEM_REFCOUNT</span> <span class="op">|</span> <span class="ident">NPY_NEEDS_PYAPI</span>;
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_OBJECT_DTYPE_FLAGS</span>: <span class="ident">npy_char</span> <span class="op">=</span> <span class="ident">NPY_LIST_PICKLE</span>
