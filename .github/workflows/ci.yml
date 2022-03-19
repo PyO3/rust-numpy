@@ -31,7 +31,7 @@ jobs:
     runs-on: ${{ matrix.platform.os }}
     needs: [lint, check-msrv, examples]
     strategy:
-      fail-fast: false
+      fail-fast: ${{ !contains(github.event.pull_request.labels.*.name, 'CI-no-fail-fast') }}
       matrix:
         python-version: ["3.7", "3.8", "3.9", "3.10"]
         platform: [
