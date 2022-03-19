@@ -24,9 +24,7 @@ jobs:
           default: true
       - uses: Swatinem/rust-cache@v1
         continue-on-error: true
-      - run: |
-          cargo fmt --all -- --check
-          cargo clippy --workspace --tests -- --deny warnings
+      - run: ./x.py check
 
   test:
     name: python${{ matrix.python-version }}-${{ matrix.platform.python-architecture }} ${{ matrix.platform.os }}
