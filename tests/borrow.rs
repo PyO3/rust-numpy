@@ -116,6 +116,19 @@ fn borrows_span_threads() {
 }
 
 #[test]
+fn shared_borrows_can_be_cloned() {
+    Python::with_gil(|py| {
+        let array = PyArray::<f64, _>::zeros(py, (1, 2, 3), false);
+
+        let shared1 = array.readonly();
+        let shared2 = shared1.clone();
+
+        assert_eq!(shared2.shape(), [1, 2, 3]);
+        assert_eq!(shared1.shape(), [1, 2, 3]);
+    });
+}
+
+#[test]
 #[should_panic(expected = "AlreadyBorrowed")]
 fn overlapping_views_conflict() {
     Python::with_gil(|py| {

@@ -275,6 +275,16 @@ where
     }
 }
 
+impl<'a, T, D> Clone for PyReadonlyArray<'a, T, D>
+where
+    T: Element,
+    D: Dimension,
+{
+    fn clone(&self) -> Self {
+        Self::try_new(self.0).unwrap()
+    }
+}
+
 impl<'a, T, D> Drop for PyReadonlyArray<'a, T, D> {
     fn drop(&mut self) {
         let address = base_address(self.0);
