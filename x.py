@@ -42,12 +42,15 @@ def check(args):
 
 
 def doc(args):
-    run("cargo", "doc")
-
     if args.name is None:
         run("cargo", "test", "--doc")
     else:
         run("cargo", "test", "--doc", args.name)
+
+    if args.open:
+        run("cargo", "doc", "--open")
+    else:
+        run("cargo", "doc")
 
 
 def test(args):
@@ -91,6 +94,7 @@ def format_(args):
         )
 
     run("cargo", "fmt")
+
     run("black", ".")
 
 
@@ -111,6 +115,9 @@ if __name__ == "__main__":
     )
     doc_parser.set_defaults(func=doc)
     doc_parser.add_argument("name", nargs="?", help="Test case name")
+    doc_parser.add_argument(
+        "--open", "-o", action="store_true", help="Open documentation in browser"
+    )
 
     test_parser = subparsers.add_parser("test", aliases=["t"], help="Integration tests")
     test_parser.set_defaults(func=test)
