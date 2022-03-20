@@ -23,7 +23,7 @@ use crate::borrow::{PyReadonlyArray, PyReadwriteArray};
 use crate::cold;
 use crate::convert::{ArrayExt, IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
 use crate::dtype::{Element, PyArrayDescr};
-use crate::error::{DimensionalityError, FromVecError, NotContiguousError, TypeError};
+use crate::error::{BorrowError, DimensionalityError, FromVecError, NotContiguousError, TypeError};
 use crate::npyffi::{self, npy_intp, NPY_ORDER, PY_ARRAY_API};
 use crate::slice_container::PySliceContainer;
 
@@ -846,13 +846,33 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     }
 
     /// Get an immutable borrow of the NumPy array
+    pub fn try_readonly(&self) -> Result<PyReadonlyArray<'_, T, D>, BorrowError> {
+        PyReadonlyArray::try_new(self)
+    }
+
+    /// Get an immutable borrow of the NumPy array
+    ///
+    /// # Panics
+    ///
+    /// Panics if the allocation backing the array is currently mutably borrowed.
+    /// For a non-panicking variant, use [`try_readonly`][Self::try_readonly].
     pub fn readonly(&self) -> PyReadonlyArray<'_, T, D> {
-        PyReadonlyArray::try_new(self).unwrap()
+        self.try_readonly().unwrap()
     }
 
     /// Get a mutable borrow of the NumPy array
+    pub fn try_readwrite(&self) -> Result<PyReadwriteArray<'_, T, D>, BorrowError> {
+        PyReadwriteArray::try_new(self)
+    }
+
+    /// Get a mutable borrow of the NumPy array
+    ///
+    /// # Panics
+    ///
+    /// Panics if the allocation backing the array is currently borrowed.
+    /// For a non-panicking variant, use [`try_readwrite`][Self::try_readwrite].
     pub fn readwrite(&self) -> PyReadwriteArray<'_, T, D> {
-        PyReadwriteArray::try_new(self).unwrap()
+        self.try_readwrite().unwrap()
     }
 
     /// Returns the internal array as [`ArrayView`].
