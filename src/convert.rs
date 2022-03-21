@@ -29,7 +29,9 @@ use crate::sealed::Sealed;
 ///     assert_eq!(py_array.readonly().as_slice().unwrap(), &[1, 2, 3]);
 ///
 ///     // Array cannot be resized when its data is owned by Rust.
-///     assert!(py_array.resize(100).is_err());
+///     unsafe {
+///         assert!(py_array.resize(100).is_err());
+///     }
 /// });
 /// ```
 pub trait IntoPyArray {

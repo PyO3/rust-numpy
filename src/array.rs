@@ -1077,19 +1077,30 @@ impl<T: Element> PyArray<T, Ix1> {
         data.into_pyarray(py)
     }
 
-    /// Extends or trancates the length of 1 dimension PyArray.
+    /// Extends or truncates the length of a one-dimensional array.
+    ///
+    /// # Safety
+    ///
+    /// There should be no outstanding references (shared or exclusive) into the array
+    /// as this method might re-allocate it and thereby invalidate all pointers into it.
     ///
     /// # Example
+    ///
     /// ```
     /// use numpy::PyArray;
-    /// pyo3::Python::with_gil(|py| {
+    /// use pyo3::Python;
+    ///
+    /// Python::with_gil(|py| {
     ///     let pyarray = PyArray::arange(py, 0, 10, 1);
     ///     assert_eq!(pyarray.len(), 10);
-    ///     pyarray.resize(100).unwrap();
+    ///
+    ///     unsafe {
+    ///         pyarray.resize(100).unwrap();
+    ///     }
     ///     assert_eq!(pyarray.len(), 100);
     /// });
     /// ```
-    pub fn resize(&self, new_elems: usize) -> PyResult<()> {
+    pub unsafe fn resize(&self, new_elems: usize) -> PyResult<()> {
         self.resize_(self.py(), [new_elems], 1, NPY_ORDER::NPY_ANYORDER)
     }
 

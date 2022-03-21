@@ -170,6 +170,86 @@ impl BorrowFlags {
     unsafe fn get(&self) -> &mut HashMap<usize, isize> {
         (*self.0.get()).get_or_insert_with(HashMap::new)
     }
+
+    fn acquire<T, D>(&self, array: &PyArray<T, D>) -> Result<(), BorrowError> {
+        let address = base_address(array);
+
+        // SAFETY: Access to `&PyArray<T, D>` implies holding the GIL
+        // and we are not calling into user code which might re-enter this function.
+        let borrow_flags = unsafe { BORROW_FLAGS.get() };
+
+        match borrow_flags.entry(address) {
+            Entry::Occupied(entry) => {
+                let readers = entry.into_mut();
+
+                let new_readers = readers.wrapping_add(1);
+
+                if new_readers <= 0 {
+                    cold();
+                    return Err(BorrowError::AlreadyBorrowed);
+                }
+
+                *readers = new_readers;
+            }
+            Entry::Vacant(entry) => {
+                entry.insert(1);
+            }
+        }
+
+        Ok(())
+    }
+
+    fn release<T, D>(&self, array: &PyArray<T, D>) {
+        let address = base_address(array);
+
+        // SAFETY: Access to `&PyArray<T, D>` implies holding the GIL
+        // and we are not calling into user code which might re-enter this function.
+        let borrow_flags = unsafe { BORROW_FLAGS.get() };
+
+        let readers = borrow_flags.get_mut(&address).unwrap();
+
+        *readers -= 1;
+
+        if *readers == 0 {
+            borrow_flags.remove(&address).unwrap();
+        }
+    }
+
+    fn acquire_mut<T, D>(&self, array: &PyArray<T, D>) -> Result<(), BorrowError> {
+        let address = base_address(array);
+
+        // SAFETY: Access to `&PyArray<T, D>` implies holding the GIL
+        // and we are not calling into user code which might re-enter this function.
+        let borrow_flags = unsafe { BORROW_FLAGS.get() };
+
+        match borrow_flags.entry(address) {
+            Entry::Occupied(entry) => {
+                let writers = entry.into_mut();
+
+                if *writers != 0 {
+                    cold();
+                    return Err(BorrowError::AlreadyBorrowed);
+                }
+
+                *writers = -1;
+            }
+            Entry::Vacant(entry) => {
+                entry.insert(-1);
+            }
+        }
+
+        Ok(())
+    }
+
+    fn release_mut<T, D>(&self, array: &PyArray<T, D>) {
+        let address = base_address(array);
+
+        // SAFETY: Access to `&PyArray<T, D>` implies holding the GIL
+        // and we are not calling into user code which might re-enter this function.
+        let borrow_flags = unsafe { self.get() };
+
+        borrow_flags.remove(&address).unwrap();
+    }
 }
 
 static BORROW_FLAGS: BorrowFlags = BorrowFlags::new();
@@ -224,29 +304,7 @@ where
     D: Dimension,
 {
     pub(crate) fn try_new(array: &'py PyArray<T, D>) -> Result<Self, BorrowError> {
-        let address = base_address(array);
-
-        // SAFETY: Access to a `&'py PyArray<T, D>` implies holding the GIL
-        // and we are not calling into user code which might re-enter this function.
-        let borrow_flags = unsafe { BORROW_FLAGS.get() };
-
-        match borrow_flags.entry(address) {
-            Entry::Occupied(entry) => {
-                let readers = entry.into_mut();
-
-                let new_readers = readers.wrapping_add(1);
-
-                if new_readers <= 0 {
-                    cold();
-                    return Err(BorrowError::AlreadyBorrowed);
-                }
-
-                *readers = new_readers;
-            }
-            Entry::Vacant(entry) => {
-                entry.insert(1);
-            }
-        }
+        BORROW_FLAGS.acquire(array)?;
 
         Ok(Self(array))
     }
@@ -287,19 +345,7 @@ where
 
 impl<'a, T, D> Drop for PyReadonlyArray<'a, T, D> {
     fn drop(&mut self) {
-        let address = base_address(self.0);
-
-        // SAFETY: Access to a `&'py PyArray<T, D>` implies holding the GIL
-        // and we are not calling into user code which might re-enter this function.
-        let borrow_flags = unsafe { BORROW_FLAGS.get() };
-
-        let readers = borrow_flags.get_mut(&address).unwrap();
-
-        *readers -= 1;
-
-        if *readers == 0 {
-            borrow_flags.remove(&address).unwrap();
-        }
+        BORROW_FLAGS.release(self.0);
     }
 }
 
@@ -358,27 +404,7 @@ where
             return Err(BorrowError::NotWriteable);
         }
 
-        let address = base_address(array);
-
-        // SAFETY: Access to a `&'py PyArray<T, D>` implies holding the GIL
-        // and we are not calling into user code which might re-enter this function.
-        let borrow_flags = unsafe { BORROW_FLAGS.get() };
-
-        match borrow_flags.entry(address) {
-            Entry::Occupied(entry) => {
-                let writers = entry.into_mut();
-
-                if *writers != 0 {
-                    cold();
-                    return Err(BorrowError::AlreadyBorrowed);
-                }
-
-                *writers = -1;
-            }
-            Entry::Vacant(entry) => {
-                entry.insert(-1);
-            }
-        }
+        BORROW_FLAGS.acquire_mut(array)?;
 
         Ok(Self(array))
     }
@@ -407,15 +433,44 @@ where
     }
 }
 
+impl<'py, T> PyReadwriteArray<'py, T, Ix1>
+where
+    T: Element,
+{
+    /// Extends or truncates the length of a one-dimensional array.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use numpy::PyArray;
+    /// use pyo3::Python;
+    ///
+    /// Python::with_gil(|py| {
+    ///     let pyarray = PyArray::arange(py, 0, 10, 1);
+    ///     assert_eq!(pyarray.len(), 10);
+    ///
+    ///     let pyarray = pyarray.readwrite();
+    ///     let pyarray = pyarray.resize(100).unwrap();
+    ///     assert_eq!(pyarray.len(), 100);
+    /// });
+    /// ```
+    pub fn resize(self, new_elems: usize) -> PyResult<Self> {
+        BORROW_FLAGS.release_mut(self.0);
+
+        // SAFETY: Ownership of `self` proves exclusive access to the interior of the array.
+        unsafe {
+            self.0.resize(new_elems)?;
+        }
+
+        BORROW_FLAGS.acquire_mut(self.0)?;
+
+        Ok(self)
+    }
+}
+
 impl<'a, T, D> Drop for PyReadwriteArray<'a, T, D> {
     fn drop(&mut self) {
-        let address = base_address(self.0);
-
-        // SAFETY: Access to a `&'py PyArray<T, D>` implies holding the GIL
-        // and we are not calling into user code which might re-enter this function.
-        let borrow_flags = unsafe { BORROW_FLAGS.get() };
-
-        borrow_flags.remove(&address).unwrap();
+        BORROW_FLAGS.release_mut(self.0);
     }
 }
 

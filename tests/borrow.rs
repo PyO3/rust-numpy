@@ -248,3 +248,17 @@ fn readwrite_as_array_slice() {
         assert_eq!(*array.get_mut([0, 1, 2]).unwrap(), 0.0);
     });
 }
+
+#[test]
+fn resize_using_exclusive_borrow() {
+    Python::with_gil(|py| {
+        let array = PyArray::<f64, _>::zeros(py, 3, false);
+        assert_eq!(array.shape(), [3]);
+
+        let mut array = array.readwrite();
+        assert_eq!(array.as_slice_mut().unwrap(), &[0.0; 3]);
+
+        let mut array = array.resize(5).unwrap();
+        assert_eq!(array.as_slice_mut().unwrap(), &[0.0; 5]);
+    });
+}
