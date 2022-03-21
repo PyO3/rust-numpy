@@ -119,6 +119,8 @@
 <span id="117">117</span>
 <span id="118">118</span>
 <span id="119">119</span>
+<span id="120">120</span>
+<span id="121">121</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This crate provides Rust interfaces for [NumPy C APIs][c-api],</span>
 <span class="doccomment">//! especially for the [ndarray][ndarray] class.</span>
 <span class="doccomment">//!</span>
@@ -157,12 +159,12 @@
 <span class="attribute">#![<span class="ident">allow</span>(<span class="ident">clippy::needless_lifetimes</span>)]</span>
 
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">array</span>;
+<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">borrow</span>;
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">convert</span>;
 <span class="kw">mod</span> <span class="ident">dtype</span>;
 <span class="kw">mod</span> <span class="ident">error</span>;
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">npyffi</span>;
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">npyiter</span>;
-<span class="kw">mod</span> <span class="ident">readonly</span>;
 <span class="kw">mod</span> <span class="ident">slice_container</span>;
 <span class="kw">mod</span> <span class="ident">sum_products</span>;
 
@@ -173,6 +175,12 @@
     <span class="ident">get_array_module</span>, <span class="ident">PyArray</span>, <span class="ident">PyArray0</span>, <span class="ident">PyArray1</span>, <span class="ident">PyArray2</span>, <span class="ident">PyArray3</span>, <span class="ident">PyArray4</span>, <span class="ident">PyArray5</span>,
     <span class="ident">PyArray6</span>, <span class="ident">PyArrayDyn</span>,
 };
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::borrow</span>::{
+    <span class="ident">PyReadonlyArray</span>, <span class="ident">PyReadonlyArray1</span>, <span class="ident">PyReadonlyArray2</span>, <span class="ident">PyReadonlyArray3</span>, <span class="ident">PyReadonlyArray4</span>,
+    <span class="ident">PyReadonlyArray5</span>, <span class="ident">PyReadonlyArray6</span>, <span class="ident">PyReadonlyArrayDyn</span>, <span class="ident">PyReadwriteArray</span>, <span class="ident">PyReadwriteArray1</span>,
+    <span class="ident">PyReadwriteArray2</span>, <span class="ident">PyReadwriteArray3</span>, <span class="ident">PyReadwriteArray4</span>, <span class="ident">PyReadwriteArray5</span>, <span class="ident">PyReadwriteArray6</span>,
+    <span class="ident">PyReadwriteArrayDyn</span>,
+};
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::convert</span>::{<span class="ident">IntoPyArray</span>, <span class="ident">NpyIndex</span>, <span class="ident">ToNpyDims</span>, <span class="ident">ToPyArray</span>};
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::dtype</span>::{<span class="ident">dtype</span>, <span class="ident">Complex32</span>, <span class="ident">Complex64</span>, <span class="ident">Element</span>, <span class="ident">PyArrayDescr</span>};
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::error</span>::{<span class="ident">DimensionalityError</span>, <span class="ident">FromVecError</span>, <span class="ident">NotContiguousError</span>, <span class="ident">TypeError</span>};
@@ -180,10 +188,6 @@
 <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">deprecated</span>)]</span>
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::npyiter</span>::{
     <span class="ident">IterMode</span>, <span class="ident">NpyIterFlag</span>, <span class="ident">NpyMultiIter</span>, <span class="ident">NpyMultiIterBuilder</span>, <span class="ident">NpySingleIter</span>, <span class="ident">NpySingleIterBuilder</span>,
-};
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::readonly</span>::{
-    <span class="ident">PyReadonlyArray</span>, <span class="ident">PyReadonlyArray1</span>, <span class="ident">PyReadonlyArray2</span>, <span class="ident">PyReadonlyArray3</span>, <span class="ident">PyReadonlyArray4</span>,
-    <span class="ident">PyReadonlyArray5</span>, <span class="ident">PyReadonlyArray6</span>, <span class="ident">PyReadonlyArrayDyn</span>,
 };
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::sum_products</span>::{<span class="ident">dot</span>, <span class="ident">einsum_impl</span>, <span class="ident">inner</span>};
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">ndarray</span>::{<span class="ident">array</span>, <span class="ident">Ix1</span>, <span class="ident">Ix2</span>, <span class="ident">Ix3</span>, <span class="ident">Ix4</span>, <span class="ident">Ix5</span>, <span class="ident">Ix6</span>, <span class="ident">IxDyn</span>};

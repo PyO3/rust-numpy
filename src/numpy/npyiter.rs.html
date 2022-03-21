@@ -591,67 +591,6 @@
 <span id="589">589</span>
 <span id="590">590</span>
 <span id="591">591</span>
-<span id="592">592</span>
-<span id="593">593</span>
-<span id="594">594</span>
-<span id="595">595</span>
-<span id="596">596</span>
-<span id="597">597</span>
-<span id="598">598</span>
-<span id="599">599</span>
-<span id="600">600</span>
-<span id="601">601</span>
-<span id="602">602</span>
-<span id="603">603</span>
-<span id="604">604</span>
-<span id="605">605</span>
-<span id="606">606</span>
-<span id="607">607</span>
-<span id="608">608</span>
-<span id="609">609</span>
-<span id="610">610</span>
-<span id="611">611</span>
-<span id="612">612</span>
-<span id="613">613</span>
-<span id="614">614</span>
-<span id="615">615</span>
-<span id="616">616</span>
-<span id="617">617</span>
-<span id="618">618</span>
-<span id="619">619</span>
-<span id="620">620</span>
-<span id="621">621</span>
-<span id="622">622</span>
-<span id="623">623</span>
-<span id="624">624</span>
-<span id="625">625</span>
-<span id="626">626</span>
-<span id="627">627</span>
-<span id="628">628</span>
-<span id="629">629</span>
-<span id="630">630</span>
-<span id="631">631</span>
-<span id="632">632</span>
-<span id="633">633</span>
-<span id="634">634</span>
-<span id="635">635</span>
-<span id="636">636</span>
-<span id="637">637</span>
-<span id="638">638</span>
-<span id="639">639</span>
-<span id="640">640</span>
-<span id="641">641</span>
-<span id="642">642</span>
-<span id="643">643</span>
-<span id="644">644</span>
-<span id="645">645</span>
-<span id="646">646</span>
-<span id="647">647</span>
-<span id="648">648</span>
-<span id="649">649</span>
-<span id="650">650</span>
-<span id="651">651</span>
-<span id="652">652</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Wrapper of the [array iterator API][iterator].</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This module exposes two iterators: [`NpySingleIter`] and [`NpyMultiIter`].</span>
@@ -678,19 +617,18 @@
 <span class="kw">use</span> <span class="ident">ndarray::Dimension</span>;
 <span class="kw">use</span> <span class="ident">pyo3</span>::{<span class="ident">PyErr</span>, <span class="ident">PyNativeType</span>, <span class="ident">PyResult</span>, <span class="ident">Python</span>};
 
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::array</span>::{<span class="ident">PyArray</span>, <span class="ident">PyArrayDyn</span>};
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::array::PyArrayDyn</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::borrow</span>::{<span class="ident">PyReadonlyArray</span>, <span class="ident">PyReadwriteArray</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::dtype::Element</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::npyffi</span>::{
     <span class="ident">array::PY_ARRAY_API</span>,
     <span class="ident">npy_intp</span>, <span class="ident">npy_uint32</span>,
-    <span class="ident">objects</span>::{<span class="ident">NpyIter</span>, <span class="ident">PyArrayObject</span>},
+    <span class="ident">objects::NpyIter</span>,
     <span class="ident">types</span>::{<span class="ident">NPY_CASTING</span>, <span class="ident">NPY_ORDER</span>},
-    <span class="ident">NPY_ARRAY_WRITEABLE</span>, <span class="ident">NPY_ITER_BUFFERED</span>, <span class="ident">NPY_ITER_COMMON_DTYPE</span>, <span class="ident">NPY_ITER_COPY_IF_OVERLAP</span>,
-    <span class="ident">NPY_ITER_DELAY_BUFALLOC</span>, <span class="ident">NPY_ITER_DONT_NEGATE_STRIDES</span>, <span class="ident">NPY_ITER_GROWINNER</span>, <span class="ident">NPY_ITER_RANGED</span>,
-    <span class="ident">NPY_ITER_READONLY</span>, <span class="ident">NPY_ITER_READWRITE</span>, <span class="ident">NPY_ITER_REDUCE_OK</span>, <span class="ident">NPY_ITER_REFS_OK</span>,
-    <span class="ident">NPY_ITER_ZEROSIZE_OK</span>,
+    <span class="ident">NPY_ITER_BUFFERED</span>, <span class="ident">NPY_ITER_COMMON_DTYPE</span>, <span class="ident">NPY_ITER_COPY_IF_OVERLAP</span>, <span class="ident">NPY_ITER_DELAY_BUFALLOC</span>,
+    <span class="ident">NPY_ITER_DONT_NEGATE_STRIDES</span>, <span class="ident">NPY_ITER_GROWINNER</span>, <span class="ident">NPY_ITER_RANGED</span>, <span class="ident">NPY_ITER_READONLY</span>,
+    <span class="ident">NPY_ITER_READWRITE</span>, <span class="ident">NPY_ITER_REDUCE_OK</span>, <span class="ident">NPY_ITER_REFS_OK</span>, <span class="ident">NPY_ITER_ZEROSIZE_OK</span>,
 };
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::readonly::PyReadonlyArray</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::sealed::Sealed</span>;
 
 <span class="doccomment">/// Flags for constructing an iterator.</span>
@@ -813,36 +751,26 @@
     <span class="ident">flags</span>: <span class="ident">npy_uint32</span>,
     <span class="ident">array</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyArrayDyn</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
     <span class="ident">mode</span>: <span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>,
-    <span class="ident">was_writable</span>: <span class="ident">bool</span>,
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>: <span class="ident">Element</span><span class="op">&gt;</span> <span class="ident">NpySingleIterBuilder</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">Readonly</span><span class="op">&gt;</span> {
-    <span class="doccomment">/// Create a new builder for a readonly iterator.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">readonly</span><span class="op">&lt;</span><span class="ident">D</span>: <span class="ident">Dimension</span><span class="op">&gt;</span>(<span class="ident">array</span>: <span class="ident">PyReadonlyArray</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span>) -&gt; <span class="self">Self</span> {
-        <span class="kw">let</span> (<span class="ident">array</span>, <span class="ident">was_writable</span>) <span class="op">=</span> <span class="ident">array</span>.<span class="ident">destruct</span>();
-
+    <span class="doccomment">/// Makes a new builder for a readonly iterator.</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">readonly</span><span class="op">&lt;</span><span class="ident">D</span>: <span class="ident">Dimension</span><span class="op">&gt;</span>(<span class="ident">array</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyReadonlyArray</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span>) -&gt; <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">flags</span>: <span class="ident">NPY_ITER_READONLY</span>,
             <span class="ident">array</span>: <span class="ident">array</span>.<span class="ident">to_dyn</span>(),
             <span class="ident">mode</span>: <span class="ident">PhantomData</span>,
-            <span class="ident">was_writable</span>,
         }
     }
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>: <span class="ident">Element</span><span class="op">&gt;</span> <span class="ident">NpySingleIterBuilder</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">ReadWrite</span><span class="op">&gt;</span> {
-    <span class="doccomment">/// Create a new builder for a writable iterator.</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// # Safety</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// The iterator will produce mutable references into the array which must not be</span>
-    <span class="doccomment">/// aliased by other references for the life time of the iterator.</span>
-    <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">readwrite</span><span class="op">&lt;</span><span class="ident">D</span>: <span class="ident">Dimension</span><span class="op">&gt;</span>(<span class="ident">array</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span>) -&gt; <span class="self">Self</span> {
+    <span class="doccomment">/// Makes a new builder for a writable iterator.</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">readwrite</span><span class="op">&lt;</span><span class="ident">D</span>: <span class="ident">Dimension</span><span class="op">&gt;</span>(<span class="ident">array</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="kw-2">mut</span> <span class="ident">PyReadwriteArray</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span>) -&gt; <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">flags</span>: <span class="ident">NPY_ITER_READWRITE</span>,
             <span class="ident">array</span>: <span class="ident">array</span>.<span class="ident">to_dyn</span>(),
             <span class="ident">mode</span>: <span class="ident">PhantomData</span>,
-            <span class="ident">was_writable</span>: <span class="bool-val">false</span>,
         }
     }
 }
@@ -871,13 +799,7 @@
             )
         };
 
-        <span class="kw">let</span> <span class="ident">readonly_array_ptr</span> <span class="op">=</span> <span class="kw">if</span> <span class="self">self</span>.<span class="ident">was_writable</span> {
-            <span class="prelude-val">Some</span>(<span class="ident">array_ptr</span>)
-        } <span class="kw">else</span> {
-            <span class="prelude-val">None</span>
-        };
-
-        <span class="ident">NpySingleIter::new</span>(<span class="ident">iter_ptr</span>, <span class="ident">readonly_array_ptr</span>, <span class="ident">py</span>)
+        <span class="ident">NpySingleIter::new</span>(<span class="ident">iter_ptr</span>, <span class="ident">py</span>)
     }
 }
 
@@ -896,8 +818,9 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// Python::with_gil(|py| {</span>
 <span class="doccomment">///     let array = PyArray::arange(py, 0, 10, 1);</span>
+<span class="doccomment">///     let mut array = array.readwrite();</span>
 <span class="doccomment">///</span>
-<span class="doccomment">///     let iter = unsafe { NpySingleIterBuilder::readwrite(array).build().unwrap() };</span>
+<span class="doccomment">///     let iter = NpySingleIterBuilder::readwrite(&amp;mut array).build().unwrap();</span>
 <span class="doccomment">///</span>
 <span class="doccomment">///     for (i, elem) in iter.enumerate() {</span>
 <span class="doccomment">///         assert_eq!(*elem, i as i64);</span>
@@ -915,8 +838,9 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// Python::with_gil(|py| {</span>
 <span class="doccomment">///     let array = PyArray::arange(py, 0, 1, 10);</span>
+<span class="doccomment">///     let array = array.readonly();</span>
 <span class="doccomment">///</span>
-<span class="doccomment">///     let iter = NpySingleIterBuilder::readonly(array.readonly()).build().unwrap();</span>
+<span class="doccomment">///     let iter = NpySingleIterBuilder::readonly(&amp;array).build().unwrap();</span>
 <span class="doccomment">///</span>
 <span class="doccomment">///     for (i, elem) in iter.enumerate() {</span>
 <span class="doccomment">///         assert_eq!(*elem, i as i64);</span>
@@ -930,16 +854,11 @@
     <span class="ident">dataptr</span>: <span class="kw-2">*mut</span> <span class="kw-2">*mut</span> <span class="ident">c_char</span>,
     <span class="ident">return_type</span>: <span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
     <span class="ident">mode</span>: <span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>,
-    <span class="ident">readonly_array_ptr</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">*mut</span> <span class="ident">PyArrayObject</span><span class="op">&gt;</span>,
     <span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">I</span><span class="op">&gt;</span> <span class="ident">NpySingleIter</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">I</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">new</span>(
-        <span class="ident">iterator</span>: <span class="kw-2">*mut</span> <span class="ident">NpyIter</span>,
-        <span class="ident">readonly_array_ptr</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">*mut</span> <span class="ident">PyArrayObject</span><span class="op">&gt;</span>,
-        <span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>,
-    ) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">iterator</span>: <span class="kw-2">*mut</span> <span class="ident">NpyIter</span>, <span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">iterator</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">ptr::NonNull::new</span>(<span class="ident">iterator</span>) {
             <span class="prelude-val">Some</span>(<span class="ident">iter</span>) =&gt; <span class="ident">iter</span>,
             <span class="prelude-val">None</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PyErr::fetch</span>(<span class="ident">py</span>)),
@@ -967,7 +886,6 @@
             <span class="ident">dataptr</span>,
             <span class="ident">return_type</span>: <span class="ident">PhantomData</span>,
             <span class="ident">mode</span>: <span class="ident">PhantomData</span>,
-            <span class="ident">readonly_array_ptr</span>,
             <span class="ident">py</span>,
         })
     }
@@ -993,12 +911,6 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">I</span><span class="op">&gt;</span> <span class="ident">Drop</span> <span class="kw">for</span> <span class="ident">NpySingleIter</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">I</span><span class="op">&gt;</span> {
     <span class="kw">fn</span> <span class="ident">drop</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) {
         <span class="kw">let</span> <span class="ident">_success</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="ident">PY_ARRAY_API</span>.<span class="ident">NpyIter_Deallocate</span>(<span class="self">self</span>.<span class="ident">py</span>, <span class="self">self</span>.<span class="ident">iterator</span>.<span class="ident">as_mut</span>()) };
-
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">ptr</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">readonly_array_ptr</span> {
-            <span class="kw">unsafe</span> {
-                (<span class="kw-2">*</span><span class="ident">ptr</span>).<span class="ident">flags</span> <span class="op">|</span><span class="op">=</span> <span class="ident">NPY_ARRAY_WRITEABLE</span>;
-            }
-        }
     }
 }
 
@@ -1043,7 +955,6 @@
     <span class="ident">flags</span>: <span class="ident">npy_uint32</span>,
     <span class="ident">arrays</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyArrayDyn</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>,
     <span class="ident">structure</span>: <span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span>,
-    <span class="ident">was_writables</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>: <span class="ident">Element</span><span class="op">&gt;</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">NpyMultiIterBuilder</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, ()<span class="op">&gt;</span> {
@@ -1059,7 +970,6 @@
             <span class="ident">flags</span>: <span class="number">0</span>,
             <span class="ident">arrays</span>: <span class="ident">Vec::new</span>(),
             <span class="ident">structure</span>: <span class="ident">PhantomData</span>,
-            <span class="ident">was_writables</span>: <span class="ident">Vec::new</span>(),
         }
     }
 
@@ -1075,38 +985,25 @@
     <span class="doccomment">/// Add a readonly array to the resulting iterator.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">add_readonly</span><span class="op">&lt;</span><span class="ident">D</span>: <span class="ident">Dimension</span><span class="op">&gt;</span>(
         <span class="kw-2">mut</span> <span class="self">self</span>,
-        <span class="ident">array</span>: <span class="ident">PyReadonlyArray</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span>,
+        <span class="ident">array</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyReadonlyArray</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span>,
     ) -&gt; <span class="ident">NpyMultiIterBuilder</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">RO</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> (<span class="ident">array</span>, <span class="ident">was_writable</span>) <span class="op">=</span> <span class="ident">array</span>.<span class="ident">destruct</span>();
-
         <span class="self">self</span>.<span class="ident">arrays</span>.<span class="ident">push</span>(<span class="ident">array</span>.<span class="ident">to_dyn</span>());
-        <span class="self">self</span>.<span class="ident">was_writables</span>.<span class="ident">push</span>(<span class="ident">was_writable</span>);
-
         <span class="ident">NpyMultiIterBuilder</span> {
             <span class="ident">flags</span>: <span class="self">self</span>.<span class="ident">flags</span>,
             <span class="ident">arrays</span>: <span class="self">self</span>.<span class="ident">arrays</span>,
-            <span class="ident">was_writables</span>: <span class="self">self</span>.<span class="ident">was_writables</span>,
             <span class="ident">structure</span>: <span class="ident">PhantomData</span>,
         }
     }
 
     <span class="doccomment">/// Adds a writable array to the resulting iterator.</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// # Safety</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// The iterator will produce mutable references into the array which must not be</span>
-    <span class="doccomment">/// aliased by other references for the life time of the iterator.</span>
-    <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">add_readwrite</span><span class="op">&lt;</span><span class="ident">D</span>: <span class="ident">Dimension</span><span class="op">&gt;</span>(
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">add_readwrite</span><span class="op">&lt;</span><span class="ident">D</span>: <span class="ident">Dimension</span><span class="op">&gt;</span>(
         <span class="kw-2">mut</span> <span class="self">self</span>,
-        <span class="ident">array</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span>,
+        <span class="ident">array</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="kw-2">mut</span> <span class="ident">PyReadwriteArray</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span>,
     ) -&gt; <span class="ident">NpyMultiIterBuilder</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">RW</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">arrays</span>.<span class="ident">push</span>(<span class="ident">array</span>.<span class="ident">to_dyn</span>());
-        <span class="self">self</span>.<span class="ident">was_writables</span>.<span class="ident">push</span>(<span class="bool-val">false</span>);
-
         <span class="ident">NpyMultiIterBuilder</span> {
             <span class="ident">flags</span>: <span class="self">self</span>.<span class="ident">flags</span>,
             <span class="ident">arrays</span>: <span class="self">self</span>.<span class="ident">arrays</span>,
-            <span class="ident">was_writables</span>: <span class="self">self</span>.<span class="ident">was_writables</span>,
             <span class="ident">structure</span>: <span class="ident">PhantomData</span>,
         }
     }
@@ -1115,12 +1012,7 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>: <span class="ident">Element</span>, <span class="ident">S</span>: <span class="ident">MultiIterModeWithManyArrays</span><span class="op">&gt;</span> <span class="ident">NpyMultiIterBuilder</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">S</span><span class="op">&gt;</span> {
     <span class="doccomment">/// Creates an iterator from this builder.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">build</span>(<span class="self">self</span>) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">NpyMultiIter</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">S</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="self">Self</span> {
-            <span class="ident">flags</span>,
-            <span class="ident">arrays</span>,
-            <span class="ident">was_writables</span>,
-            ..
-        } <span class="op">=</span> <span class="self">self</span>;
+        <span class="kw">let</span> <span class="self">Self</span> { <span class="ident">flags</span>, <span class="ident">arrays</span>, .. } <span class="op">=</span> <span class="self">self</span>;
 
         <span class="macro">debug_assert!</span>(<span class="ident">arrays</span>.<span class="ident">len</span>() <span class="op">&lt;</span><span class="op">=</span> <span class="ident">i32::MAX</span> <span class="kw">as</span> <span class="ident">usize</span>);
         <span class="macro">debug_assert!</span>(<span class="number">2</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">arrays</span>.<span class="ident">len</span>());
@@ -1144,7 +1036,7 @@
             )
         };
 
-        <span class="ident">NpyMultiIter::new</span>(<span class="ident">iter_ptr</span>, <span class="ident">arrays</span>, <span class="ident">was_writables</span>, <span class="ident">py</span>)
+        <span class="ident">NpyMultiIter::new</span>(<span class="ident">iter_ptr</span>, <span class="ident">py</span>)
     }
 }
 
@@ -1161,17 +1053,18 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// Python::with_gil(|py| {</span>
 <span class="doccomment">///     let array1 = numpy::PyArray::arange(py, 0, 10, 1);</span>
+<span class="doccomment">///     let array1 = array1.readonly();</span>
 <span class="doccomment">///     let array2 = numpy::PyArray::arange(py, 10, 20, 1);</span>
+<span class="doccomment">///     let mut array2 = array2.readwrite();</span>
 <span class="doccomment">///     let array3 = numpy::PyArray::arange(py, 10, 30, 2);</span>
+<span class="doccomment">///     let array3 = array3.readonly();</span>
 <span class="doccomment">///</span>
-<span class="doccomment">///     let iter = unsafe {</span>
-<span class="doccomment">///         NpyMultiIterBuilder::new()</span>
-<span class="doccomment">///             .add_readonly(array1.readonly())</span>
-<span class="doccomment">///             .add_readwrite(array2)</span>
-<span class="doccomment">///             .add_readonly(array3.readonly())</span>
+<span class="doccomment">///     let iter = NpyMultiIterBuilder::new()</span>
+<span class="doccomment">///             .add_readonly(&amp;array1)</span>
+<span class="doccomment">///             .add_readwrite(&amp;mut array2)</span>
+<span class="doccomment">///             .add_readonly(&amp;array3)</span>
 <span class="doccomment">///             .build()</span>
-<span class="doccomment">///             .unwrap()</span>
-<span class="doccomment">///     };</span>
+<span class="doccomment">///             .unwrap();</span>
 <span class="doccomment">///</span>
 <span class="doccomment">///     for (i, j, k) in iter {</span>
 <span class="doccomment">///         assert_eq!(*i + *j, *k);</span>
@@ -1185,18 +1078,11 @@
     <span class="ident">iter_size</span>: <span class="ident">npy_intp</span>,
     <span class="ident">dataptr</span>: <span class="kw-2">*mut</span> <span class="kw-2">*mut</span> <span class="ident">c_char</span>,
     <span class="ident">marker</span>: <span class="ident">PhantomData</span><span class="op">&lt;</span>(<span class="ident">T</span>, <span class="ident">S</span>)<span class="op">&gt;</span>,
-    <span class="ident">arrays</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw-2">*mut</span> <span class="ident">PyArrayObject</span><span class="op">&gt;</span>,
-    <span class="ident">was_writables</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>,
     <span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">S</span>: <span class="ident">MultiIterModeWithManyArrays</span><span class="op">&gt;</span> <span class="ident">NpyMultiIter</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">S</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">new</span>(
-        <span class="ident">iterator</span>: <span class="kw-2">*mut</span> <span class="ident">NpyIter</span>,
-        <span class="ident">arrays</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw-2">*mut</span> <span class="ident">PyArrayObject</span><span class="op">&gt;</span>,
-        <span class="ident">was_writables</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>,
-        <span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>,
-    ) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">iterator</span>: <span class="kw-2">*mut</span> <span class="ident">NpyIter</span>, <span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">iterator</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">ptr::NonNull::new</span>(<span class="ident">iterator</span>) {
             <span class="prelude-val">Some</span>(<span class="ident">ptr</span>) =&gt; <span class="ident">ptr</span>,
             <span class="prelude-val">None</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PyErr::fetch</span>(<span class="ident">py</span>)),
@@ -1223,8 +1109,6 @@
             <span class="ident">iter_size</span>,
             <span class="ident">dataptr</span>,
             <span class="ident">marker</span>: <span class="ident">PhantomData</span>,
-            <span class="ident">arrays</span>,
-            <span class="ident">was_writables</span>,
             <span class="ident">py</span>,
         })
     }
@@ -1233,12 +1117,6 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">S</span>: <span class="ident">MultiIterModeWithManyArrays</span><span class="op">&gt;</span> <span class="ident">Drop</span> <span class="kw">for</span> <span class="ident">NpyMultiIter</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">S</span><span class="op">&gt;</span> {
     <span class="kw">fn</span> <span class="ident">drop</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) {
         <span class="kw">let</span> <span class="ident">_success</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="ident">PY_ARRAY_API</span>.<span class="ident">NpyIter_Deallocate</span>(<span class="self">self</span>.<span class="ident">py</span>, <span class="self">self</span>.<span class="ident">iterator</span>.<span class="ident">as_mut</span>()) };
-
-        <span class="kw">for</span> (<span class="ident">array_ptr</span>, <span class="kw-2">&amp;</span><span class="ident">was_writable</span>) <span class="kw">in</span> <span class="self">self</span>.<span class="ident">arrays</span>.<span class="ident">iter</span>().<span class="ident">zip</span>(<span class="self">self</span>.<span class="ident">was_writables</span>.<span class="ident">iter</span>()) {
-            <span class="kw">if</span> <span class="ident">was_writable</span> {
-                <span class="kw">unsafe</span> { (<span class="kw-2">*</span><span class="kw-2">*</span><span class="ident">array_ptr</span>).<span class="ident">flags</span> <span class="op">|</span><span class="op">=</span> <span class="ident">NPY_ARRAY_WRITEABLE</span> };
-            }
-        }
     }
 }
 
