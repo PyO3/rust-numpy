@@ -36,12 +36,12 @@
 #![allow(clippy::needless_lifetimes)]
 
 pub mod array;
+pub mod borrow;
 pub mod convert;
 mod dtype;
 mod error;
 pub mod npyffi;
 pub mod npyiter;
-mod readonly;
 mod slice_container;
 mod sum_products;
 
@@ -52,6 +52,12 @@ pub use crate::array::{
     get_array_module, PyArray, PyArray0, PyArray1, PyArray2, PyArray3, PyArray4, PyArray5,
     PyArray6, PyArrayDyn,
 };
+pub use crate::borrow::{
+    PyReadonlyArray, PyReadonlyArray1, PyReadonlyArray2, PyReadonlyArray3, PyReadonlyArray4,
+    PyReadonlyArray5, PyReadonlyArray6, PyReadonlyArrayDyn, PyReadwriteArray, PyReadwriteArray1,
+    PyReadwriteArray2, PyReadwriteArray3, PyReadwriteArray4, PyReadwriteArray5, PyReadwriteArray6,
+    PyReadwriteArrayDyn,
+};
 pub use crate::convert::{IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
 pub use crate::dtype::{dtype, Complex32, Complex64, Element, PyArrayDescr};
 pub use crate::error::{DimensionalityError, FromVecError, NotContiguousError, TypeError};
@@ -59,10 +65,6 @@ pub use crate::npyffi::{PY_ARRAY_API, PY_UFUNC_API};
 #[allow(deprecated)]
 pub use crate::npyiter::{
     IterMode, NpyIterFlag, NpyMultiIter, NpyMultiIterBuilder, NpySingleIter, NpySingleIterBuilder,
-};
-pub use crate::readonly::{
-    PyReadonlyArray, PyReadonlyArray1, PyReadonlyArray2, PyReadonlyArray3, PyReadonlyArray4,
-    PyReadonlyArray5, PyReadonlyArray6, PyReadonlyArrayDyn,
 };
 pub use crate::sum_products::{dot, einsum_impl, inner};
 pub use ndarray::{array, Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};

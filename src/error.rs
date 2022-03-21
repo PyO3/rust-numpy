@@ -115,3 +115,22 @@ impl fmt::Display for NotContiguousError {
 }
 
 impl_pyerr!(NotContiguousError);
+
+/// Inidcates why borrowing an array failed.
+#[derive(Debug)]
+#[non_exhaustive]
+pub enum BorrowError {
+    AlreadyBorrowed,
+    NotWriteable,
+}
+
+impl fmt::Display for BorrowError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::AlreadyBorrowed => write!(f, "The given array is already borrowed"),
+            Self::NotWriteable => write!(f, "The given array is not writeable"),
+        }
+    }
+}
+
+impl_pyerr!(BorrowError);

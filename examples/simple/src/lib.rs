@@ -1,5 +1,7 @@
 use numpy::ndarray::{ArrayD, ArrayViewD, ArrayViewMutD};
-use numpy::{Complex64, IntoPyArray, PyArray1, PyArrayDyn, PyReadonlyArrayDyn};
+use numpy::{
+    Complex64, IntoPyArray, PyArray1, PyArrayDyn, PyReadonlyArrayDyn, PyReadwriteArrayDyn,
+};
 use pyo3::{
     pymodule,
     types::{PyDict, PyModule},
@@ -41,8 +43,8 @@ fn rust_ext(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     // wrapper of `mult`
     #[pyfn(m)]
     #[pyo3(name = "mult")]
-    fn mult_py(a: f64, x: &PyArrayDyn<f64>) {
-        let x = unsafe { x.as_array_mut() };
+    fn mult_py(a: f64, mut x: PyReadwriteArrayDyn<f64>) {
+        let x = x.as_array_mut();
         mult(a, x);
     }
 

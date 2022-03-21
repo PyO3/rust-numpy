@@ -10,10 +10,9 @@ use pyo3::Python;
 fn readonly_iter() {
     Python::with_gil(|py| {
         let arr = pyarray![py, [0, 1], [2, 3], [4, 5]];
+        let ro_arr = arr.readonly();
 
-        let iter = NpySingleIterBuilder::readonly(arr.readonly())
-            .build()
-            .unwrap();
+        let iter = NpySingleIterBuilder::readonly(&ro_arr).build().unwrap();
 
         assert_eq!(iter.sum::<i32>(), 15);
     });
@@ -23,16 +22,20 @@ fn readonly_iter() {
 fn mutable_iter() {
     Python::with_gil(|py| {
         let arr = pyarray![py, [0, 1], [2, 3], [4, 5]];
+        let mut rw_arr = arr.readwrite();
 
-        let iter = unsafe { NpySingleIterBuilder::readwrite(arr).build().unwrap() };
+        let iter = NpySingleIterBuilder::readwrite(&mut rw_arr)
+            .build()
+            .unwrap();
 
         for elem in iter {
             *elem *= 2;
         }
 
-        let iter = NpySingleIterBuilder::readonly(arr.readonly())
-            .build()
-            .unwrap();
+        drop(rw_arr);
+        let ro_arr = arr.readonly();
+
+        let iter = NpySingleIterBuilder::readonly(&ro_arr).build().unwrap();
 
         assert_eq!(iter.sum::<i32>(), 30);
     });
@@ -42,11 +45,13 @@ fn mutable_iter() {
 fn multiiter_rr() {
     Python::with_gil(|py| {
         let arr1 = pyarray![py, [0, 1], [2, 3], [4, 5]];
+        let ro_arr1 = arr1.readonly();
         let arr2 = pyarray![py, [6, 7], [8, 9], [10, 11]];
+        let ro_arr2 = arr2.readonly();
 
         let iter = NpyMultiIterBuilder::new()
-            .add_readonly(arr1.readonly())
-            .add_readonly(arr2.readonly())
+            .add_readonly(&ro_arr1)
+            .add_readonly(&ro_arr2)
             .build()
             .unwrap();
 
@@ -58,23 +63,26 @@ fn multiiter_rr() {
 fn multiiter_rw() {
     Python::with_gil(|py| {
         let arr1 = pyarray![py, [0, 1], [2, 3], [4, 5]];
+        let ro_arr1 = arr1.readonly();
         let arr2 = pyarray![py, [0, 0], [0, 0], [0, 0]];
+        let mut rw_arr2 = arr2.readwrite();
 
-        let iter = unsafe {
-            NpyMultiIterBuilder::new()
-                .add_readonly(arr1.readonly())
-                .add_readwrite(arr2)
-                .build()
-                .unwrap()
-        };
+        let iter = NpyMultiIterBuilder::new()
+            .add_readonly(&ro_arr1)
+            .add_readwrite(&mut rw_arr2)
+            .build()
+            .unwrap();
 
         for (x, y) in iter {
             *y = *x * 2;
         }
 
+        drop(rw_arr2);
+        let ro_arr2 = arr2.readonly();
+
         let iter = NpyMultiIterBuilder::new()
-            .add_readonly(arr1.readonly())
-            .add_readonly(arr2.readonly())
+            .add_readonly(&ro_arr1)
+            .add_readonly(&ro_arr2)
             .build()
             .unwrap();
 
@@ -88,10 +96,9 @@ fn multiiter_rw() {
 fn single_iter_size_hint_len() {
     Python::with_gil(|py| {
         let arr = pyarray![py, [0, 1], [2, 3], [4, 5]];
+        let ro_arr = arr.readonly();
 
-        let mut iter = NpySingleIterBuilder::readonly(arr.readonly())
-            .build()
-            .unwrap();
+        let mut iter = NpySingleIterBuilder::readonly(&ro_arr).build().unwrap();
 
         for len in (1..=6).rev() {
             assert_eq!(iter.len(), len);
@@ -109,11 +116,13 @@ fn single_iter_size_hint_len() {
 fn multi_iter_size_hint_len() {
     Python::with_gil(|py| {
         let arr1 = pyarray![py, [0, 1], [2, 3], [4, 5]];
+        let ro_arr1 = arr1.readonly();
         let arr2 = pyarray![py, [0, 0], [0, 0], [0, 0]];
+        let ro_arr2 = arr2.readonly();
 
         let mut iter = NpyMultiIterBuilder::new()
-            .add_readonly(arr1.readonly())
-            .add_readonly(arr2.readonly())
+            .add_readonly(&ro_arr1)
+            .add_readonly(&ro_arr2)
             .build()
             .unwrap();
 
