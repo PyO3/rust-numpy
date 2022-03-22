@@ -161,7 +161,9 @@ fn into_pyarray_cannot_resize() {
     Python::with_gil(|py| {
         let arr = vec![1, 2, 3].into_pyarray(py);
 
-        assert!(arr.resize(100).is_err())
+        unsafe {
+            assert!(arr.resize(100).is_err());
+        }
     });
 }
 

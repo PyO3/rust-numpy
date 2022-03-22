@@ -116,6 +116,19 @@ fn borrows_span_threads() {
 }
 
 #[test]
+fn shared_borrows_can_be_cloned() {
+    Python::with_gil(|py| {
+        let array = PyArray::<f64, _>::zeros(py, (1, 2, 3), false);
+
+        let shared1 = array.readonly();
+        let shared2 = shared1.clone();
+
+        assert_eq!(shared2.shape(), [1, 2, 3]);
+        assert_eq!(shared1.shape(), [1, 2, 3]);
+    });
+}
+
+#[test]
 #[should_panic(expected = "AlreadyBorrowed")]
 fn overlapping_views_conflict() {
     Python::with_gil(|py| {
@@ -233,5 +246,19 @@ fn readwrite_as_array_slice() {
         assert_eq!(array.as_slice().unwrap().len(), 2 * 3);
         assert_eq!(array.as_slice_mut().unwrap().len(), 2 * 3);
         assert_eq!(*array.get_mut([0, 1, 2]).unwrap(), 0.0);
+    });
+}
+
+#[test]
+fn resize_using_exclusive_borrow() {
+    Python::with_gil(|py| {
+        let array = PyArray::<f64, _>::zeros(py, 3, false);
+        assert_eq!(array.shape(), [3]);
+
+        let mut array = array.readwrite();
+        assert_eq!(array.as_slice_mut().unwrap(), &[0.0; 3]);
+
+        let mut array = array.resize(5).unwrap();
+        assert_eq!(array.as_slice_mut().unwrap(), &[0.0; 5]);
     });
 }

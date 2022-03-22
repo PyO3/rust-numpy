@@ -23,7 +23,7 @@ use crate::borrow::{PyReadonlyArray, PyReadwriteArray};
 use crate::cold;
 use crate::convert::{ArrayExt, IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
 use crate::dtype::{Element, PyArrayDescr};
-use crate::error::{DimensionalityError, FromVecError, NotContiguousError, TypeError};
+use crate::error::{BorrowError, DimensionalityError, FromVecError, NotContiguousError, TypeError};
 use crate::npyffi::{self, npy_intp, NPY_ORDER, PY_ARRAY_API};
 use crate::slice_container::PySliceContainer;
 
@@ -846,13 +846,33 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     }
 
     /// Get an immutable borrow of the NumPy array
+    pub fn try_readonly(&self) -> Result<PyReadonlyArray<'_, T, D>, BorrowError> {
+        PyReadonlyArray::try_new(self)
+    }
+
+    /// Get an immutable borrow of the NumPy array
+    ///
+    /// # Panics
+    ///
+    /// Panics if the allocation backing the array is currently mutably borrowed.
+    /// For a non-panicking variant, use [`try_readonly`][Self::try_readonly].
     pub fn readonly(&self) -> PyReadonlyArray<'_, T, D> {
-        PyReadonlyArray::try_new(self).unwrap()
+        self.try_readonly().unwrap()
     }
 
     /// Get a mutable borrow of the NumPy array
+    pub fn try_readwrite(&self) -> Result<PyReadwriteArray<'_, T, D>, BorrowError> {
+        PyReadwriteArray::try_new(self)
+    }
+
+    /// Get a mutable borrow of the NumPy array
+    ///
+    /// # Panics
+    ///
+    /// Panics if the allocation backing the array is currently borrowed.
+    /// For a non-panicking variant, use [`try_readwrite`][Self::try_readwrite].
     pub fn readwrite(&self) -> PyReadwriteArray<'_, T, D> {
-        PyReadwriteArray::try_new(self).unwrap()
+        self.try_readwrite().unwrap()
     }
 
     /// Returns the internal array as [`ArrayView`].
@@ -1057,19 +1077,30 @@ impl<T: Element> PyArray<T, Ix1> {
         data.into_pyarray(py)
     }
 
-    /// Extends or trancates the length of 1 dimension PyArray.
+    /// Extends or truncates the length of a one-dimensional array.
+    ///
+    /// # Safety
+    ///
+    /// There should be no outstanding references (shared or exclusive) into the array
+    /// as this method might re-allocate it and thereby invalidate all pointers into it.
     ///
     /// # Example
+    ///
     /// ```
     /// use numpy::PyArray;
-    /// pyo3::Python::with_gil(|py| {
+    /// use pyo3::Python;
+    ///
+    /// Python::with_gil(|py| {
     ///     let pyarray = PyArray::arange(py, 0, 10, 1);
     ///     assert_eq!(pyarray.len(), 10);
-    ///     pyarray.resize(100).unwrap();
+    ///
+    ///     unsafe {
+    ///         pyarray.resize(100).unwrap();
+    ///     }
     ///     assert_eq!(pyarray.len(), 100);
     /// });
     /// ```
-    pub fn resize(&self, new_elems: usize) -> PyResult<()> {
+    pub unsafe fn resize(&self, new_elems: usize) -> PyResult<()> {
         self.resize_(self.py(), [new_elems], 1, NPY_ORDER::NPY_ANYORDER)
     }
 
