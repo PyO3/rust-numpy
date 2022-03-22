@@ -78,6 +78,10 @@ mod doctest {
     doc_comment!(include_str!("../README.md"), readme);
 }
 
+#[cold]
+#[inline(always)]
+fn cold() {}
+
 /// Create a [`PyArray`] with one, two or three dimensions.
 ///
 /// This macro is backed by [`ndarray::array`].
