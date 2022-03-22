@@ -212,28 +212,39 @@ fn conflict_due_reborrow_of_overlapping_views() {
 }
 
 #[test]
-#[should_panic(expected = "AlreadyBorrowed")]
-fn interleaved_views_conflict() {
+fn interleaved_views_do_not_conflict() {
     Python::with_gil(|py| {
-        let array = PyArray::<f64, _>::zeros(py, (1, 2, 3), false);
+        let array = PyArray::<f64, _>::zeros(py, (23, 42, 3), false);
         let locals = [("array", array)].into_py_dict(py);
 
         let view1 = py
+            .eval("array[:,:,0]", None, Some(locals))
+            .unwrap()
+            .downcast::<PyArray2<f64>>()
+            .unwrap();
+        assert_eq!(view1.shape(), [23, 42]);
+
+        let view2 = py
             .eval("array[:,:,1]", None, Some(locals))
             .unwrap()
             .downcast::<PyArray2<f64>>()
             .unwrap();
-        assert_eq!(view1.shape(), [1, 2]);
+        assert_eq!(view2.shape(), [23, 42]);
 
-        let view2 = py
+        let view3 = py
             .eval("array[:,:,2]", None, Some(locals))
             .unwrap()
             .downcast::<PyArray2<f64>>()
             .unwrap();
-        assert_eq!(view2.shape(), [1, 2]);
+        assert_eq!(view2.shape(), [23, 42]);
 
-        let _exclusive1 = view1.readwrite();
-        let _exclusive2 = view2.readwrite();
+        let exclusive1 = view1.readwrite();
+        let exclusive2 = view2.readwrite();
+        let exclusive3 = view3.readwrite();
+
+        assert_eq!(exclusive3.len(), 23 * 42);
+        assert_eq!(exclusive2.len(), 23 * 42);
+        assert_eq!(exclusive1.len(), 23 * 42);
     });
 }
 

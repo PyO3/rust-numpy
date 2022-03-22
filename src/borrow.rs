@@ -59,13 +59,9 @@
 //! });
 //! ```
 //!
-//! The second example shows that while non-overlapping views are supported,
-//! interleaved views which do not touch are currently not supported
-//! due to over-approximating which borrows are in conflict.
+//! The second example shows that non-overlapping and interleaved views are also supported.
 //!
 //! ```rust
-//! # use std::panic::{catch_unwind, AssertUnwindSafe};
-//! #
 //! use numpy::PyArray1;
 //! use pyo3::{types::IntoPyDict, Python};
 //!
@@ -78,16 +74,15 @@
 //!     let view3 = py.eval("array[::2]", None, Some(locals)).unwrap().downcast::<PyArray1<f64>>().unwrap();
 //!     let view4 = py.eval("array[1::2]", None, Some(locals)).unwrap().downcast::<PyArray1<f64>>().unwrap();
 //!
-//!     let _view1 = view1.readwrite();
-//!     let _view2 = view2.readwrite();
+//!     {
+//!         let _view1 = view1.readwrite();
+//!         let _view2 = view2.readwrite();
+//!     }
 //!
-//!     // Will fail at runtime even though `view3` and `view4`
-//!     // interleave as they are based on the same array.
-//!     let res = catch_unwind(AssertUnwindSafe(|| {
+//!     {
 //!         let _view3 = view3.readwrite();
 //!         let _view4 = view4.readwrite();
-//!     }));
-//!     assert!(res.is_err());
+//!     }
 //! });
 //! ```
 //!
@@ -125,15 +120,17 @@
 //!
 //! # Limitations
 //!
-//! Note that the current implementation of this is an over-approximation: It will consider overlapping borrows
+//! Note that the current implementation of this is an over-approximation: It will consider borrows
 //! potentially conflicting if the initial arrays have the same object at the end of their [base object chain][base].
-//! For example, creating two views of the same underlying array by slicing can yield potentially conflicting borrows
-//! even if the slice indices are chosen so that the two views do not actually share any elements by interleaving along one of its axes.
+//! Then, multiple conditions which are sufficient but not necessary to show the absence of conflicts are checked,
+//! but there are cases which they do not handle, for example slicing an array with a step size
+//! that does not divide its dimension along that axis. In these situations, borrows are rejected even though the arrays
+//! do not actually share any elements.
 //!
 //! This does limit the set of programs that can be written using safe Rust in way similar to rustc itself
 //! which ensures that all accepted programs are memory safe but does not necessarily accept all memory safe programs.
-//! The plan is to refine this checking to correctly handle more involved cases like interleaved views
-//! into the same array and until then the unsafe method [`PyArray::as_array_mut`] can be used as an escape hatch.
+//! In the future, more involved cases like the example from above may be handled and until then,
+//! the unsafe method [`PyArray::as_array_mut`] can be used as an escape hatch.
 //!
 //! [base]: https://numpy.org/doc/stable/reference/c-api/types-and-structures.html#c.NPY_AO.base
 #![deny(missing_docs)]
@@ -143,6 +140,7 @@ use std::collections::hash_map::{Entry, HashMap};
 use std::ops::{Deref, Range};
 
 use ndarray::{ArrayView, ArrayViewMut, Dimension, Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};
+use num_integer::gcd;
 use pyo3::{FromPyObject, PyAny, PyResult};
 
 use crate::array::PyArray;
@@ -155,14 +153,48 @@ use crate::npyffi::{self, PyArrayObject, NPY_ARRAY_WRITEABLE};
 #[derive(PartialEq, Eq, Hash)]
 struct BorrowKey {
     range: Range<usize>,
+    data_ptr: usize,
+    gcd_strides: isize,
 }
 
 impl BorrowKey {
+    fn from_array<T, D>(array: &PyArray<T, D>) -> Self
+    where
+        T: Element,
+        D: Dimension,
+    {
+        let range = data_range(array);
+
+        let data_ptr = array.data() as usize;
+        let gcd_strides = reduce(array.strides().iter().copied(), gcd).unwrap_or(1);
+
+        Self {
+            range,
+            data_ptr,
+            gcd_strides,
+        }
+    }
+
     fn conflicts(&self, other: &Self) -> bool {
         debug_assert!(self.range.start <= self.range.end);
         debug_assert!(other.range.start <= other.range.end);
 
         if other.range.start >= self.range.end || other.range.end <= self.range.start {
+            return false;
+        }
+
+        // The Diophantine equation which describes whether any integers can combine the data pointers and strides of the two arrays s.t.
+        // they yield the same element has a solution if and only if the GCD of all strides divides the difference of the data pointers.
+        //
+        // That solution could be out of bounds which mean that this is still an over-approximation.
+        // It appears sufficient to handle typical cases like the color channels of an image,
+        // but fails when slicing an array with a step size that does not divide the dimension along that axis.
+        //
+        // https://users.rust-lang.org/t/math-for-borrow-checking-numpy-arrays/73303
+        let ptr_diff = abs_diff(self.data_ptr, other.data_ptr) as isize;
+        let gcd_strides = gcd(self.gcd_strides, other.gcd_strides);
+
+        if ptr_diff % gcd_strides != 0 {
             return false;
         }
 
@@ -192,10 +224,7 @@ impl BorrowFlags {
         D: Dimension,
     {
         let address = base_address(array);
-
-        let key = BorrowKey {
-            range: data_range(array),
-        };
+        let key = BorrowKey::from_array(array);
 
         // SAFETY: Access to `&PyArray<T, D>` implies holding the GIL
         // and we are not calling into user code which might re-enter this function.
@@ -242,10 +271,7 @@ impl BorrowFlags {
         D: Dimension,
     {
         let address = base_address(array);
-
-        let key = BorrowKey {
-            range: data_range(array),
-        };
+        let key = BorrowKey::from_array(array);
 
         // SAFETY: Access to `&PyArray<T, D>` implies holding the GIL
         // and we are not calling into user code which might re-enter this function.
@@ -272,10 +298,7 @@ impl BorrowFlags {
         D: Dimension,
     {
         let address = base_address(array);
-
-        let key = BorrowKey {
-            range: data_range(array),
-        };
+        let key = BorrowKey::from_array(array);
 
         // SAFETY: Access to `&PyArray<T, D>` implies holding the GIL
         // and we are not calling into user code which might re-enter this function.
@@ -320,10 +343,7 @@ impl BorrowFlags {
         D: Dimension,
     {
         let address = base_address(array);
-
-        let key = BorrowKey {
-            range: data_range(array),
-        };
+        let key = BorrowKey::from_array(array);
 
         // SAFETY: Access to `&PyArray<T, D>` implies holding the GIL
         // and we are not calling into user code which might re-enter this function.
@@ -628,6 +648,25 @@ where
     Range { start, end }
 }
 
+// FIXME(adamreichold): Use `usize::abs_diff` from std when that becomes stable.
+fn abs_diff(lhs: usize, rhs: usize) -> usize {
+    if lhs >= rhs {
+        lhs - rhs
+    } else {
+        rhs - lhs
+    }
+}
+
+// FIXME(adamreichold): Use `Iterator::reduce` from std when our MSRV reaches 1.51.
+fn reduce<I, F>(mut iter: I, f: F) -> Option<I::Item>
+where
+    I: Iterator,
+    F: FnMut(I::Item, I::Item) -> I::Item,
+{
+    let first = iter.next()?;
+    Some(iter.fold(first, f))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -650,7 +689,7 @@ mod tests {
             assert_eq!(base_address, array as *const _ as usize);
 
             let data_range = data_range(array);
-            assert_eq!(data_range.start, unsafe { array.data() } as usize);
+            assert_eq!(data_range.start, array.data() as usize);
             assert_eq!(data_range.end, unsafe { array.data().add(15) } as usize);
         });
     }
@@ -668,7 +707,7 @@ mod tests {
             assert_eq!(base_address, base as usize);
 
             let data_range = data_range(array);
-            assert_eq!(data_range.start, unsafe { array.data() } as usize);
+            assert_eq!(data_range.start, array.data() as usize);
             assert_eq!(data_range.end, unsafe { array.data().add(15) } as usize);
         });
     }
@@ -694,7 +733,7 @@ mod tests {
             assert_eq!(base_address, base as usize);
 
             let data_range = data_range(view);
-            assert_eq!(data_range.start, unsafe { view.data() } as usize);
+            assert_eq!(data_range.start, view.data() as usize);
             assert_eq!(data_range.end, unsafe { view.data().add(12) } as usize);
         });
     }
@@ -724,7 +763,7 @@ mod tests {
             assert_eq!(base_address, base as usize);
 
             let data_range = data_range(view);
-            assert_eq!(data_range.start, unsafe { view.data() } as usize);
+            assert_eq!(data_range.start, view.data() as usize);
             assert_eq!(data_range.end, unsafe { view.data().add(12) } as usize);
         });
     }
@@ -763,7 +802,7 @@ mod tests {
             assert_eq!(base_address, base as usize);
 
             let data_range = data_range(view2);
-            assert_eq!(data_range.start, unsafe { view2.data() } as usize);
+            assert_eq!(data_range.start, view2.data() as usize);
             assert_eq!(data_range.end, unsafe { view2.data().add(6) } as usize);
         });
     }
@@ -806,7 +845,7 @@ mod tests {
             assert_eq!(base_address, base as usize);
 
             let data_range = data_range(view2);
-            assert_eq!(data_range.start, unsafe { view2.data() } as usize);
+            assert_eq!(data_range.start, view2.data() as usize);
             assert_eq!(data_range.end, unsafe { view2.data().add(6) } as usize);
         });
     }
@@ -834,6 +873,65 @@ mod tests {
             let data_range = data_range(view);
             assert_eq!(data_range.start, unsafe { view.data().offset(-9) } as usize);
             assert_eq!(data_range.end, unsafe { view.data().offset(6) } as usize);
+        });
+    }
+
+    #[test]
+    fn view_with_non_dividing_strides() {
+        Python::with_gil(|py| {
+            let array = PyArray::<f64, _>::zeros(py, (10, 10), false);
+            let locals = [("array", array)].into_py_dict(py);
+
+            let view1 = py
+                .eval("array[:,::3]", None, Some(locals))
+                .unwrap()
+                .downcast::<PyArray2<f64>>()
+                .unwrap();
+
+            let key1 = BorrowKey::from_array(view1);
+
+            assert_eq!(view1.strides(), &[80, 24]);
+            assert_eq!(key1.gcd_strides, 8);
+
+            let view2 = py
+                .eval("array[:,1::3]", None, Some(locals))
+                .unwrap()
+                .downcast::<PyArray2<f64>>()
+                .unwrap();
+
+            let key2 = BorrowKey::from_array(view2);
+
+            assert_eq!(view2.strides(), &[80, 24]);
+            assert_eq!(key2.gcd_strides, 8);
+
+            let view3 = py
+                .eval("array[:,::2]", None, Some(locals))
+                .unwrap()
+                .downcast::<PyArray2<f64>>()
+                .unwrap();
+
+            let key3 = BorrowKey::from_array(view3);
+
+            assert_eq!(view3.strides(), &[80, 16]);
+            assert_eq!(key3.gcd_strides, 16);
+
+            let view4 = py
+                .eval("array[:,1::2]", None, Some(locals))
+                .unwrap()
+                .downcast::<PyArray2<f64>>()
+                .unwrap();
+
+            let key4 = BorrowKey::from_array(view4);
+
+            assert_eq!(view4.strides(), &[80, 16]);
+            assert_eq!(key4.gcd_strides, 16);
+
+            assert!(!key3.conflicts(&key4));
+            assert!(key1.conflicts(&key3));
+            assert!(key2.conflicts(&key4));
+
+            // This is a false conflict where all aliasing indices like (0,7) and (2,0) are out of bounds.
+            assert!(key1.conflicts(&key2));
         });
     }
 }
