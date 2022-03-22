@@ -311,6 +311,8 @@
 <span id="309">309</span>
 <span id="310">310</span>
 <span id="311">311</span>
+<span id="312">312</span>
+<span id="313">313</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Defines conversion traits between Rust types and NumPy data types.</span>
 <span class="attribute">#![<span class="ident">deny</span>(<span class="ident">missing_docs</span>)]</span>
 
@@ -342,7 +344,9 @@
 <span class="doccomment">///     assert_eq!(py_array.readonly().as_slice().unwrap(), &amp;[1, 2, 3]);</span>
 <span class="doccomment">///</span>
 <span class="doccomment">///     // Array cannot be resized when its data is owned by Rust.</span>
-<span class="doccomment">///     assert!(py_array.resize(100).is_err());</span>
+<span class="doccomment">///     unsafe {</span>
+<span class="doccomment">///         assert!(py_array.resize(100).is_err());</span>
+<span class="doccomment">///     }</span>
 <span class="doccomment">/// });</span>
 <span class="doccomment">/// ```</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">IntoPyArray</span> {

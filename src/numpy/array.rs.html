@@ -1363,6 +1363,37 @@
 <span id="1361">1361</span>
 <span id="1362">1362</span>
 <span id="1363">1363</span>
+<span id="1364">1364</span>
+<span id="1365">1365</span>
+<span id="1366">1366</span>
+<span id="1367">1367</span>
+<span id="1368">1368</span>
+<span id="1369">1369</span>
+<span id="1370">1370</span>
+<span id="1371">1371</span>
+<span id="1372">1372</span>
+<span id="1373">1373</span>
+<span id="1374">1374</span>
+<span id="1375">1375</span>
+<span id="1376">1376</span>
+<span id="1377">1377</span>
+<span id="1378">1378</span>
+<span id="1379">1379</span>
+<span id="1380">1380</span>
+<span id="1381">1381</span>
+<span id="1382">1382</span>
+<span id="1383">1383</span>
+<span id="1384">1384</span>
+<span id="1385">1385</span>
+<span id="1386">1386</span>
+<span id="1387">1387</span>
+<span id="1388">1388</span>
+<span id="1389">1389</span>
+<span id="1390">1390</span>
+<span id="1391">1391</span>
+<span id="1392">1392</span>
+<span id="1393">1393</span>
+<span id="1394">1394</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Safe interface for NumPy&#39;s ndarray class</span>
 
 <span class="kw">use</span> <span class="ident">std</span>::{
@@ -1388,7 +1419,7 @@
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::cold</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::convert</span>::{<span class="ident">ArrayExt</span>, <span class="ident">IntoPyArray</span>, <span class="ident">NpyIndex</span>, <span class="ident">ToNpyDims</span>, <span class="ident">ToPyArray</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::dtype</span>::{<span class="ident">Element</span>, <span class="ident">PyArrayDescr</span>};
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::error</span>::{<span class="ident">DimensionalityError</span>, <span class="ident">FromVecError</span>, <span class="ident">NotContiguousError</span>, <span class="ident">TypeError</span>};
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::error</span>::{<span class="ident">BorrowError</span>, <span class="ident">DimensionalityError</span>, <span class="ident">FromVecError</span>, <span class="ident">NotContiguousError</span>, <span class="ident">TypeError</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::npyffi</span>::{<span class="self">self</span>, <span class="ident">npy_intp</span>, <span class="ident">NPY_ORDER</span>, <span class="ident">PY_ARRAY_API</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::slice_container::PySliceContainer</span>;
 
@@ -2211,13 +2242,33 @@
     }
 
     <span class="doccomment">/// Get an immutable borrow of the NumPy array</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">try_readonly</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">PyReadonlyArray</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span>, <span class="ident">BorrowError</span><span class="op">&gt;</span> {
+        <span class="ident">PyReadonlyArray::try_new</span>(<span class="self">self</span>)
+    }
+
+    <span class="doccomment">/// Get an immutable borrow of the NumPy array</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// # Panics</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// Panics if the allocation backing the array is currently mutably borrowed.</span>
+    <span class="doccomment">/// For a non-panicking variant, use [`try_readonly`][Self::try_readonly].</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">readonly</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">PyReadonlyArray</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> {
-        <span class="ident">PyReadonlyArray::try_new</span>(<span class="self">self</span>).<span class="ident">unwrap</span>()
+        <span class="self">self</span>.<span class="ident">try_readonly</span>().<span class="ident">unwrap</span>()
     }
 
     <span class="doccomment">/// Get a mutable borrow of the NumPy array</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">try_readwrite</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">PyReadwriteArray</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span>, <span class="ident">BorrowError</span><span class="op">&gt;</span> {
+        <span class="ident">PyReadwriteArray::try_new</span>(<span class="self">self</span>)
+    }
+
+    <span class="doccomment">/// Get a mutable borrow of the NumPy array</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// # Panics</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// Panics if the allocation backing the array is currently borrowed.</span>
+    <span class="doccomment">/// For a non-panicking variant, use [`try_readwrite`][Self::try_readwrite].</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">readwrite</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">PyReadwriteArray</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> {
-        <span class="ident">PyReadwriteArray::try_new</span>(<span class="self">self</span>).<span class="ident">unwrap</span>()
+        <span class="self">self</span>.<span class="ident">try_readwrite</span>().<span class="ident">unwrap</span>()
     }
 
     <span class="doccomment">/// Returns the internal array as [`ArrayView`].</span>
@@ -2422,19 +2473,30 @@
         <span class="ident">data</span>.<span class="ident">into_pyarray</span>(<span class="ident">py</span>)
     }
 
-    <span class="doccomment">/// Extends or trancates the length of 1 dimension PyArray.</span>
+    <span class="doccomment">/// Extends or truncates the length of a one-dimensional array.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// # Safety</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// There should be no outstanding references (shared or exclusive) into the array</span>
+    <span class="doccomment">/// as this method might re-allocate it and thereby invalidate all pointers into it.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// # Example</span>
+    <span class="doccomment">///</span>
     <span class="doccomment">/// ```</span>
     <span class="doccomment">/// use numpy::PyArray;</span>
-    <span class="doccomment">/// pyo3::Python::with_gil(|py| {</span>
+    <span class="doccomment">/// use pyo3::Python;</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// Python::with_gil(|py| {</span>
     <span class="doccomment">///     let pyarray = PyArray::arange(py, 0, 10, 1);</span>
     <span class="doccomment">///     assert_eq!(pyarray.len(), 10);</span>
-    <span class="doccomment">///     pyarray.resize(100).unwrap();</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">///     unsafe {</span>
+    <span class="doccomment">///         pyarray.resize(100).unwrap();</span>
+    <span class="doccomment">///     }</span>
     <span class="doccomment">///     assert_eq!(pyarray.len(), 100);</span>
     <span class="doccomment">/// });</span>
     <span class="doccomment">/// ```</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">resize</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">new_elems</span>: <span class="ident">usize</span>) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">resize</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">new_elems</span>: <span class="ident">usize</span>) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">resize_</span>(<span class="self">self</span>.<span class="ident">py</span>(), [<span class="ident">new_elems</span>], <span class="number">1</span>, <span class="ident">NPY_ORDER::NPY_ANYORDER</span>)
     }
 
