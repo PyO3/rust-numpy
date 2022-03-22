@@ -66,7 +66,8 @@ pub use crate::npyffi::{PY_ARRAY_API, PY_UFUNC_API};
 pub use crate::npyiter::{
     IterMode, NpyIterFlag, NpyMultiIter, NpyMultiIterBuilder, NpySingleIter, NpySingleIterBuilder,
 };
-pub use crate::sum_products::{dot, einsum_impl, inner};
+pub use crate::sum_products::{dot, einsum, inner};
+
 pub use ndarray::{array, Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};
 
 #[cfg(doctest)]
