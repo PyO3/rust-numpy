@@ -340,9 +340,9 @@ impl<T, D> PyArray<T, D> {
     }
 
     /// Returns the pointer to the first element of the inner array.
-    pub(crate) unsafe fn data(&self) -> *mut T {
+    pub(crate) fn data(&self) -> *mut T {
         let ptr = self.as_array_ptr();
-        (*ptr).data as *mut _
+        unsafe { (*ptr).data as *mut _ }
     }
 }
 
@@ -381,7 +381,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         let strides = self.strides();
 
         let mut new_strides = D::zeros(strides.len());
-        let mut data_ptr = unsafe { self.data() };
+        let mut data_ptr = self.data();
         let mut inverted_axes = InvertedAxes::new(strides.len());
 
         for i in 0..strides.len() {
