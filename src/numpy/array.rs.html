@@ -1736,9 +1736,9 @@
     }
 
     <span class="doccomment">/// Returns the pointer to the first element of the inner array.</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">data</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">*mut</span> <span class="ident">T</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">data</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">*mut</span> <span class="ident">T</span> {
         <span class="kw">let</span> <span class="ident">ptr</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">as_array_ptr</span>();
-        (<span class="kw-2">*</span><span class="ident">ptr</span>).<span class="ident">data</span> <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="kw">_</span>
+        <span class="kw">unsafe</span> { (<span class="kw-2">*</span><span class="ident">ptr</span>).<span class="ident">data</span> <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="kw">_</span> }
     }
 }
 
@@ -1777,7 +1777,7 @@
         <span class="kw">let</span> <span class="ident">strides</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">strides</span>();
 
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">new_strides</span> <span class="op">=</span> <span class="ident">D::zeros</span>(<span class="ident">strides</span>.<span class="ident">len</span>());
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">data_ptr</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="self">self</span>.<span class="ident">data</span>() };
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">data_ptr</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">data</span>();
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">inverted_axes</span> <span class="op">=</span> <span class="ident">InvertedAxes::new</span>(<span class="ident">strides</span>.<span class="ident">len</span>());
 
         <span class="kw">for</span> <span class="ident">i</span> <span class="kw">in</span> <span class="number">0</span>..<span class="ident">strides</span>.<span class="ident">len</span>() {
