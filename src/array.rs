@@ -302,6 +302,10 @@ impl<T, D> PyArray<T, D> {
     // C API: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_STRIDES
     pub fn strides(&self) -> &[isize] {
         let n = self.ndim();
+        if n == 0 {
+            cold();
+            return &[];
+        }
         let ptr = self.as_array_ptr();
         unsafe {
             let p = (*ptr).strides;
@@ -323,6 +327,10 @@ impl<T, D> PyArray<T, D> {
     // C API: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_DIMS
     pub fn shape(&self) -> &[usize] {
         let n = self.ndim();
+        if n == 0 {
+            cold();
+            return &[];
+        }
         let ptr = self.as_array_ptr();
         unsafe {
             let p = (*ptr).dimensions as *mut usize;

@@ -83,6 +83,17 @@ fn tuple_as_dim() {
 }
 
 #[test]
+fn rank_zero_array_has_invalid_strides_dimensions() {
+    Python::with_gil(|py| {
+        let arr = PyArray::<f64, _>::zeros(py, (), false);
+
+        assert_eq!(arr.ndim(), 0);
+        assert_eq!(arr.strides(), &[]);
+        assert_eq!(arr.shape(), &[]);
+    })
+}
+
+#[test]
 fn zeros() {
     Python::with_gil(|py| {
         let dims = [3, 4];
