@@ -9,7 +9,7 @@ use std::{
 
 use ndarray::{
     Array, ArrayBase, ArrayView, ArrayViewMut, Axis, Data, Dim, Dimension, IntoDimension, Ix0, Ix1,
-    Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn, RawArrayView, RawArrayViewMut, RawData, Shape, ShapeBuilder,
+    Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn, RawArrayView, RawArrayViewMut, RawData, ShapeBuilder,
     StrideShape,
 };
 use num_traits::AsPrimitive;
@@ -338,42 +338,19 @@ impl<T, D> PyArray<T, D> {
         }
     }
 
-    /// Calcurates the total number of elements in the array.
+    /// Calculates the total number of elements in the array.
     pub fn len(&self) -> usize {
         self.shape().iter().product()
     }
 
+    /// Returns `true` if the there are no elements in the array.
     pub fn is_empty(&self) -> bool {
-        self.len() == 0
+        self.shape().iter().any(|dim| *dim == 0)
     }
 
-    /// Returns the pointer to the first element of the inner array.
+    /// Returns the pointer to the first element of the array.
     pub(crate) fn data(&self) -> *mut T {
-        let ptr = self.as_array_ptr();
-        unsafe { (*ptr).data as *mut _ }
-    }
-}
-
-struct InvertedAxes(u32);
-
-impl InvertedAxes {
-    fn new(len: usize) -> Self {
-        assert!(len <= 32, "Only dimensionalities of up to 32 are supported");
-        Self(0)
-    }
-
-    fn push(&mut self, axis: usize) {
-        debug_assert!(axis < 32);
-        self.0 |= 1 << axis;
-    }
-
-    fn invert<S: RawData, D: Dimension>(mut self, array: &mut ArrayBase<S, D>) {
-        while self.0 != 0 {
-            let axis = self.0.trailing_zeros() as usize;
-            self.0 &= !(1 << axis);
-
-            array.invert_axis(Axis(axis));
-        }
+        unsafe { (*self.as_array_ptr()).data as *mut _ }
     }
 }
 
@@ -382,38 +359,6 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     #[inline(always)]
     pub fn dims(&self) -> D {
         D::from_dimension(&Dim(self.shape())).expect("mismatching dimensions")
-    }
-
-    fn ndarray_shape_ptr(&self) -> (StrideShape<D>, *mut T, InvertedAxes) {
-        let shape = self.shape();
-        let strides = self.strides();
-
-        let mut new_strides = D::zeros(strides.len());
-        let mut data_ptr = self.data();
-        let mut inverted_axes = InvertedAxes::new(strides.len());
-
-        for i in 0..strides.len() {
-            // FIXME(kngwyu): Replace this hacky negative strides support with
-            // a proper constructor, when it's implemented.
-            // See https://github.com/rust-ndarray/ndarray/issues/842 for more.
-            if strides[i] < 0 {
-                // Move the pointer to the start position
-                let offset = strides[i] * (shape[i] as isize - 1) / mem::size_of::<T>() as isize;
-                unsafe {
-                    data_ptr = data_ptr.offset(offset);
-                }
-                new_strides[i] = (-strides[i]) as usize / mem::size_of::<T>();
-
-                inverted_axes.push(i);
-            } else {
-                new_strides[i] = strides[i] as usize / mem::size_of::<T>();
-            }
-        }
-
-        let shape = Shape::from(D::from_dimension(&Dim(shape)).expect("mismatching dimensions"));
-        let new_strides = D::from_dimension(&Dim(new_strides)).expect("mismatching dimensions");
-
-        (shape.strides(new_strides), data_ptr, inverted_axes)
     }
 
     /// Creates a new uninitialized PyArray in python heap.
@@ -883,6 +828,53 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         self.try_readwrite().unwrap()
     }
 
+    fn as_view<S: RawData, F>(&self, from_shape_ptr: F) -> ArrayBase<S, D>
+    where
+        F: FnOnce(StrideShape<D>, *mut T) -> ArrayBase<S, D>,
+    {
+        let shape = D::from_dimension(&Dim(self.shape())).expect("mismatching dimensions");
+
+        let strides = self.strides();
+        let itemsize = mem::size_of::<T>();
+
+        assert!(
+            strides.len() <= 32,
+            "Only dimensionalities of up to 32 are supported"
+        );
+
+        let mut new_strides = D::zeros(strides.len());
+        let mut data_ptr = self.data();
+        let mut inverted_axes = 0_u32;
+
+        for i in 0..strides.len() {
+            // FIXME(kngwyu): Replace this hacky negative strides support with
+            // a proper constructor, when it's implemented.
+            // See https://github.com/rust-ndarray/ndarray/issues/842 for more.
+            if strides[i] >= 0 {
+                new_strides[i] = strides[i] as usize / itemsize;
+            } else {
+                // Move the pointer to the start position.
+                let offset = strides[i] * (shape[i] as isize - 1) / itemsize as isize;
+                data_ptr = unsafe { data_ptr.offset(offset) };
+
+                new_strides[i] = (-strides[i]) as usize / itemsize;
+
+                inverted_axes |= 1 << i;
+            }
+        }
+
+        let mut array = from_shape_ptr(shape.strides(new_strides), data_ptr);
+
+        while inverted_axes != 0 {
+            let axis = inverted_axes.trailing_zeros() as usize;
+            inverted_axes &= !(1 << axis);
+
+            array.invert_axis(Axis(axis));
+        }
+
+        array
+    }
+
     /// Returns the internal array as [`ArrayView`].
     ///
     /// See also [`PyReadonlyArray::as_array`].
@@ -891,10 +883,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     ///
     /// The existence of an exclusive reference to the internal data, e.g. `&mut [T]` or `ArrayViewMut`, implies undefined behavior.
     pub unsafe fn as_array(&self) -> ArrayView<'_, T, D> {
-        let (shape, ptr, inverted_axes) = self.ndarray_shape_ptr();
-        let mut res = ArrayView::from_shape_ptr(shape, ptr);
-        inverted_axes.invert(&mut res);
-        res
+        self.as_view(|shape, ptr| ArrayView::from_shape_ptr(shape, ptr))
     }
 
     /// Returns the internal array as [`ArrayViewMut`].
@@ -905,26 +894,17 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     ///
     /// The existence of another reference to the internal data, e.g. `&[T]` or `ArrayView`, implies undefined behavior.
     pub unsafe fn as_array_mut(&self) -> ArrayViewMut<'_, T, D> {
-        let (shape, ptr, inverted_axes) = self.ndarray_shape_ptr();
-        let mut res = ArrayViewMut::from_shape_ptr(shape, ptr);
-        inverted_axes.invert(&mut res);
-        res
+        self.as_view(|shape, ptr| ArrayViewMut::from_shape_ptr(shape, ptr))
     }
 
     /// Returns the internal array as [`RawArrayView`] enabling element access via raw pointers
     pub fn as_raw_array(&self) -> RawArrayView<T, D> {
-        let (shape, ptr, inverted_axes) = self.ndarray_shape_ptr();
-        let mut res = unsafe { RawArrayView::from_shape_ptr(shape, ptr) };
-        inverted_axes.invert(&mut res);
-        res
+        self.as_view(|shape, ptr| unsafe { RawArrayView::from_shape_ptr(shape, ptr) })
     }
 
     /// Returns the internal array as [`RawArrayViewMut`] enabling element access via raw pointers
     pub fn as_raw_array_mut(&self) -> RawArrayViewMut<T, D> {
-        let (shape, ptr, inverted_axes) = self.ndarray_shape_ptr();
-        let mut res = unsafe { RawArrayViewMut::from_shape_ptr(shape, ptr) };
-        inverted_axes.invert(&mut res);
-        res
+        self.as_view(|shape, ptr| unsafe { RawArrayViewMut::from_shape_ptr(shape, ptr) })
     }
 
     /// Get a copy of `PyArray` as

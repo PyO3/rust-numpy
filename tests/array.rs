@@ -90,6 +90,11 @@ fn rank_zero_array_has_invalid_strides_dimensions() {
         assert_eq!(arr.ndim(), 0);
         assert_eq!(arr.strides(), &[]);
         assert_eq!(arr.shape(), &[]);
+
+        assert_eq!(arr.len(), 1);
+        assert!(!arr.is_empty());
+
+        assert_eq!(arr.item(), 0.0);
     })
 }
 
