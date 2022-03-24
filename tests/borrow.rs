@@ -45,6 +45,17 @@ fn exclusive_and_shared_borrows() {
 
 #[test]
 #[should_panic(expected = "AlreadyBorrowed")]
+fn shared_and_exclusive_borrows() {
+    Python::with_gil(|py| {
+        let array = PyArray::<f64, _>::zeros(py, (1, 2, 3), false);
+
+        let _shared = array.readonly();
+        let _exclusive = array.readwrite();
+    });
+}
+
+#[test]
+#[should_panic(expected = "AlreadyBorrowed")]
 fn multiple_exclusive_borrows() {
     Python::with_gil(|py| {
         let array = PyArray::<f64, _>::zeros(py, (1, 2, 3), false);
@@ -184,7 +195,33 @@ fn non_overlapping_views_do_not_conflict() {
 
 #[test]
 #[should_panic(expected = "AlreadyBorrowed")]
-fn conflict_due_reborrow_of_overlapping_views() {
+fn conflict_due_to_overlapping_views() {
+    Python::with_gil(|py| {
+        let array = PyArray::<f64, _>::zeros(py, 3, false);
+        let locals = [("array", array)].into_py_dict(py);
+
+        let view1 = py
+            .eval("array[0:2]", None, Some(locals))
+            .unwrap()
+            .downcast::<PyArray1<f64>>()
+            .unwrap();
+        assert_eq!(view1.shape(), [2]);
+
+        let view2 = py
+            .eval("array[1:3]", None, Some(locals))
+            .unwrap()
+            .downcast::<PyArray1<f64>>()
+            .unwrap();
+        assert_eq!(view2.shape(), [2]);
+
+        let _exclusive1 = view1.readwrite();
+        let _shared2 = view2.readonly();
+    });
+}
+
+#[test]
+#[should_panic(expected = "AlreadyBorrowed")]
+fn conflict_due_to_reborrow_of_overlapping_views() {
     Python::with_gil(|py| {
         let array = PyArray::<f64, _>::zeros(py, 3, false);
         let locals = [("array", array)].into_py_dict(py);

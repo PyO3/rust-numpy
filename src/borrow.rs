@@ -86,6 +86,30 @@
 //! });
 //! ```
 //!
+//! The third example shows that some views are incorrectly rejected since the borrows are over-approximated.
+//!
+//! ```rust
+//! # use std::panic::{catch_unwind, AssertUnwindSafe};
+//! #
+//! use numpy::PyArray2;
+//! use pyo3::{types::IntoPyDict, Python};
+//!
+//! Python::with_gil(|py| {
+//!     let array = PyArray2::<f64>::zeros(py, (10, 10), false);
+//!     let locals = [("array", array)].into_py_dict(py);
+//!
+//!     let view1 = py.eval("array[:, ::3]", None, Some(locals)).unwrap().downcast::<PyArray2<f64>>().unwrap();
+//!     let view2 = py.eval("array[:, 1::3]", None, Some(locals)).unwrap().downcast::<PyArray2<f64>>().unwrap();
+//!
+//!     // A false conflict as the views do not actually share any elements.
+//!     let res = catch_unwind(AssertUnwindSafe(|| {
+//!         let _view1 = view1.readwrite();
+//!         let _view2 = view2.readwrite();
+//!     }));
+//!     assert!(res.is_err());
+//! });
+//! ```
+//!
 //! # Rationale
 //!
 //! Rust references require aliasing discipline to be maintained, i.e. there must always
@@ -235,6 +259,9 @@ impl BorrowFlags {
                 let same_base = entry.into_mut();
 
                 if let Some(readers) = same_base.get_mut(&key) {
+                    // Zero flags are removed during release.
+                    assert_ne!(*readers, 0);
+
                     let new_readers = readers.wrapping_add(1);
 
                     if new_readers <= 0 {
@@ -309,12 +336,11 @@ impl BorrowFlags {
                 let same_base = entry.into_mut();
 
                 if let Some(writers) = same_base.get_mut(&key) {
-                    if *writers != 0 {
-                        cold();
-                        return Err(BorrowError::AlreadyBorrowed);
-                    }
+                    // Zero flags are removed during release.
+                    assert_ne!(*writers, 0);
 
-                    *writers = -1;
+                    cold();
+                    return Err(BorrowError::AlreadyBorrowed);
                 } else {
                     if same_base
                         .iter()
@@ -620,8 +646,6 @@ fn base_address<T, D>(array: &PyArray<T, D>) -> usize {
     }
 }
 
-// FIXME(adamreichold): This is a coarse approximation and needs to be refined,
-// i.e. borrows of interleaved views into the same base should not be considered conflicting.
 fn data_range<T, D>(array: &PyArray<T, D>) -> Range<usize>
 where
     T: Element,
@@ -932,6 +956,227 @@ mod tests {
 
             // This is a false conflict where all aliasing indices like (0,7) and (2,0) are out of bounds.
             assert!(key1.conflicts(&key2));
+        });
+    }
+
+    #[test]
+    fn borrow_multiple_arrays() {
+        Python::with_gil(|py| {
+            let array1 = PyArray::<f64, _>::zeros(py, 10, false);
+            let array2 = PyArray::<f64, _>::zeros(py, 10, false);
+
+            let base1 = base_address(array1);
+            let base2 = base_address(array2);
+
+            let key1 = BorrowKey::from_array(array1);
+            let _exclusive1 = array1.readwrite();
+
+            {
+                let borrow_flags = unsafe { BORROW_FLAGS.get() };
+                assert_eq!(borrow_flags.len(), 1);
+
+                let same_base = &borrow_flags[&base1];
+                assert_eq!(same_base.len(), 1);
+
+                let flag = same_base[&key1];
+                assert_eq!(flag, -1);
+            }
+
+            let key2 = BorrowKey::from_array(array2);
+            let _shared2 = array2.readonly();
+
+            {
+                let borrow_flags = unsafe { BORROW_FLAGS.get() };
+                assert_eq!(borrow_flags.len(), 2);
+
+                let same_base = &borrow_flags[&base1];
+                assert_eq!(same_base.len(), 1);
+
+                let flag = same_base[&key1];
+                assert_eq!(flag, -1);
+
+                let same_base = &borrow_flags[&base2];
+                assert_eq!(same_base.len(), 1);
+
+                let flag = same_base[&key2];
+                assert_eq!(flag, 1);
+            }
+        });
+    }
+
+    #[test]
+    fn borrow_multiple_views() {
+        Python::with_gil(|py| {
+            let array = PyArray::<f64, _>::zeros(py, 10, false);
+            let base = base_address(array);
+
+            let locals = [("array", array)].into_py_dict(py);
+
+            let view1 = py
+                .eval("array[:5]", None, Some(locals))
+                .unwrap()
+                .downcast::<PyArray1<f64>>()
+                .unwrap();
+
+            let key1 = BorrowKey::from_array(view1);
+            let exclusive1 = view1.readwrite();
+
+            {
+                let borrow_flags = unsafe { BORROW_FLAGS.get() };
+                assert_eq!(borrow_flags.len(), 1);
+
+                let same_base = &borrow_flags[&base];
+                assert_eq!(same_base.len(), 1);
+
+                let flag = same_base[&key1];
+                assert_eq!(flag, -1);
+            }
+
+            let view2 = py
+                .eval("array[5:]", None, Some(locals))
+                .unwrap()
+                .downcast::<PyArray1<f64>>()
+                .unwrap();
+
+            let key2 = BorrowKey::from_array(view2);
+            let shared2 = view2.readonly();
+
+            {
+                let borrow_flags = unsafe { BORROW_FLAGS.get() };
+                assert_eq!(borrow_flags.len(), 1);
+
+                let same_base = &borrow_flags[&base];
+                assert_eq!(same_base.len(), 2);
+
+                let flag = same_base[&key1];
+                assert_eq!(flag, -1);
+
+                let flag = same_base[&key2];
+                assert_eq!(flag, 1);
+            }
+
+            let view3 = py
+                .eval("array[5:]", None, Some(locals))
+                .unwrap()
+                .downcast::<PyArray1<f64>>()
+                .unwrap();
+
+            let key3 = BorrowKey::from_array(view3);
+            let shared3 = view3.readonly();
+
+            {
+                let borrow_flags = unsafe { BORROW_FLAGS.get() };
+                assert_eq!(borrow_flags.len(), 1);
+
+                let same_base = &borrow_flags[&base];
+                assert_eq!(same_base.len(), 2);
+
+                let flag = same_base[&key1];
+                assert_eq!(flag, -1);
+
+                let flag = same_base[&key2];
+                assert_eq!(flag, 2);
+
+                let flag = same_base[&key3];
+                assert_eq!(flag, 2);
+            }
+
+            let view4 = py
+                .eval("array[7:]", None, Some(locals))
+                .unwrap()
+                .downcast::<PyArray1<f64>>()
+                .unwrap();
+
+            let key4 = BorrowKey::from_array(view4);
+            let shared4 = view4.readonly();
+
+            {
+                let borrow_flags = unsafe { BORROW_FLAGS.get() };
+                assert_eq!(borrow_flags.len(), 1);
+
+                let same_base = &borrow_flags[&base];
+                assert_eq!(same_base.len(), 3);
+
+                let flag = same_base[&key1];
+                assert_eq!(flag, -1);
+
+                let flag = same_base[&key2];
+                assert_eq!(flag, 2);
+
+                let flag = same_base[&key3];
+                assert_eq!(flag, 2);
+
+                let flag = same_base[&key4];
+                assert_eq!(flag, 1);
+            }
+
+            drop(shared2);
+
+            {
+                let borrow_flags = unsafe { BORROW_FLAGS.get() };
+                assert_eq!(borrow_flags.len(), 1);
+
+                let same_base = &borrow_flags[&base];
+                assert_eq!(same_base.len(), 3);
+
+                let flag = same_base[&key1];
+                assert_eq!(flag, -1);
+
+                let flag = same_base[&key2];
+                assert_eq!(flag, 1);
+
+                let flag = same_base[&key3];
+                assert_eq!(flag, 1);
+
+                let flag = same_base[&key4];
+                assert_eq!(flag, 1);
+            }
+
+            drop(shared3);
+
+            {
+                let borrow_flags = unsafe { BORROW_FLAGS.get() };
+                assert_eq!(borrow_flags.len(), 1);
+
+                let same_base = &borrow_flags[&base];
+                assert_eq!(same_base.len(), 2);
+
+                let flag = same_base[&key1];
+                assert_eq!(flag, -1);
+
+                assert!(!same_base.contains_key(&key2));
+
+                assert!(!same_base.contains_key(&key3));
+
+                let flag = same_base[&key4];
+                assert_eq!(flag, 1);
+            }
+
+            drop(exclusive1);
+
+            {
+                let borrow_flags = unsafe { BORROW_FLAGS.get() };
+                assert_eq!(borrow_flags.len(), 1);
+
+                let same_base = &borrow_flags[&base];
+                assert_eq!(same_base.len(), 1);
+
+                assert!(!same_base.contains_key(&key1));
+
+                assert!(!same_base.contains_key(&key2));
+
+                assert!(!same_base.contains_key(&key3));
+
+                let flag = same_base[&key4];
+                assert_eq!(flag, 1);
+            }
+
+            drop(shared4);
+
+            {
+                let borrow_flags = unsafe { BORROW_FLAGS.get() };
+                assert_eq!(borrow_flags.len(), 0);
+            }
         });
     }
 }
