@@ -832,38 +832,48 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     where
         F: FnOnce(StrideShape<D>, *mut T) -> ArrayBase<S, D>,
     {
-        let shape = D::from_dimension(&Dim(self.shape())).expect("mismatching dimensions");
+        fn inner<D: Dimension>(
+            shape: &[usize],
+            strides: &[isize],
+            itemsize: usize,
+            mut data_ptr: *mut u8,
+        ) -> (StrideShape<D>, u32, *mut u8) {
+            let shape = D::from_dimension(&Dim(shape)).expect("mismatching dimensions");
 
-        let strides = self.strides();
-        let itemsize = mem::size_of::<T>();
+            assert!(
+                strides.len() <= 32,
+                "Only dimensionalities of up to 32 are supported"
+            );
 
-        assert!(
-            strides.len() <= 32,
-            "Only dimensionalities of up to 32 are supported"
-        );
+            let mut new_strides = D::zeros(strides.len());
+            let mut inverted_axes = 0_u32;
 
-        let mut new_strides = D::zeros(strides.len());
-        let mut data_ptr = self.data();
-        let mut inverted_axes = 0_u32;
+            for i in 0..strides.len() {
+                // FIXME(kngwyu): Replace this hacky negative strides support with
+                // a proper constructor, when it's implemented.
+                // See https://github.com/rust-ndarray/ndarray/issues/842 for more.
+                if strides[i] >= 0 {
+                    new_strides[i] = strides[i] as usize / itemsize;
+                } else {
+                    // Move the pointer to the start position.
+                    data_ptr = unsafe { data_ptr.offset(strides[i] * (shape[i] as isize - 1)) };
 
-        for i in 0..strides.len() {
-            // FIXME(kngwyu): Replace this hacky negative strides support with
-            // a proper constructor, when it's implemented.
-            // See https://github.com/rust-ndarray/ndarray/issues/842 for more.
-            if strides[i] >= 0 {
-                new_strides[i] = strides[i] as usize / itemsize;
-            } else {
-                // Move the pointer to the start position.
-                let offset = strides[i] * (shape[i] as isize - 1) / itemsize as isize;
-                data_ptr = unsafe { data_ptr.offset(offset) };
-
-                new_strides[i] = (-strides[i]) as usize / itemsize;
-
-                inverted_axes |= 1 << i;
+                    new_strides[i] = (-strides[i]) as usize / itemsize;
+                    inverted_axes |= 1 << i;
+                }
             }
+
+            (shape.strides(new_strides), inverted_axes, data_ptr)
         }
 
-        let mut array = from_shape_ptr(shape.strides(new_strides), data_ptr);
+        let (shape, mut inverted_axes, data_ptr) = inner(
+            self.shape(),
+            self.strides(),
+            mem::size_of::<T>(),
+            self.data() as _,
+        );
+
+        let mut array = from_shape_ptr(shape, data_ptr as _);
 
         while inverted_axes != 0 {
             let axis = inverted_axes.trailing_zeros() as usize;
