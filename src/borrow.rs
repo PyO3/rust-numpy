@@ -163,11 +163,12 @@
 
 use std::any::type_name;
 use std::cell::UnsafeCell;
-use std::collections::hash_map::{Entry, HashMap};
+use std::collections::hash_map::Entry;
 use std::fmt;
 use std::mem::size_of;
 use std::ops::Deref;
 
+use ahash::AHashMap;
 use ndarray::{ArrayView, ArrayViewMut, Dimension, Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};
 use num_integer::gcd;
 use pyo3::{FromPyObject, PyAny, PyResult};
@@ -235,7 +236,7 @@ impl BorrowKey {
     }
 }
 
-type BorrowFlagsInner = HashMap<usize, HashMap<BorrowKey, isize>>;
+type BorrowFlagsInner = AHashMap<usize, AHashMap<BorrowKey, isize>>;
 
 struct BorrowFlags(UnsafeCell<Option<BorrowFlagsInner>>);
 
@@ -248,7 +249,7 @@ impl BorrowFlags {
 
     #[allow(clippy::mut_from_ref)]
     unsafe fn get(&self) -> &mut BorrowFlagsInner {
-        (*self.0.get()).get_or_insert_with(HashMap::new)
+        (*self.0.get()).get_or_insert_with(AHashMap::new)
     }
 
     fn acquire<T, D>(&self, array: &PyArray<T, D>) -> Result<(), BorrowError>
@@ -292,7 +293,7 @@ impl BorrowFlags {
                 }
             }
             Entry::Vacant(entry) => {
-                let mut same_base_arrays = HashMap::with_capacity(1);
+                let mut same_base_arrays = AHashMap::with_capacity(1);
                 same_base_arrays.insert(key, 1);
                 entry.insert(same_base_arrays);
             }
@@ -363,7 +364,7 @@ impl BorrowFlags {
                 }
             }
             Entry::Vacant(entry) => {
-                let mut same_base_arrays = HashMap::with_capacity(1);
+                let mut same_base_arrays = AHashMap::with_capacity(1);
                 same_base_arrays.insert(key, -1);
                 entry.insert(same_base_arrays);
             }
