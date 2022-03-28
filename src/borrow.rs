@@ -146,22 +146,25 @@
 //!
 //! Note that the current implementation of this is an over-approximation: It will consider borrows
 //! potentially conflicting if the initial arrays have the same object at the end of their [base object chain][base].
-//! Then, multiple conditions which are sufficient but not necessary to show the absence of conflicts are checked,
-//! but there are cases which they do not handle, for example slicing an array with a step size
-//! that does not divide its dimension along that axis. In these situations, borrows are rejected even though the arrays
+//! Then, multiple conditions which are sufficient but not necessary to show the absence of conflicts are checked.
+//!
+//! While this is sufficient to handle common situations like slicing an array with a non-unit step size which divides
+//! the dimension along that axis, there are also cases which it does not handle. For example, if the step size does
+//! not divide the dimension along the sliced axis. Under such conditions, borrows are rejected even though the arrays
 //! do not actually share any elements.
 //!
 //! This does limit the set of programs that can be written using safe Rust in way similar to rustc itself
 //! which ensures that all accepted programs are memory safe but does not necessarily accept all memory safe programs.
-//! In the future, more involved cases like the example from above may be handled and until then,
-//! the unsafe method [`PyArray::as_array_mut`] can be used as an escape hatch.
+//! However, the unsafe method [`PyArray::as_array_mut`] can be used as an escape hatch.
+//! More involved cases like the example from above may be supported in the future.
 //!
 //! [base]: https://numpy.org/doc/stable/reference/c-api/types-and-structures.html#c.NPY_AO.base
 #![deny(missing_docs)]
 
 use std::cell::UnsafeCell;
 use std::collections::hash_map::{Entry, HashMap};
-use std::ops::{Deref, Range};
+use std::mem::size_of;
+use std::ops::Deref;
 
 use ndarray::{ArrayView, ArrayViewMut, Dimension, Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};
 use num_integer::gcd;
@@ -176,8 +179,11 @@ use crate::npyffi::{self, PyArrayObject, NPY_ARRAY_WRITEABLE};
 
 #[derive(PartialEq, Eq, Hash)]
 struct BorrowKey {
-    range: Range<usize>,
+    /// exclusive range of lowest and highest address covered by array
+    range: (usize, usize),
+    /// the data address on which address computations are based
     data_ptr: usize,
+    /// the greatest common divisor of the strides of the array
     gcd_strides: isize,
 }
 
@@ -200,10 +206,10 @@ impl BorrowKey {
     }
 
     fn conflicts(&self, other: &Self) -> bool {
-        debug_assert!(self.range.start <= self.range.end);
-        debug_assert!(other.range.start <= other.range.end);
+        debug_assert!(self.range.0 <= self.range.1);
+        debug_assert!(other.range.0 <= other.range.1);
 
-        if other.range.start >= self.range.end || other.range.end <= self.range.start {
+        if other.range.0 >= self.range.1 || self.range.0 >= other.range.1 {
             return false;
         }
 
@@ -222,6 +228,7 @@ impl BorrowKey {
             return false;
         }
 
+        // By default, a conflict is assumed as it is the safe choice without actually solving the aliasing equation.
         true
     }
 }
@@ -256,9 +263,9 @@ impl BorrowFlags {
 
         match borrow_flags.entry(address) {
             Entry::Occupied(entry) => {
-                let same_base = entry.into_mut();
+                let same_base_arrays = entry.into_mut();
 
-                if let Some(readers) = same_base.get_mut(&key) {
+                if let Some(readers) = same_base_arrays.get_mut(&key) {
                     // Zero flags are removed during release.
                     assert_ne!(*readers, 0);
 
@@ -271,7 +278,7 @@ impl BorrowFlags {
 
                     *readers = new_readers;
                 } else {
-                    if same_base
+                    if same_base_arrays
                         .iter()
                         .any(|(other, readers)| key.conflicts(other) && *readers < 0)
                     {
@@ -279,13 +286,13 @@ impl BorrowFlags {
                         return Err(BorrowError::AlreadyBorrowed);
                     }
 
-                    same_base.insert(key, 1);
+                    same_base_arrays.insert(key, 1);
                 }
             }
             Entry::Vacant(entry) => {
-                let mut same_base = HashMap::new();
-                same_base.insert(key, 1);
-                entry.insert(same_base);
+                let mut same_base_arrays = HashMap::with_capacity(1);
+                same_base_arrays.insert(key, 1);
+                entry.insert(same_base_arrays);
             }
         }
 
@@ -304,15 +311,15 @@ impl BorrowFlags {
         // and we are not calling into user code which might re-enter this function.
         let borrow_flags = unsafe { BORROW_FLAGS.get() };
 
-        let same_base = borrow_flags.get_mut(&address).unwrap();
+        let same_base_arrays = borrow_flags.get_mut(&address).unwrap();
 
-        let readers = same_base.get_mut(&key).unwrap();
+        let readers = same_base_arrays.get_mut(&key).unwrap();
 
         *readers -= 1;
 
         if *readers == 0 {
-            if same_base.len() > 1 {
-                same_base.remove(&key).unwrap();
+            if same_base_arrays.len() > 1 {
+                same_base_arrays.remove(&key).unwrap();
             } else {
                 borrow_flags.remove(&address).unwrap();
             }
@@ -333,16 +340,16 @@ impl BorrowFlags {
 
         match borrow_flags.entry(address) {
             Entry::Occupied(entry) => {
-                let same_base = entry.into_mut();
+                let same_base_arrays = entry.into_mut();
 
-                if let Some(writers) = same_base.get_mut(&key) {
+                if let Some(writers) = same_base_arrays.get_mut(&key) {
                     // Zero flags are removed during release.
                     assert_ne!(*writers, 0);
 
                     cold();
                     return Err(BorrowError::AlreadyBorrowed);
                 } else {
-                    if same_base
+                    if same_base_arrays
                         .iter()
                         .any(|(other, writers)| key.conflicts(other) && *writers != 0)
                     {
@@ -350,13 +357,13 @@ impl BorrowFlags {
                         return Err(BorrowError::AlreadyBorrowed);
                     }
 
-                    same_base.insert(key, -1);
+                    same_base_arrays.insert(key, -1);
                 }
             }
             Entry::Vacant(entry) => {
-                let mut same_base = HashMap::new();
-                same_base.insert(key, -1);
-                entry.insert(same_base);
+                let mut same_base_arrays = HashMap::with_capacity(1);
+                same_base_arrays.insert(key, -1);
+                entry.insert(same_base_arrays);
             }
         }
 
@@ -375,10 +382,10 @@ impl BorrowFlags {
         // and we are not calling into user code which might re-enter this function.
         let borrow_flags = unsafe { BORROW_FLAGS.get() };
 
-        let same_base = borrow_flags.get_mut(&address).unwrap();
+        let same_base_arrays = borrow_flags.get_mut(&address).unwrap();
 
-        if same_base.len() > 1 {
-            same_base.remove(&key).unwrap();
+        if same_base_arrays.len() > 1 {
+            same_base_arrays.remove(&key).unwrap();
         } else {
             borrow_flags.remove(&address);
         }
@@ -646,30 +653,36 @@ fn base_address<T, D>(array: &PyArray<T, D>) -> usize {
     }
 }
 
-fn data_range<T, D>(array: &PyArray<T, D>) -> Range<usize>
+fn data_range<T, D>(array: &PyArray<T, D>) -> (usize, usize)
 where
     T: Element,
     D: Dimension,
 {
-    let data = unsafe { (*array.as_array_ptr()).data };
+    let shape = array.shape();
+    let strides = array.strides();
 
     let mut start = 0;
     let mut end = 0;
 
-    for (&dim, &stride) in array.shape().iter().zip(array.strides()) {
-        let offset = (dim as isize) * stride;
+    if shape.iter().all(|dim| *dim != 0) {
+        for (&dim, &stride) in shape.iter().zip(strides) {
+            let offset = (dim - 1) as isize * stride;
 
-        if offset >= 0 {
-            end += offset;
-        } else {
-            start += offset;
+            if offset >= 0 {
+                end += offset;
+            } else {
+                start += offset;
+            }
         }
+
+        end += size_of::<T>() as isize;
     }
 
+    let data = unsafe { (*array.as_array_ptr()).data };
     let start = unsafe { data.offset(start) } as usize;
     let end = unsafe { data.offset(end) } as usize;
 
-    Range { start, end }
+    (start, end)
 }
 
 // FIXME(adamreichold): Use `usize::abs_diff` from std when that becomes stable.
@@ -713,8 +726,8 @@ mod tests {
             assert_eq!(base_address, array as *const _ as usize);
 
             let data_range = data_range(array);
-            assert_eq!(data_range.start, array.data() as usize);
-            assert_eq!(data_range.end, unsafe { array.data().add(15) } as usize);
+            assert_eq!(data_range.0, array.data() as usize);
+            assert_eq!(data_range.1, unsafe { array.data().add(6) } as usize);
         });
     }
 
@@ -731,8 +744,8 @@ mod tests {
             assert_eq!(base_address, base as usize);
 
             let data_range = data_range(array);
-            assert_eq!(data_range.start, array.data() as usize);
-            assert_eq!(data_range.end, unsafe { array.data().add(15) } as usize);
+            assert_eq!(data_range.0, array.data() as usize);
+            assert_eq!(data_range.1, unsafe { array.data().add(6) } as usize);
         });
     }
 
@@ -757,8 +770,8 @@ mod tests {
             assert_eq!(base_address, base as usize);
 
             let data_range = data_range(view);
-            assert_eq!(data_range.start, view.data() as usize);
-            assert_eq!(data_range.end, unsafe { view.data().add(12) } as usize);
+            assert_eq!(data_range.0, array.data() as usize);
+            assert_eq!(data_range.1, unsafe { array.data().add(4) } as usize);
         });
     }
 
@@ -787,8 +800,8 @@ mod tests {
             assert_eq!(base_address, base as usize);
 
             let data_range = data_range(view);
-            assert_eq!(data_range.start, view.data() as usize);
-            assert_eq!(data_range.end, unsafe { view.data().add(12) } as usize);
+            assert_eq!(data_range.0, array.data() as usize);
+            assert_eq!(data_range.1, unsafe { array.data().add(4) } as usize);
         });
     }
 
@@ -826,8 +839,8 @@ mod tests {
             assert_eq!(base_address, base as usize);
 
             let data_range = data_range(view2);
-            assert_eq!(data_range.start, view2.data() as usize);
-            assert_eq!(data_range.end, unsafe { view2.data().add(6) } as usize);
+            assert_eq!(data_range.0, array.data() as usize);
+            assert_eq!(data_range.1, unsafe { array.data().add(1) } as usize);
         });
     }
 
@@ -869,8 +882,8 @@ mod tests {
             assert_eq!(base_address, base as usize);
 
             let data_range = data_range(view2);
-            assert_eq!(data_range.start, view2.data() as usize);
-            assert_eq!(data_range.end, unsafe { view2.data().add(6) } as usize);
+            assert_eq!(data_range.0, array.data() as usize);
+            assert_eq!(data_range.1, unsafe { array.data().add(1) } as usize);
         });
     }
 
@@ -895,8 +908,26 @@ mod tests {
             assert_eq!(base_address, base as usize);
 
             let data_range = data_range(view);
-            assert_eq!(data_range.start, unsafe { view.data().offset(-9) } as usize);
-            assert_eq!(data_range.end, unsafe { view.data().offset(6) } as usize);
+            assert_eq!(view.data(), unsafe { array.data().offset(2) });
+            assert_eq!(data_range.0, unsafe { view.data().offset(-2) } as usize);
+            assert_eq!(data_range.1, unsafe { view.data().offset(4) } as usize);
+        });
+    }
+
+    #[test]
+    fn array_with_zero_dimensions() {
+        Python::with_gil(|py| {
+            let array = PyArray::<f64, _>::zeros(py, (1, 0, 3), false);
+
+            let base = unsafe { (*array.as_array_ptr()).base };
+            assert!(base.is_null());
+
+            let base_address = base_address(array);
+            assert_eq!(base_address, array as *const _ as usize);
+
+            let data_range = data_range(array);
+            assert_eq!(data_range.0, array.data() as usize);
+            assert_eq!(data_range.1, array.data() as usize);
         });
     }
 
@@ -975,10 +1006,10 @@ mod tests {
                 let borrow_flags = unsafe { BORROW_FLAGS.get() };
                 assert_eq!(borrow_flags.len(), 1);
 
-                let same_base = &borrow_flags[&base1];
-                assert_eq!(same_base.len(), 1);
+                let same_base_arrays = &borrow_flags[&base1];
+                assert_eq!(same_base_arrays.len(), 1);
 
-                let flag = same_base[&key1];
+                let flag = same_base_arrays[&key1];
                 assert_eq!(flag, -1);
             }
 
@@ -989,16 +1020,16 @@ mod tests {
                 let borrow_flags = unsafe { BORROW_FLAGS.get() };
                 assert_eq!(borrow_flags.len(), 2);
 
-                let same_base = &borrow_flags[&base1];
-                assert_eq!(same_base.len(), 1);
+                let same_base_arrays = &borrow_flags[&base1];
+                assert_eq!(same_base_arrays.len(), 1);
 
-                let flag = same_base[&key1];
+                let flag = same_base_arrays[&key1];
                 assert_eq!(flag, -1);
 
-                let same_base = &borrow_flags[&base2];
-                assert_eq!(same_base.len(), 1);
+                let same_base_arrays = &borrow_flags[&base2];
+                assert_eq!(same_base_arrays.len(), 1);
 
-                let flag = same_base[&key2];
+                let flag = same_base_arrays[&key2];
                 assert_eq!(flag, 1);
             }
         });
@@ -1025,10 +1056,10 @@ mod tests {
                 let borrow_flags = unsafe { BORROW_FLAGS.get() };
                 assert_eq!(borrow_flags.len(), 1);
 
-                let same_base = &borrow_flags[&base];
-                assert_eq!(same_base.len(), 1);
+                let same_base_arrays = &borrow_flags[&base];
+                assert_eq!(same_base_arrays.len(), 1);
 
-                let flag = same_base[&key1];
+                let flag = same_base_arrays[&key1];
                 assert_eq!(flag, -1);
             }
 
@@ -1045,13 +1076,13 @@ mod tests {
                 let borrow_flags = unsafe { BORROW_FLAGS.get() };
                 assert_eq!(borrow_flags.len(), 1);
 
-                let same_base = &borrow_flags[&base];
-                assert_eq!(same_base.len(), 2);
+                let same_base_arrays = &borrow_flags[&base];
+                assert_eq!(same_base_arrays.len(), 2);
 
-                let flag = same_base[&key1];
+                let flag = same_base_arrays[&key1];
                 assert_eq!(flag, -1);
 
-                let flag = same_base[&key2];
+                let flag = same_base_arrays[&key2];
                 assert_eq!(flag, 1);
             }
 
@@ -1068,16 +1099,16 @@ mod tests {
                 let borrow_flags = unsafe { BORROW_FLAGS.get() };
                 assert_eq!(borrow_flags.len(), 1);
 
-                let same_base = &borrow_flags[&base];
-                assert_eq!(same_base.len(), 2);
+                let same_base_arrays = &borrow_flags[&base];
+                assert_eq!(same_base_arrays.len(), 2);
 
-                let flag = same_base[&key1];
+                let flag = same_base_arrays[&key1];
                 assert_eq!(flag, -1);
 
-                let flag = same_base[&key2];
+                let flag = same_base_arrays[&key2];
                 assert_eq!(flag, 2);
 
-                let flag = same_base[&key3];
+                let flag = same_base_arrays[&key3];
                 assert_eq!(flag, 2);
             }
 
@@ -1094,19 +1125,19 @@ mod tests {
                 let borrow_flags = unsafe { BORROW_FLAGS.get() };
                 assert_eq!(borrow_flags.len(), 1);
 
-                let same_base = &borrow_flags[&base];
-                assert_eq!(same_base.len(), 3);
+                let same_base_arrays = &borrow_flags[&base];
+                assert_eq!(same_base_arrays.len(), 3);
 
-                let flag = same_base[&key1];
+                let flag = same_base_arrays[&key1];
                 assert_eq!(flag, -1);
 
-                let flag = same_base[&key2];
+                let flag = same_base_arrays[&key2];
                 assert_eq!(flag, 2);
 
-                let flag = same_base[&key3];
+                let flag = same_base_arrays[&key3];
                 assert_eq!(flag, 2);
 
-                let flag = same_base[&key4];
+                let flag = same_base_arrays[&key4];
                 assert_eq!(flag, 1);
             }
 
@@ -1116,19 +1147,19 @@ mod tests {
                 let borrow_flags = unsafe { BORROW_FLAGS.get() };
                 assert_eq!(borrow_flags.len(), 1);
 
-                let same_base = &borrow_flags[&base];
-                assert_eq!(same_base.len(), 3);
+                let same_base_arrays = &borrow_flags[&base];
+                assert_eq!(same_base_arrays.len(), 3);
 
-                let flag = same_base[&key1];
+                let flag = same_base_arrays[&key1];
                 assert_eq!(flag, -1);
 
-                let flag = same_base[&key2];
+                let flag = same_base_arrays[&key2];
                 assert_eq!(flag, 1);
 
-                let flag = same_base[&key3];
+                let flag = same_base_arrays[&key3];
                 assert_eq!(flag, 1);
 
-                let flag = same_base[&key4];
+                let flag = same_base_arrays[&key4];
                 assert_eq!(flag, 1);
             }
 
@@ -1138,17 +1169,17 @@ mod tests {
                 let borrow_flags = unsafe { BORROW_FLAGS.get() };
                 assert_eq!(borrow_flags.len(), 1);
 
-                let same_base = &borrow_flags[&base];
-                assert_eq!(same_base.len(), 2);
+                let same_base_arrays = &borrow_flags[&base];
+                assert_eq!(same_base_arrays.len(), 2);
 
-                let flag = same_base[&key1];
+                let flag = same_base_arrays[&key1];
                 assert_eq!(flag, -1);
 
-                assert!(!same_base.contains_key(&key2));
+                assert!(!same_base_arrays.contains_key(&key2));
 
-                assert!(!same_base.contains_key(&key3));
+                assert!(!same_base_arrays.contains_key(&key3));
 
-                let flag = same_base[&key4];
+                let flag = same_base_arrays[&key4];
                 assert_eq!(flag, 1);
             }
 
@@ -1158,16 +1189,16 @@ mod tests {
                 let borrow_flags = unsafe { BORROW_FLAGS.get() };
                 assert_eq!(borrow_flags.len(), 1);
 
-                let same_base = &borrow_flags[&base];
-                assert_eq!(same_base.len(), 1);
+                let same_base_arrays = &borrow_flags[&base];
+                assert_eq!(same_base_arrays.len(), 1);
 
-                assert!(!same_base.contains_key(&key1));
+                assert!(!same_base_arrays.contains_key(&key1));
 
-                assert!(!same_base.contains_key(&key2));
+                assert!(!same_base_arrays.contains_key(&key2));
 
-                assert!(!same_base.contains_key(&key3));
+                assert!(!same_base_arrays.contains_key(&key3));
 
-                let flag = same_base[&key4];
+                let flag = same_base_arrays[&key4];
                 assert_eq!(flag, 1);
             }
 
