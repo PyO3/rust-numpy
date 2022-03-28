@@ -55,18 +55,18 @@ fn shared_and_exclusive_borrows() {
 }
 
 #[test]
-#[should_panic(expected = "AlreadyBorrowed")]
 fn multiple_exclusive_borrows() {
     Python::with_gil(|py| {
         let array = PyArray::<f64, _>::zeros(py, (1, 2, 3), false);
 
-        let _exclusive1 = array.readwrite();
-        let _exclusive2 = array.readwrite();
+        let _exclusive = array.try_readwrite().unwrap();
+
+        let err = array.try_readwrite().unwrap_err();
+        assert_eq!(err.to_string(), "The given array is already borrowed");
     });
 }
 
 #[test]
-#[should_panic(expected = "NotWriteable")]
 fn exclusive_borrow_requires_writeable() {
     Python::with_gil(|py| {
         let array = PyArray::<f64, _>::zeros(py, (1, 2, 3), false);
@@ -75,7 +75,8 @@ fn exclusive_borrow_requires_writeable() {
             (*array.as_array_ptr()).flags &= !NPY_ARRAY_WRITEABLE;
         }
 
-        let _exclusive = array.readwrite();
+        let err = array.try_readwrite().unwrap_err();
+        assert_eq!(err.to_string(), "The given array is not writeable");
     });
 }
 

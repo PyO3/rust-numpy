@@ -161,8 +161,10 @@
 //! [base]: https://numpy.org/doc/stable/reference/c-api/types-and-structures.html#c.NPY_AO.base
 #![deny(missing_docs)]
 
+use std::any::type_name;
 use std::cell::UnsafeCell;
 use std::collections::hash_map::{Entry, HashMap};
+use std::fmt;
 use std::mem::size_of;
 use std::ops::Deref;
 
@@ -500,6 +502,22 @@ where
     }
 }
 
+impl<'py, T, D> fmt::Debug for PyReadonlyArray<'py, T, D>
+where
+    T: Element,
+    D: Dimension,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let name = format!(
+            "PyReadonlyArray<{}, {}>",
+            type_name::<T>(),
+            type_name::<D>()
+        );
+
+        f.debug_struct(&name).finish()
+    }
+}
+
 /// Read-write borrow of an array.
 ///
 /// An instance of this type ensures that there are no instances of [`PyReadonlyArray`] and no other instances of [`PyReadwriteArray`],
@@ -633,6 +651,22 @@ where
 {
     fn drop(&mut self) {
         BORROW_FLAGS.release_mut(self.0);
+    }
+}
+
+impl<'py, T, D> fmt::Debug for PyReadwriteArray<'py, T, D>
+where
+    T: Element,
+    D: Dimension,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let name = format!(
+            "PyReadwriteArray<{}, {}>",
+            type_name::<T>(),
+            type_name::<D>()
+        );
+
+        f.debug_struct(&name).finish()
     }
 }
 
@@ -1207,6 +1241,31 @@ mod tests {
             {
                 let borrow_flags = unsafe { BORROW_FLAGS.get() };
                 assert_eq!(borrow_flags.len(), 0);
+            }
+        });
+    }
+
+    #[test]
+    fn test_debug_formatting() {
+        Python::with_gil(|py| {
+            let array = PyArray::<f64, _>::zeros(py, (1, 2, 3), false);
+
+            {
+                let shared = array.readonly();
+
+                assert_eq!(
+                    format!("{:?}", shared),
+                    "PyReadonlyArray<f64, ndarray::dimension::dim::Dim<[usize; 3]>>"
+                );
+            }
+
+            {
+                let exclusive = array.readwrite();
+
+                assert_eq!(
+                    format!("{:?}", exclusive),
+                    "PyReadwriteArray<f64, ndarray::dimension::dim::Dim<[usize; 3]>>"
+                );
             }
         });
     }
