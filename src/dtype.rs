@@ -84,17 +84,17 @@ impl PyArrayDescr {
     ///
     /// [dtype]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.html
     #[inline]
-    pub fn new<'py, T: ToPyObject + ?Sized>(py: Python<'py>, obj: &T) -> PyResult<&'py Self> {
-        Self::new_impl(py, obj.to_object(py))
-    }
-
-    fn new_impl<'py>(py: Python<'py>, obj: PyObject) -> PyResult<&'py Self> {
-        let mut descr: *mut PyArray_Descr = ptr::null_mut();
-        unsafe {
-            // None is an invalid input here and is not converted to NPY_DEFAULT_TYPE
-            PY_ARRAY_API.PyArray_DescrConverter2(py, obj.as_ptr(), &mut descr as *mut _);
-            py.from_owned_ptr_or_err(descr as _)
+    pub fn new<'py, T: ToPyObject + ?Sized>(py: Python<'py>, ob: &T) -> PyResult<&'py Self> {
+        fn inner<'py>(py: Python<'py>, obj: PyObject) -> PyResult<&'py PyArrayDescr> {
+            let mut descr: *mut PyArray_Descr = ptr::null_mut();
+            unsafe {
+                // None is an invalid input here and is not converted to NPY_DEFAULT_TYPE
+                PY_ARRAY_API.PyArray_DescrConverter2(py, obj.as_ptr(), &mut descr as *mut _);
+                py.from_owned_ptr_or_err(descr as _)
+            }
         }
+
+        inner(py, ob.to_object(py))
     }
 
     /// Returns `self` as `*mut PyArray_Descr`.
@@ -127,7 +127,7 @@ impl PyArrayDescr {
         }
     }
 
-    fn from_npy_type(py: Python, npy_type: NPY_TYPES) -> &Self {
+    pub(crate) fn from_npy_type(py: Python, npy_type: NPY_TYPES) -> &Self {
         unsafe {
             let descr = PY_ARRAY_API.PyArray_DescrFromType(py, npy_type as _);
             py.from_owned_ptr(descr as _)
@@ -143,15 +143,6 @@ impl PyArrayDescr {
     pub fn typeobj(&self) -> &PyType {
         let dtype_type_ptr = unsafe { *self.as_dtype_ptr() }.typeobj;
         unsafe { PyType::from_type_ptr(self.py(), dtype_type_ptr) }
-    }
-
-    #[doc(hidden)]
-    #[deprecated(
-        since = "0.16.0",
-        note = "`get_type()` is deprecated, please use `typeobj()` instead"
-    )]
-    pub fn get_type(&self) -> &PyType {
-        self.typeobj()
     }
 
     /// Returns a unique number for each of the 21 different built-in

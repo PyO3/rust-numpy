@@ -9,6 +9,7 @@
   - The `PyArray::resize` function supports n-dimensional contiguous arrays. ([#312](https://github.com/PyO3/rust-numpy/pull/312))
   - Deprecate `PyArray::from_exact_iter` after optimizing `PyArray::from_iter`. ([#292](https://github.com/PyO3/rust-numpy/pull/292))
   - Remove `DimensionalityError` and `TypeError` from the public API as they never used directly. ([#315](https://github.com/PyO3/rust-numpy/pull/315))
+  - Remove the deprecated `PyArrayDescr::get_type` which was replaced by `PyArrayDescr::typeobj` in the last cycle. ([#308](https://github.com/PyO3/rust-numpy/pull/308))
   - Fix returning invalid slices from `PyArray::{strides,shape}` for rank zero arrays. ([#303](https://github.com/PyO3/rust-numpy/pull/303))
 
 - v0.16.2
