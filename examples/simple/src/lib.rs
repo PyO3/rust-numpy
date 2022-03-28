@@ -1,6 +1,8 @@
-use numpy::ndarray::{ArrayD, ArrayViewD, ArrayViewMutD};
+use numpy::ndarray::{ArrayD, ArrayViewD, ArrayViewMutD, Zip};
 use numpy::{
-    Complex64, IntoPyArray, PyArray1, PyArrayDyn, PyReadonlyArrayDyn, PyReadwriteArrayDyn,
+    datetime::{units, Timedelta},
+    Complex64, IntoPyArray, PyArray1, PyArrayDyn, PyReadonlyArray1, PyReadonlyArrayDyn,
+    PyReadwriteArray1, PyReadwriteArrayDyn,
 };
 use pyo3::{
     pymodule,
@@ -68,6 +70,18 @@ fn rust_ext(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
             .unwrap();
 
         x.readonly().as_array().sum()
+    }
+
+    // example using timedelta64 array
+    #[pyfn(m)]
+    fn add_minutes_to_seconds(
+        mut x: PyReadwriteArray1<Timedelta<units::Seconds>>,
+        y: PyReadonlyArray1<Timedelta<units::Minutes>>,
+    ) {
+        #[allow(deprecated)]
+        Zip::from(x.as_array_mut())
+            .and(y.as_array())
+            .apply(|x, y| *x = (i64::from(*x) + 60 * i64::from(*y)).into());
     }
 
     Ok(())

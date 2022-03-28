@@ -127,9 +127,16 @@ impl PyArrayDescr {
         }
     }
 
-    pub(crate) fn from_npy_type(py: Python, npy_type: NPY_TYPES) -> &Self {
+    fn from_npy_type(py: Python, npy_type: NPY_TYPES) -> &Self {
         unsafe {
             let descr = PY_ARRAY_API.PyArray_DescrFromType(py, npy_type as _);
+            py.from_owned_ptr(descr as _)
+        }
+    }
+
+    pub(crate) fn new_from_npy_type(py: Python, npy_type: NPY_TYPES) -> &Self {
+        unsafe {
+            let descr = PY_ARRAY_API.PyArray_DescrNewFromType(py, npy_type as _);
             py.from_owned_ptr(descr as _)
         }
     }
