@@ -1273,6 +1273,12 @@
 <span id="1271">1271</span>
 <span id="1272">1272</span>
 <span id="1273">1273</span>
+<span id="1274">1274</span>
+<span id="1275">1275</span>
+<span id="1276">1276</span>
+<span id="1277">1277</span>
+<span id="1278">1278</span>
+<span id="1279">1279</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Types to safely create references into NumPy arrays</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! It is assumed that unchecked code - which includes unsafe Rust and Python - is validated by its author</span>
@@ -1446,7 +1452,7 @@
 <span class="kw">use</span> <span class="ident">ahash::AHashMap</span>;
 <span class="kw">use</span> <span class="ident">ndarray</span>::{<span class="ident">ArrayView</span>, <span class="ident">ArrayViewMut</span>, <span class="ident">Dimension</span>, <span class="ident">Ix1</span>, <span class="ident">Ix2</span>, <span class="ident">Ix3</span>, <span class="ident">Ix4</span>, <span class="ident">Ix5</span>, <span class="ident">Ix6</span>, <span class="ident">IxDyn</span>};
 <span class="kw">use</span> <span class="ident">num_integer::gcd</span>;
-<span class="kw">use</span> <span class="ident">pyo3</span>::{<span class="ident">FromPyObject</span>, <span class="ident">PyAny</span>, <span class="ident">PyResult</span>};
+<span class="kw">use</span> <span class="ident">pyo3</span>::{<span class="ident">FromPyObject</span>, <span class="ident">PyAny</span>, <span class="ident">PyResult</span>, <span class="ident">Python</span>};
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::array::PyArray</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::cold</span>;
@@ -1947,20 +1953,21 @@
 }
 
 <span class="kw">fn</span> <span class="ident">base_address</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span>(<span class="ident">array</span>: <span class="kw-2">&amp;</span><span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span>) -&gt; <span class="ident">usize</span> {
-    <span class="kw">let</span> <span class="ident">py</span> <span class="op">=</span> <span class="ident">array</span>.<span class="ident">py</span>();
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">array</span> <span class="op">=</span> <span class="ident">array</span>.<span class="ident">as_array_ptr</span>();
+    <span class="kw">fn</span> <span class="ident">inner</span>(<span class="ident">py</span>: <span class="ident">Python</span>, <span class="kw-2">mut</span> <span class="ident">array</span>: <span class="kw-2">*mut</span> <span class="ident">PyArrayObject</span>) -&gt; <span class="ident">usize</span> {
+        <span class="kw">loop</span> {
+            <span class="kw">let</span> <span class="ident">base</span> <span class="op">=</span> <span class="kw">unsafe</span> { (<span class="kw-2">*</span><span class="ident">array</span>).<span class="ident">base</span> };
 
-    <span class="kw">loop</span> {
-        <span class="kw">let</span> <span class="ident">base</span> <span class="op">=</span> <span class="kw">unsafe</span> { (<span class="kw-2">*</span><span class="ident">array</span>).<span class="ident">base</span> };
-
-        <span class="kw">if</span> <span class="ident">base</span>.<span class="ident">is_null</span>() {
-            <span class="kw">return</span> <span class="ident">array</span> <span class="kw">as</span> <span class="ident">usize</span>;
-        } <span class="kw">else</span> <span class="kw">if</span> <span class="kw">unsafe</span> { <span class="ident">npyffi::PyArray_Check</span>(<span class="ident">py</span>, <span class="ident">base</span>) } <span class="op">!</span><span class="op">=</span> <span class="number">0</span> {
-            <span class="ident">array</span> <span class="op">=</span> <span class="ident">base</span> <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="ident">PyArrayObject</span>;
-        } <span class="kw">else</span> {
-            <span class="kw">return</span> <span class="ident">base</span> <span class="kw">as</span> <span class="ident">usize</span>;
+            <span class="kw">if</span> <span class="ident">base</span>.<span class="ident">is_null</span>() {
+                <span class="kw">return</span> <span class="ident">array</span> <span class="kw">as</span> <span class="ident">usize</span>;
+            } <span class="kw">else</span> <span class="kw">if</span> <span class="kw">unsafe</span> { <span class="ident">npyffi::PyArray_Check</span>(<span class="ident">py</span>, <span class="ident">base</span>) } <span class="op">!</span><span class="op">=</span> <span class="number">0</span> {
+                <span class="ident">array</span> <span class="op">=</span> <span class="ident">base</span> <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="ident">PyArrayObject</span>;
+            } <span class="kw">else</span> {
+                <span class="kw">return</span> <span class="ident">base</span> <span class="kw">as</span> <span class="ident">usize</span>;
+            }
         }
     }
+
+    <span class="ident">inner</span>(<span class="ident">array</span>.<span class="ident">py</span>(), <span class="ident">array</span>.<span class="ident">as_array_ptr</span>())
 }
 
 <span class="kw">fn</span> <span class="ident">data_range</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span>(<span class="ident">array</span>: <span class="kw-2">&amp;</span><span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span>) -&gt; (<span class="ident">usize</span>, <span class="ident">usize</span>)
@@ -1968,31 +1975,36 @@
     <span class="ident">T</span>: <span class="ident">Element</span>,
     <span class="ident">D</span>: <span class="ident">Dimension</span>,
 {
-    <span class="kw">let</span> <span class="ident">shape</span> <span class="op">=</span> <span class="ident">array</span>.<span class="ident">shape</span>();
-    <span class="kw">let</span> <span class="ident">strides</span> <span class="op">=</span> <span class="ident">array</span>.<span class="ident">strides</span>();
+    <span class="kw">fn</span> <span class="ident">inner</span>(<span class="ident">shape</span>: <span class="kw-2">&amp;</span>[<span class="ident">usize</span>], <span class="ident">strides</span>: <span class="kw-2">&amp;</span>[<span class="ident">isize</span>], <span class="ident">itemsize</span>: <span class="ident">isize</span>, <span class="ident">data</span>: <span class="kw-2">*mut</span> <span class="ident">u8</span>) -&gt; (<span class="ident">usize</span>, <span class="ident">usize</span>) {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">start</span> <span class="op">=</span> <span class="number">0</span>;
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">end</span> <span class="op">=</span> <span class="number">0</span>;
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">start</span> <span class="op">=</span> <span class="number">0</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">end</span> <span class="op">=</span> <span class="number">0</span>;
+        <span class="kw">if</span> <span class="ident">shape</span>.<span class="ident">iter</span>().<span class="ident">all</span>(<span class="op">|</span><span class="ident">dim</span><span class="op">|</span> <span class="kw-2">*</span><span class="ident">dim</span> <span class="op">!</span><span class="op">=</span> <span class="number">0</span>) {
+            <span class="kw">for</span> (<span class="kw-2">&amp;</span><span class="ident">dim</span>, <span class="kw-2">&amp;</span><span class="ident">stride</span>) <span class="kw">in</span> <span class="ident">shape</span>.<span class="ident">iter</span>().<span class="ident">zip</span>(<span class="ident">strides</span>) {
+                <span class="kw">let</span> <span class="ident">offset</span> <span class="op">=</span> (<span class="ident">dim</span> <span class="op">-</span> <span class="number">1</span>) <span class="kw">as</span> <span class="ident">isize</span> <span class="op">*</span> <span class="ident">stride</span>;
 
-    <span class="kw">if</span> <span class="ident">shape</span>.<span class="ident">iter</span>().<span class="ident">all</span>(<span class="op">|</span><span class="ident">dim</span><span class="op">|</span> <span class="kw-2">*</span><span class="ident">dim</span> <span class="op">!</span><span class="op">=</span> <span class="number">0</span>) {
-        <span class="kw">for</span> (<span class="kw-2">&amp;</span><span class="ident">dim</span>, <span class="kw-2">&amp;</span><span class="ident">stride</span>) <span class="kw">in</span> <span class="ident">shape</span>.<span class="ident">iter</span>().<span class="ident">zip</span>(<span class="ident">strides</span>) {
-            <span class="kw">let</span> <span class="ident">offset</span> <span class="op">=</span> (<span class="ident">dim</span> <span class="op">-</span> <span class="number">1</span>) <span class="kw">as</span> <span class="ident">isize</span> <span class="op">*</span> <span class="ident">stride</span>;
-
-            <span class="kw">if</span> <span class="ident">offset</span> <span class="op">&gt;</span><span class="op">=</span> <span class="number">0</span> {
-                <span class="ident">end</span> <span class="op">+</span><span class="op">=</span> <span class="ident">offset</span>;
-            } <span class="kw">else</span> {
-                <span class="ident">start</span> <span class="op">+</span><span class="op">=</span> <span class="ident">offset</span>;
+                <span class="kw">if</span> <span class="ident">offset</span> <span class="op">&gt;</span><span class="op">=</span> <span class="number">0</span> {
+                    <span class="ident">end</span> <span class="op">+</span><span class="op">=</span> <span class="ident">offset</span>;
+                } <span class="kw">else</span> {
+                    <span class="ident">start</span> <span class="op">+</span><span class="op">=</span> <span class="ident">offset</span>;
+                }
             }
+
+            <span class="ident">end</span> <span class="op">+</span><span class="op">=</span> <span class="ident">itemsize</span>;
         }
 
-        <span class="ident">end</span> <span class="op">+</span><span class="op">=</span> <span class="ident">size_of</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>() <span class="kw">as</span> <span class="ident">isize</span>;
+        <span class="kw">let</span> <span class="ident">start</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="ident">data</span>.<span class="ident">offset</span>(<span class="ident">start</span>) } <span class="kw">as</span> <span class="ident">usize</span>;
+        <span class="kw">let</span> <span class="ident">end</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="ident">data</span>.<span class="ident">offset</span>(<span class="ident">end</span>) } <span class="kw">as</span> <span class="ident">usize</span>;
+
+        (<span class="ident">start</span>, <span class="ident">end</span>)
     }
 
-    <span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="kw">unsafe</span> { (<span class="kw-2">*</span><span class="ident">array</span>.<span class="ident">as_array_ptr</span>()).<span class="ident">data</span> };
-    <span class="kw">let</span> <span class="ident">start</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="ident">data</span>.<span class="ident">offset</span>(<span class="ident">start</span>) } <span class="kw">as</span> <span class="ident">usize</span>;
-    <span class="kw">let</span> <span class="ident">end</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="ident">data</span>.<span class="ident">offset</span>(<span class="ident">end</span>) } <span class="kw">as</span> <span class="ident">usize</span>;
-
-    (<span class="ident">start</span>, <span class="ident">end</span>)
+    <span class="ident">inner</span>(
+        <span class="ident">array</span>.<span class="ident">shape</span>(),
+        <span class="ident">array</span>.<span class="ident">strides</span>(),
+        <span class="ident">size_of</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>() <span class="kw">as</span> <span class="kw">_</span>,
+        <span class="ident">array</span>.<span class="ident">data</span>() <span class="kw">as</span> <span class="kw">_</span>,
+    )
 }
 
 <span class="comment">// FIXME(adamreichold): Use `usize::abs_diff` from std when that becomes stable.</span>
