@@ -199,7 +199,7 @@ impl BorrowKey {
         let range = data_range(array);
 
         let data_ptr = array.data() as usize;
-        let gcd_strides = reduce(array.strides().iter().copied(), gcd).unwrap_or(1);
+        let gcd_strides = gcd_strides(array.strides());
 
         Self {
             range,
@@ -252,16 +252,9 @@ impl BorrowFlags {
         (*self.0.get()).get_or_insert_with(AHashMap::new)
     }
 
-    fn acquire<T, D>(&self, array: &PyArray<T, D>) -> Result<(), BorrowError>
-    where
-        T: Element,
-        D: Dimension,
-    {
-        let address = base_address(array);
-        let key = BorrowKey::from_array(array);
-
-        // SAFETY: Access to `&PyArray<T, D>` implies holding the GIL
-        // and we are not calling into user code which might re-enter this function.
+    fn acquire(&self, _py: Python, address: usize, key: BorrowKey) -> Result<(), BorrowError> {
+        // SAFETY: Having `_py` implies holding the GIL and
+        // we are not calling into user code which might re-enter this function.
         let borrow_flags = unsafe { BORROW_FLAGS.get() };
 
         match borrow_flags.entry(address) {
@@ -302,16 +295,9 @@ impl BorrowFlags {
         Ok(())
     }
 
-    fn release<T, D>(&self, array: &PyArray<T, D>)
-    where
-        T: Element,
-        D: Dimension,
-    {
-        let address = base_address(array);
-        let key = BorrowKey::from_array(array);
-
-        // SAFETY: Access to `&PyArray<T, D>` implies holding the GIL
-        // and we are not calling into user code which might re-enter this function.
+    fn release(&self, _py: Python, address: usize, key: BorrowKey) {
+        // SAFETY: Having `_py` implies holding the GIL and
+        // we are not calling into user code which might re-enter this function.
         let borrow_flags = unsafe { BORROW_FLAGS.get() };
 
         let same_base_arrays = borrow_flags.get_mut(&address).unwrap();
@@ -329,16 +315,9 @@ impl BorrowFlags {
         }
     }
 
-    fn acquire_mut<T, D>(&self, array: &PyArray<T, D>) -> Result<(), BorrowError>
-    where
-        T: Element,
-        D: Dimension,
-    {
-        let address = base_address(array);
-        let key = BorrowKey::from_array(array);
-
-        // SAFETY: Access to `&PyArray<T, D>` implies holding the GIL
-        // and we are not calling into user code which might re-enter this function.
+    fn acquire_mut(&self, _py: Python, address: usize, key: BorrowKey) -> Result<(), BorrowError> {
+        // SAFETY: Having `_py` implies holding the GIL and
+        // we are not calling into user code which might re-enter this function.
         let borrow_flags = unsafe { BORROW_FLAGS.get() };
 
         match borrow_flags.entry(address) {
@@ -373,16 +352,9 @@ impl BorrowFlags {
         Ok(())
     }
 
-    fn release_mut<T, D>(&self, array: &PyArray<T, D>)
-    where
-        T: Element,
-        D: Dimension,
-    {
-        let address = base_address(array);
-        let key = BorrowKey::from_array(array);
-
-        // SAFETY: Access to `&PyArray<T, D>` implies holding the GIL
-        // and we are not calling into user code which might re-enter this function.
+    fn release_mut(&self, _py: Python, address: usize, key: BorrowKey) {
+        // SAFETY: Having `_py` implies holding the GIL and
+        // we are not calling into user code which might re-enter this function.
         let borrow_flags = unsafe { BORROW_FLAGS.get() };
 
         let same_base_arrays = borrow_flags.get_mut(&address).unwrap();
@@ -454,7 +426,11 @@ where
     D: Dimension,
 {
     pub(crate) fn try_new(array: &'py PyArray<T, D>) -> Result<Self, BorrowError> {
-        BORROW_FLAGS.acquire(array)?;
+        let py = array.py();
+        let address = base_address(array);
+        let key = BorrowKey::from_array(array);
+
+        BORROW_FLAGS.acquire(py, address, key)?;
 
         Ok(Self(array))
     }
@@ -499,7 +475,11 @@ where
     D: Dimension,
 {
     fn drop(&mut self) {
-        BORROW_FLAGS.release(self.0);
+        let py = self.0.py();
+        let address = base_address(self.0);
+        let key = BorrowKey::from_array(self.0);
+
+        BORROW_FLAGS.release(py, address, key);
     }
 }
 
@@ -581,7 +561,11 @@ where
             return Err(BorrowError::NotWriteable);
         }
 
-        BORROW_FLAGS.acquire_mut(array)?;
+        let py = array.py();
+        let address = base_address(array);
+        let key = BorrowKey::from_array(array);
+
+        BORROW_FLAGS.acquire_mut(py, address, key)?;
 
         Ok(Self(array))
     }
@@ -632,14 +616,21 @@ where
     /// });
     /// ```
     pub fn resize(self, new_elems: usize) -> PyResult<Self> {
-        BORROW_FLAGS.release_mut(self.0);
+        let py = self.0.py();
+        let address = base_address(self.0);
+        let key = BorrowKey::from_array(self.0);
+
+        BORROW_FLAGS.release_mut(py, address, key);
 
         // SAFETY: Ownership of `self` proves exclusive access to the interior of the array.
         unsafe {
             self.0.resize(new_elems)?;
         }
 
-        BORROW_FLAGS.acquire_mut(self.0)?;
+        let address = base_address(self.0);
+        let key = BorrowKey::from_array(self.0);
+
+        BORROW_FLAGS.acquire_mut(py, address, key)?;
 
         Ok(self)
     }
@@ -651,7 +642,11 @@ where
     D: Dimension,
 {
     fn drop(&mut self) {
-        BORROW_FLAGS.release_mut(self.0);
+        let py = self.0.py();
+        let address = base_address(self.0);
+        let key = BorrowKey::from_array(self.0);
+
+        BORROW_FLAGS.release_mut(py, address, key);
     }
 }
 
@@ -724,6 +719,10 @@ where
         size_of::<T>() as _,
         array.data() as _,
     )
+}
+
+fn gcd_strides(strides: &[isize]) -> isize {
+    reduce(strides.iter().copied(), gcd).unwrap_or(1)
 }
 
 // FIXME(adamreichold): Use `usize::abs_diff` from std when that becomes stable.
