@@ -15,6 +15,7 @@ keywords = ["python", "numpy", "ffi", "pyo3"]
 license = "BSD-2-Clause"
 
 [dependencies]
+ahash = "0.7"
 libc = "0.2"
 num-complex = ">= 0.2, < 0.5"
 num-integer = "0.1"
@@ -23,7 +24,7 @@ ndarray = ">= 0.13, < 0.16"
 pyo3 = { version = "0.16", default-features = false, features = ["macros"] }
 
 [dev-dependencies]
-pyo3 = { version = "0.16", features = ["auto-initialize"] }
+pyo3 = { version = "0.16", default-features = false, features = ["auto-initialize"] }
 
 [workspace]
 members = ["examples/*"]
