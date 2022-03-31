@@ -17,6 +17,7 @@ license = "BSD-2-Clause"
 [dependencies]
 libc = "0.2"
 num-complex = ">= 0.2, < 0.5"
+num-integer = "0.1"
 num-traits = "0.2"
 ndarray = ">= 0.13, < 0.16"
 pyo3 = { version = "0.16", default-features = false, features = ["macros"] }
