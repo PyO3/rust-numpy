@@ -1213,6 +1213,65 @@
 <span id="1211">1211</span>
 <span id="1212">1212</span>
 <span id="1213">1213</span>
+<span id="1214">1214</span>
+<span id="1215">1215</span>
+<span id="1216">1216</span>
+<span id="1217">1217</span>
+<span id="1218">1218</span>
+<span id="1219">1219</span>
+<span id="1220">1220</span>
+<span id="1221">1221</span>
+<span id="1222">1222</span>
+<span id="1223">1223</span>
+<span id="1224">1224</span>
+<span id="1225">1225</span>
+<span id="1226">1226</span>
+<span id="1227">1227</span>
+<span id="1228">1228</span>
+<span id="1229">1229</span>
+<span id="1230">1230</span>
+<span id="1231">1231</span>
+<span id="1232">1232</span>
+<span id="1233">1233</span>
+<span id="1234">1234</span>
+<span id="1235">1235</span>
+<span id="1236">1236</span>
+<span id="1237">1237</span>
+<span id="1238">1238</span>
+<span id="1239">1239</span>
+<span id="1240">1240</span>
+<span id="1241">1241</span>
+<span id="1242">1242</span>
+<span id="1243">1243</span>
+<span id="1244">1244</span>
+<span id="1245">1245</span>
+<span id="1246">1246</span>
+<span id="1247">1247</span>
+<span id="1248">1248</span>
+<span id="1249">1249</span>
+<span id="1250">1250</span>
+<span id="1251">1251</span>
+<span id="1252">1252</span>
+<span id="1253">1253</span>
+<span id="1254">1254</span>
+<span id="1255">1255</span>
+<span id="1256">1256</span>
+<span id="1257">1257</span>
+<span id="1258">1258</span>
+<span id="1259">1259</span>
+<span id="1260">1260</span>
+<span id="1261">1261</span>
+<span id="1262">1262</span>
+<span id="1263">1263</span>
+<span id="1264">1264</span>
+<span id="1265">1265</span>
+<span id="1266">1266</span>
+<span id="1267">1267</span>
+<span id="1268">1268</span>
+<span id="1269">1269</span>
+<span id="1270">1270</span>
+<span id="1271">1271</span>
+<span id="1272">1272</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Types to safely create references into NumPy arrays</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! It is assumed that unchecked code - which includes unsafe Rust and Python - is validated by its author</span>
@@ -1376,8 +1435,10 @@
 <span class="doccomment">//! [base]: https://numpy.org/doc/stable/reference/c-api/types-and-structures.html#c.NPY_AO.base</span>
 <span class="attribute">#![<span class="ident">deny</span>(<span class="ident">missing_docs</span>)]</span>
 
+<span class="kw">use</span> <span class="ident">std::any::type_name</span>;
 <span class="kw">use</span> <span class="ident">std::cell::UnsafeCell</span>;
 <span class="kw">use</span> <span class="ident">std::collections::hash_map</span>::{<span class="ident">Entry</span>, <span class="ident">HashMap</span>};
+<span class="kw">use</span> <span class="ident">std::fmt</span>;
 <span class="kw">use</span> <span class="ident">std::mem::size_of</span>;
 <span class="kw">use</span> <span class="ident">std::ops::Deref</span>;
 
@@ -1715,6 +1776,22 @@
     }
 }
 
+<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> <span class="ident">fmt::Debug</span> <span class="kw">for</span> <span class="ident">PyReadonlyArray</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span>
+<span class="kw">where</span>
+    <span class="ident">T</span>: <span class="ident">Element</span>,
+    <span class="ident">D</span>: <span class="ident">Dimension</span>,
+{
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;mut</span> <span class="ident">fmt::Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) -&gt; <span class="ident">fmt::Result</span> {
+        <span class="kw">let</span> <span class="ident">name</span> <span class="op">=</span> <span class="macro">format!</span>(
+            <span class="string">&quot;PyReadonlyArray&lt;{}, {}&gt;&quot;</span>,
+            <span class="ident">type_name</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(),
+            <span class="ident">type_name</span>::<span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>()
+        );
+
+        <span class="ident">f</span>.<span class="ident">debug_struct</span>(<span class="kw-2">&amp;</span><span class="ident">name</span>).<span class="ident">finish</span>()
+    }
+}
+
 <span class="doccomment">/// Read-write borrow of an array.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// An instance of this type ensures that there are no instances of [`PyReadonlyArray`] and no other instances of [`PyReadwriteArray`],</span>
@@ -1848,6 +1925,22 @@
 {
     <span class="kw">fn</span> <span class="ident">drop</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) {
         <span class="ident">BORROW_FLAGS</span>.<span class="ident">release_mut</span>(<span class="self">self</span>.<span class="number">0</span>);
+    }
+}
+
+<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> <span class="ident">fmt::Debug</span> <span class="kw">for</span> <span class="ident">PyReadwriteArray</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span>
+<span class="kw">where</span>
+    <span class="ident">T</span>: <span class="ident">Element</span>,
+    <span class="ident">D</span>: <span class="ident">Dimension</span>,
+{
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;mut</span> <span class="ident">fmt::Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) -&gt; <span class="ident">fmt::Result</span> {
+        <span class="kw">let</span> <span class="ident">name</span> <span class="op">=</span> <span class="macro">format!</span>(
+            <span class="string">&quot;PyReadwriteArray&lt;{}, {}&gt;&quot;</span>,
+            <span class="ident">type_name</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(),
+            <span class="ident">type_name</span>::<span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>()
+        );
+
+        <span class="ident">f</span>.<span class="ident">debug_struct</span>(<span class="kw-2">&amp;</span><span class="ident">name</span>).<span class="ident">finish</span>()
     }
 }
 
@@ -2422,6 +2515,31 @@
             {
                 <span class="kw">let</span> <span class="ident">borrow_flags</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="ident">BORROW_FLAGS</span>.<span class="ident">get</span>() };
                 <span class="macro">assert_eq!</span>(<span class="ident">borrow_flags</span>.<span class="ident">len</span>(), <span class="number">0</span>);
+            }
+        });
+    }
+
+    <span class="attribute">#[<span class="ident">test</span>]</span>
+    <span class="kw">fn</span> <span class="ident">test_debug_formatting</span>() {
+        <span class="ident">Python::with_gil</span>(<span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
+            <span class="kw">let</span> <span class="ident">array</span> <span class="op">=</span> <span class="ident">PyArray</span>::<span class="op">&lt;</span><span class="ident">f64</span>, <span class="kw">_</span><span class="op">&gt;</span><span class="ident">::zeros</span>(<span class="ident">py</span>, (<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>), <span class="bool-val">false</span>);
+
+            {
+                <span class="kw">let</span> <span class="ident">shared</span> <span class="op">=</span> <span class="ident">array</span>.<span class="ident">readonly</span>();
+
+                <span class="macro">assert_eq!</span>(
+                    <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">shared</span>),
+                    <span class="string">&quot;PyReadonlyArray&lt;f64, ndarray::dimension::dim::Dim&lt;[usize; 3]&gt;&gt;&quot;</span>
+                );
+            }
+
+            {
+                <span class="kw">let</span> <span class="ident">exclusive</span> <span class="op">=</span> <span class="ident">array</span>.<span class="ident">readwrite</span>();
+
+                <span class="macro">assert_eq!</span>(
+                    <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">exclusive</span>),
+                    <span class="string">&quot;PyReadwriteArray&lt;f64, ndarray::dimension::dim::Dim&lt;[usize; 3]&gt;&gt;&quot;</span>
+                );
             }
         });
     }
