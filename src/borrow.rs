@@ -171,7 +171,7 @@ use std::ops::Deref;
 use ahash::AHashMap;
 use ndarray::{ArrayView, ArrayViewMut, Dimension, Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};
 use num_integer::gcd;
-use pyo3::{FromPyObject, PyAny, PyResult};
+use pyo3::{FromPyObject, PyAny, PyResult, Python};
 
 use crate::array::PyArray;
 use crate::cold;
@@ -672,20 +672,21 @@ where
 }
 
 fn base_address<T, D>(array: &PyArray<T, D>) -> usize {
-    let py = array.py();
-    let mut array = array.as_array_ptr();
+    fn inner(py: Python, mut array: *mut PyArrayObject) -> usize {
+        loop {
+            let base = unsafe { (*array).base };
 
-    loop {
-        let base = unsafe { (*array).base };
-
-        if base.is_null() {
-            return array as usize;
-        } else if unsafe { npyffi::PyArray_Check(py, base) } != 0 {
-            array = base as *mut PyArrayObject;
-        } else {
-            return base as usize;
+            if base.is_null() {
+                return array as usize;
+            } else if unsafe { npyffi::PyArray_Check(py, base) } != 0 {
+                array = base as *mut PyArrayObject;
+            } else {
+                return base as usize;
+            }
         }
     }
+
+    inner(array.py(), array.as_array_ptr())
 }
 
 fn data_range<T, D>(array: &PyArray<T, D>) -> (usize, usize)
@@ -693,31 +694,36 @@ where
     T: Element,
     D: Dimension,
 {
-    let shape = array.shape();
-    let strides = array.strides();
+    fn inner(shape: &[usize], strides: &[isize], itemsize: isize, data: *mut u8) -> (usize, usize) {
+        let mut start = 0;
+        let mut end = 0;
 
-    let mut start = 0;
-    let mut end = 0;
+        if shape.iter().all(|dim| *dim != 0) {
+            for (&dim, &stride) in shape.iter().zip(strides) {
+                let offset = (dim - 1) as isize * stride;
 
-    if shape.iter().all(|dim| *dim != 0) {
-        for (&dim, &stride) in shape.iter().zip(strides) {
-            let offset = (dim - 1) as isize * stride;
-
-            if offset >= 0 {
-                end += offset;
-            } else {
-                start += offset;
+                if offset >= 0 {
+                    end += offset;
+                } else {
+                    start += offset;
+                }
             }
+
+            end += itemsize;
         }
 
-        end += size_of::<T>() as isize;
+        let start = unsafe { data.offset(start) } as usize;
+        let end = unsafe { data.offset(end) } as usize;
+
+        (start, end)
     }
 
-    let data = unsafe { (*array.as_array_ptr()).data };
-    let start = unsafe { data.offset(start) } as usize;
-    let end = unsafe { data.offset(end) } as usize;
-
-    (start, end)
+    inner(
+        array.shape(),
+        array.strides(),
+        size_of::<T>() as _,
+        array.data() as _,
+    )
 }
 
 // FIXME(adamreichold): Use `usize::abs_diff` from std when that becomes stable.
