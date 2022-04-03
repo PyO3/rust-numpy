@@ -180,7 +180,7 @@ use crate::dtype::Element;
 use crate::error::{BorrowError, NotContiguousError};
 use crate::npyffi::{self, PyArrayObject, NPY_ARRAY_WRITEABLE};
 
-#[derive(PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 struct BorrowKey {
     /// exclusive range of lowest and highest address covered by array
     range: (usize, usize),
@@ -199,7 +199,7 @@ impl BorrowKey {
         let range = data_range(array);
 
         let data_ptr = array.data() as usize;
-        let gcd_strides = reduce(array.strides().iter().copied(), gcd).unwrap_or(1);
+        let gcd_strides = gcd_strides(array.strides());
 
         Self {
             range,
@@ -252,16 +252,9 @@ impl BorrowFlags {
         (*self.0.get()).get_or_insert_with(AHashMap::new)
     }
 
-    fn acquire<T, D>(&self, array: &PyArray<T, D>) -> Result<(), BorrowError>
-    where
-        T: Element,
-        D: Dimension,
-    {
-        let address = base_address(array);
-        let key = BorrowKey::from_array(array);
-
-        // SAFETY: Access to `&PyArray<T, D>` implies holding the GIL
-        // and we are not calling into user code which might re-enter this function.
+    fn acquire(&self, _py: Python, address: usize, key: BorrowKey) -> Result<(), BorrowError> {
+        // SAFETY: Having `_py` implies holding the GIL and
+        // we are not calling into user code which might re-enter this function.
         let borrow_flags = unsafe { BORROW_FLAGS.get() };
 
         match borrow_flags.entry(address) {
@@ -302,16 +295,9 @@ impl BorrowFlags {
         Ok(())
     }
 
-    fn release<T, D>(&self, array: &PyArray<T, D>)
-    where
-        T: Element,
-        D: Dimension,
-    {
-        let address = base_address(array);
-        let key = BorrowKey::from_array(array);
-
-        // SAFETY: Access to `&PyArray<T, D>` implies holding the GIL
-        // and we are not calling into user code which might re-enter this function.
+    fn release(&self, _py: Python, address: usize, key: BorrowKey) {
+        // SAFETY: Having `_py` implies holding the GIL and
+        // we are not calling into user code which might re-enter this function.
         let borrow_flags = unsafe { BORROW_FLAGS.get() };
 
         let same_base_arrays = borrow_flags.get_mut(&address).unwrap();
@@ -329,16 +315,9 @@ impl BorrowFlags {
         }
     }
 
-    fn acquire_mut<T, D>(&self, array: &PyArray<T, D>) -> Result<(), BorrowError>
-    where
-        T: Element,
-        D: Dimension,
-    {
-        let address = base_address(array);
-        let key = BorrowKey::from_array(array);
-
-        // SAFETY: Access to `&PyArray<T, D>` implies holding the GIL
-        // and we are not calling into user code which might re-enter this function.
+    fn acquire_mut(&self, _py: Python, address: usize, key: BorrowKey) -> Result<(), BorrowError> {
+        // SAFETY: Having `_py` implies holding the GIL and
+        // we are not calling into user code which might re-enter this function.
         let borrow_flags = unsafe { BORROW_FLAGS.get() };
 
         match borrow_flags.entry(address) {
@@ -373,16 +352,9 @@ impl BorrowFlags {
         Ok(())
     }
 
-    fn release_mut<T, D>(&self, array: &PyArray<T, D>)
-    where
-        T: Element,
-        D: Dimension,
-    {
-        let address = base_address(array);
-        let key = BorrowKey::from_array(array);
-
-        // SAFETY: Access to `&PyArray<T, D>` implies holding the GIL
-        // and we are not calling into user code which might re-enter this function.
+    fn release_mut(&self, _py: Python, address: usize, key: BorrowKey) {
+        // SAFETY: Having `_py` implies holding the GIL and
+        // we are not calling into user code which might re-enter this function.
         let borrow_flags = unsafe { BORROW_FLAGS.get() };
 
         let same_base_arrays = borrow_flags.get_mut(&address).unwrap();
@@ -403,10 +375,16 @@ static BORROW_FLAGS: BorrowFlags = BorrowFlags::new();
 /// i.e. that only shared references into the interior of the array can be created safely.
 ///
 /// See the [module-level documentation](self) for more.
-pub struct PyReadonlyArray<'py, T, D>(&'py PyArray<T, D>)
+#[repr(C)]
+pub struct PyReadonlyArray<'py, T, D>
 where
     T: Element,
-    D: Dimension;
+    D: Dimension,
+{
+    array: &'py PyArray<T, D>,
+    address: usize,
+    key: BorrowKey,
+}
 
 /// Read-only borrow of a one-dimensional array.
 pub type PyReadonlyArray1<'py, T> = PyReadonlyArray<'py, T, Ix1>;
@@ -437,7 +415,7 @@ where
     type Target = PyArray<T, D>;
 
     fn deref(&self) -> &Self::Target {
-        self.0
+        self.array
     }
 }
 
@@ -454,23 +432,30 @@ where
     D: Dimension,
 {
     pub(crate) fn try_new(array: &'py PyArray<T, D>) -> Result<Self, BorrowError> {
-        BORROW_FLAGS.acquire(array)?;
+        let address = base_address(array);
+        let key = BorrowKey::from_array(array);
 
-        Ok(Self(array))
+        BORROW_FLAGS.acquire(array.py(), address, key)?;
+
+        Ok(Self {
+            array,
+            address,
+            key,
+        })
     }
 
     /// Provides an immutable array view of the interior of the NumPy array.
     #[inline(always)]
     pub fn as_array(&self) -> ArrayView<T, D> {
         // SAFETY: Global borrow flags ensure aliasing discipline.
-        unsafe { self.0.as_array() }
+        unsafe { self.array.as_array() }
     }
 
     /// Provide an immutable slice view of the interior of the NumPy array if it is contiguous.
     #[inline(always)]
     pub fn as_slice(&self) -> Result<&[T], NotContiguousError> {
         // SAFETY: Global borrow flags ensure aliasing discipline.
-        unsafe { self.0.as_slice() }
+        unsafe { self.array.as_slice() }
     }
 
     /// Provide an immutable reference to an element of the NumPy array if the index is within bounds.
@@ -479,7 +464,7 @@ where
     where
         I: NpyIndex<Dim = D>,
     {
-        unsafe { self.0.get(index) }
+        unsafe { self.array.get(index) }
     }
 }
 
@@ -489,7 +474,15 @@ where
     D: Dimension,
 {
     fn clone(&self) -> Self {
-        Self::try_new(self.0).unwrap()
+        BORROW_FLAGS
+            .acquire(self.array.py(), self.address, self.key)
+            .unwrap();
+
+        Self {
+            array: self.array,
+            address: self.address,
+            key: self.key,
+        }
     }
 }
 
@@ -499,7 +492,7 @@ where
     D: Dimension,
 {
     fn drop(&mut self) {
-        BORROW_FLAGS.release(self.0);
+        BORROW_FLAGS.release(self.array.py(), self.address, self.key);
     }
 }
 
@@ -525,10 +518,16 @@ where
 /// i.e. that only a single exclusive reference into the interior of the array can be created safely.
 ///
 /// See the [module-level documentation](self) for more.
-pub struct PyReadwriteArray<'py, T, D>(&'py PyArray<T, D>)
+#[repr(C)]
+pub struct PyReadwriteArray<'py, T, D>
 where
     T: Element,
-    D: Dimension;
+    D: Dimension,
+{
+    array: &'py PyArray<T, D>,
+    address: usize,
+    key: BorrowKey,
+}
 
 /// Read-write borrow of a one-dimensional array.
 pub type PyReadwriteArray1<'py, T> = PyReadwriteArray<'py, T, Ix1>;
@@ -581,23 +580,30 @@ where
             return Err(BorrowError::NotWriteable);
         }
 
-        BORROW_FLAGS.acquire_mut(array)?;
+        let address = base_address(array);
+        let key = BorrowKey::from_array(array);
 
-        Ok(Self(array))
+        BORROW_FLAGS.acquire_mut(array.py(), address, key)?;
+
+        Ok(Self {
+            array,
+            address,
+            key,
+        })
     }
 
     /// Provides a mutable array view of the interior of the NumPy array.
     #[inline(always)]
     pub fn as_array_mut(&mut self) -> ArrayViewMut<T, D> {
         // SAFETY: Global borrow flags ensure aliasing discipline.
-        unsafe { self.0.as_array_mut() }
+        unsafe { self.array.as_array_mut() }
     }
 
     /// Provide a mutable slice view of the interior of the NumPy array if it is contiguous.
     #[inline(always)]
     pub fn as_slice_mut(&mut self) -> Result<&mut [T], NotContiguousError> {
         // SAFETY: Global borrow flags ensure aliasing discipline.
-        unsafe { self.0.as_slice_mut() }
+        unsafe { self.array.as_slice_mut() }
     }
 
     /// Provide a mutable reference to an element of the NumPy array if the index is within bounds.
@@ -606,7 +612,7 @@ where
     where
         I: NpyIndex<Dim = D>,
     {
-        unsafe { self.0.get_mut(index) }
+        unsafe { self.array.get_mut(index) }
     }
 }
 
@@ -632,16 +638,16 @@ where
     /// });
     /// ```
     pub fn resize(self, new_elems: usize) -> PyResult<Self> {
-        BORROW_FLAGS.release_mut(self.0);
+        let array = self.array;
 
         // SAFETY: Ownership of `self` proves exclusive access to the interior of the array.
         unsafe {
-            self.0.resize(new_elems)?;
+            array.resize(new_elems)?;
         }
 
-        BORROW_FLAGS.acquire_mut(self.0)?;
+        drop(self);
 
-        Ok(self)
+        Ok(Self::try_new(array).unwrap())
     }
 }
 
@@ -651,7 +657,7 @@ where
     D: Dimension,
 {
     fn drop(&mut self) {
-        BORROW_FLAGS.release_mut(self.0);
+        BORROW_FLAGS.release_mut(self.array.py(), self.address, self.key);
     }
 }
 
@@ -724,6 +730,10 @@ where
         size_of::<T>() as _,
         array.data() as _,
     )
+}
+
+fn gcd_strides(strides: &[isize]) -> isize {
+    reduce(strides.iter().copied(), gcd).unwrap_or(1)
 }
 
 // FIXME(adamreichold): Use `usize::abs_diff` from std when that becomes stable.
@@ -1274,6 +1284,45 @@ mod tests {
                     "PyReadwriteArray<f64, ndarray::dimension::dim::Dim<[usize; 3]>>"
                 );
             }
+        });
+    }
+
+    #[test]
+    #[should_panic(expected = "AlreadyBorrowed")]
+    fn cannot_clone_exclusive_borrow_via_deref() {
+        Python::with_gil(|py| {
+            let array = PyArray::<f64, _>::zeros(py, (3, 2, 1), false);
+
+            let exclusive = array.readwrite();
+            let _shared = exclusive.clone();
+        });
+    }
+
+    #[test]
+    fn failed_resize_does_not_double_release() {
+        Python::with_gil(|py| {
+            let array = PyArray::<f64, _>::zeros(py, 10, false);
+
+            // The view will make the internal reference check of `PyArray_Resize` fail.
+            let locals = [("array", array)].into_py_dict(py);
+            let _view = py
+                .eval("array[:]", None, Some(locals))
+                .unwrap()
+                .downcast::<PyArray1<f64>>()
+                .unwrap();
+
+            let exclusive = array.readwrite();
+            assert!(exclusive.resize(100).is_err());
+        });
+    }
+
+    #[test]
+    fn ineffective_resize_does_not_conflict() {
+        Python::with_gil(|py| {
+            let array = PyArray::<f64, _>::zeros(py, 10, false);
+
+            let exclusive = array.readwrite();
+            assert!(exclusive.resize(10).is_ok());
         });
     }
 }
