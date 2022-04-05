@@ -1074,58 +1074,6 @@ impl<T: Element> PyArray<T, Ix1> {
         let data = iter.into_iter().collect::<Vec<_>>();
         data.into_pyarray(py)
     }
-
-    /// Extends or truncates the length of a one-dimensional array.
-    ///
-    /// # Safety
-    ///
-    /// There should be no outstanding references (shared or exclusive) into the array
-    /// as this method might re-allocate it and thereby invalidate all pointers into it.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use numpy::PyArray;
-    /// use pyo3::Python;
-    ///
-    /// Python::with_gil(|py| {
-    ///     let pyarray = PyArray::arange(py, 0, 10, 1);
-    ///     assert_eq!(pyarray.len(), 10);
-    ///
-    ///     unsafe {
-    ///         pyarray.resize(100).unwrap();
-    ///     }
-    ///     assert_eq!(pyarray.len(), 100);
-    /// });
-    /// ```
-    pub unsafe fn resize(&self, new_elems: usize) -> PyResult<()> {
-        self.resize_(self.py(), [new_elems], 1, NPY_ORDER::NPY_ANYORDER)
-    }
-
-    fn resize_<D: IntoDimension>(
-        &self,
-        py: Python,
-        dims: D,
-        check_ref: c_int,
-        order: NPY_ORDER,
-    ) -> PyResult<()> {
-        let dims = dims.into_dimension();
-        let mut np_dims = dims.to_npy_dims();
-        let res = unsafe {
-            PY_ARRAY_API.PyArray_Resize(
-                py,
-                self.as_array_ptr(),
-                &mut np_dims as *mut npyffi::PyArray_Dims,
-                check_ref,
-                order,
-            )
-        };
-        if res.is_null() {
-            Err(PyErr::fetch(self.py()))
-        } else {
-            Ok(())
-        }
-    }
 }
 
 impl<T: Element> PyArray<T, Ix2> {
@@ -1260,57 +1208,106 @@ impl<T: Element, D> PyArray<T, D> {
         }
     }
 
-    /// Construct a new array which has same values as self, same matrix order, but has different
-    /// dimensions specified by `dims`.
+    /// Construct a new array which has same values as self,
+    /// but has different dimensions specified by `dims`
+    /// and a possibly different memory order specified by `order`.
     ///
-    /// Since a returned array can contain a same pointer as self, we highly recommend to drop an
-    /// old array, if this method returns `Ok`.
+    /// See also [`numpy.reshape`][numpy-reshape] and [`PyArray_Newshape`][PyArray_Newshape].
     ///
     /// # Example
     ///
     /// ```
-    /// # #[macro_use] extern crate ndarray;
-    /// use numpy::PyArray;
-    /// pyo3::Python::with_gil(|py| {
-    ///     let array = PyArray::from_exact_iter(py, 0..9);
-    ///     let array = array.reshape([3, 3]).unwrap();
-    ///     assert_eq!(array.readonly().as_array(), array![[0, 1, 2], [3, 4, 5], [6, 7, 8]]);
+    /// use numpy::{npyffi::NPY_ORDER, PyArray};
+    /// use pyo3::Python;
+    /// use ndarray::array;
+    ///
+    /// Python::with_gil(|py| {
+    ///     let array =
+    ///         PyArray::from_iter(py, 0..9).reshape_with_order([3, 3], NPY_ORDER::NPY_FORTRANORDER).unwrap();
+    ///
+    ///     assert_eq!(array.readonly().as_array(), array![[0, 3, 6], [1, 4, 7], [2, 5, 8]]);
+    ///     assert!(array.is_fortran_contiguous());
+    ///
     ///     assert!(array.reshape([5]).is_err());
     /// });
     /// ```
-    #[inline(always)]
-    pub fn reshape<'py, ID, D2>(&'py self, dims: ID) -> PyResult<&'py PyArray<T, D2>>
-    where
-        ID: IntoDimension<Dim = D2>,
-        D2: Dimension,
-    {
-        self.reshape_with_order(dims, NPY_ORDER::NPY_ANYORDER)
-    }
-
-    /// Same as [reshape](method.reshape.html), but you can change the order of returned matrix.
-    pub fn reshape_with_order<'py, ID, D2>(
+    ///
+    /// [numpy-reshape]: https://numpy.org/doc/stable/reference/generated/numpy.reshape.html
+    /// [PyArray_Newshape]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_Newshape
+    pub fn reshape_with_order<'py, ID: IntoDimension>(
         &'py self,
         dims: ID,
         order: NPY_ORDER,
-    ) -> PyResult<&'py PyArray<T, D2>>
-    where
-        ID: IntoDimension<Dim = D2>,
-        D2: Dimension,
-    {
-        let dims = dims.into_dimension();
-        let mut np_dims = dims.to_npy_dims();
+    ) -> PyResult<&'py PyArray<T, ID::Dim>> {
+        let mut dims = dims.into_dimension().to_npy_dims();
         let ptr = unsafe {
             PY_ARRAY_API.PyArray_Newshape(
                 self.py(),
                 self.as_array_ptr(),
-                &mut np_dims as *mut npyffi::PyArray_Dims,
+                &mut dims as *mut npyffi::PyArray_Dims,
                 order,
             )
         };
         if ptr.is_null() {
             Err(PyErr::fetch(self.py()))
         } else {
-            Ok(unsafe { PyArray::<T, D2>::from_owned_ptr(self.py(), ptr) })
+            Ok(unsafe { PyArray::<T, ID::Dim>::from_owned_ptr(self.py(), ptr) })
+        }
+    }
+
+    /// Special case of [`reshape_with_order`][Self::reshape_with_order] which keeps the memory order the same.
+    #[inline(always)]
+    pub fn reshape<'py, ID: IntoDimension>(
+        &'py self,
+        dims: ID,
+    ) -> PyResult<&'py PyArray<T, ID::Dim>> {
+        self.reshape_with_order(dims, NPY_ORDER::NPY_ANYORDER)
+    }
+
+    /// Extends or truncates the dimensions of an array.
+    ///
+    /// This method works only on [contiguous][`Self::is_contiguous`] arrays.
+    /// Missing elements will be initialized as if calling [`zeros`][Self::zeros].
+    ///
+    /// See also [`ndarray.resize`][ndarray-resize] and [`PyArray_Resize`][PyArray_Resize].
+    ///
+    /// # Safety
+    ///
+    /// There should be no outstanding references (shared or exclusive) into the array
+    /// as this method might re-allocate it and thereby invalidate all pointers into it.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use numpy::PyArray;
+    /// use pyo3::Python;
+    ///
+    /// Python::with_gil(|py| {
+    ///     let pyarray = PyArray::<f64, _>::zeros(py, (10, 10), false);
+    ///     assert_eq!(pyarray.shape(), [10, 10]);
+    ///
+    ///     unsafe {
+    ///         pyarray.resize((100, 100)).unwrap();
+    ///     }
+    ///     assert_eq!(pyarray.shape(), [100, 100]);
+    /// });
+    /// ```
+    ///
+    /// [ndarray-resize]: https://numpy.org/doc/stable/reference/generated/numpy.ndarray.resize.html
+    /// [PyArray_Resize]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_Resize
+    pub unsafe fn resize<ID: IntoDimension>(&self, dims: ID) -> PyResult<()> {
+        let mut dims = dims.into_dimension().to_npy_dims();
+        let res = PY_ARRAY_API.PyArray_Resize(
+            self.py(),
+            self.as_array_ptr(),
+            &mut dims as *mut npyffi::PyArray_Dims,
+            1,
+            NPY_ORDER::NPY_ANYORDER,
+        );
+        if res.is_null() {
+            Err(PyErr::fetch(self.py()))
+        } else {
+            Ok(())
         }
     }
 }
