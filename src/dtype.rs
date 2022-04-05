@@ -4,6 +4,8 @@ use std::os::raw::{
 };
 use std::ptr;
 
+#[cfg(feature = "half")]
+use half::f16;
 use num_traits::{Bounded, Zero};
 use pyo3::{
     exceptions::{PyIndexError, PyValueError},
@@ -470,6 +472,9 @@ impl_element_scalar!(u8, u16, u32, u64);
 
 impl_element_scalar!(f32 => NPY_FLOAT);
 impl_element_scalar!(f64 => NPY_DOUBLE);
+
+#[cfg(feature = "half")]
+impl_element_scalar!(f16 => NPY_HALF);
 
 impl_element_scalar!(Complex32 => NPY_CFLOAT,
     #[doc = "Complex type with `f32` components which maps to `numpy.csingle` (`numpy.complex64`)."]);

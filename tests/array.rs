@@ -1,5 +1,7 @@
 use std::mem::size_of;
 
+#[cfg(feature = "half")]
+use half::f16;
 use ndarray::{array, s, Array1, Dim};
 use numpy::{
     dtype, get_array_module, pyarray, PyArray, PyArray1, PyArray2, PyArrayDescr, PyArrayDyn,
@@ -503,5 +505,43 @@ fn get_works() {
             assert_eq!(*array.uget_mut([0, 1, 0]), 3);
             assert_eq!(*array.uget_raw([0, 0, 1]), 2);
         }
+    });
+}
+
+#[cfg(feature = "half")]
+#[test]
+fn half_works() {
+    Python::with_gil(|py| {
+        let np = py.eval("__import__('numpy')", None, None).unwrap();
+        let locals = [("np", np)].into_py_dict(py);
+
+        let array = py
+            .eval(
+                "np.array([[1, 2], [3, 4]], dtype='float16')",
+                None,
+                Some(locals),
+            )
+            .unwrap()
+            .downcast::<PyArray2<f16>>()
+            .unwrap();
+
+        assert_eq!(
+            array.readonly().as_array(),
+            array![
+                [f16::from_f32(1.0), f16::from_f32(2.0)],
+                [f16::from_f32(3.0), f16::from_f32(4.0)]
+            ]
+        );
+
+        array
+            .readwrite()
+            .as_array_mut()
+            .map_inplace(|value| *value *= f16::from_f32(2.0));
+
+        py_run!(
+            py,
+            array np,
+            "np.testing.assert_array_almost_equal(array, np.array([[2, 4], [6, 8]], dtype='float16'))"
+        );
     });
 }

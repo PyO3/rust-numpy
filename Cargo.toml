@@ -16,6 +16,7 @@ license = "BSD-2-Clause"
 
 [dependencies]
 ahash = "0.7"
+half = { version = "1.8", default-features = false, optional = true }
 libc = "0.2"
 num-complex = ">= 0.2, < 0.5"
 num-integer = "0.1"
@@ -28,3 +29,6 @@ pyo3 = { version = "0.16", default-features = false, features = ["auto-initializ
 
 [workspace]
 members = ["examples/*"]
+
+[package.metadata.docs.rs]
+all-features = true

@@ -28,36 +28,36 @@ def default(args):
     run("cargo", "fmt")
 
     if nightly():
-        run("cargo", "clippy", "--workspace", "--tests", "--benches")
+        run("cargo", "clippy", "--workspace", "--all-features", "--tests", "--benches")
     else:
-        run("cargo", "clippy", "--workspace", "--tests")
+        run("cargo", "clippy", "--workspace", "--all-features", "--tests")
 
-    run("cargo", "test", "--lib", "--tests")
+    run("cargo", "test", "--all-features", "--lib", "--tests")
 
 
 def check(args):
     run("cargo", "fmt", "--", "--check")
 
-    run("cargo", "clippy", "--workspace", "--tests", "--", "--deny", "warnings")
+    run("cargo", "clippy", "--workspace", "--all-features", "--tests", "--", "--deny", "warnings")
 
 
 def doc(args):
     if args.name is None:
-        run("cargo", "test", "--doc")
+        run("cargo", "test", "--all-features", "--doc")
     else:
-        run("cargo", "test", "--doc", args.name)
+        run("cargo", "test", "--all-features", "--doc", args.name)
 
     if args.open:
-        run("cargo", "doc", "--open")
+        run("cargo", "doc", "--all-features", "--open")
     else:
-        run("cargo", "doc")
+        run("cargo", "doc", "--all-features")
 
 
 def test(args):
     if args.name is None:
-        run("cargo", "test", "--tests")
+        run("cargo", "test", "--all-features", "--tests")
     else:
-        run("cargo", "test", "--test", args.name)
+        run("cargo", "test", "--all-features", "--test", args.name)
 
 
 def bench(args):
@@ -65,9 +65,9 @@ def bench(args):
         sys.exit("Benchmarks require a nightly build of the Rust compiler.")
 
     if args.name is None:
-        run("cargo", "bench", "--benches")
+        run("cargo", "bench", "--all-features", "--benches")
     else:
-        run("cargo", "bench", "--bench", args.name)
+        run("cargo", "bench", "--all-features", "--bench", args.name)
 
 
 def examples(args):
