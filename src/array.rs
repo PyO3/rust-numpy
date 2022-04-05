@@ -23,7 +23,10 @@ use crate::borrow::{PyReadonlyArray, PyReadwriteArray};
 use crate::cold;
 use crate::convert::{ArrayExt, IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
 use crate::dtype::{Element, PyArrayDescr};
-use crate::error::{BorrowError, DimensionalityError, FromVecError, NotContiguousError, TypeError};
+use crate::error::{
+    BorrowError, DimensionalityError, FromVecError, NotContiguousError, TypeError,
+    DIMENSIONALITY_MISMATCH_ERR, MAX_DIMENSIONALITY_ERR,
+};
 use crate::npyffi::{self, npy_intp, NPY_ORDER, PY_ARRAY_API};
 use crate::slice_container::PySliceContainer;
 
@@ -358,7 +361,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     /// Same as [shape](#method.shape), but returns `D`
     #[inline(always)]
     pub fn dims(&self) -> D {
-        D::from_dimension(&Dim(self.shape())).expect("mismatching dimensions")
+        D::from_dimension(&Dim(self.shape())).expect(DIMENSIONALITY_MISMATCH_ERR)
     }
 
     /// Creates a new uninitialized PyArray in python heap.
@@ -838,12 +841,9 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
             itemsize: usize,
             mut data_ptr: *mut u8,
         ) -> (StrideShape<D>, u32, *mut u8) {
-            let shape = D::from_dimension(&Dim(shape)).expect("mismatching dimensions");
+            let shape = D::from_dimension(&Dim(shape)).expect(DIMENSIONALITY_MISMATCH_ERR);
 
-            assert!(
-                strides.len() <= 32,
-                "Only dimensionalities of up to 32 are supported"
-            );
+            assert!(strides.len() <= 32, "{}", MAX_DIMENSIONALITY_ERR);
 
             let mut new_strides = D::zeros(strides.len());
             let mut inverted_axes = 0_u32;

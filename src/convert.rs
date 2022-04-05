@@ -1,5 +1,4 @@
 //! Defines conversion traits between Rust types and NumPy data types.
-#![deny(missing_docs)]
 
 use std::{mem, os::raw::c_int, ptr};
 
@@ -8,6 +7,7 @@ use pyo3::Python;
 
 use crate::array::PyArray;
 use crate::dtype::Element;
+use crate::error::MAX_DIMENSIONALITY_ERR;
 use crate::npyffi::{self, npy_intp};
 use crate::sealed::Sealed;
 
@@ -184,10 +184,7 @@ where
         let strides = self.strides();
         let itemsize = mem::size_of::<A>() as isize;
 
-        assert!(
-            strides.len() <= 32,
-            "Only dimensionalities of up to 32 are supported"
-        );
+        assert!(strides.len() <= 32, "{}", MAX_DIMENSIONALITY_ERR);
 
         let mut new_strides = [0; 32];
 

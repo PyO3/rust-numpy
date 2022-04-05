@@ -3,6 +3,8 @@
 //! <https://numpy.org/doc/stable/reference/c-api>
 #![allow(
     non_camel_case_types,
+    missing_docs,
+    missing_debug_implementations,
     clippy::too_many_arguments,
     clippy::missing_safety_doc
 )]

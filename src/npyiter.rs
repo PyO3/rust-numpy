@@ -16,6 +16,7 @@
 #![deprecated(
     note = "The wrappers of the array iterator API are deprecated, please use ndarray's iterators like `Lanes` and `Zip` instead."
 )]
+#![allow(missing_debug_implementations)]
 
 use std::marker::PhantomData;
 use std::os::raw::{c_char, c_int};
@@ -48,15 +49,25 @@ use crate::sealed::Sealed;
 /// [iterator]: https://numpy.org/doc/stable/reference/c-api/iterator.html#c.NpyIter_MultiNew
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum NpyIterFlag {
+    /// [`NPY_ITER_COMMON_DTYPE`](https://numpy.org/doc/stable/reference/c-api/iterator.html#c.NPY_ITER_COMMON_DTYPE)
     CommonDtype,
+    /// [`NPY_ITER_REFS_OK`](https://numpy.org/doc/stable/reference/c-api/iterator.html#c.NPY_ITER_REFS_OK)
     RefsOk,
+    /// [`NPY_ITER_ZEROSIZE_OK`](https://numpy.org/doc/stable/reference/c-api/iterator.html#c.NPY_ITER_ZEROSIZE_OK)
     ZerosizeOk,
+    /// [`NPY_ITER_REDUCE_OK`](https://numpy.org/doc/stable/reference/c-api/iterator.html#c.NPY_ITER_REDUCE_OK)
     ReduceOk,
+    /// [`NPY_ITER_RANGED`](https://numpy.org/doc/stable/reference/c-api/iterator.html#c.NPY_ITER_RANGED)
     Ranged,
+    /// [`NPY_ITER_BUFFERED`](https://numpy.org/doc/stable/reference/c-api/iterator.html#c.NPY_ITER_BUFFERED)
     Buffered,
+    /// [`NPY_ITER_GROWINNER`](https://numpy.org/doc/stable/reference/c-api/iterator.html#c.NPY_ITER_GROWINNER)
     GrowInner,
+    /// [`NPY_ITER_DELAY_BUFALLOC`](https://numpy.org/doc/stable/reference/c-api/iterator.html#c.NPY_ITER_DELAY_BUFALLOC)
     DelayBufAlloc,
+    /// [`NPY_ITER_DONT_NEGATE_STRIDES`](https://numpy.org/doc/stable/reference/c-api/iterator.html#c.NPY_ITER_DONT_NEGATE_STRIDES)
     DontNegateStrides,
+    /// [`NPY_ITER_COPY_IF_OVERLAP`](https://numpy.org/doc/stable/reference/c-api/iterator.html#c.NPY_ITER_COPY_IF_OVERLAP)
     CopyIfOverlap,
     // CIndex,
     // FIndex,
@@ -91,8 +102,11 @@ mod itermode {
 
     /// A combinator type that represents the mode of an iterator.
     pub trait MultiIterMode: Sealed {
+        #[doc(hidden)]
         type Pre: MultiIterMode;
+        #[doc(hidden)]
         const FLAG: npy_uint32 = 0;
+        #[doc(hidden)]
         fn flags() -> Vec<npy_uint32> {
             if Self::FLAG == 0 {
                 Vec::new()
