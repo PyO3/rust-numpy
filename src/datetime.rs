@@ -50,11 +50,14 @@
 //!
 //! [datetime]: https://numpy.org/doc/stable/reference/arrays.datetime.html
 
+use std::cell::UnsafeCell;
+use std::collections::hash_map::Entry;
 use std::fmt;
 use std::hash::Hash;
 use std::marker::PhantomData;
 
-use pyo3::Python;
+use ahash::AHashMap;
+use pyo3::{Py, Python};
 
 use crate::dtype::{Element, PyArrayDescr};
 use crate::npyffi::{PyArray_DatetimeDTypeMetaData, NPY_DATETIMEUNIT, NPY_TYPES};
@@ -147,14 +150,9 @@ unsafe impl<U: Unit> Element for Datetime<U> {
     const IS_COPY: bool = true;
 
     fn get_dtype(py: Python) -> &PyArrayDescr {
-        // FIXME(adamreichold): Memoize these via the Unit trait
-        let dtype = PyArrayDescr::new_from_npy_type(py, NPY_TYPES::NPY_DATETIME);
+        static DTYPES: TypeDescriptors = unsafe { TypeDescriptors::new(NPY_TYPES::NPY_DATETIME) };
 
-        unsafe {
-            set_unit(dtype, U::UNIT);
-        }
-
-        dtype
+        DTYPES.from_unit(py, U::UNIT)
     }
 }
 
@@ -187,14 +185,9 @@ unsafe impl<U: Unit> Element for Timedelta<U> {
     const IS_COPY: bool = true;
 
     fn get_dtype(py: Python) -> &PyArrayDescr {
-        // FIXME(adamreichold): Memoize these via the Unit trait
-        let dtype = PyArrayDescr::new_from_npy_type(py, NPY_TYPES::NPY_TIMEDELTA);
+        static DTYPES: TypeDescriptors = unsafe { TypeDescriptors::new(NPY_TYPES::NPY_TIMEDELTA) };
 
-        unsafe {
-            set_unit(dtype, U::UNIT);
-        }
-
-        dtype
+        DTYPES.from_unit(py, U::UNIT)
     }
 }
 
@@ -204,11 +197,50 @@ impl<U: Unit> fmt::Debug for Timedelta<U> {
     }
 }
 
-unsafe fn set_unit(dtype: &PyArrayDescr, unit: NPY_DATETIMEUNIT) {
-    let metadata = &mut *((*dtype.as_dtype_ptr()).c_metadata as *mut PyArray_DatetimeDTypeMetaData);
+struct TypeDescriptors {
+    npy_type: NPY_TYPES,
+    dtypes: UnsafeCell<Option<AHashMap<NPY_DATETIMEUNIT, Py<PyArrayDescr>>>>,
+}
 
-    metadata.meta.base = unit;
-    metadata.meta.num = 1;
+unsafe impl Sync for TypeDescriptors {}
+
+impl TypeDescriptors {
+    /// `npy_type` must be either `NPY_DATETIME` or `NPY_TIMEDELTA`.
+    const unsafe fn new(npy_type: NPY_TYPES) -> Self {
+        Self {
+            npy_type,
+            dtypes: UnsafeCell::new(None),
+        }
+    }
+
+    #[allow(clippy::mut_from_ref)]
+    unsafe fn get(&self) -> &mut AHashMap<NPY_DATETIMEUNIT, Py<PyArrayDescr>> {
+        (*self.dtypes.get()).get_or_insert_with(AHashMap::new)
+    }
+
+    #[allow(clippy::wrong_self_convention)]
+    fn from_unit<'py>(&'py self, py: Python<'py>, unit: NPY_DATETIMEUNIT) -> &'py PyArrayDescr {
+        // SAFETY: We hold the GIL and we do not call into user code which might re-enter.
+        let dtypes = unsafe { self.get() };
+
+        match dtypes.entry(unit) {
+            Entry::Occupied(entry) => entry.into_mut().as_ref(py),
+            Entry::Vacant(entry) => {
+                let dtype = PyArrayDescr::new_from_npy_type(py, self.npy_type);
+
+                // SAFETY: `self.npy_type` is either `NPY_DATETIME` or `NPY_TIMEDELTA` which implies the type of `c_metadata`.
+                unsafe {
+                    let metadata = &mut *((*dtype.as_dtype_ptr()).c_metadata
+                        as *mut PyArray_DatetimeDTypeMetaData);
+
+                    metadata.meta.base = unit;
+                    metadata.meta.num = 1;
+                }
+
+                entry.insert(dtype.into()).as_ref(py)
+            }
+        }
+    }
 }
 
 #[cfg(test)]
