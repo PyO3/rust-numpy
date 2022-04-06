@@ -6,6 +6,7 @@
     - The destructive `PyArray::resize` method is now unsafe if used without an instance of `PyReadwriteArray`. ([#302](https://github.com/PyO3/rust-numpy/pull/302))
   - Add support for IEEE 754-2008 16-bit floating point numbers via an optional dependency on the `half` crate. ([#314](https://github.com/PyO3/rust-numpy/pull/314))
   - The `inner`, `dot` and `einsum` functions can also return a scalar instead of a zero-dimensional array to match NumPy's types ([#285](https://github.com/PyO3/rust-numpy/pull/285))
+  - The `PyArray::resize` function supports n-dimensional contiguous arrays. ([#312](https://github.com/PyO3/rust-numpy/pull/312))
   - Deprecate `PyArray::from_exact_iter` after optimizing `PyArray::from_iter`. ([#292](https://github.com/PyO3/rust-numpy/pull/292))
   - Fix returning invalid slices from `PyArray::{strides,shape}` for rank zero arrays. ([#303](https://github.com/PyO3/rust-numpy/pull/303))
 

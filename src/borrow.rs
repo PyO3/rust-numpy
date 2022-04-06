@@ -168,7 +168,9 @@ use std::mem::size_of;
 use std::ops::Deref;
 
 use ahash::AHashMap;
-use ndarray::{ArrayView, ArrayViewMut, Dimension, Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};
+use ndarray::{
+    ArrayView, ArrayViewMut, Dimension, IntoDimension, Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn,
+};
 use num_integer::gcd;
 use pyo3::{FromPyObject, PyAny, PyResult, Python};
 
@@ -619,7 +621,9 @@ impl<'py, T> PyReadwriteArray<'py, T, Ix1>
 where
     T: Element,
 {
-    /// Extends or truncates the length of a one-dimensional array.
+    /// Extends or truncates the dimensions of an array.
+    ///
+    /// Safe wrapper for [`PyArray::resize`].
     ///
     /// # Example
     ///
@@ -636,12 +640,12 @@ where
     ///     assert_eq!(pyarray.len(), 100);
     /// });
     /// ```
-    pub fn resize(self, new_elems: usize) -> PyResult<Self> {
+    pub fn resize<ID: IntoDimension>(self, dims: ID) -> PyResult<Self> {
         let array = self.array;
 
         // SAFETY: Ownership of `self` proves exclusive access to the interior of the array.
         unsafe {
-            array.resize(new_elems)?;
+            array.resize(dims)?;
         }
 
         drop(self);
