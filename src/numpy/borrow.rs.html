@@ -1327,6 +1327,10 @@
 <span id="1325">1325</span>
 <span id="1326">1326</span>
 <span id="1327">1327</span>
+<span id="1328">1328</span>
+<span id="1329">1329</span>
+<span id="1330">1330</span>
+<span id="1331">1331</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Types to safely create references into NumPy arrays</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! It is assumed that unchecked code - which includes unsafe Rust and Python - is validated by its author</span>
@@ -1497,7 +1501,9 @@
 <span class="kw">use</span> <span class="ident">std::ops::Deref</span>;
 
 <span class="kw">use</span> <span class="ident">ahash::AHashMap</span>;
-<span class="kw">use</span> <span class="ident">ndarray</span>::{<span class="ident">ArrayView</span>, <span class="ident">ArrayViewMut</span>, <span class="ident">Dimension</span>, <span class="ident">Ix1</span>, <span class="ident">Ix2</span>, <span class="ident">Ix3</span>, <span class="ident">Ix4</span>, <span class="ident">Ix5</span>, <span class="ident">Ix6</span>, <span class="ident">IxDyn</span>};
+<span class="kw">use</span> <span class="ident">ndarray</span>::{
+    <span class="ident">ArrayView</span>, <span class="ident">ArrayViewMut</span>, <span class="ident">Dimension</span>, <span class="ident">IntoDimension</span>, <span class="ident">Ix1</span>, <span class="ident">Ix2</span>, <span class="ident">Ix3</span>, <span class="ident">Ix4</span>, <span class="ident">Ix5</span>, <span class="ident">Ix6</span>, <span class="ident">IxDyn</span>,
+};
 <span class="kw">use</span> <span class="ident">num_integer::gcd</span>;
 <span class="kw">use</span> <span class="ident">pyo3</span>::{<span class="ident">FromPyObject</span>, <span class="ident">PyAny</span>, <span class="ident">PyResult</span>, <span class="ident">Python</span>};
 
@@ -1948,7 +1954,9 @@
 <span class="kw">where</span>
     <span class="ident">T</span>: <span class="ident">Element</span>,
 {
-    <span class="doccomment">/// Extends or truncates the length of a one-dimensional array.</span>
+    <span class="doccomment">/// Extends or truncates the dimensions of an array.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// Safe wrapper for [`PyArray::resize`].</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// # Example</span>
     <span class="doccomment">///</span>
@@ -1965,12 +1973,12 @@
     <span class="doccomment">///     assert_eq!(pyarray.len(), 100);</span>
     <span class="doccomment">/// });</span>
     <span class="doccomment">/// ```</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">resize</span>(<span class="self">self</span>, <span class="ident">new_elems</span>: <span class="ident">usize</span>) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">resize</span><span class="op">&lt;</span><span class="ident">ID</span>: <span class="ident">IntoDimension</span><span class="op">&gt;</span>(<span class="self">self</span>, <span class="ident">dims</span>: <span class="ident">ID</span>) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">array</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">array</span>;
 
         <span class="comment">// SAFETY: Ownership of `self` proves exclusive access to the interior of the array.</span>
         <span class="kw">unsafe</span> {
-            <span class="ident">array</span>.<span class="ident">resize</span>(<span class="ident">new_elems</span>)<span class="question-mark">?</span>;
+            <span class="ident">array</span>.<span class="ident">resize</span>(<span class="ident">dims</span>)<span class="question-mark">?</span>;
         }
 
         <span class="ident">drop</span>(<span class="self">self</span>);

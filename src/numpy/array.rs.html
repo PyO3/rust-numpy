@@ -1389,9 +1389,6 @@
 <span id="1387">1387</span>
 <span id="1388">1388</span>
 <span id="1389">1389</span>
-<span id="1390">1390</span>
-<span id="1391">1391</span>
-<span id="1392">1392</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Safe interface for NumPy&#39;s ndarray class</span>
 
 <span class="kw">use</span> <span class="ident">std</span>::{
@@ -2468,58 +2465,6 @@
         <span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="ident">iter</span>.<span class="ident">into_iter</span>().<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>();
         <span class="ident">data</span>.<span class="ident">into_pyarray</span>(<span class="ident">py</span>)
     }
-
-    <span class="doccomment">/// Extends or truncates the length of a one-dimensional array.</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// # Safety</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// There should be no outstanding references (shared or exclusive) into the array</span>
-    <span class="doccomment">/// as this method might re-allocate it and thereby invalidate all pointers into it.</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// # Example</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// ```</span>
-    <span class="doccomment">/// use numpy::PyArray;</span>
-    <span class="doccomment">/// use pyo3::Python;</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// Python::with_gil(|py| {</span>
-    <span class="doccomment">///     let pyarray = PyArray::arange(py, 0, 10, 1);</span>
-    <span class="doccomment">///     assert_eq!(pyarray.len(), 10);</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">///     unsafe {</span>
-    <span class="doccomment">///         pyarray.resize(100).unwrap();</span>
-    <span class="doccomment">///     }</span>
-    <span class="doccomment">///     assert_eq!(pyarray.len(), 100);</span>
-    <span class="doccomment">/// });</span>
-    <span class="doccomment">/// ```</span>
-    <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">resize</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">new_elems</span>: <span class="ident">usize</span>) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">resize_</span>(<span class="self">self</span>.<span class="ident">py</span>(), [<span class="ident">new_elems</span>], <span class="number">1</span>, <span class="ident">NPY_ORDER::NPY_ANYORDER</span>)
-    }
-
-    <span class="kw">fn</span> <span class="ident">resize_</span><span class="op">&lt;</span><span class="ident">D</span>: <span class="ident">IntoDimension</span><span class="op">&gt;</span>(
-        <span class="kw-2">&amp;</span><span class="self">self</span>,
-        <span class="ident">py</span>: <span class="ident">Python</span>,
-        <span class="ident">dims</span>: <span class="ident">D</span>,
-        <span class="ident">check_ref</span>: <span class="ident">c_int</span>,
-        <span class="ident">order</span>: <span class="ident">NPY_ORDER</span>,
-    ) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">dims</span> <span class="op">=</span> <span class="ident">dims</span>.<span class="ident">into_dimension</span>();
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">np_dims</span> <span class="op">=</span> <span class="ident">dims</span>.<span class="ident">to_npy_dims</span>();
-        <span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="kw">unsafe</span> {
-            <span class="ident">PY_ARRAY_API</span>.<span class="ident">PyArray_Resize</span>(
-                <span class="ident">py</span>,
-                <span class="self">self</span>.<span class="ident">as_array_ptr</span>(),
-                <span class="kw-2">&amp;mut</span> <span class="ident">np_dims</span> <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="ident">npyffi::PyArray_Dims</span>,
-                <span class="ident">check_ref</span>,
-                <span class="ident">order</span>,
-            )
-        };
-        <span class="kw">if</span> <span class="ident">res</span>.<span class="ident">is_null</span>() {
-            <span class="prelude-val">Err</span>(<span class="ident">PyErr::fetch</span>(<span class="self">self</span>.<span class="ident">py</span>()))
-        } <span class="kw">else</span> {
-            <span class="prelude-val">Ok</span>(())
-        }
-    }
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Element</span><span class="op">&gt;</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">Ix2</span><span class="op">&gt;</span> {
@@ -2654,57 +2599,106 @@
         }
     }
 
-    <span class="doccomment">/// Construct a new array which has same values as self, same matrix order, but has different</span>
-    <span class="doccomment">/// dimensions specified by `dims`.</span>
+    <span class="doccomment">/// Construct a new array which has same values as self,</span>
+    <span class="doccomment">/// but has different dimensions specified by `dims`</span>
+    <span class="doccomment">/// and a possibly different memory order specified by `order`.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// Since a returned array can contain a same pointer as self, we highly recommend to drop an</span>
-    <span class="doccomment">/// old array, if this method returns `Ok`.</span>
+    <span class="doccomment">/// See also [`numpy.reshape`][numpy-reshape] and [`PyArray_Newshape`][PyArray_Newshape].</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// # Example</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// ```</span>
-    <span class="doccomment">/// # #[macro_use] extern crate ndarray;</span>
-    <span class="doccomment">/// use numpy::PyArray;</span>
-    <span class="doccomment">/// pyo3::Python::with_gil(|py| {</span>
-    <span class="doccomment">///     let array = PyArray::from_exact_iter(py, 0..9);</span>
-    <span class="doccomment">///     let array = array.reshape([3, 3]).unwrap();</span>
-    <span class="doccomment">///     assert_eq!(array.readonly().as_array(), array![[0, 1, 2], [3, 4, 5], [6, 7, 8]]);</span>
+    <span class="doccomment">/// use numpy::{npyffi::NPY_ORDER, PyArray};</span>
+    <span class="doccomment">/// use pyo3::Python;</span>
+    <span class="doccomment">/// use ndarray::array;</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// Python::with_gil(|py| {</span>
+    <span class="doccomment">///     let array =</span>
+    <span class="doccomment">///         PyArray::from_iter(py, 0..9).reshape_with_order([3, 3], NPY_ORDER::NPY_FORTRANORDER).unwrap();</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">///     assert_eq!(array.readonly().as_array(), array![[0, 3, 6], [1, 4, 7], [2, 5, 8]]);</span>
+    <span class="doccomment">///     assert!(array.is_fortran_contiguous());</span>
+    <span class="doccomment">///</span>
     <span class="doccomment">///     assert!(array.reshape([5]).is_err());</span>
     <span class="doccomment">/// });</span>
     <span class="doccomment">/// ```</span>
-    <span class="attribute">#[<span class="ident">inline</span>(<span class="ident">always</span>)]</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">reshape</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">ID</span>, <span class="ident">D2</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="self">self</span>, <span class="ident">dims</span>: <span class="ident">ID</span>) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D2</span><span class="op">&gt;</span><span class="op">&gt;</span>
-    <span class="kw">where</span>
-        <span class="ident">ID</span>: <span class="ident">IntoDimension</span><span class="op">&lt;</span><span class="ident">Dim</span> <span class="op">=</span> <span class="ident">D2</span><span class="op">&gt;</span>,
-        <span class="ident">D2</span>: <span class="ident">Dimension</span>,
-    {
-        <span class="self">self</span>.<span class="ident">reshape_with_order</span>(<span class="ident">dims</span>, <span class="ident">NPY_ORDER::NPY_ANYORDER</span>)
-    }
-
-    <span class="doccomment">/// Same as [reshape](method.reshape.html), but you can change the order of returned matrix.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">reshape_with_order</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">ID</span>, <span class="ident">D2</span><span class="op">&gt;</span>(
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// [numpy-reshape]: https://numpy.org/doc/stable/reference/generated/numpy.reshape.html</span>
+    <span class="doccomment">/// [PyArray_Newshape]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_Newshape</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">reshape_with_order</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">ID</span>: <span class="ident">IntoDimension</span><span class="op">&gt;</span>(
         <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="self">self</span>,
         <span class="ident">dims</span>: <span class="ident">ID</span>,
         <span class="ident">order</span>: <span class="ident">NPY_ORDER</span>,
-    ) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D2</span><span class="op">&gt;</span><span class="op">&gt;</span>
-    <span class="kw">where</span>
-        <span class="ident">ID</span>: <span class="ident">IntoDimension</span><span class="op">&lt;</span><span class="ident">Dim</span> <span class="op">=</span> <span class="ident">D2</span><span class="op">&gt;</span>,
-        <span class="ident">D2</span>: <span class="ident">Dimension</span>,
-    {
-        <span class="kw">let</span> <span class="ident">dims</span> <span class="op">=</span> <span class="ident">dims</span>.<span class="ident">into_dimension</span>();
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">np_dims</span> <span class="op">=</span> <span class="ident">dims</span>.<span class="ident">to_npy_dims</span>();
+    ) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">ID::Dim</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dims</span> <span class="op">=</span> <span class="ident">dims</span>.<span class="ident">into_dimension</span>().<span class="ident">to_npy_dims</span>();
         <span class="kw">let</span> <span class="ident">ptr</span> <span class="op">=</span> <span class="kw">unsafe</span> {
             <span class="ident">PY_ARRAY_API</span>.<span class="ident">PyArray_Newshape</span>(
                 <span class="self">self</span>.<span class="ident">py</span>(),
                 <span class="self">self</span>.<span class="ident">as_array_ptr</span>(),
-                <span class="kw-2">&amp;mut</span> <span class="ident">np_dims</span> <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="ident">npyffi::PyArray_Dims</span>,
+                <span class="kw-2">&amp;mut</span> <span class="ident">dims</span> <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="ident">npyffi::PyArray_Dims</span>,
                 <span class="ident">order</span>,
             )
         };
         <span class="kw">if</span> <span class="ident">ptr</span>.<span class="ident">is_null</span>() {
             <span class="prelude-val">Err</span>(<span class="ident">PyErr::fetch</span>(<span class="self">self</span>.<span class="ident">py</span>()))
         } <span class="kw">else</span> {
-            <span class="prelude-val">Ok</span>(<span class="kw">unsafe</span> { <span class="ident">PyArray</span>::<span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D2</span><span class="op">&gt;</span><span class="ident">::from_owned_ptr</span>(<span class="self">self</span>.<span class="ident">py</span>(), <span class="ident">ptr</span>) })
+            <span class="prelude-val">Ok</span>(<span class="kw">unsafe</span> { <span class="ident">PyArray</span>::<span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">ID::Dim</span><span class="op">&gt;</span><span class="ident">::from_owned_ptr</span>(<span class="self">self</span>.<span class="ident">py</span>(), <span class="ident">ptr</span>) })
+        }
+    }
+
+    <span class="doccomment">/// Special case of [`reshape_with_order`][Self::reshape_with_order] which keeps the memory order the same.</span>
+    <span class="attribute">#[<span class="ident">inline</span>(<span class="ident">always</span>)]</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">reshape</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">ID</span>: <span class="ident">IntoDimension</span><span class="op">&gt;</span>(
+        <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="self">self</span>,
+        <span class="ident">dims</span>: <span class="ident">ID</span>,
+    ) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">ID::Dim</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+        <span class="self">self</span>.<span class="ident">reshape_with_order</span>(<span class="ident">dims</span>, <span class="ident">NPY_ORDER::NPY_ANYORDER</span>)
+    }
+
+    <span class="doccomment">/// Extends or truncates the dimensions of an array.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// This method works only on [contiguous][`Self::is_contiguous`] arrays.</span>
+    <span class="doccomment">/// Missing elements will be initialized as if calling [`zeros`][Self::zeros].</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// See also [`ndarray.resize`][ndarray-resize] and [`PyArray_Resize`][PyArray_Resize].</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// # Safety</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// There should be no outstanding references (shared or exclusive) into the array</span>
+    <span class="doccomment">/// as this method might re-allocate it and thereby invalidate all pointers into it.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// # Example</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// ```</span>
+    <span class="doccomment">/// use numpy::PyArray;</span>
+    <span class="doccomment">/// use pyo3::Python;</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// Python::with_gil(|py| {</span>
+    <span class="doccomment">///     let pyarray = PyArray::&lt;f64, _&gt;::zeros(py, (10, 10), false);</span>
+    <span class="doccomment">///     assert_eq!(pyarray.shape(), [10, 10]);</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">///     unsafe {</span>
+    <span class="doccomment">///         pyarray.resize((100, 100)).unwrap();</span>
+    <span class="doccomment">///     }</span>
+    <span class="doccomment">///     assert_eq!(pyarray.shape(), [100, 100]);</span>
+    <span class="doccomment">/// });</span>
+    <span class="doccomment">/// ```</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// [ndarray-resize]: https://numpy.org/doc/stable/reference/generated/numpy.ndarray.resize.html</span>
+    <span class="doccomment">/// [PyArray_Resize]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_Resize</span>
+    <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">resize</span><span class="op">&lt;</span><span class="ident">ID</span>: <span class="ident">IntoDimension</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">dims</span>: <span class="ident">ID</span>) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dims</span> <span class="op">=</span> <span class="ident">dims</span>.<span class="ident">into_dimension</span>().<span class="ident">to_npy_dims</span>();
+        <span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">PY_ARRAY_API</span>.<span class="ident">PyArray_Resize</span>(
+            <span class="self">self</span>.<span class="ident">py</span>(),
+            <span class="self">self</span>.<span class="ident">as_array_ptr</span>(),
+            <span class="kw-2">&amp;mut</span> <span class="ident">dims</span> <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="ident">npyffi::PyArray_Dims</span>,
+            <span class="number">1</span>,
+            <span class="ident">NPY_ORDER::NPY_ANYORDER</span>,
+        );
+        <span class="kw">if</span> <span class="ident">res</span>.<span class="ident">is_null</span>() {
+            <span class="prelude-val">Err</span>(<span class="ident">PyErr::fetch</span>(<span class="self">self</span>.<span class="ident">py</span>()))
+        } <span class="kw">else</span> {
+            <span class="prelude-val">Ok</span>(())
         }
     }
 }
