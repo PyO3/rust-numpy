@@ -1327,7 +1327,6 @@
 <span id="1325">1325</span>
 <span id="1326">1326</span>
 <span id="1327">1327</span>
-<span id="1328">1328</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Types to safely create references into NumPy arrays</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! It is assumed that unchecked code - which includes unsafe Rust and Python - is validated by its author</span>
@@ -1489,7 +1488,6 @@
 <span class="doccomment">//! More involved cases like the example from above may be supported in the future.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! [base]: https://numpy.org/doc/stable/reference/c-api/types-and-structures.html#c.NPY_AO.base</span>
-<span class="attribute">#![<span class="ident">deny</span>(<span class="ident">missing_docs</span>)]</span>
 
 <span class="kw">use</span> <span class="ident">std::any::type_name</span>;
 <span class="kw">use</span> <span class="ident">std::cell::UnsafeCell</span>;

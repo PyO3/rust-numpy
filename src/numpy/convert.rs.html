@@ -279,11 +279,7 @@
 <span id="277">277</span>
 <span id="278">278</span>
 <span id="279">279</span>
-<span id="280">280</span>
-<span id="281">281</span>
-<span id="282">282</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Defines conversion traits between Rust types and NumPy data types.</span>
-<span class="attribute">#![<span class="ident">deny</span>(<span class="ident">missing_docs</span>)]</span>
 
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">mem</span>, <span class="ident">os::raw::c_int</span>, <span class="ident">ptr</span>};
 
@@ -292,6 +288,7 @@
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::array::PyArray</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::dtype::Element</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::error::MAX_DIMENSIONALITY_ERR</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::npyffi</span>::{<span class="self">self</span>, <span class="ident">npy_intp</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::sealed::Sealed</span>;
 
@@ -468,10 +465,7 @@
         <span class="kw">let</span> <span class="ident">strides</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">strides</span>();
         <span class="kw">let</span> <span class="ident">itemsize</span> <span class="op">=</span> <span class="ident">mem::size_of</span>::<span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>() <span class="kw">as</span> <span class="ident">isize</span>;
 
-        <span class="macro">assert!</span>(
-            <span class="ident">strides</span>.<span class="ident">len</span>() <span class="op">&lt;</span><span class="op">=</span> <span class="number">32</span>,
-            <span class="string">&quot;Only dimensionalities of up to 32 are supported&quot;</span>
-        );
+        <span class="macro">assert!</span>(<span class="ident">strides</span>.<span class="ident">len</span>() <span class="op">&lt;</span><span class="op">=</span> <span class="number">32</span>, <span class="string">&quot;{}&quot;</span>, <span class="ident">MAX_DIMENSIONALITY_ERR</span>);
 
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">new_strides</span> <span class="op">=</span> [<span class="number">0</span>; <span class="number">32</span>];
 

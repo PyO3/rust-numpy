@@ -124,6 +124,7 @@
 <span id="122">122</span>
 <span id="123">123</span>
 <span id="124">124</span>
+<span id="125">125</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This crate provides Rust interfaces for [NumPy C APIs][c-api],</span>
 <span class="doccomment">//! especially for the [ndarray][ndarray] class.</span>
 <span class="doccomment">//!</span>
@@ -158,6 +159,7 @@
 <span class="doccomment">//! [c-api]: https://numpy.org/doc/stable/reference/c-api</span>
 <span class="doccomment">//! [ndarray]: https://numpy.org/doc/stable/reference/arrays.ndarray.html</span>
 
+<span class="attribute">#![<span class="ident">deny</span>(<span class="ident">missing_docs</span>, <span class="ident">missing_debug_implementations</span>)]</span>
 <span class="comment">// We often want to make the GIL lifetime explicit.</span>
 <span class="attribute">#![<span class="ident">allow</span>(<span class="ident">clippy::needless_lifetimes</span>)]</span>
 

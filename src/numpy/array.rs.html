@@ -1417,7 +1417,10 @@
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::cold</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::convert</span>::{<span class="ident">ArrayExt</span>, <span class="ident">IntoPyArray</span>, <span class="ident">NpyIndex</span>, <span class="ident">ToNpyDims</span>, <span class="ident">ToPyArray</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::dtype</span>::{<span class="ident">Element</span>, <span class="ident">PyArrayDescr</span>};
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::error</span>::{<span class="ident">BorrowError</span>, <span class="ident">DimensionalityError</span>, <span class="ident">FromVecError</span>, <span class="ident">NotContiguousError</span>, <span class="ident">TypeError</span>};
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::error</span>::{
+    <span class="ident">BorrowError</span>, <span class="ident">DimensionalityError</span>, <span class="ident">FromVecError</span>, <span class="ident">NotContiguousError</span>, <span class="ident">TypeError</span>,
+    <span class="ident">DIMENSIONALITY_MISMATCH_ERR</span>, <span class="ident">MAX_DIMENSIONALITY_ERR</span>,
+};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::npyffi</span>::{<span class="self">self</span>, <span class="ident">npy_intp</span>, <span class="ident">NPY_ORDER</span>, <span class="ident">PY_ARRAY_API</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::slice_container::PySliceContainer</span>;
 
@@ -1752,7 +1755,7 @@
     <span class="doccomment">/// Same as [shape](#method.shape), but returns `D`</span>
     <span class="attribute">#[<span class="ident">inline</span>(<span class="ident">always</span>)]</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">dims</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">D</span> {
-        <span class="ident">D::from_dimension</span>(<span class="kw-2">&amp;</span><span class="ident">Dim</span>(<span class="self">self</span>.<span class="ident">shape</span>())).<span class="ident">expect</span>(<span class="string">&quot;mismatching dimensions&quot;</span>)
+        <span class="ident">D::from_dimension</span>(<span class="kw-2">&amp;</span><span class="ident">Dim</span>(<span class="self">self</span>.<span class="ident">shape</span>())).<span class="ident">expect</span>(<span class="ident">DIMENSIONALITY_MISMATCH_ERR</span>)
     }
 
     <span class="doccomment">/// Creates a new uninitialized PyArray in python heap.</span>
@@ -2232,12 +2235,9 @@
             <span class="ident">itemsize</span>: <span class="ident">usize</span>,
             <span class="kw-2">mut</span> <span class="ident">data_ptr</span>: <span class="kw-2">*mut</span> <span class="ident">u8</span>,
         ) -&gt; (<span class="ident">StrideShape</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>, <span class="ident">u32</span>, <span class="kw-2">*mut</span> <span class="ident">u8</span>) {
-            <span class="kw">let</span> <span class="ident">shape</span> <span class="op">=</span> <span class="ident">D::from_dimension</span>(<span class="kw-2">&amp;</span><span class="ident">Dim</span>(<span class="ident">shape</span>)).<span class="ident">expect</span>(<span class="string">&quot;mismatching dimensions&quot;</span>);
+            <span class="kw">let</span> <span class="ident">shape</span> <span class="op">=</span> <span class="ident">D::from_dimension</span>(<span class="kw-2">&amp;</span><span class="ident">Dim</span>(<span class="ident">shape</span>)).<span class="ident">expect</span>(<span class="ident">DIMENSIONALITY_MISMATCH_ERR</span>);
 
-            <span class="macro">assert!</span>(
-                <span class="ident">strides</span>.<span class="ident">len</span>() <span class="op">&lt;</span><span class="op">=</span> <span class="number">32</span>,
-                <span class="string">&quot;Only dimensionalities of up to 32 are supported&quot;</span>
-            );
+            <span class="macro">assert!</span>(<span class="ident">strides</span>.<span class="ident">len</span>() <span class="op">&lt;</span><span class="op">=</span> <span class="number">32</span>, <span class="string">&quot;{}&quot;</span>, <span class="ident">MAX_DIMENSIONALITY_ERR</span>);
 
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">new_strides</span> <span class="op">=</span> <span class="ident">D::zeros</span>(<span class="ident">strides</span>.<span class="ident">len</span>());
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">inverted_axes</span> <span class="op">=</span> <span class="number">0_u32</span>;

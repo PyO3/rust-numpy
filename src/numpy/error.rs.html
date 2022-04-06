@@ -136,6 +136,15 @@
 <span id="134">134</span>
 <span id="135">135</span>
 <span id="136">136</span>
+<span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
+<span id="144">144</span>
+<span id="145">145</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Defines error types.</span>
 
 <span class="kw">use</span> <span class="ident">std::error::Error</span>;
@@ -144,6 +153,13 @@
 <span class="kw">use</span> <span class="ident">pyo3</span>::{<span class="ident">exceptions::PyTypeError</span>, <span class="ident">PyErr</span>, <span class="ident">PyErrArguments</span>, <span class="ident">PyObject</span>, <span class="ident">Python</span>, <span class="ident">ToPyObject</span>};
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::dtype::PyArrayDescr</span>;
+
+<span class="doccomment">/// Array dimensionality should be limited by [`NPY_MAXDIMS`][NPY_MAXDIMS] which is currently 32.´</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// [NPY_MAXDIMS]: https://github.com/numpy/numpy/blob/4c60b3263ac50e5e72f6a909e156314fc3c9cba0/numpy/core/include/numpy/ndarraytypes.h#L40</span>
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const</span> <span class="ident">MAX_DIMENSIONALITY_ERR</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;unexpected dimensionality: NumPy is expected to limit arrays to 32 or fewer dimensions.\nPlease report a bug against the `rust-numpy` crate.&quot;</span>;
+
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const</span> <span class="ident">DIMENSIONALITY_MISMATCH_ERR</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;inconsistent dimensionalities: The dimensionality expected by `PyArray` does not match that given by NumPy.\nPlease report a bug against the `rust-numpy` crate.&quot;</span>;
 
 <span class="macro">macro_rules!</span> <span class="ident">impl_pyerr</span> {
     (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">err_type</span>:<span class="ident">ty</span>) =&gt; {
@@ -258,7 +274,9 @@
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
 <span class="attribute">#[<span class="ident">non_exhaustive</span>]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">BorrowError</span> {
+    <span class="doccomment">/// The given array is already borrowed</span>
     <span class="ident">AlreadyBorrowed</span>,
+    <span class="doccomment">/// The given array is not writeable</span>
     <span class="ident">NotWriteable</span>,
 }
 

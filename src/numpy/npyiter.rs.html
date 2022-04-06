@@ -591,6 +591,20 @@
 <span id="589">589</span>
 <span id="590">590</span>
 <span id="591">591</span>
+<span id="592">592</span>
+<span id="593">593</span>
+<span id="594">594</span>
+<span id="595">595</span>
+<span id="596">596</span>
+<span id="597">597</span>
+<span id="598">598</span>
+<span id="599">599</span>
+<span id="600">600</span>
+<span id="601">601</span>
+<span id="602">602</span>
+<span id="603">603</span>
+<span id="604">604</span>
+<span id="605">605</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Wrapper of the [array iterator API][iterator].</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This module exposes two iterators: [`NpySingleIter`] and [`NpyMultiIter`].</span>
@@ -609,6 +623,7 @@
 <span class="attribute">#![<span class="ident">deprecated</span>(
     <span class="ident">note</span> <span class="op">=</span> <span class="string">&quot;The wrappers of the array iterator API are deprecated, please use ndarray&#39;s iterators like `Lanes` and `Zip` instead.&quot;</span>
 )]</span>
+<span class="attribute">#![<span class="ident">allow</span>(<span class="ident">missing_debug_implementations</span>)]</span>
 
 <span class="kw">use</span> <span class="ident">std::marker::PhantomData</span>;
 <span class="kw">use</span> <span class="ident">std::os::raw</span>::{<span class="ident">c_char</span>, <span class="ident">c_int</span>};
@@ -641,15 +656,25 @@
 <span class="doccomment">/// [iterator]: https://numpy.org/doc/stable/reference/c-api/iterator.html#c.NpyIter_MultiNew</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">Debug</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">NpyIterFlag</span> {
+    <span class="doccomment">/// [`NPY_ITER_COMMON_DTYPE`](https://numpy.org/doc/stable/reference/c-api/iterator.html#c.NPY_ITER_COMMON_DTYPE)</span>
     <span class="ident">CommonDtype</span>,
+    <span class="doccomment">/// [`NPY_ITER_REFS_OK`](https://numpy.org/doc/stable/reference/c-api/iterator.html#c.NPY_ITER_REFS_OK)</span>
     <span class="ident">RefsOk</span>,
+    <span class="doccomment">/// [`NPY_ITER_ZEROSIZE_OK`](https://numpy.org/doc/stable/reference/c-api/iterator.html#c.NPY_ITER_ZEROSIZE_OK)</span>
     <span class="ident">ZerosizeOk</span>,
+    <span class="doccomment">/// [`NPY_ITER_REDUCE_OK`](https://numpy.org/doc/stable/reference/c-api/iterator.html#c.NPY_ITER_REDUCE_OK)</span>
     <span class="ident">ReduceOk</span>,
+    <span class="doccomment">/// [`NPY_ITER_RANGED`](https://numpy.org/doc/stable/reference/c-api/iterator.html#c.NPY_ITER_RANGED)</span>
     <span class="ident">Ranged</span>,
+    <span class="doccomment">/// [`NPY_ITER_BUFFERED`](https://numpy.org/doc/stable/reference/c-api/iterator.html#c.NPY_ITER_BUFFERED)</span>
     <span class="ident">Buffered</span>,
+    <span class="doccomment">/// [`NPY_ITER_GROWINNER`](https://numpy.org/doc/stable/reference/c-api/iterator.html#c.NPY_ITER_GROWINNER)</span>
     <span class="ident">GrowInner</span>,
+    <span class="doccomment">/// [`NPY_ITER_DELAY_BUFALLOC`](https://numpy.org/doc/stable/reference/c-api/iterator.html#c.NPY_ITER_DELAY_BUFALLOC)</span>
     <span class="ident">DelayBufAlloc</span>,
+    <span class="doccomment">/// [`NPY_ITER_DONT_NEGATE_STRIDES`](https://numpy.org/doc/stable/reference/c-api/iterator.html#c.NPY_ITER_DONT_NEGATE_STRIDES)</span>
     <span class="ident">DontNegateStrides</span>,
+    <span class="doccomment">/// [`NPY_ITER_COPY_IF_OVERLAP`](https://numpy.org/doc/stable/reference/c-api/iterator.html#c.NPY_ITER_COPY_IF_OVERLAP)</span>
     <span class="ident">CopyIfOverlap</span>,
     <span class="comment">// CIndex,</span>
     <span class="comment">// FIndex,</span>
@@ -684,8 +709,11 @@
 
     <span class="doccomment">/// A combinator type that represents the mode of an iterator.</span>
     <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">MultiIterMode</span>: <span class="ident">Sealed</span> {
+        <span class="attribute">#[<span class="ident">doc</span>(<span class="ident">hidden</span>)]</span>
         <span class="kw">type</span> <span class="ident">Pre</span>: <span class="ident">MultiIterMode</span>;
+        <span class="attribute">#[<span class="ident">doc</span>(<span class="ident">hidden</span>)]</span>
         <span class="kw">const</span> <span class="ident">FLAG</span>: <span class="ident">npy_uint32</span> <span class="op">=</span> <span class="number">0</span>;
+        <span class="attribute">#[<span class="ident">doc</span>(<span class="ident">hidden</span>)]</span>
         <span class="kw">fn</span> <span class="ident">flags</span>() -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">npy_uint32</span><span class="op">&gt;</span> {
             <span class="kw">if</span> <span class="ident"><span class="self">Self</span>::FLAG</span> <span class="op">==</span> <span class="number">0</span> {
                 <span class="ident">Vec::new</span>()
