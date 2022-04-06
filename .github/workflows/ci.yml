@@ -121,6 +121,7 @@ jobs:
           import toml
           cargo_toml = toml.load("Cargo.toml")
           cargo_toml["dependencies"]["ndarray"] = "0.13.1"
+          cargo_toml["dependencies"]["parking_lot"] = "0.11.2"
           cargo_toml["dependencies"]["num-complex"] = "0.2.4"
           cargo_toml["workspace"] = {}
           with open("Cargo.toml", "w") as f:
@@ -130,15 +131,17 @@ jobs:
       - name: Generate lockfile
         run: cargo generate-lockfile
         working-directory: examples/simple
-      - name: Unify dependencies on ndarray to 0.13.1
+      - name: Unify dependencies on ndarray to 0.13.1 and on parking_lot to 0.11.2
         run: |
           import toml
           import subprocess
           cargo_lock = toml.load("Cargo.lock")
           for pkg in cargo_lock["package"]:
+            pkg_id = pkg["name"] + ":" + pkg["version"]
             if pkg["name"] == "ndarray" and pkg["version"] != "0.13.1":
-              pkg_id = pkg["name"] + ":" + pkg["version"]
               subprocess.run(["cargo", "update", "--package", pkg_id, "--precise", "0.13.1"], check=True)
+            if pkg["name"] == "parking_lot" and pkg["version"] != "0.11.2":
+              subprocess.run(["cargo", "update", "--package", pkg_id, "--precise", "0.11.2"], check=True)
         working-directory: examples/simple
         shell: python
       - name: Test example
