@@ -656,12 +656,19 @@
 <span id="654">654</span>
 <span id="655">655</span>
 <span id="656">656</span>
+<span id="657">657</span>
+<span id="658">658</span>
+<span id="659">659</span>
+<span id="660">660</span>
+<span id="661">661</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::mem::size_of</span>;
 <span class="kw">use</span> <span class="ident">std::os::raw</span>::{
     <span class="ident">c_char</span>, <span class="ident">c_int</span>, <span class="ident">c_long</span>, <span class="ident">c_longlong</span>, <span class="ident">c_short</span>, <span class="ident">c_uint</span>, <span class="ident">c_ulong</span>, <span class="ident">c_ulonglong</span>, <span class="ident">c_ushort</span>,
 };
 <span class="kw">use</span> <span class="ident">std::ptr</span>;
 
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;half&quot;</span>)]</span>
+<span class="kw">use</span> <span class="ident">half::f16</span>;
 <span class="kw">use</span> <span class="ident">num_traits</span>::{<span class="ident">Bounded</span>, <span class="ident">Zero</span>};
 <span class="kw">use</span> <span class="ident">pyo3</span>::{
     <span class="ident">exceptions</span>::{<span class="ident">PyIndexError</span>, <span class="ident">PyValueError</span>},
@@ -1128,6 +1135,9 @@
 
 <span class="macro">impl_element_scalar!</span>(<span class="ident">f32</span> =&gt; <span class="ident">NPY_FLOAT</span>);
 <span class="macro">impl_element_scalar!</span>(<span class="ident">f64</span> =&gt; <span class="ident">NPY_DOUBLE</span>);
+
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;half&quot;</span>)]</span>
+<span class="macro">impl_element_scalar!</span>(<span class="ident">f16</span> =&gt; <span class="ident">NPY_HALF</span>);
 
 <span class="macro">impl_element_scalar!</span>(<span class="ident">Complex32</span> =&gt; <span class="ident">NPY_CFLOAT</span>,
     <span class="attribute">#[<span class="ident">doc</span> <span class="op">=</span> <span class="string">&quot;Complex type with `f32` components which maps to `numpy.csingle` (`numpy.complex64`).&quot;</span>]</span>);
