@@ -32,6 +32,7 @@
 //! [c-api]: https://numpy.org/doc/stable/reference/c-api
 //! [ndarray]: https://numpy.org/doc/stable/reference/arrays.ndarray.html
 
+#![deny(missing_docs, missing_debug_implementations)]
 // We often want to make the GIL lifetime explicit.
 #![allow(clippy::needless_lifetimes)]
 

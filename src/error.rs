@@ -7,6 +7,13 @@ use pyo3::{exceptions::PyTypeError, PyErr, PyErrArguments, PyObject, Python, ToP
 
 use crate::dtype::PyArrayDescr;
 
+/// Array dimensionality should be limited by [`NPY_MAXDIMS`][NPY_MAXDIMS] which is currently 32.´
+///
+/// [NPY_MAXDIMS]: https://github.com/numpy/numpy/blob/4c60b3263ac50e5e72f6a909e156314fc3c9cba0/numpy/core/include/numpy/ndarraytypes.h#L40
+pub(crate) const MAX_DIMENSIONALITY_ERR: &str = "unexpected dimensionality: NumPy is expected to limit arrays to 32 or fewer dimensions.\nPlease report a bug against the `rust-numpy` crate.";
+
+pub(crate) const DIMENSIONALITY_MISMATCH_ERR: &str = "inconsistent dimensionalities: The dimensionality expected by `PyArray` does not match that given by NumPy.\nPlease report a bug against the `rust-numpy` crate.";
+
 macro_rules! impl_pyerr {
     ($err_type:ty) => {
         impl Error for $err_type {}
@@ -120,7 +127,9 @@ impl_pyerr!(NotContiguousError);
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum BorrowError {
+    /// The given array is already borrowed
     AlreadyBorrowed,
+    /// The given array is not writeable
     NotWriteable,
 }
 

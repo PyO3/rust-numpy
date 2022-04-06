@@ -159,7 +159,6 @@
 //! More involved cases like the example from above may be supported in the future.
 //!
 //! [base]: https://numpy.org/doc/stable/reference/c-api/types-and-structures.html#c.NPY_AO.base
-#![deny(missing_docs)]
 
 use std::any::type_name;
 use std::cell::UnsafeCell;
