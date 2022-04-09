@@ -189,10 +189,10 @@ jobs:
         continue-on-error: true
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly
-          override: true
+          toolchain: stable
           profile: minimal
           components: llvm-tools-preview
+          default: true
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
       - name: Generate code coverage
