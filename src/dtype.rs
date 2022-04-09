@@ -146,7 +146,10 @@ impl PyArrayDescr {
     }
 
     #[doc(hidden)]
-    #[deprecated(note = "`get_type()` is deprecated, please use `typeobj()` instead")]
+    #[deprecated(
+        since = "0.16.0",
+        note = "`get_type()` is deprecated, please use `typeobj()` instead"
+    )]
     pub fn get_type(&self) -> &PyType {
         self.typeobj()
     }

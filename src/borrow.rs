@@ -739,7 +739,7 @@ fn gcd_strides(strides: &[isize]) -> isize {
     reduce(strides.iter().copied(), gcd).unwrap_or(1)
 }
 
-// FIXME(adamreichold): Use `usize::abs_diff` from std when that becomes stable.
+// FIXME(adamreichold): Use `usize::abs_diff` from std when our MSRV reaches 1.60.
 fn abs_diff(lhs: usize, rhs: usize) -> usize {
     if lhs >= rhs {
         lhs - rhs
