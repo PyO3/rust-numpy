@@ -61,9 +61,7 @@ pub use crate::borrow::{
 };
 pub use crate::convert::{IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
 pub use crate::dtype::{dtype, Complex32, Complex64, Element, PyArrayDescr};
-pub use crate::error::{
-    BorrowError, DimensionalityError, FromVecError, NotContiguousError, TypeError,
-};
+pub use crate::error::{BorrowError, FromVecError, NotContiguousError};
 pub use crate::npyffi::{PY_ARRAY_API, PY_UFUNC_API};
 #[allow(deprecated)]
 pub use crate::npyiter::{

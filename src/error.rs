@@ -3,7 +3,7 @@
 use std::error::Error;
 use std::fmt;
 
-use pyo3::{exceptions::PyTypeError, PyErr, PyErrArguments, PyObject, Python, ToPyObject};
+use pyo3::{exceptions::PyTypeError, Py, PyErr, PyErrArguments, PyObject, Python, ToPyObject};
 
 use crate::dtype::PyArrayDescr;
 
@@ -59,32 +59,51 @@ impl_pyerr!(DimensionalityError);
 
 /// Represents that types of the given arrays do not match.
 #[derive(Debug)]
-pub struct TypeError {
-    from: String,
-    to: String,
+pub struct TypeError<'a> {
+    from: &'a PyArrayDescr,
+    to: &'a PyArrayDescr,
 }
 
-impl TypeError {
-    pub(crate) fn new(from: &PyArrayDescr, to: &PyArrayDescr) -> Self {
-        let dtype_to_str = |dtype: &PyArrayDescr| {
-            dtype
-                .str()
-                .map_or_else(|_| "(unknown)".into(), |s| s.to_string_lossy().into_owned())
-        };
-        Self {
-            from: dtype_to_str(from),
-            to: dtype_to_str(to),
-        }
+impl<'a> TypeError<'a> {
+    pub(crate) fn new(from: &'a PyArrayDescr, to: &'a PyArrayDescr) -> Self {
+        Self { from, to }
     }
 }
 
-impl fmt::Display for TypeError {
+impl fmt::Display for TypeError<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "type mismatch:\n from={}, to={}", self.from, self.to)
     }
 }
 
-impl_pyerr!(TypeError);
+impl Error for TypeError<'_> {}
+
+struct TypeErrorArguments {
+    from: Py<PyArrayDescr>,
+    to: Py<PyArrayDescr>,
+}
+
+impl PyErrArguments for TypeErrorArguments {
+    fn arguments(self, py: Python) -> PyObject {
+        let err = TypeError {
+            from: self.from.as_ref(py),
+            to: self.to.as_ref(py),
+        };
+
+        err.to_string().to_object(py)
+    }
+}
+
+impl From<TypeError<'_>> for PyErr {
+    fn from(err: TypeError<'_>) -> PyErr {
+        let args = TypeErrorArguments {
+            from: err.from.into(),
+            to: err.to.into(),
+        };
+
+        PyTypeError::new_err(args)
+    }
+}
 
 /// Represents that given `Vec` cannot be treated as an array.
 #[derive(Debug)]

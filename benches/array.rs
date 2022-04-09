@@ -6,7 +6,29 @@ use test::{black_box, Bencher};
 use std::ops::Range;
 
 use numpy::{PyArray1, PyArray2, PyArray3};
-use pyo3::{Python, ToPyObject};
+use pyo3::{PyAny, Python, ToPyObject};
+
+#[bench]
+fn extract_success(bencher: &mut Bencher) {
+    Python::with_gil(|py| {
+        let any: &PyAny = PyArray2::<f64>::zeros(py, (10, 10), false);
+
+        bencher.iter(|| {
+            black_box(any).extract::<&PyArray2<f64>>().unwrap();
+        });
+    });
+}
+
+#[bench]
+fn extract_failure(bencher: &mut Bencher) {
+    Python::with_gil(|py| {
+        let any: &PyAny = PyArray2::<i32>::zeros(py, (10, 10), false);
+
+        bencher.iter(|| {
+            black_box(any).extract::<&PyArray2<f64>>().unwrap_err();
+        });
+    });
+}
 
 struct Iter(Range<usize>);
 
