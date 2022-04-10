@@ -14,6 +14,7 @@
 //!
 //! [iterator]: https://numpy.org/doc/stable/reference/c-api/iterator.html
 #![deprecated(
+    since = "0.16.0",
     note = "The wrappers of the array iterator API are deprecated, please use ndarray's iterators like `Lanes` and `Zip` instead."
 )]
 #![allow(missing_debug_implementations)]

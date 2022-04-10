@@ -1040,6 +1040,7 @@ impl<T: Element> PyArray<T, Ix1> {
     /// });
     /// ```
     #[deprecated(
+        since = "0.17.0",
         note = "`from_exact_iter` is deprecated as it does not provide any benefit over `from_iter`."
     )]
     #[inline(always)]
