@@ -605,6 +605,7 @@
 <span id="603">603</span>
 <span id="604">604</span>
 <span id="605">605</span>
+<span id="606">606</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Wrapper of the [array iterator API][iterator].</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This module exposes two iterators: [`NpySingleIter`] and [`NpyMultiIter`].</span>
@@ -621,6 +622,7 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! [iterator]: https://numpy.org/doc/stable/reference/c-api/iterator.html</span>
 <span class="attribute">#![<span class="ident">deprecated</span>(
+    <span class="ident">since</span> <span class="op">=</span> <span class="string">&quot;0.16.0&quot;</span>,
     <span class="ident">note</span> <span class="op">=</span> <span class="string">&quot;The wrappers of the array iterator API are deprecated, please use ndarray&#39;s iterators like `Lanes` and `Zip` instead.&quot;</span>
 )]</span>
 <span class="attribute">#![<span class="ident">allow</span>(<span class="ident">missing_debug_implementations</span>)]</span>

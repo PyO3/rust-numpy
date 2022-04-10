@@ -2072,7 +2072,7 @@
     <span class="ident">reduce</span>(<span class="ident">strides</span>.<span class="ident">iter</span>().<span class="ident">copied</span>(), <span class="ident">gcd</span>).<span class="ident">unwrap_or</span>(<span class="number">1</span>)
 }
 
-<span class="comment">// FIXME(adamreichold): Use `usize::abs_diff` from std when that becomes stable.</span>
+<span class="comment">// FIXME(adamreichold): Use `usize::abs_diff` from std when our MSRV reaches 1.60.</span>
 <span class="kw">fn</span> <span class="ident">abs_diff</span>(<span class="ident">lhs</span>: <span class="ident">usize</span>, <span class="ident">rhs</span>: <span class="ident">usize</span>) -&gt; <span class="ident">usize</span> {
     <span class="kw">if</span> <span class="ident">lhs</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">rhs</span> {
         <span class="ident">lhs</span> <span class="op">-</span> <span class="ident">rhs</span>

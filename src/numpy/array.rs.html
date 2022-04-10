@@ -1389,6 +1389,7 @@
 <span id="1387">1387</span>
 <span id="1388">1388</span>
 <span id="1389">1389</span>
+<span id="1390">1390</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Safe interface for NumPy&#39;s ndarray class</span>
 
 <span class="kw">use</span> <span class="ident">std</span>::{
@@ -2431,6 +2432,7 @@
     <span class="doccomment">/// });</span>
     <span class="doccomment">/// ```</span>
     <span class="attribute">#[<span class="ident">deprecated</span>(
+        <span class="ident">since</span> <span class="op">=</span> <span class="string">&quot;0.17.0&quot;</span>,
         <span class="ident">note</span> <span class="op">=</span> <span class="string">&quot;`from_exact_iter` is deprecated as it does not provide any benefit over `from_iter`.&quot;</span>
     )]</span>
     <span class="attribute">#[<span class="ident">inline</span>(<span class="ident">always</span>)]</span>
