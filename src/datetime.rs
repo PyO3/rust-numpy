@@ -1,5 +1,10 @@
 //! Support datetimes and timedeltas
 //!
+//! This module provides wrappers for NumPy's [`datetime64`][scalars-datetime64] and [`timedelta64`][scalars-timedelta64] types
+//! which are used for time keeping with with an emphasis on scientific applications.
+//! This means that while these types differentiate absolute and relative quantities, they ignore calendars (a month is always 30.44 days) and time zones.
+//! On the other hand, their flexible units enable them to support either a large range (up to 2<sup>64</sup> years) or high precision (down to 10<sup>-18</sup> seconds).
+//!
 //! [The corresponding section][datetime] of the NumPy documentation contains more information.
 //!
 //! # Example
@@ -49,6 +54,8 @@
 //! ```
 //!
 //! [datetime]: https://numpy.org/doc/stable/reference/arrays.datetime.html
+//! [scalars-datetime64]: https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.datetime64
+//! [scalars-timedelta64]: https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.timedelta64
 
 use std::cell::UnsafeCell;
 use std::collections::hash_map::Entry;
