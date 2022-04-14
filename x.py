@@ -38,7 +38,16 @@ def default(args):
 def check(args):
     run("cargo", "fmt", "--", "--check")
 
-    run("cargo", "clippy", "--workspace", "--all-features", "--tests", "--", "--deny", "warnings")
+    run(
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-features",
+        "--tests",
+        "--",
+        "--deny",
+        "warnings",
+    )
 
 
 def doc(args):

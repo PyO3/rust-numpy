@@ -39,6 +39,7 @@
 pub mod array;
 pub mod borrow;
 pub mod convert;
+pub mod datetime;
 mod dtype;
 mod error;
 pub mod npyffi;

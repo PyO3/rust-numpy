@@ -1,5 +1,5 @@
 import numpy as np
-from rust_ext import axpy, conj, mult, extract
+from rust_ext import axpy, conj, mult, extract, add_minutes_to_seconds
 
 
 def test_axpy():
@@ -24,3 +24,12 @@ def test_extract():
     x = np.arange(5.0)
     d = {"x": x}
     np.testing.assert_almost_equal(extract(d), 10.0)
+
+
+def test_add_minutes_to_seconds():
+    x = np.array([10, 20, 30], dtype="timedelta64[s]")
+    y = np.array([1, 2, 3], dtype="timedelta64[m]")
+
+    add_minutes_to_seconds(x, y)
+
+    assert np.all(x == np.array([70, 140, 210], dtype="timedelta64[s]"))
