@@ -27,8 +27,5 @@ pyo3 = { version = "0.16", default-features = false, features = ["macros"] }
 [dev-dependencies]
 pyo3 = { version = "0.16", default-features = false, features = ["auto-initialize"] }
 
-[workspace]
-members = ["examples/*"]
-
 [package.metadata.docs.rs]
 all-features = true

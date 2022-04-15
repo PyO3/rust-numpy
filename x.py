@@ -24,13 +24,20 @@ def nightly():
     return b"-nightly " in proc.stdout
 
 
+def example_manifests(manifest):
+    return [dir_ / manifest for dir_ in Path("examples").iterdir()]
+
+
 def default(args):
-    run("cargo", "fmt")
+    format_(args)
 
     if nightly():
-        run("cargo", "clippy", "--workspace", "--all-features", "--tests", "--benches")
+        run("cargo", "clippy", "--all-features", "--tests", "--benches")
     else:
-        run("cargo", "clippy", "--workspace", "--all-features", "--tests")
+        run("cargo", "clippy", "--all-features", "--tests")
+
+    for manifest in example_manifests("Cargo.toml"):
+        run("cargo", "clippy", "--manifest-path", manifest)
 
     run("cargo", "test", "--all-features", "--lib", "--tests")
 
@@ -41,13 +48,17 @@ def check(args):
     run(
         "cargo",
         "clippy",
-        "--workspace",
         "--all-features",
         "--tests",
         "--",
         "--deny",
         "warnings",
     )
+
+    for manifest in example_manifests("Cargo.toml"):
+        run("cargo", "fmt", "--manifest-path", manifest, "--", "--check")
+
+        run("cargo", "clippy", "--manifest-path", manifest, "--", "--deny", "warnings")
 
 
 def doc(args):
@@ -63,6 +74,8 @@ def doc(args):
 
 
 def test(args):
+    run("cargo", "test", "--all-features", "--lib")
+
     if args.name is None:
         run("cargo", "test", "--all-features", "--tests")
     else:
@@ -84,16 +97,10 @@ def examples(args):
         sys.exit("Examples require the Nox tool (https://nox.thea.codes)")
 
     if args.name is None:
-        dirs = [
-            dir_.name
-            for dir_ in Path("examples").iterdir()
-            if (dir_ / "noxfile.py").exists()
-        ]
+        for manifest in example_manifests("noxfile.py"):
+            run("nox", "--noxfile", manifest)
     else:
-        dirs = [args.name]
-
-    for dir in dirs:
-        run("nox", "--noxfile", f"examples/{dir}/noxfile.py")
+        run("nox", "--noxfile", f"examples/{args.name}/noxfile.py")
 
 
 def format_(args):
@@ -103,6 +110,9 @@ def format_(args):
         )
 
     run("cargo", "fmt")
+
+    for manifest in example_manifests("Cargo.toml"):
+        run("cargo", "fmt", "--manifest-path", manifest)
 
     run("black", ".")
 
