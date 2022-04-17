@@ -2,6 +2,7 @@
 
 import argparse
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -24,13 +25,21 @@ def nightly():
     return b"-nightly " in proc.stdout
 
 
+def gen_examples(manifest):
+    for dir_ in Path("examples").iterdir():
+        yield dir_ / manifest
+
+
 def default(args):
-    run("cargo", "fmt")
+    format_(args)
 
     if nightly():
-        run("cargo", "clippy", "--workspace", "--all-features", "--tests", "--benches")
+        run("cargo", "clippy", "--all-features", "--tests", "--benches")
     else:
-        run("cargo", "clippy", "--workspace", "--all-features", "--tests")
+        run("cargo", "clippy", "--all-features", "--tests")
+
+    for manifest in gen_examples("Cargo.toml"):
+        run("cargo", "clippy", "--manifest-path", manifest)
 
     run("cargo", "test", "--all-features", "--lib", "--tests")
 
@@ -41,13 +50,17 @@ def check(args):
     run(
         "cargo",
         "clippy",
-        "--workspace",
         "--all-features",
         "--tests",
         "--",
         "--deny",
         "warnings",
     )
+
+    for manifest in gen_examples("Cargo.toml"):
+        run("cargo", "fmt", "--manifest-path", manifest, "--", "--check")
+
+        run("cargo", "clippy", "--manifest-path", manifest, "--", "--deny", "warnings")
 
 
 def doc(args):
@@ -63,6 +76,8 @@ def doc(args):
 
 
 def test(args):
+    run("cargo", "test", "--all-features", "--lib")
+
     if args.name is None:
         run("cargo", "test", "--all-features", "--tests")
     else:
@@ -84,16 +99,10 @@ def examples(args):
         sys.exit("Examples require the Nox tool (https://nox.thea.codes)")
 
     if args.name is None:
-        dirs = [
-            dir_.name
-            for dir_ in Path("examples").iterdir()
-            if (dir_ / "noxfile.py").exists()
-        ]
+        for manifest in gen_examples("noxfile.py"):
+            run("nox", "--noxfile", manifest)
     else:
-        dirs = [args.name]
-
-    for dir in dirs:
-        run("nox", "--noxfile", f"examples/{dir}/noxfile.py")
+        run("nox", "--noxfile", f"examples/{args.name}/noxfile.py")
 
 
 def format_(args):
@@ -104,7 +113,20 @@ def format_(args):
 
     run("cargo", "fmt")
 
+    for manifest in gen_examples("Cargo.toml"):
+        run("cargo", "fmt", "--manifest-path", manifest)
+
     run("black", ".")
+
+
+def prune(args):
+    shutil.rmtree("target", ignore_errors=True)
+
+    for target_dir in gen_examples("target"):
+        shutil.rmtree(target_dir, ignore_errors=True)
+
+    for nox_dir in gen_examples(".nox"):
+        shutil.rmtree(nox_dir, ignore_errors=True)
 
 
 if __name__ == "__main__":
@@ -148,6 +170,11 @@ if __name__ == "__main__":
         "format", aliases=["f"], help="Format Rust and Python code (requires Black)"
     )
     format_parser.set_defaults(func=format_)
+
+    prune_parser = subparsers.add_parser(
+        "prune", aliases=["p"], help="Remove target and venv directories"
+    )
+    prune_parser.set_defaults(func=prune)
 
     args = parser.parse_args()
     os.chdir(Path(__file__).parent)

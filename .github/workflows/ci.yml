@@ -66,7 +66,7 @@ jobs:
         run: |
           import toml
           cargo_toml = toml.load("Cargo.toml")
-          cargo_toml["workspace"]["resolver"] = "2"
+          cargo_toml["package"]["resolver"] = "2"
           with open("Cargo.toml", "w") as f:
             toml.dump(cargo_toml, f)
         shell: python
@@ -116,14 +116,13 @@ jobs:
         continue-on-error: true
       - name: Install toml
         run: pip install toml
-      - name: Edit Cargo.toml and detach from workspace
+      - name: Edit Cargo.toml
         run: |
           import toml
           cargo_toml = toml.load("Cargo.toml")
           cargo_toml["dependencies"]["ndarray"] = "0.13.1"
           cargo_toml["dependencies"]["parking_lot"] = "0.11.2"
           cargo_toml["dependencies"]["num-complex"] = "0.2.4"
-          cargo_toml["workspace"] = {}
           with open("Cargo.toml", "w") as f:
             toml.dump(cargo_toml, f)
         working-directory: examples/simple

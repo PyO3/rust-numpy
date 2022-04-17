@@ -14,3 +14,5 @@ numpy = { path = "../.." }
 ndarray = { version = "0.15", features = ["rayon", "blas"] }
 blas-src = { version = "0.8", features = ["openblas"] }
 openblas-src = { version = "0.10", features = ["cblas", "system"] }
+
+[workspace]
