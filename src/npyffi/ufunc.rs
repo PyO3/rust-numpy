@@ -12,7 +12,7 @@ const MOD_NAME: &str = "numpy.core.umath";
 const CAPSULE_NAME: &str = "_UFUNC_API";
 
 /// A global variable which stores a ['capsule'](https://docs.python.org/3/c-api/capsule.html)
-/// pointer to [Numpy UFunc API](https://numpy.org/doc/stable/reference/c-api/array.html).
+/// pointer to [Numpy UFunc API](https://numpy.org/doc/stable/reference/c-api/ufunc.html).
 pub static PY_UFUNC_API: PyUFuncAPI = PyUFuncAPI::new();
 
 pub struct PyUFuncAPI {

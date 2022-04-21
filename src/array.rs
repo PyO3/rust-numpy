@@ -16,9 +16,9 @@ use ndarray::{
 };
 use num_traits::AsPrimitive;
 use pyo3::{
-    ffi, pyobject_native_type_named, type_object, types::PyModule, AsPyPointer, FromPyObject,
-    IntoPy, Py, PyAny, PyClassInitializer, PyDowncastError, PyErr, PyNativeType, PyObject,
-    PyResult, PyTypeInfo, Python, ToPyObject,
+    ffi, pyobject_native_type_named, types::PyModule, AsPyPointer, FromPyObject, IntoPy, Py, PyAny,
+    PyClassInitializer, PyDowncastError, PyErr, PyNativeType, PyObject, PyResult, PyTypeInfo,
+    Python, ToPyObject,
 };
 
 use crate::borrow::{PyReadonlyArray, PyReadwriteArray};
@@ -95,6 +95,7 @@ use crate::slice_container::PySliceContainer;
 ///
 /// [ndarray]: https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html
 /// [pyo3-memory]: https://pyo3.rs/main/memory.html
+#[repr(transparent)]
 pub struct PyArray<T, D>(PyAny, PhantomData<T>, PhantomData<D>);
 
 /// Zero-dimensional array.
@@ -118,10 +119,6 @@ pub type PyArrayDyn<T> = PyArray<T, IxDyn>;
 pub fn get_array_module(py: Python<'_>) -> PyResult<&PyModule> {
     PyModule::import(py, npyffi::array::MOD_NAME)
 }
-
-unsafe impl<T, D> type_object::PyLayout<PyArray<T, D>> for npyffi::PyArrayObject {}
-
-impl<T, D> type_object::PySizedLayout<PyArray<T, D>> for npyffi::PyArrayObject {}
 
 unsafe impl<T: Element, D: Dimension> PyTypeInfo for PyArray<T, D> {
     type AsRefTarget = Self;
