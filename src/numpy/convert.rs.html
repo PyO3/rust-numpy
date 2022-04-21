@@ -432,7 +432,7 @@
                 <span class="comment">// if the array is contiguous, copy it by `copy_nonoverlapping`.</span>
                 <span class="kw">let</span> <span class="ident">strides</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">npy_strides</span>();
                 <span class="kw">unsafe</span> {
-                    <span class="kw">let</span> <span class="ident">array</span> <span class="op">=</span> <span class="ident">PyArray::new_</span>(<span class="ident">py</span>, <span class="self">self</span>.<span class="ident">raw_dim</span>(), <span class="ident">strides</span>.<span class="ident">as_ptr</span>(), <span class="ident">flag</span>);
+                    <span class="kw">let</span> <span class="ident">array</span> <span class="op">=</span> <span class="ident">PyArray::new_uninit</span>(<span class="ident">py</span>, <span class="self">self</span>.<span class="ident">raw_dim</span>(), <span class="ident">strides</span>.<span class="ident">as_ptr</span>(), <span class="ident">flag</span>);
                     <span class="ident">ptr::copy_nonoverlapping</span>(<span class="self">self</span>.<span class="ident">as_ptr</span>(), <span class="ident">array</span>.<span class="ident">data</span>(), <span class="ident">len</span>);
                     <span class="ident">array</span>
                 }
