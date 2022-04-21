@@ -18,17 +18,17 @@ fn get_numpy_api(_py: Python, module: &str, capsule: &str) -> *const *const c_vo
     let module = CString::new(module).unwrap();
     let capsule = CString::new(capsule).unwrap();
     unsafe {
-        let numpy = ffi::PyImport_ImportModule(module.as_ptr());
-        assert!(!numpy.is_null(), "Failed to import numpy module");
-        let capsule = ffi::PyObject_GetAttrString(numpy as _, capsule.as_ptr());
-        assert!(!capsule.is_null(), "Failed to get numpy capsule API");
+        let module = ffi::PyImport_ImportModule(module.as_ptr());
+        assert!(!module.is_null(), "Failed to import NumPy module");
+        let capsule = ffi::PyObject_GetAttrString(module as _, capsule.as_ptr());
+        assert!(!capsule.is_null(), "Failed to get NumPy API capsule");
         ffi::PyCapsule_GetPointer(capsule, null_mut()) as _
     }
 }
 
-// Define Array&UFunc APIs
+// Implements wrappers for NumPy's Array and UFunc API
 macro_rules! impl_api {
-    [$offset: expr; $fname: ident ( $($arg: ident : $t: ty),* ) $( -> $ret: ty )* ] => {
+    [$offset: expr; $fname: ident ( $($arg: ident : $t: ty),* $(,)?) $( -> $ret: ty )* ] => {
         #[allow(non_snake_case)]
         pub unsafe fn $fname(&self, py: Python, $($arg : $t), *) $( -> $ret )* {
             let fptr = self.get(py, $offset)
@@ -36,10 +36,6 @@ macro_rules! impl_api {
             (*fptr)($($arg), *)
         }
     };
-    // To allow fn a(b: type,) -> ret
-    [$offset: expr; $fname: ident ( $($arg: ident : $t:ty,)* ) $( -> $ret: ty )* ] => {
-        impl_api![$offset; $fname( $($arg: $t),*) $( -> $ret )*];
-    }
 }
 
 pub mod array;

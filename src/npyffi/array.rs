@@ -328,14 +328,15 @@ impl PyArrayAPI {
     impl_api![303; PyArray_SetWritebackIfCopyBase(arr: *mut PyArrayObject, base: *mut PyArrayObject) -> c_int];
 }
 
-// Define type objects that belongs to Numpy API
+// Define type objects associated with the NumPy API
 macro_rules! impl_array_type {
     ($(($offset:expr, $tname:ident)),*) => {
-        /// All type objects of numpy API.
+        /// All type objects exported by the NumPy API.
         #[allow(non_camel_case_types)]
         pub enum NpyTypes { $($tname),* }
+
         impl PyArrayAPI {
-            /// Get the pointer of the type object that `self` refers.
+            /// Get a pointer of the type object assocaited with `ty`.
             pub unsafe fn get_type_object(&self, py: Python, ty: NpyTypes) -> *mut PyTypeObject {
                 match ty {
                     $( NpyTypes::$tname => *(self.get(py, $offset)) as _ ),*
@@ -401,11 +402,11 @@ pub unsafe fn PyArray_CheckExact(py: Python, op: *mut PyObject) -> c_int {
 
 #[cfg(test)]
 mod tests {
-    use super::PY_ARRAY_API;
+    use super::*;
 
     #[test]
     fn call_api() {
-        pyo3::Python::with_gil(|py| unsafe {
+        Python::with_gil(|py| unsafe {
             assert_eq!(
                 PY_ARRAY_API.PyArray_MultiplyIntList(py, [1, 2, 3].as_mut_ptr(), 3),
                 6
