@@ -1523,9 +1523,6 @@
 <span id="1518">1518</span>
 <span id="1519">1519</span>
 <span id="1520">1520</span>
-<span id="1521">1521</span>
-<span id="1522">1522</span>
-<span id="1523">1523</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Safe interface for NumPy&#39;s [N-dimensional arrays][ndarray]</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! [ndarray]: https://numpy.org/doc/stable/reference/arrays.ndarray.html</span>
@@ -1544,9 +1541,9 @@
 };
 <span class="kw">use</span> <span class="ident">num_traits::AsPrimitive</span>;
 <span class="kw">use</span> <span class="ident">pyo3</span>::{
-    <span class="ident">ffi</span>, <span class="ident">pyobject_native_type_named</span>, <span class="ident">type_object</span>, <span class="ident">types::PyModule</span>, <span class="ident">AsPyPointer</span>, <span class="ident">FromPyObject</span>,
-    <span class="ident">IntoPy</span>, <span class="ident">Py</span>, <span class="ident">PyAny</span>, <span class="ident">PyClassInitializer</span>, <span class="ident">PyDowncastError</span>, <span class="ident">PyErr</span>, <span class="ident">PyNativeType</span>, <span class="ident">PyObject</span>,
-    <span class="ident">PyResult</span>, <span class="ident">PyTypeInfo</span>, <span class="ident">Python</span>, <span class="ident">ToPyObject</span>,
+    <span class="ident">ffi</span>, <span class="ident">pyobject_native_type_named</span>, <span class="ident">types::PyModule</span>, <span class="ident">AsPyPointer</span>, <span class="ident">FromPyObject</span>, <span class="ident">IntoPy</span>, <span class="ident">Py</span>, <span class="ident">PyAny</span>,
+    <span class="ident">PyClassInitializer</span>, <span class="ident">PyDowncastError</span>, <span class="ident">PyErr</span>, <span class="ident">PyNativeType</span>, <span class="ident">PyObject</span>, <span class="ident">PyResult</span>, <span class="ident">PyTypeInfo</span>,
+    <span class="ident">Python</span>, <span class="ident">ToPyObject</span>,
 };
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::borrow</span>::{<span class="ident">PyReadonlyArray</span>, <span class="ident">PyReadwriteArray</span>};
@@ -1623,6 +1620,7 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// [ndarray]: https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html</span>
 <span class="doccomment">/// [pyo3-memory]: https://pyo3.rs/main/memory.html</span>
+<span class="attribute">#[<span class="ident">repr</span>(<span class="ident">transparent</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span>(<span class="ident">PyAny</span>, <span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>);
 
 <span class="doccomment">/// Zero-dimensional array.</span>
@@ -1646,10 +1644,6 @@
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_array_module</span>(<span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">PyModule</span><span class="op">&gt;</span> {
     <span class="ident">PyModule::import</span>(<span class="ident">py</span>, <span class="ident">npyffi::array::MOD_NAME</span>)
 }
-
-<span class="kw">unsafe</span> <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> <span class="ident">type_object::PyLayout</span><span class="op">&lt;</span><span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">npyffi::PyArrayObject</span> {}
-
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> <span class="ident">type_object::PySizedLayout</span><span class="op">&lt;</span><span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">npyffi::PyArrayObject</span> {}
 
 <span class="kw">unsafe</span> <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Element</span>, <span class="ident">D</span>: <span class="ident">Dimension</span><span class="op">&gt;</span> <span class="ident">PyTypeInfo</span> <span class="kw">for</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> {
     <span class="kw">type</span> <span class="ident">AsRefTarget</span> <span class="op">=</span> <span class="self">Self</span>;

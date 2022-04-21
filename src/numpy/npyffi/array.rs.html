@@ -418,6 +418,7 @@
 <span id="413">413</span>
 <span id="414">414</span>
 <span id="415">415</span>
+<span id="416">416</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Low-Level binding for [Array API](https://numpy.org/doc/stable/reference/c-api/array.html)</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Note that NumPy&#39;s low-level allocation functions `PyArray_{malloc,realloc,free}` are not part of this module.</span>
@@ -748,14 +749,15 @@
     <span class="macro">impl_api!</span>[<span class="number">303</span>; <span class="ident">PyArray_SetWritebackIfCopyBase</span>(<span class="ident">arr</span>: <span class="kw-2">*mut</span> <span class="ident">PyArrayObject</span>, <span class="ident">base</span>: <span class="kw-2">*mut</span> <span class="ident">PyArrayObject</span>) -&gt; <span class="ident">c_int</span>];
 }
 
-<span class="comment">// Define type objects that belongs to Numpy API</span>
+<span class="comment">// Define type objects associated with the NumPy API</span>
 <span class="macro">macro_rules!</span> <span class="ident">impl_array_type</span> {
     ($((<span class="macro-nonterminal">$</span><span class="macro-nonterminal">offset</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">tname</span>:<span class="ident">ident</span>)),<span class="kw-2">*</span>) =&gt; {
-        <span class="doccomment">/// All type objects of numpy API.</span>
+        <span class="doccomment">/// All type objects exported by the NumPy API.</span>
         <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">non_camel_case_types</span>)]</span>
         <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">NpyTypes</span> { $(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">tname</span>),<span class="op">*</span> }
+
         <span class="kw">impl</span> <span class="ident">PyArrayAPI</span> {
-            <span class="doccomment">/// Get the pointer of the type object that `self` refers.</span>
+            <span class="doccomment">/// Get a pointer of the type object assocaited with `ty`.</span>
             <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">get_type_object</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">py</span>: <span class="ident">Python</span>, <span class="ident">ty</span>: <span class="ident">NpyTypes</span>) -&gt; <span class="kw-2">*mut</span> <span class="ident">PyTypeObject</span> {
                 <span class="kw">match</span> <span class="ident">ty</span> {
                     $( <span class="ident">NpyTypes</span>::<span class="macro-nonterminal">$</span><span class="macro-nonterminal">tname</span> =&gt; <span class="kw-2">*</span>(<span class="self">self</span>.<span class="ident">get</span>(<span class="ident">py</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">offset</span>)) <span class="kw">as</span> <span class="kw">_</span> ),<span class="op">*</span>
@@ -821,11 +823,11 @@
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">tests</span> {
-    <span class="kw">use</span> <span class="ident"><span class="kw">super</span>::PY_ARRAY_API</span>;
+    <span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">call_api</span>() {
-        <span class="ident">pyo3::Python::with_gil</span>(<span class="op">|</span><span class="ident">py</span><span class="op">|</span> <span class="kw">unsafe</span> {
+        <span class="ident">Python::with_gil</span>(<span class="op">|</span><span class="ident">py</span><span class="op">|</span> <span class="kw">unsafe</span> {
             <span class="macro">assert_eq!</span>(
                 <span class="ident">PY_ARRAY_API</span>.<span class="ident">PyArray_MultiplyIntList</span>(<span class="ident">py</span>, [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>].<span class="ident">as_mut_ptr</span>(), <span class="number">3</span>),
                 <span class="number">6</span>

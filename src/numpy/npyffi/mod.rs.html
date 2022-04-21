@@ -54,10 +54,6 @@
 <span id="49">49</span>
 <span id="50">50</span>
 <span id="51">51</span>
-<span id="52">52</span>
-<span id="53">53</span>
-<span id="54">54</span>
-<span id="55">55</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Low-Level bindings for NumPy C API.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! &lt;https://numpy.org/doc/stable/reference/c-api&gt;</span>
@@ -78,17 +74,17 @@
     <span class="kw">let</span> <span class="ident">module</span> <span class="op">=</span> <span class="ident">CString::new</span>(<span class="ident">module</span>).<span class="ident">unwrap</span>();
     <span class="kw">let</span> <span class="ident">capsule</span> <span class="op">=</span> <span class="ident">CString::new</span>(<span class="ident">capsule</span>).<span class="ident">unwrap</span>();
     <span class="kw">unsafe</span> {
-        <span class="kw">let</span> <span class="ident">numpy</span> <span class="op">=</span> <span class="ident">ffi::PyImport_ImportModule</span>(<span class="ident">module</span>.<span class="ident">as_ptr</span>());
-        <span class="macro">assert!</span>(<span class="op">!</span><span class="ident">numpy</span>.<span class="ident">is_null</span>(), <span class="string">&quot;Failed to import numpy module&quot;</span>);
-        <span class="kw">let</span> <span class="ident">capsule</span> <span class="op">=</span> <span class="ident">ffi::PyObject_GetAttrString</span>(<span class="ident">numpy</span> <span class="kw">as</span> <span class="kw">_</span>, <span class="ident">capsule</span>.<span class="ident">as_ptr</span>());
-        <span class="macro">assert!</span>(<span class="op">!</span><span class="ident">capsule</span>.<span class="ident">is_null</span>(), <span class="string">&quot;Failed to get numpy capsule API&quot;</span>);
+        <span class="kw">let</span> <span class="ident">module</span> <span class="op">=</span> <span class="ident">ffi::PyImport_ImportModule</span>(<span class="ident">module</span>.<span class="ident">as_ptr</span>());
+        <span class="macro">assert!</span>(<span class="op">!</span><span class="ident">module</span>.<span class="ident">is_null</span>(), <span class="string">&quot;Failed to import NumPy module&quot;</span>);
+        <span class="kw">let</span> <span class="ident">capsule</span> <span class="op">=</span> <span class="ident">ffi::PyObject_GetAttrString</span>(<span class="ident">module</span> <span class="kw">as</span> <span class="kw">_</span>, <span class="ident">capsule</span>.<span class="ident">as_ptr</span>());
+        <span class="macro">assert!</span>(<span class="op">!</span><span class="ident">capsule</span>.<span class="ident">is_null</span>(), <span class="string">&quot;Failed to get NumPy API capsule&quot;</span>);
         <span class="ident">ffi::PyCapsule_GetPointer</span>(<span class="ident">capsule</span>, <span class="ident">null_mut</span>()) <span class="kw">as</span> <span class="kw">_</span>
     }
 }
 
-<span class="comment">// Define Array&amp;UFunc APIs</span>
+<span class="comment">// Implements wrappers for NumPy&#39;s Array and UFunc API</span>
 <span class="macro">macro_rules!</span> <span class="ident">impl_api</span> {
-    [<span class="macro-nonterminal">$</span><span class="macro-nonterminal">offset</span>: <span class="ident">expr</span>; <span class="macro-nonterminal">$</span><span class="macro-nonterminal">fname</span>: <span class="ident">ident</span> ( $(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg</span>: <span class="ident">ident</span> : <span class="macro-nonterminal">$</span><span class="macro-nonterminal">t</span>: <span class="ident">ty</span>),<span class="op">*</span> ) $( -&gt; <span class="macro-nonterminal">$</span><span class="macro-nonterminal">ret</span>: <span class="ident">ty</span> )<span class="op">*</span> ] =&gt; {
+    [<span class="macro-nonterminal">$</span><span class="macro-nonterminal">offset</span>: <span class="ident">expr</span>; <span class="macro-nonterminal">$</span><span class="macro-nonterminal">fname</span>: <span class="ident">ident</span> ( $(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg</span>: <span class="ident">ident</span> : <span class="macro-nonterminal">$</span><span class="macro-nonterminal">t</span>: <span class="ident">ty</span>),<span class="op">*</span> $(,)<span class="question-mark">?</span>) $( -&gt; <span class="macro-nonterminal">$</span><span class="macro-nonterminal">ret</span>: <span class="ident">ty</span> )<span class="op">*</span> ] =&gt; {
         <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">non_snake_case</span>)]</span>
         <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">fname</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">py</span>: <span class="ident">Python</span>, $(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg</span> : <span class="macro-nonterminal">$</span><span class="macro-nonterminal">t</span>), <span class="kw-2">*</span>) $( -&gt; <span class="macro-nonterminal">$</span><span class="macro-nonterminal">ret</span> )<span class="op">*</span> {
             <span class="kw">let</span> <span class="ident">fptr</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">get</span>(<span class="ident">py</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">offset</span>)
@@ -96,10 +92,6 @@
             (<span class="kw-2">*</span><span class="ident">fptr</span>)($(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg</span>), <span class="kw-2">*</span>)
         }
     };
-    <span class="comment">// To allow fn a(b: type,) -&gt; ret</span>
-    [<span class="macro-nonterminal">$</span><span class="macro-nonterminal">offset</span>: <span class="ident">expr</span>; <span class="macro-nonterminal">$</span><span class="macro-nonterminal">fname</span>: <span class="ident">ident</span> ( $(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg</span>: <span class="ident">ident</span> : <span class="macro-nonterminal">$</span><span class="macro-nonterminal">t</span>:<span class="ident">ty</span>,)<span class="op">*</span> ) $( -&gt; <span class="macro-nonterminal">$</span><span class="macro-nonterminal">ret</span>: <span class="ident">ty</span> )<span class="op">*</span> ] =&gt; {
-        <span class="macro">impl_api!</span>[<span class="macro-nonterminal">$</span><span class="macro-nonterminal">offset</span>; <span class="macro-nonterminal">$</span><span class="macro-nonterminal">fname</span>( $(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg</span>: <span class="macro-nonterminal">$</span><span class="macro-nonterminal">t</span>),<span class="kw-2">*</span>) $( -&gt; <span class="macro-nonterminal">$</span><span class="macro-nonterminal">ret</span> )<span class="kw-2">*</span>];
-    }
 }
 
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">array</span>;
