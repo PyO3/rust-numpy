@@ -43,7 +43,6 @@ pub mod datetime;
 mod dtype;
 mod error;
 pub mod npyffi;
-pub mod npyiter;
 mod slice_container;
 mod sum_products;
 
@@ -64,10 +63,6 @@ pub use crate::convert::{IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
 pub use crate::dtype::{dtype, Complex32, Complex64, Element, PyArrayDescr};
 pub use crate::error::{BorrowError, FromVecError, NotContiguousError};
 pub use crate::npyffi::{PY_ARRAY_API, PY_UFUNC_API};
-#[allow(deprecated)]
-pub use crate::npyiter::{
-    IterMode, NpyIterFlag, NpyMultiIter, NpyMultiIterBuilder, NpySingleIter, NpySingleIterBuilder,
-};
 pub use crate::sum_products::{dot, einsum, inner};
 
 pub use ndarray::{array, Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};
