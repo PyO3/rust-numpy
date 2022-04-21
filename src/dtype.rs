@@ -45,6 +45,7 @@ pub use num_complex::{Complex32, Complex64};
 /// ```
 ///
 /// [dtype]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.html
+#[repr(transparent)]
 pub struct PyArrayDescr(PyAny);
 
 pyobject_native_type_named!(PyArrayDescr);
@@ -61,12 +62,7 @@ unsafe impl PyTypeInfo for PyArrayDescr {
     }
 
     fn is_type_of(ob: &PyAny) -> bool {
-        unsafe {
-            ffi::PyObject_TypeCheck(
-                ob.as_ptr(),
-                PY_ARRAY_API.get_type_object(ob.py(), NpyTypes::PyArrayDescr_Type),
-            ) > 0
-        }
+        unsafe { ffi::PyObject_TypeCheck(ob.as_ptr(), Self::type_object_raw(ob.py())) > 0 }
     }
 }
 
