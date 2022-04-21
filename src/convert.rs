@@ -148,7 +148,7 @@ where
                 // if the array is contiguous, copy it by `copy_nonoverlapping`.
                 let strides = self.npy_strides();
                 unsafe {
-                    let array = PyArray::new_(py, self.raw_dim(), strides.as_ptr(), flag);
+                    let array = PyArray::new_uninit(py, self.raw_dim(), strides.as_ptr(), flag);
                     ptr::copy_nonoverlapping(self.as_ptr(), array.data(), len);
                     array
                 }
