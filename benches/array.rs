@@ -30,6 +30,27 @@ fn extract_failure(bencher: &mut Bencher) {
     });
 }
 
+#[bench]
+fn downcast_success(bencher: &mut Bencher) {
+    Python::with_gil(|py| {
+        let any: &PyAny = PyArray2::<f64>::zeros(py, (10, 10), false);
+
+        bencher.iter(|| {
+            black_box(any).downcast::<PyArray2<f64>>().unwrap();
+        });
+    });
+}
+
+#[bench]
+fn downcast_failure(bencher: &mut Bencher) {
+    Python::with_gil(|py| {
+        let any: &PyAny = PyArray2::<i32>::zeros(py, (10, 10), false);
+
+        bencher.iter(|| {
+            black_box(any).downcast::<PyArray2<f64>>().unwrap_err();
+        });
+    });
+}
 struct Iter(Range<usize>);
 
 impl Iterator for Iter {
