@@ -1523,6 +1523,13 @@
 <span id="1518">1518</span>
 <span id="1519">1519</span>
 <span id="1520">1520</span>
+<span id="1521">1521</span>
+<span id="1522">1522</span>
+<span id="1523">1523</span>
+<span id="1524">1524</span>
+<span id="1525">1525</span>
+<span id="1526">1526</span>
+<span id="1527">1527</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Safe interface for NumPy&#39;s [N-dimensional arrays][ndarray]</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! [ndarray]: https://numpy.org/doc/stable/reference/arrays.ndarray.html</span>
@@ -1551,7 +1558,7 @@
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::convert</span>::{<span class="ident">ArrayExt</span>, <span class="ident">IntoPyArray</span>, <span class="ident">NpyIndex</span>, <span class="ident">ToNpyDims</span>, <span class="ident">ToPyArray</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::dtype</span>::{<span class="ident">Element</span>, <span class="ident">PyArrayDescr</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::error</span>::{
-    <span class="ident">BorrowError</span>, <span class="ident">DimensionalityError</span>, <span class="ident">FromVecError</span>, <span class="ident">NotContiguousError</span>, <span class="ident">TypeError</span>,
+    <span class="ident">BorrowError</span>, <span class="ident">DimensionalityError</span>, <span class="ident">FromVecError</span>, <span class="ident">IgnoreError</span>, <span class="ident">NotContiguousError</span>, <span class="ident">TypeError</span>,
     <span class="ident">DIMENSIONALITY_MISMATCH_ERR</span>, <span class="ident">MAX_DIMENSIONALITY_ERR</span>,
 };
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::npyffi</span>::{<span class="self">self</span>, <span class="ident">npy_intp</span>, <span class="ident">NPY_ORDER</span>, <span class="ident">PY_ARRAY_API</span>};
@@ -1656,7 +1663,7 @@
     }
 
     <span class="kw">fn</span> <span class="ident">is_type_of</span>(<span class="ident">ob</span>: <span class="kw-2">&amp;</span><span class="ident">PyAny</span>) -&gt; <span class="ident">bool</span> {
-        <span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="self">Self</span><span class="op">&gt;</span><span class="ident">::extract</span>(<span class="ident">ob</span>).<span class="ident">is_ok</span>()
+        <span class="ident"><span class="self">Self</span>::extract</span>::<span class="op">&lt;</span><span class="ident">IgnoreError</span><span class="op">&gt;</span>(<span class="ident">ob</span>).<span class="ident">is_ok</span>()
     }
 }
 
@@ -1670,30 +1677,7 @@
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>: <span class="ident">Element</span>, <span class="ident">D</span>: <span class="ident">Dimension</span><span class="op">&gt;</span> <span class="ident">FromPyObject</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> {
     <span class="kw">fn</span> <span class="ident">extract</span>(<span class="ident">ob</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyAny</span>) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
-        <span class="comment">// Check if the object is an array.</span>
-        <span class="kw">let</span> <span class="ident">array</span> <span class="op">=</span> <span class="kw">unsafe</span> {
-            <span class="kw">if</span> <span class="ident">npyffi::PyArray_Check</span>(<span class="ident">ob</span>.<span class="ident">py</span>(), <span class="ident">ob</span>.<span class="ident">as_ptr</span>()) <span class="op">==</span> <span class="number">0</span> {
-                <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PyDowncastError::new</span>(<span class="ident">ob</span>, <span class="ident">PyArray</span>::<span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span><span class="ident">::NAME</span>).<span class="ident">into</span>());
-            }
-            <span class="kw-2">&amp;</span><span class="kw-2">*</span>(<span class="ident">ob</span> <span class="kw">as</span> <span class="kw-2">*const</span> <span class="ident">PyAny</span> <span class="kw">as</span> <span class="kw-2">*const</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span>)
-        };
-
-        <span class="comment">// Check if the dimensionality matches `D`.</span>
-        <span class="kw">let</span> <span class="ident">src_ndim</span> <span class="op">=</span> <span class="ident">array</span>.<span class="ident">ndim</span>();
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">dst_ndim</span>) <span class="op">=</span> <span class="ident">D::NDIM</span> {
-            <span class="kw">if</span> <span class="ident">src_ndim</span> <span class="op">!</span><span class="op">=</span> <span class="ident">dst_ndim</span> {
-                <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">DimensionalityError::new</span>(<span class="ident">src_ndim</span>, <span class="ident">dst_ndim</span>).<span class="ident">into</span>());
-            }
-        }
-
-        <span class="comment">// Check if the element type matches `T`.</span>
-        <span class="kw">let</span> <span class="ident">src_dtype</span> <span class="op">=</span> <span class="ident">array</span>.<span class="ident">dtype</span>();
-        <span class="kw">let</span> <span class="ident">dst_dtype</span> <span class="op">=</span> <span class="ident">T::get_dtype</span>(<span class="ident">ob</span>.<span class="ident">py</span>());
-        <span class="kw">if</span> <span class="op">!</span><span class="ident">src_dtype</span>.<span class="ident">is_equiv_to</span>(<span class="ident">dst_dtype</span>) {
-            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">TypeError::new</span>(<span class="ident">src_dtype</span>, <span class="ident">dst_dtype</span>).<span class="ident">into</span>());
-        }
-
-        <span class="prelude-val">Ok</span>(<span class="ident">array</span>)
+        <span class="ident">PyArray::extract</span>(<span class="ident">ob</span>)
     }
 }
 
@@ -1915,6 +1899,36 @@
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Element</span>, <span class="ident">D</span>: <span class="ident">Dimension</span><span class="op">&gt;</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">extract</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">E</span><span class="op">&gt;</span>(<span class="ident">ob</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyAny</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="self">Self</span>, <span class="ident">E</span><span class="op">&gt;</span>
+    <span class="kw">where</span>
+        <span class="ident">E</span>: <span class="ident">From</span><span class="op">&lt;</span><span class="ident">PyDowncastError</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">DimensionalityError</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">TypeError</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    {
+        <span class="comment">// Check if the object is an array.</span>
+        <span class="kw">let</span> <span class="ident">array</span> <span class="op">=</span> <span class="kw">unsafe</span> {
+            <span class="kw">if</span> <span class="ident">npyffi::PyArray_Check</span>(<span class="ident">ob</span>.<span class="ident">py</span>(), <span class="ident">ob</span>.<span class="ident">as_ptr</span>()) <span class="op">==</span> <span class="number">0</span> {
+                <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PyDowncastError::new</span>(<span class="ident">ob</span>, <span class="ident"><span class="self">Self</span>::NAME</span>).<span class="ident">into</span>());
+            }
+            <span class="kw-2">&amp;</span><span class="kw-2">*</span>(<span class="ident">ob</span> <span class="kw">as</span> <span class="kw-2">*const</span> <span class="ident">PyAny</span> <span class="kw">as</span> <span class="kw-2">*const</span> <span class="self">Self</span>)
+        };
+
+        <span class="comment">// Check if the dimensionality matches `D`.</span>
+        <span class="kw">let</span> <span class="ident">src_ndim</span> <span class="op">=</span> <span class="ident">array</span>.<span class="ident">ndim</span>();
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">dst_ndim</span>) <span class="op">=</span> <span class="ident">D::NDIM</span> {
+            <span class="kw">if</span> <span class="ident">src_ndim</span> <span class="op">!</span><span class="op">=</span> <span class="ident">dst_ndim</span> {
+                <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">DimensionalityError::new</span>(<span class="ident">src_ndim</span>, <span class="ident">dst_ndim</span>).<span class="ident">into</span>());
+            }
+        }
+
+        <span class="comment">// Check if the element type matches `T`.</span>
+        <span class="kw">let</span> <span class="ident">src_dtype</span> <span class="op">=</span> <span class="ident">array</span>.<span class="ident">dtype</span>();
+        <span class="kw">let</span> <span class="ident">dst_dtype</span> <span class="op">=</span> <span class="ident">T::get_dtype</span>(<span class="ident">ob</span>.<span class="ident">py</span>());
+        <span class="kw">if</span> <span class="op">!</span><span class="ident">src_dtype</span>.<span class="ident">is_equiv_to</span>(<span class="ident">dst_dtype</span>) {
+            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">TypeError::new</span>(<span class="ident">src_dtype</span>, <span class="ident">dst_dtype</span>).<span class="ident">into</span>());
+        }
+
+        <span class="prelude-val">Ok</span>(<span class="ident">array</span>)
+    }
+
     <span class="doccomment">/// Same as [`shape`][Self::shape], but returns `D` insead of `&amp;[usize]`.</span>
     <span class="attribute">#[<span class="ident">inline</span>(<span class="ident">always</span>)]</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">dims</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">D</span> {

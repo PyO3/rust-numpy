@@ -167,6 +167,21 @@
 <span id="162">162</span>
 <span id="163">163</span>
 <span id="164">164</span>
+<span id="165">165</span>
+<span id="166">166</span>
+<span id="167">167</span>
+<span id="168">168</span>
+<span id="169">169</span>
+<span id="170">170</span>
+<span id="171">171</span>
+<span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
+<span id="177">177</span>
+<span id="178">178</span>
+<span id="179">179</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Defines error types.</span>
 
 <span class="kw">use</span> <span class="ident">std::error::Error</span>;
@@ -331,6 +346,21 @@
 }
 
 <span class="macro">impl_pyerr!</span>(<span class="ident">BorrowError</span>);
+
+<span class="doccomment">/// An internal type used to ignore certain error conditions</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// This is beneficial when those errors will never reach a public API anyway</span>
+<span class="doccomment">/// but dropping them will improve performance.</span>
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">IgnoreError</span>;
+
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">E</span><span class="op">&gt;</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">E</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">IgnoreError</span>
+<span class="kw">where</span>
+    <span class="ident">PyErr</span>: <span class="ident">From</span><span class="op">&lt;</span><span class="ident">E</span><span class="op">&gt;</span>,
+{
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">_err</span>: <span class="ident">E</span>) -&gt; <span class="self">Self</span> {
+        <span class="self">Self</span>
+    }
+}
 </code></pre></div>
 </section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="numpy" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.60.0 (7737e0b5c 2022-04-04)" ></div>
 </body></html>
