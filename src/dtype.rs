@@ -117,9 +117,12 @@ impl PyArrayDescr {
 
     /// Returns true if two type descriptors are equivalent.
     pub fn is_equiv_to(&self, other: &Self) -> bool {
+        let self_ptr = self.as_dtype_ptr();
+        let other_ptr = other.as_dtype_ptr();
+
         unsafe {
-            PY_ARRAY_API.PyArray_EquivTypes(self.py(), self.as_dtype_ptr(), other.as_dtype_ptr())
-                != 0
+            self_ptr == other_ptr
+                || PY_ARRAY_API.PyArray_EquivTypes(self.py(), self_ptr, other_ptr) != 0
         }
     }
 
@@ -413,7 +416,7 @@ fn npy_int_type_lookup<T, T0, T1, T2>(npy_types: [NPY_TYPES; 3]) -> NPY_TYPES {
 
 fn npy_int_type<T: Bounded + Zero + Sized + PartialEq>() -> NPY_TYPES {
     let is_unsigned = T::min_value() == T::zero();
-    let bit_width = size_of::<T>() << 3;
+    let bit_width = 8 * size_of::<T>();
 
     match (is_unsigned, bit_width) {
         (false, 8) => NPY_TYPES::NPY_BYTE,
@@ -449,6 +452,7 @@ macro_rules! impl_element_scalar {
         $(#[$meta])*
         unsafe impl Element for $ty {
             const IS_COPY: bool = true;
+
             fn get_dtype(py: Python) -> &PyArrayDescr {
                 PyArrayDescr::from_npy_type(py, $npy_type)
             }

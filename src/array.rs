@@ -26,7 +26,7 @@ use crate::cold;
 use crate::convert::{ArrayExt, IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
 use crate::dtype::{Element, PyArrayDescr};
 use crate::error::{
-    BorrowError, DimensionalityError, FromVecError, NotContiguousError, TypeError,
+    BorrowError, DimensionalityError, FromVecError, IgnoreError, NotContiguousError, TypeError,
     DIMENSIONALITY_MISMATCH_ERR, MAX_DIMENSIONALITY_ERR,
 };
 use crate::npyffi::{self, npy_intp, NPY_ORDER, PY_ARRAY_API};
@@ -131,7 +131,7 @@ unsafe impl<T: Element, D: Dimension> PyTypeInfo for PyArray<T, D> {
     }
 
     fn is_type_of(ob: &PyAny) -> bool {
-        <&Self>::extract(ob).is_ok()
+        Self::extract::<IgnoreError>(ob).is_ok()
     }
 }
 
@@ -145,30 +145,7 @@ impl<T, D> IntoPy<PyObject> for PyArray<T, D> {
 
 impl<'py, T: Element, D: Dimension> FromPyObject<'py> for &'py PyArray<T, D> {
     fn extract(ob: &'py PyAny) -> PyResult<Self> {
-        // Check if the object is an array.
-        let array = unsafe {
-            if npyffi::PyArray_Check(ob.py(), ob.as_ptr()) == 0 {
-                return Err(PyDowncastError::new(ob, PyArray::<T, D>::NAME).into());
-            }
-            &*(ob as *const PyAny as *const PyArray<T, D>)
-        };
-
-        // Check if the dimensionality matches `D`.
-        let src_ndim = array.ndim();
-        if let Some(dst_ndim) = D::NDIM {
-            if src_ndim != dst_ndim {
-                return Err(DimensionalityError::new(src_ndim, dst_ndim).into());
-            }
-        }
-
-        // Check if the element type matches `T`.
-        let src_dtype = array.dtype();
-        let dst_dtype = T::get_dtype(ob.py());
-        if !src_dtype.is_equiv_to(dst_dtype) {
-            return Err(TypeError::new(src_dtype, dst_dtype).into());
-        }
-
-        Ok(array)
+        PyArray::extract(ob)
     }
 }
 
@@ -390,6 +367,36 @@ impl<T, D> PyArray<T, D> {
 }
 
 impl<T: Element, D: Dimension> PyArray<T, D> {
+    fn extract<'py, E>(ob: &'py PyAny) -> Result<&'py Self, E>
+    where
+        E: From<PyDowncastError<'py>> + From<DimensionalityError> + From<TypeError<'py>>,
+    {
+        // Check if the object is an array.
+        let array = unsafe {
+            if npyffi::PyArray_Check(ob.py(), ob.as_ptr()) == 0 {
+                return Err(PyDowncastError::new(ob, Self::NAME).into());
+            }
+            &*(ob as *const PyAny as *const Self)
+        };
+
+        // Check if the dimensionality matches `D`.
+        let src_ndim = array.ndim();
+        if let Some(dst_ndim) = D::NDIM {
+            if src_ndim != dst_ndim {
+                return Err(DimensionalityError::new(src_ndim, dst_ndim).into());
+            }
+        }
+
+        // Check if the element type matches `T`.
+        let src_dtype = array.dtype();
+        let dst_dtype = T::get_dtype(ob.py());
+        if !src_dtype.is_equiv_to(dst_dtype) {
+            return Err(TypeError::new(src_dtype, dst_dtype).into());
+        }
+
+        Ok(array)
+    }
+
     /// Same as [`shape`][Self::shape], but returns `D` insead of `&[usize]`.
     #[inline(always)]
     pub fn dims(&self) -> D {

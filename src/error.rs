@@ -162,3 +162,18 @@ impl fmt::Display for BorrowError {
 }
 
 impl_pyerr!(BorrowError);
+
+/// An internal type used to ignore certain error conditions
+///
+/// This is beneficial when those errors will never reach a public API anyway
+/// but dropping them will improve performance.
+pub(crate) struct IgnoreError;
+
+impl<E> From<E> for IgnoreError
+where
+    PyErr: From<E>,
+{
+    fn from(_err: E) -> Self {
+        Self
+    }
+}
