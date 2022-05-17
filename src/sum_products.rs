@@ -132,7 +132,7 @@ where
 
 /// Return the Einstein summation convention of given tensors.
 ///
-/// This is usually invoked via the the [`einsum!`] macro.
+/// This is usually invoked via the the [`einsum!`][crate::einsum!] macro.
 pub fn einsum<'py, T, OUT>(subscripts: &str, arrays: &[&'py PyArray<T, IxDyn>]) -> PyResult<OUT>
 where
     T: Element,
