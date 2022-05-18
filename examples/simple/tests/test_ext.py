@@ -1,5 +1,5 @@
 import numpy as np
-from rust_ext import axpy, conj, mult, extract, add_minutes_to_seconds
+from rust_ext import axpy, conj, mult, extract, add_minutes_to_seconds, polymorphic_add
 
 
 def test_axpy():
@@ -33,3 +33,20 @@ def test_add_minutes_to_seconds():
     add_minutes_to_seconds(x, y)
 
     assert np.all(x == np.array([70, 140, 210], dtype="timedelta64[s]"))
+
+
+def test_polymorphic_add():
+    x = np.array([1.0, 2.0, 3.0], dtype=np.double)
+    y = np.array([3.0, 3.0, 3.0], dtype=np.double)
+    z = polymorphic_add(x, y)
+    np.testing.assert_array_almost_equal(z, np.array([4.0, 5.0, 6.0], dtype=np.double))
+
+    x = np.array([1, 2, 3], dtype=np.int64)
+    y = np.array([3, 3, 3], dtype=np.int64)
+    z = polymorphic_add(x, y)
+    assert np.all(z == np.array([4, 5, 6], dtype=np.int64))
+
+    x = np.array([1.0, 2.0, 3.0], dtype=np.double)
+    y = np.array([3, 3, 3], dtype=np.int64)
+    z = polymorphic_add(x, y)
+    np.testing.assert_array_almost_equal(z, np.array([4.0, 5.0, 6.0], dtype=np.double))
