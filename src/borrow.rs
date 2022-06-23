@@ -184,9 +184,9 @@ use crate::npyffi::{self, PyArrayObject, NPY_ARRAY_WRITEABLE};
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 struct BorrowKey {
     /// exclusive range of lowest and highest address covered by array
-    range: (usize, usize),
+    range: (*mut u8, *mut u8),
     /// the data address on which address computations are based
-    data_ptr: usize,
+    data_ptr: *mut u8,
     /// the greatest common divisor of the strides of the array
     gcd_strides: isize,
 }
@@ -199,7 +199,7 @@ impl BorrowKey {
     {
         let range = data_range(array);
 
-        let data_ptr = array.data() as usize;
+        let data_ptr = array.data() as *mut u8;
         let gcd_strides = gcd_strides(array.strides());
 
         Self {
@@ -225,7 +225,7 @@ impl BorrowKey {
         // but fails when slicing an array with a step size that does not divide the dimension along that axis.
         //
         // https://users.rust-lang.org/t/math-for-borrow-checking-numpy-arrays/73303
-        let ptr_diff = abs_diff(self.data_ptr, other.data_ptr) as isize;
+        let ptr_diff = unsafe { self.data_ptr.offset_from(other.data_ptr).abs() };
         let gcd_strides = gcd(self.gcd_strides, other.gcd_strides);
 
         if ptr_diff % gcd_strides != 0 {
@@ -237,7 +237,7 @@ impl BorrowKey {
     }
 }
 
-type BorrowFlagsInner = AHashMap<usize, AHashMap<BorrowKey, isize>>;
+type BorrowFlagsInner = AHashMap<*mut u8, AHashMap<BorrowKey, isize>>;
 
 struct BorrowFlags(UnsafeCell<Option<BorrowFlagsInner>>);
 
@@ -253,7 +253,7 @@ impl BorrowFlags {
         (*self.0.get()).get_or_insert_with(AHashMap::new)
     }
 
-    fn acquire(&self, _py: Python, address: usize, key: BorrowKey) -> Result<(), BorrowError> {
+    fn acquire(&self, _py: Python, address: *mut u8, key: BorrowKey) -> Result<(), BorrowError> {
         // SAFETY: Having `_py` implies holding the GIL and
         // we are not calling into user code which might re-enter this function.
         let borrow_flags = unsafe { BORROW_FLAGS.get() };
@@ -296,7 +296,7 @@ impl BorrowFlags {
         Ok(())
     }
 
-    fn release(&self, _py: Python, address: usize, key: BorrowKey) {
+    fn release(&self, _py: Python, address: *mut u8, key: BorrowKey) {
         // SAFETY: Having `_py` implies holding the GIL and
         // we are not calling into user code which might re-enter this function.
         let borrow_flags = unsafe { BORROW_FLAGS.get() };
@@ -316,7 +316,12 @@ impl BorrowFlags {
         }
     }
 
-    fn acquire_mut(&self, _py: Python, address: usize, key: BorrowKey) -> Result<(), BorrowError> {
+    fn acquire_mut(
+        &self,
+        _py: Python,
+        address: *mut u8,
+        key: BorrowKey,
+    ) -> Result<(), BorrowError> {
         // SAFETY: Having `_py` implies holding the GIL and
         // we are not calling into user code which might re-enter this function.
         let borrow_flags = unsafe { BORROW_FLAGS.get() };
@@ -353,7 +358,7 @@ impl BorrowFlags {
         Ok(())
     }
 
-    fn release_mut(&self, _py: Python, address: usize, key: BorrowKey) {
+    fn release_mut(&self, _py: Python, address: *mut u8, key: BorrowKey) {
         // SAFETY: Having `_py` implies holding the GIL and
         // we are not calling into user code which might re-enter this function.
         let borrow_flags = unsafe { BORROW_FLAGS.get() };
@@ -383,7 +388,7 @@ where
     D: Dimension,
 {
     array: &'py PyArray<T, D>,
-    address: usize,
+    address: *mut u8,
     key: BorrowKey,
 }
 
@@ -526,7 +531,7 @@ where
     D: Dimension,
 {
     array: &'py PyArray<T, D>,
-    address: usize,
+    address: *mut u8,
     key: BorrowKey,
 }
 
@@ -680,17 +685,17 @@ where
     }
 }
 
-fn base_address<T, D>(array: &PyArray<T, D>) -> usize {
-    fn inner(py: Python, mut array: *mut PyArrayObject) -> usize {
+fn base_address<T, D>(array: &PyArray<T, D>) -> *mut u8 {
+    fn inner(py: Python, mut array: *mut PyArrayObject) -> *mut u8 {
         loop {
             let base = unsafe { (*array).base };
 
             if base.is_null() {
-                return array as usize;
+                return array as *mut u8;
             } else if unsafe { npyffi::PyArray_Check(py, base) } != 0 {
                 array = base as *mut PyArrayObject;
             } else {
-                return base as usize;
+                return base as *mut u8;
             }
         }
     }
@@ -698,12 +703,17 @@ fn base_address<T, D>(array: &PyArray<T, D>) -> usize {
     inner(array.py(), array.as_array_ptr())
 }
 
-fn data_range<T, D>(array: &PyArray<T, D>) -> (usize, usize)
+fn data_range<T, D>(array: &PyArray<T, D>) -> (*mut u8, *mut u8)
 where
     T: Element,
     D: Dimension,
 {
-    fn inner(shape: &[usize], strides: &[isize], itemsize: isize, data: *mut u8) -> (usize, usize) {
+    fn inner(
+        shape: &[usize],
+        strides: &[isize],
+        itemsize: isize,
+        data: *mut u8,
+    ) -> (*mut u8, *mut u8) {
         let mut start = 0;
         let mut end = 0;
 
@@ -721,8 +731,8 @@ where
             end += itemsize;
         }
 
-        let start = unsafe { data.offset(start) } as usize;
-        let end = unsafe { data.offset(end) } as usize;
+        let start = unsafe { data.offset(start) };
+        let end = unsafe { data.offset(end) };
 
         (start, end)
     }
@@ -730,22 +740,13 @@ where
     inner(
         array.shape(),
         array.strides(),
-        size_of::<T>() as _,
-        array.data() as _,
+        size_of::<T>() as isize,
+        array.data() as *mut u8,
     )
 }
 
 fn gcd_strides(strides: &[isize]) -> isize {
     reduce(strides.iter().copied(), gcd).unwrap_or(1)
-}
-
-// FIXME(adamreichold): Use `usize::abs_diff` from std when our MSRV reaches 1.60.
-fn abs_diff(lhs: usize, rhs: usize) -> usize {
-    if lhs >= rhs {
-        lhs - rhs
-    } else {
-        rhs - lhs
-    }
 }
 
 // FIXME(adamreichold): Use `Iterator::reduce` from std when our MSRV reaches 1.51.
@@ -777,11 +778,11 @@ mod tests {
             assert!(base.is_null());
 
             let base_address = base_address(array);
-            assert_eq!(base_address, array as *const _ as usize);
+            assert_eq!(base_address, array as *const _ as *mut u8);
 
             let data_range = data_range(array);
-            assert_eq!(data_range.0, array.data() as usize);
-            assert_eq!(data_range.1, unsafe { array.data().add(6) } as usize);
+            assert_eq!(data_range.0, array.data() as *mut u8);
+            assert_eq!(data_range.1, unsafe { array.data().add(6) } as *mut u8);
         });
     }
 
@@ -794,12 +795,12 @@ mod tests {
             assert!(!base.is_null());
 
             let base_address = base_address(array);
-            assert_ne!(base_address, array as *const _ as usize);
-            assert_eq!(base_address, base as usize);
+            assert_ne!(base_address, array as *const _ as *mut u8);
+            assert_eq!(base_address, base as *mut u8);
 
             let data_range = data_range(array);
-            assert_eq!(data_range.0, array.data() as usize);
-            assert_eq!(data_range.1, unsafe { array.data().add(6) } as usize);
+            assert_eq!(data_range.0, array.data() as *mut u8);
+            assert_eq!(data_range.1, unsafe { array.data().add(6) } as *mut u8);
         });
     }
 
@@ -814,18 +815,18 @@ mod tests {
                 .unwrap()
                 .downcast::<PyArray2<f64>>()
                 .unwrap();
-            assert_ne!(view as *const _ as usize, array as *const _ as usize);
+            assert_ne!(view as *const _ as *mut u8, array as *const _ as *mut u8);
 
             let base = unsafe { (*view.as_array_ptr()).base };
-            assert_eq!(base as usize, array as *const _ as usize);
+            assert_eq!(base as *mut u8, array as *const _ as *mut u8);
 
             let base_address = base_address(view);
-            assert_ne!(base_address, view as *const _ as usize);
-            assert_eq!(base_address, base as usize);
+            assert_ne!(base_address, view as *const _ as *mut u8);
+            assert_eq!(base_address, base as *mut u8);
 
             let data_range = data_range(view);
-            assert_eq!(data_range.0, array.data() as usize);
-            assert_eq!(data_range.1, unsafe { array.data().add(4) } as usize);
+            assert_eq!(data_range.0, array.data() as *mut u8);
+            assert_eq!(data_range.1, unsafe { array.data().add(4) } as *mut u8);
         });
     }
 
@@ -840,22 +841,22 @@ mod tests {
                 .unwrap()
                 .downcast::<PyArray2<f64>>()
                 .unwrap();
-            assert_ne!(view as *const _ as usize, array as *const _ as usize);
+            assert_ne!(view as *const _ as *mut u8, array as *const _ as *mut u8);
 
             let base = unsafe { (*view.as_array_ptr()).base };
-            assert_eq!(base as usize, array as *const _ as usize);
+            assert_eq!(base as *mut u8, array as *const _ as *mut u8);
 
             let base = unsafe { (*array.as_array_ptr()).base };
             assert!(!base.is_null());
 
             let base_address = base_address(view);
-            assert_ne!(base_address, view as *const _ as usize);
-            assert_ne!(base_address, array as *const _ as usize);
-            assert_eq!(base_address, base as usize);
+            assert_ne!(base_address, view as *const _ as *mut u8);
+            assert_ne!(base_address, array as *const _ as *mut u8);
+            assert_eq!(base_address, base as *mut u8);
 
             let data_range = data_range(view);
-            assert_eq!(data_range.0, array.data() as usize);
-            assert_eq!(data_range.1, unsafe { array.data().add(4) } as usize);
+            assert_eq!(data_range.0, array.data() as *mut u8);
+            assert_eq!(data_range.1, unsafe { array.data().add(4) } as *mut u8);
         });
     }
 
@@ -870,7 +871,7 @@ mod tests {
                 .unwrap()
                 .downcast::<PyArray2<f64>>()
                 .unwrap();
-            assert_ne!(view1 as *const _ as usize, array as *const _ as usize);
+            assert_ne!(view1 as *const _ as *mut u8, array as *const _ as *mut u8);
 
             let locals = [("view1", view1)].into_py_dict(py);
             let view2 = py
@@ -878,23 +879,23 @@ mod tests {
                 .unwrap()
                 .downcast::<PyArray1<f64>>()
                 .unwrap();
-            assert_ne!(view2 as *const _ as usize, array as *const _ as usize);
-            assert_ne!(view2 as *const _ as usize, view1 as *const _ as usize);
+            assert_ne!(view2 as *const _ as *mut u8, array as *const _ as *mut u8);
+            assert_ne!(view2 as *const _ as *mut u8, view1 as *const _ as *mut u8);
 
             let base = unsafe { (*view2.as_array_ptr()).base };
-            assert_eq!(base as usize, array as *const _ as usize);
+            assert_eq!(base as *mut u8, array as *const _ as *mut u8);
 
             let base = unsafe { (*view1.as_array_ptr()).base };
-            assert_eq!(base as usize, array as *const _ as usize);
+            assert_eq!(base as *mut u8, array as *const _ as *mut u8);
 
             let base_address = base_address(view2);
-            assert_ne!(base_address, view2 as *const _ as usize);
-            assert_ne!(base_address, view1 as *const _ as usize);
-            assert_eq!(base_address, base as usize);
+            assert_ne!(base_address, view2 as *const _ as *mut u8);
+            assert_ne!(base_address, view1 as *const _ as *mut u8);
+            assert_eq!(base_address, base as *mut u8);
 
             let data_range = data_range(view2);
-            assert_eq!(data_range.0, array.data() as usize);
-            assert_eq!(data_range.1, unsafe { array.data().add(1) } as usize);
+            assert_eq!(data_range.0, array.data() as *mut u8);
+            assert_eq!(data_range.1, unsafe { array.data().add(1) } as *mut u8);
         });
     }
 
@@ -909,7 +910,7 @@ mod tests {
                 .unwrap()
                 .downcast::<PyArray2<f64>>()
                 .unwrap();
-            assert_ne!(view1 as *const _ as usize, array as *const _ as usize);
+            assert_ne!(view1 as *const _ as *mut u8, array as *const _ as *mut u8);
 
             let locals = [("view1", view1)].into_py_dict(py);
             let view2 = py
@@ -917,27 +918,27 @@ mod tests {
                 .unwrap()
                 .downcast::<PyArray1<f64>>()
                 .unwrap();
-            assert_ne!(view2 as *const _ as usize, array as *const _ as usize);
-            assert_ne!(view2 as *const _ as usize, view1 as *const _ as usize);
+            assert_ne!(view2 as *const _ as *mut u8, array as *const _ as *mut u8);
+            assert_ne!(view2 as *const _ as *mut u8, view1 as *const _ as *mut u8);
 
             let base = unsafe { (*view2.as_array_ptr()).base };
-            assert_eq!(base as usize, array as *const _ as usize);
+            assert_eq!(base as *mut u8, array as *const _ as *mut u8);
 
             let base = unsafe { (*view1.as_array_ptr()).base };
-            assert_eq!(base as usize, array as *const _ as usize);
+            assert_eq!(base as *mut u8, array as *const _ as *mut u8);
 
             let base = unsafe { (*array.as_array_ptr()).base };
             assert!(!base.is_null());
 
             let base_address = base_address(view2);
-            assert_ne!(base_address, view2 as *const _ as usize);
-            assert_ne!(base_address, view1 as *const _ as usize);
-            assert_ne!(base_address, array as *const _ as usize);
-            assert_eq!(base_address, base as usize);
+            assert_ne!(base_address, view2 as *const _ as *mut u8);
+            assert_ne!(base_address, view1 as *const _ as *mut u8);
+            assert_ne!(base_address, array as *const _ as *mut u8);
+            assert_eq!(base_address, base as *mut u8);
 
             let data_range = data_range(view2);
-            assert_eq!(data_range.0, array.data() as usize);
-            assert_eq!(data_range.1, unsafe { array.data().add(1) } as usize);
+            assert_eq!(data_range.0, array.data() as *mut u8);
+            assert_eq!(data_range.1, unsafe { array.data().add(1) } as *mut u8);
         });
     }
 
@@ -952,19 +953,19 @@ mod tests {
                 .unwrap()
                 .downcast::<PyArray3<f64>>()
                 .unwrap();
-            assert_ne!(view as *const _ as usize, array as *const _ as usize);
+            assert_ne!(view as *const _ as *mut u8, array as *const _ as *mut u8);
 
             let base = unsafe { (*view.as_array_ptr()).base };
-            assert_eq!(base as usize, array as *const _ as usize);
+            assert_eq!(base as *mut u8, array as *const _ as *mut u8);
 
             let base_address = base_address(view);
-            assert_ne!(base_address, view as *const _ as usize);
-            assert_eq!(base_address, base as usize);
+            assert_ne!(base_address, view as *const _ as *mut u8);
+            assert_eq!(base_address, base as *mut u8);
 
             let data_range = data_range(view);
             assert_eq!(view.data(), unsafe { array.data().offset(2) });
-            assert_eq!(data_range.0, unsafe { view.data().offset(-2) } as usize);
-            assert_eq!(data_range.1, unsafe { view.data().offset(4) } as usize);
+            assert_eq!(data_range.0, unsafe { view.data().offset(-2) } as *mut u8);
+            assert_eq!(data_range.1, unsafe { view.data().offset(4) } as *mut u8);
         });
     }
 
@@ -977,11 +978,11 @@ mod tests {
             assert!(base.is_null());
 
             let base_address = base_address(array);
-            assert_eq!(base_address, array as *const _ as usize);
+            assert_eq!(base_address, array as *const _ as *mut u8);
 
             let data_range = data_range(array);
-            assert_eq!(data_range.0, array.data() as usize);
-            assert_eq!(data_range.1, array.data() as usize);
+            assert_eq!(data_range.0, array.data() as *mut u8);
+            assert_eq!(data_range.1, array.data() as *mut u8);
         });
     }
 
