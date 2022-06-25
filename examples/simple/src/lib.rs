@@ -1,4 +1,6 @@
-use numpy::ndarray::{ArrayD, ArrayViewD, ArrayViewMutD, Zip};
+use std::ops::Add;
+
+use numpy::ndarray::{Array1, ArrayD, ArrayView1, ArrayViewD, ArrayViewMutD, Zip};
 use numpy::{
     datetime::{units, Timedelta},
     Complex64, IntoPyArray, PyArray1, PyArrayDyn, PyReadonlyArray1, PyReadonlyArrayDyn,
@@ -7,7 +9,7 @@ use numpy::{
 use pyo3::{
     pymodule,
     types::{PyDict, PyModule},
-    PyResult, Python,
+    FromPyObject, PyAny, PyResult, Python,
 };
 
 #[pymodule]
@@ -25,6 +27,11 @@ fn rust_ext(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     // example using complex numbers
     fn conj(x: ArrayViewD<'_, Complex64>) -> ArrayD<Complex64> {
         x.map(|c| c.conj())
+    }
+
+    // example using generics
+    fn generic_add<T: Copy + Add<Output = T>>(x: ArrayView1<T>, y: ArrayView1<T>) -> Array1<T> {
+        &x + &y
     }
 
     // wrapper of `axpy`
@@ -82,6 +89,48 @@ fn rust_ext(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
         Zip::from(x.as_array_mut())
             .and(y.as_array())
             .apply(|x, y| *x = (i64::from(*x) + 60 * i64::from(*y)).into());
+    }
+
+    // This crate follows a strongly-typed approach to wrapping NumPy arrays
+    // while Python API are often expected to work with multiple element types.
+    //
+    // That kind of limited polymorphis can be recovered by accepting an enumerated type
+    // covering the supported element types and dispatching into a generic implementation.
+    #[derive(FromPyObject)]
+    enum SupportedArray<'py> {
+        F64(&'py PyArray1<f64>),
+        I64(&'py PyArray1<i64>),
+    }
+
+    #[pyfn(m)]
+    fn polymorphic_add<'py>(
+        x: SupportedArray<'py>,
+        y: SupportedArray<'py>,
+    ) -> PyResult<&'py PyAny> {
+        match (x, y) {
+            (SupportedArray::F64(x), SupportedArray::F64(y)) => Ok(generic_add(
+                x.readonly().as_array(),
+                y.readonly().as_array(),
+            )
+            .into_pyarray(x.py())
+            .into()),
+            (SupportedArray::I64(x), SupportedArray::I64(y)) => Ok(generic_add(
+                x.readonly().as_array(),
+                y.readonly().as_array(),
+            )
+            .into_pyarray(x.py())
+            .into()),
+            (SupportedArray::F64(x), SupportedArray::I64(y))
+            | (SupportedArray::I64(y), SupportedArray::F64(x)) => {
+                let y = y.cast::<f64>(false)?;
+
+                Ok(
+                    generic_add(x.readonly().as_array(), y.readonly().as_array())
+                        .into_pyarray(x.py())
+                        .into(),
+                )
+            }
+        }
     }
 
     Ok(())
