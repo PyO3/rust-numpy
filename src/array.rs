@@ -151,6 +151,7 @@ impl<'py, T: Element, D: Dimension> FromPyObject<'py> for &'py PyArray<T, D> {
 
 impl<T, D> PyArray<T, D> {
     /// Returns a raw pointer to the underlying [`PyArrayObject`][npyffi::PyArrayObject].
+    #[inline]
     pub fn as_array_ptr(&self) -> *mut npyffi::PyArrayObject {
         self.as_ptr() as _
     }
@@ -282,6 +283,7 @@ impl<T, D> PyArray<T, D> {
     ///
     /// [ndarray-ndim]: https://numpy.org/doc/stable/reference/generated/numpy.ndarray.ndim.html
     /// [PyArray_NDIM]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_NDIM
+    #[inline]
     pub fn ndim(&self) -> usize {
         unsafe { (*self.as_array_ptr()).nd as usize }
     }
@@ -304,6 +306,7 @@ impl<T, D> PyArray<T, D> {
     /// ```
     /// [ndarray-strides]: https://numpy.org/doc/stable/reference/generated/numpy.ndarray.strides.html
     /// [PyArray_STRIDES]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_STRIDES
+    #[inline]
     pub fn strides(&self) -> &[isize] {
         let n = self.ndim();
         if n == 0 {
@@ -336,6 +339,7 @@ impl<T, D> PyArray<T, D> {
     ///
     /// [ndarray-shape]: https://numpy.org/doc/stable/reference/generated/numpy.ndarray.shape.html
     /// [PyArray_DIMS]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_DIMS
+    #[inline]
     pub fn shape(&self) -> &[usize] {
         let n = self.ndim();
         if n == 0 {
