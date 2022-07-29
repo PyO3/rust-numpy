@@ -112,6 +112,7 @@ jobs:
           import toml
           cargo_toml = toml.load("Cargo.toml")
           cargo_toml["dependencies"]["ndarray"] = "0.13.1"
+          cargo_toml["dependencies"]["parking_lot"] = "0.11.2"
           cargo_toml["dependencies"]["num-complex"] = "0.2.4"
           cargo_toml["workspace"] = {}
           with open("Cargo.toml", "w") as f:
