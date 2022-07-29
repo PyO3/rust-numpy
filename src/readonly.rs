@@ -7,7 +7,7 @@ use crate::npyffi::NPY_ARRAY_WRITEABLE;
 use crate::npyiter::{NpySingleIter, NpySingleIterBuilder, Readonly};
 use crate::{Element, NotContiguousError, NpyIndex, PyArray};
 
-/// Readonly reference of [`PyArray`](../array/struct.PyArray.html).
+/// Readonly reference of [`PyArray`](../numpy/array/struct.PyArray.html).
 ///
 /// This struct ensures that the internal array is not writeable while holding `PyReadonlyArray`.
 /// We use a simple trick for this: modifying the internal flag of the array when creating

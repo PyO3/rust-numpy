@@ -35,7 +35,7 @@ use crate::slice_container::PySliceContainer;
 /// # Memory location
 ///
 /// - Case1: Constructed via [`IntoPyArray`](../convert/trait.IntoPyArray.html) or
-/// [`from_vec`](#method.from_vec) or [`from_owned_array`](#method.from_owned_vec).
+/// [`from_vec`](#method.from_vec) or [`from_owned_array`](#method.from_owned_array).
 ///
 /// These methods don't allocate memory and use `Box<[T]>` as a internal buffer.
 ///
@@ -43,7 +43,7 @@ use crate::slice_container::PySliceContainer;
 /// for this kind of array**.
 ///
 /// - Case2: Constructed via other methods, like [`ToPyArray`](../convert/trait.ToPyArray.html) or
-/// [`from_slice`](#method.from_slice) or [`from_array`](#from_array).
+/// [`from_slice`](#method.from_slice) or [`from_array`](#method.from_array).
 ///
 /// These methods allocate memory in Python's private heap.
 ///
@@ -841,7 +841,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     ///
     /// Please consider the use of safe alternatives
     /// ([`PyReadonlyArray::as_array`](../struct.PyReadonlyArray.html#method.as_array)
-    /// or [`to_array`](#method.to_array)) instead of this.
+    /// or [`to_owned_array`](#method.to_owned_array)) instead of this.
     ///
     /// # Safety
     /// If the internal array is not readonly and can be mutated from Python code,
