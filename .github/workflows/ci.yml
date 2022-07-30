@@ -113,7 +113,7 @@ jobs:
           default: true
       - uses: Swatinem/rust-cache@v2
         with:
-          working-directory: examples/simple
+          workspaces: examples/simple
         continue-on-error: true
       - name: Install toml
         run: pip install toml
