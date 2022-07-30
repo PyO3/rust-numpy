@@ -23,7 +23,7 @@ jobs:
           profile: minimal
           components: rustfmt, clippy
           default: true
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
         continue-on-error: true
       - run: ./x.py check
 
@@ -111,7 +111,7 @@ jobs:
           toolchain: 1.48.0
           profile: minimal
           default: true
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
         with:
           working-directory: examples/simple
         continue-on-error: true
@@ -165,7 +165,7 @@ jobs:
           toolchain: stable
           profile: minimal
           default: true
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
         continue-on-error: true
       - name: Test examples
         run: |
@@ -185,7 +185,7 @@ jobs:
           architecture: x64
       - name: Install numpy
         run: pip install numpy
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
         continue-on-error: true
       - uses: actions-rs/toolchain@v1
         with:
