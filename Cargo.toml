@@ -15,7 +15,7 @@ keywords = ["python", "numpy", "ffi", "pyo3"]
 license = "BSD-2-Clause"
 
 [features]
-default = ["half"]
+default = []
 half = ["dep:half"]
 
 [dependencies]

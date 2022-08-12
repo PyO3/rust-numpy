@@ -145,6 +145,9 @@ cargo update ---package ndarray:0.15.3 --precise 0.13.1
 
 to achieve a single dependency on version `0.13.1` of `ndarray`.
 
+## Features
+- `half` to enable support for f16
+
 ## Contributing
 
 We welcome [issues](https://github.com/PyO3/rust-numpy/issues)
