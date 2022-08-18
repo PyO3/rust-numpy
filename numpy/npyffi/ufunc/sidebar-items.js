@@ -1,1 +1,1 @@
-initSidebarItems({"static":[["PY_UFUNC_API","A global variable which stores a ‘capsule’ pointer to Numpy UFunc API."]],"struct":[["PyUFuncAPI",""]]});
+window.SIDEBAR_ITEMS = {"static":[["PY_UFUNC_API","A global variable which stores a ‘capsule’ pointer to Numpy UFunc API."]],"struct":[["PyUFuncAPI",""]]};
