@@ -95,7 +95,7 @@ jobs:
         with:
           target: aarch64
           manylinux: auto
-          args: --manifest-path examples/simple/Cargo.toml --no-sdist
+          args: --manifest-path examples/simple/Cargo.toml
 
   check-msrv:
     runs-on: ubuntu-latest

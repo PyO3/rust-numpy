@@ -60,7 +60,18 @@ def check(args):
     for manifest in gen_examples("Cargo.toml"):
         run("cargo", "fmt", "--manifest-path", manifest, "--", "--check")
 
-        run("cargo", "clippy", "--manifest-path", manifest, "--", "--deny", "warnings")
+        run(
+            "cargo",
+            "clippy",
+            "--manifest-path",
+            manifest,
+            "--",
+            "--deny",
+            "warnings",
+            # https://github.com/PyO3/pyo3/issues/2555
+            "--allow",
+            "clippy::borrow-deref-ref",
+        )
 
 
 def doc(args):
