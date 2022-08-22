@@ -1,5 +1,11 @@
 import numpy as np
-from rust_ext import axpy, conj, mult, extract, add_minutes_to_seconds, polymorphic_add
+from rust_ext import head, axpy, conj, mult, extract, add_minutes_to_seconds, polymorphic_add
+
+
+def test_head():
+    x = np.array(['first', None, 42])
+    first = head(x)
+    assert first == 'first'
 
 
 def test_axpy():

@@ -7,13 +7,21 @@ use numpy::{
     PyReadwriteArray1, PyReadwriteArrayDyn,
 };
 use pyo3::{
+    exceptions::PyIndexError,
     pymodule,
     types::{PyDict, PyModule},
-    FromPyObject, PyAny, PyResult, Python,
+    FromPyObject, PyAny, PyObject, PyResult, Python,
 };
 
 #[pymodule]
 fn rust_ext(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+    // example using generic PyObject
+    fn head(x: ArrayViewD<'_, PyObject>) -> PyResult<PyObject> {
+        x.get(0)
+            .cloned()
+            .ok_or_else(|| PyIndexError::new_err("array index out of range"))
+    }
+
     // example using immutable borrows producing a new array
     fn axpy(a: f64, x: ArrayViewD<'_, f64>, y: ArrayViewD<'_, f64>) -> ArrayD<f64> {
         a * &x + &y
@@ -32,6 +40,13 @@ fn rust_ext(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     // example using generics
     fn generic_add<T: Copy + Add<Output = T>>(x: ArrayView1<T>, y: ArrayView1<T>) -> Array1<T> {
         &x + &y
+    }
+
+    // wrapper of `head`
+    #[pyfn(m)]
+    #[pyo3(name = "head")]
+    fn head_py(_py: Python<'_>, x: PyReadonlyArrayDyn<'_, PyObject>) -> PyResult<PyObject> {
+        head(x.as_array())
     }
 
     // wrapper of `axpy`
