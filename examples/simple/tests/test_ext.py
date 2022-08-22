@@ -3,8 +3,8 @@ from rust_ext import head, axpy, conj, mult, extract, add_minutes_to_seconds, po
 
 
 def test_head():
-    x = np.array(['first', 'second'])
-    first = head(x.astype(object))
+    x = np.array(['first', None, 42])
+    first = head(x)
     assert first == 'first'
 
 

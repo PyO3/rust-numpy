@@ -17,11 +17,7 @@ use pyo3::{
 fn rust_ext(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     // example using generic PyObject
     fn head(x: ArrayViewD<'_, PyObject>) -> PyResult<PyObject> {
-        if x.len() > 0 {
-            Ok(x[0].clone())
-        } else {
-            Err(PyIndexError::new_err("array index out of range"))
-        }
+        x.get(0).and_then(|elem| Some(elem.clone())).ok_or_else(|| PyIndexError::new_err("array index out of range"))
     }
 
     // example using immutable borrows producing a new array
