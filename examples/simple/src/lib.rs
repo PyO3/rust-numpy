@@ -7,9 +7,9 @@ use numpy::{
     PyReadwriteArray1, PyReadwriteArrayDyn,
 };
 use pyo3::{
+    exceptions::PyIndexError,
     pymodule,
     types::{PyDict, PyModule},
-    exceptions::PyIndexError,
     FromPyObject, PyAny, PyObject, PyResult, Python,
 };
 
@@ -17,7 +17,9 @@ use pyo3::{
 fn rust_ext(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     // example using generic PyObject
     fn head(x: ArrayViewD<'_, PyObject>) -> PyResult<PyObject> {
-        x.get(0).cloned().ok_or_else(|| PyIndexError::new_err("array index out of range"))
+        x.get(0)
+            .cloned()
+            .ok_or_else(|| PyIndexError::new_err("array index out of range"))
     }
 
     // example using immutable borrows producing a new array
@@ -43,10 +45,7 @@ fn rust_ext(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     // wrapper of `head`
     #[pyfn(m)]
     #[pyo3(name = "head")]
-    fn head_py<'py>(
-        _py: Python<'py>,
-        x: PyReadonlyArrayDyn<'_, PyObject>,
-    ) -> PyResult<PyObject> {
+    fn head_py<'py>(_py: Python<'py>, x: PyReadonlyArrayDyn<'_, PyObject>) -> PyResult<PyObject> {
         head(x.as_array())
     }
 
