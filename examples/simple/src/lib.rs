@@ -45,7 +45,7 @@ fn rust_ext(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     // wrapper of `head`
     #[pyfn(m)]
     #[pyo3(name = "head")]
-    fn head_py<'py>(_py: Python<'py>, x: PyReadonlyArrayDyn<'_, PyObject>) -> PyResult<PyObject> {
+    fn head_py(_py: Python<'_>, x: PyReadonlyArrayDyn<'_, PyObject>) -> PyResult<PyObject> {
         head(x.as_array())
     }
 
