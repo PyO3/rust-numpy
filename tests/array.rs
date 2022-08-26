@@ -4,8 +4,8 @@ use std::mem::size_of;
 use half::f16;
 use ndarray::{array, s, Array1, Dim};
 use numpy::{
-    dtype, get_array_module, pyarray, PyArray, PyArray1, PyArray2, PyArrayDescr, PyArrayDyn,
-    ToPyArray,
+    dtype, get_array_module, npyffi::NPY_ORDER, pyarray, PyArray, PyArray1, PyArray2, PyArrayDescr,
+    PyArrayDyn, ToPyArray,
 };
 use pyo3::{
     py_run, pyclass, pymethods,
@@ -505,6 +505,23 @@ fn get_works() {
             assert_eq!(*array.uget_mut([0, 1, 0]), 3);
             assert_eq!(*array.uget_raw([0, 0, 1]), 2);
         }
+    });
+}
+
+#[test]
+fn reshape() {
+    Python::with_gil(|py| {
+        let array = PyArray::from_iter(py, 0..9)
+            .reshape_with_order([3, 3], NPY_ORDER::NPY_FORTRANORDER)
+            .unwrap();
+
+        assert_eq!(
+            array.readonly().as_array(),
+            array![[0, 3, 6], [1, 4, 7], [2, 5, 8]]
+        );
+        assert!(array.is_fortran_contiguous());
+
+        assert!(array.reshape([5]).is_err());
     });
 }
 
