@@ -213,11 +213,11 @@ pub trait ToNpyDims: Dimension + Sealed {
         self.ndim() as c_int
     }
     #[doc(hidden)]
-    fn as_dims_ptr(&self) -> *mut npyffi::npy_intp {
-        self.slice().as_ptr() as *mut npyffi::npy_intp
+    fn as_dims_ptr(&mut self) -> *mut npyffi::npy_intp {
+        self.slice_mut().as_ptr() as *mut npyffi::npy_intp
     }
     #[doc(hidden)]
-    fn to_npy_dims(&self) -> npyffi::PyArray_Dims {
+    fn to_npy_dims(&mut self) -> npyffi::PyArray_Dims {
         npyffi::PyArray_Dims {
             ptr: self.as_dims_ptr(),
             len: self.ndim_cint(),
