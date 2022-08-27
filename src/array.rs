@@ -1379,7 +1379,8 @@ impl<T: Element, D> PyArray<T, D> {
         dims: ID,
         order: NPY_ORDER,
     ) -> PyResult<&'py PyArray<T, ID::Dim>> {
-        let mut dims = dims.into_dimension().to_npy_dims();
+        let dims = dims.into_dimension();
+        let mut dims = dims.to_npy_dims();
         let ptr = unsafe {
             PY_ARRAY_API.PyArray_Newshape(
                 self.py(),
@@ -1436,7 +1437,8 @@ impl<T: Element, D> PyArray<T, D> {
     /// [ndarray-resize]: https://numpy.org/doc/stable/reference/generated/numpy.ndarray.resize.html
     /// [PyArray_Resize]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_Resize
     pub unsafe fn resize<ID: IntoDimension>(&self, dims: ID) -> PyResult<()> {
-        let mut dims = dims.into_dimension().to_npy_dims();
+        let dims = dims.into_dimension();
+        let mut dims = dims.to_npy_dims();
         let res = PY_ARRAY_API.PyArray_Resize(
             self.py(),
             self.as_array_ptr(),
