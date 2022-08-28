@@ -3,6 +3,10 @@
 - Unreleased
   - Drop our wrapper for NumPy iterators which were deprecated in v0.16.0 as ndarray's iteration facilities are almost always preferable. ([#324](https://github.com/PyO3/rust-numpy/pull/324))
 
+- v0.17.1
+  - Fix use-after-free in `PyArray::resize`, `PyArray::reshape` and `PyArray::reshape_with_order`. ([#341](https://github.com/PyO3/rust-numpy/pull/341))
+  - Fix UB in `ToNpyDims::as_dims_ptr` with dimensions of dynamic size (-1). ([#344](https://github.com/PyO3/rust-numpy/pull/344))
+
 - v0.17.0
   - Add dynamic borrow checking to safely construct references into the interior of NumPy arrays. ([#274](https://github.com/PyO3/rust-numpy/pull/274))
     - The deprecated iterator builders `NpySingleIterBuilder::{readonly,readwrite}` and `NpyMultiIterBuilder::add_{readonly,readwrite}` now take referencces to `PyReadonlyArray` and `PyReadwriteArray` instead of consuming them.
