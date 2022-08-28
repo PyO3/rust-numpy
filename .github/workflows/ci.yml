@@ -16,7 +16,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
@@ -48,7 +48,7 @@ jobs:
           - python-version: pypy-3.8
             platform: { os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" }
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
@@ -90,17 +90,37 @@ jobs:
     runs-on: ubuntu-latest
     needs: [lint, check-msrv, examples]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: messense/maturin-action@v1
         with:
           target: aarch64
           manylinux: auto
           args: --manifest-path examples/simple/Cargo.toml
 
+  address-sanitizer:
+    runs-on: ubuntu-22.04
+    needs: [lint, check-msrv, examples]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          profile: minimal
+          components: rust-src
+          default: true
+      - uses: Swatinem/rust-cache@v2
+        continue-on-error: true
+      - run: |
+            pip install numpy
+            cargo test -Zbuild-std --target x86_64-unknown-linux-gnu --release --lib --tests
+        env:
+          RUSTFLAGS: -Zsanitizer=address
+          ASAN_OPTIONS: detect_leaks=0
+
   check-msrv:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
@@ -152,7 +172,7 @@ jobs:
   examples:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
@@ -177,7 +197,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [lint, check-msrv, examples]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
