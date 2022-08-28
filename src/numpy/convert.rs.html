@@ -498,11 +498,11 @@
         <span class="self">self</span>.<span class="ident">ndim</span>() <span class="kw">as</span> <span class="ident">c_int</span>
     }
     <span class="attribute">#[<span class="ident">doc</span>(<span class="ident">hidden</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">as_dims_ptr</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">*mut</span> <span class="ident">npyffi::npy_intp</span> {
-        <span class="self">self</span>.<span class="ident">slice</span>().<span class="ident">as_ptr</span>() <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="ident">npyffi::npy_intp</span>
+    <span class="kw">fn</span> <span class="ident">as_dims_ptr</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="kw-2">*mut</span> <span class="ident">npyffi::npy_intp</span> {
+        <span class="self">self</span>.<span class="ident">slice_mut</span>().<span class="ident">as_ptr</span>() <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="ident">npyffi::npy_intp</span>
     }
     <span class="attribute">#[<span class="ident">doc</span>(<span class="ident">hidden</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">to_npy_dims</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">npyffi::PyArray_Dims</span> {
+    <span class="kw">fn</span> <span class="ident">to_npy_dims</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="ident">npyffi::PyArray_Dims</span> {
         <span class="ident">npyffi::PyArray_Dims</span> {
             <span class="ident">ptr</span>: <span class="self">self</span>.<span class="ident">as_dims_ptr</span>(),
             <span class="ident">len</span>: <span class="self">self</span>.<span class="ident">ndim_cint</span>(),

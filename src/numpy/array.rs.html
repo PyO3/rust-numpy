@@ -1535,6 +1535,8 @@
 <span id="1529">1529</span>
 <span id="1530">1530</span>
 <span id="1531">1531</span>
+<span id="1532">1532</span>
+<span id="1533">1533</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Safe interface for NumPy&#39;s [N-dimensional arrays][ndarray]</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! [ndarray]: https://numpy.org/doc/stable/reference/arrays.ndarray.html</span>
@@ -2001,7 +2003,7 @@
     <span class="kw">where</span>
         <span class="ident">ID</span>: <span class="ident">IntoDimension</span><span class="op">&lt;</span><span class="ident">Dim</span> <span class="op">=</span> <span class="ident">D</span><span class="op">&gt;</span>,
     {
-        <span class="kw">let</span> <span class="ident">dims</span> <span class="op">=</span> <span class="ident">dims</span>.<span class="ident">into_dimension</span>();
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dims</span> <span class="op">=</span> <span class="ident">dims</span>.<span class="ident">into_dimension</span>();
         <span class="kw">let</span> <span class="ident">ptr</span> <span class="op">=</span> <span class="ident">PY_ARRAY_API</span>.<span class="ident">PyArray_NewFromDescr</span>(
             <span class="ident">py</span>,
             <span class="ident">PY_ARRAY_API</span>.<span class="ident">get_type_object</span>(<span class="ident">py</span>, <span class="ident">npyffi::NpyTypes::PyArray_Type</span>),
@@ -2027,7 +2029,7 @@
     <span class="kw">where</span>
         <span class="ident">ID</span>: <span class="ident">IntoDimension</span><span class="op">&lt;</span><span class="ident">Dim</span> <span class="op">=</span> <span class="ident">D</span><span class="op">&gt;</span>,
     {
-        <span class="kw">let</span> <span class="ident">dims</span> <span class="op">=</span> <span class="ident">dims</span>.<span class="ident">into_dimension</span>();
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dims</span> <span class="op">=</span> <span class="ident">dims</span>.<span class="ident">into_dimension</span>();
         <span class="kw">let</span> <span class="ident">ptr</span> <span class="op">=</span> <span class="ident">PY_ARRAY_API</span>.<span class="ident">PyArray_NewFromDescr</span>(
             <span class="ident">py</span>,
             <span class="ident">PY_ARRAY_API</span>.<span class="ident">get_type_object</span>(<span class="ident">py</span>, <span class="ident">npyffi::NpyTypes::PyArray_Type</span>),
@@ -2149,7 +2151,7 @@
     <span class="kw">where</span>
         <span class="ident">ID</span>: <span class="ident">IntoDimension</span><span class="op">&lt;</span><span class="ident">Dim</span> <span class="op">=</span> <span class="ident">D</span><span class="op">&gt;</span>,
     {
-        <span class="kw">let</span> <span class="ident">dims</span> <span class="op">=</span> <span class="ident">dims</span>.<span class="ident">into_dimension</span>();
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dims</span> <span class="op">=</span> <span class="ident">dims</span>.<span class="ident">into_dimension</span>();
         <span class="kw">unsafe</span> {
             <span class="kw">let</span> <span class="ident">ptr</span> <span class="op">=</span> <span class="ident">PY_ARRAY_API</span>.<span class="ident">PyArray_Zeros</span>(
                 <span class="ident">py</span>,
@@ -2916,7 +2918,8 @@
         <span class="ident">dims</span>: <span class="ident">ID</span>,
         <span class="ident">order</span>: <span class="ident">NPY_ORDER</span>,
     ) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">ID::Dim</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dims</span> <span class="op">=</span> <span class="ident">dims</span>.<span class="ident">into_dimension</span>().<span class="ident">to_npy_dims</span>();
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dims</span> <span class="op">=</span> <span class="ident">dims</span>.<span class="ident">into_dimension</span>();
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dims</span> <span class="op">=</span> <span class="ident">dims</span>.<span class="ident">to_npy_dims</span>();
         <span class="kw">let</span> <span class="ident">ptr</span> <span class="op">=</span> <span class="kw">unsafe</span> {
             <span class="ident">PY_ARRAY_API</span>.<span class="ident">PyArray_Newshape</span>(
                 <span class="self">self</span>.<span class="ident">py</span>(),
@@ -2973,7 +2976,8 @@
     <span class="doccomment">/// [ndarray-resize]: https://numpy.org/doc/stable/reference/generated/numpy.ndarray.resize.html</span>
     <span class="doccomment">/// [PyArray_Resize]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_Resize</span>
     <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">resize</span><span class="op">&lt;</span><span class="ident">ID</span>: <span class="ident">IntoDimension</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">dims</span>: <span class="ident">ID</span>) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dims</span> <span class="op">=</span> <span class="ident">dims</span>.<span class="ident">into_dimension</span>().<span class="ident">to_npy_dims</span>();
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dims</span> <span class="op">=</span> <span class="ident">dims</span>.<span class="ident">into_dimension</span>();
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dims</span> <span class="op">=</span> <span class="ident">dims</span>.<span class="ident">to_npy_dims</span>();
         <span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">PY_ARRAY_API</span>.<span class="ident">PyArray_Resize</span>(
             <span class="self">self</span>.<span class="ident">py</span>(),
             <span class="self">self</span>.<span class="ident">as_array_ptr</span>(),
