@@ -74,7 +74,7 @@ jobs:
       - name: Test
         run: |
             pip install numpy
-            cargo test
+            cargo test --all-features
         # Not on PyPy, because no embedding API
         if: ${{ !startsWith(matrix.python-version, 'pypy') }}
       - name: Test example
@@ -215,7 +215,7 @@ jobs:
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
       - name: Generate code coverage
-        run: cargo llvm-cov --lcov --output-path coverage.lcov
+        run: cargo llvm-cov --all-features --lcov --output-path coverage.lcov
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v2
         with:
