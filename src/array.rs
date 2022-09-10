@@ -1040,6 +1040,110 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     }
 }
 
+#[cfg(feature = "nalgebra")]
+impl<N, D> PyArray<N, D>
+where
+    N: nalgebra::Scalar + Element,
+    D: Dimension,
+{
+    fn try_as_matrix_shape_strides<R, C, RStride, CStride>(
+        &self,
+    ) -> Option<((R, C), (RStride, CStride))>
+    where
+        R: nalgebra::Dim,
+        C: nalgebra::Dim,
+        RStride: nalgebra::Dim,
+        CStride: nalgebra::Dim,
+    {
+        let ndim = self.ndim();
+        let shape = self.shape();
+        let strides = self.strides();
+
+        if ndim != 1 && ndim != 2 {
+            return None;
+        }
+
+        if strides.iter().any(|strides| *strides < 0) {
+            return None;
+        }
+
+        let rows = shape[0];
+        let cols = *shape.get(1).unwrap_or(&1);
+
+        if R::try_to_usize().map(|expected| rows == expected) == Some(false) {
+            return None;
+        }
+
+        if C::try_to_usize().map(|expected| cols == expected) == Some(false) {
+            return None;
+        }
+
+        let row_stride = strides[0] as usize / mem::size_of::<N>();
+        let col_stride = strides
+            .get(1)
+            .map_or(rows, |stride| *stride as usize / mem::size_of::<N>());
+
+        if RStride::try_to_usize().map(|expected| row_stride == expected) == Some(false) {
+            return None;
+        }
+
+        if CStride::try_to_usize().map(|expected| col_stride == expected) == Some(false) {
+            return None;
+        }
+
+        let shape = (R::from_usize(rows), C::from_usize(cols));
+
+        let strides = (
+            RStride::from_usize(row_stride),
+            CStride::from_usize(col_stride),
+        );
+
+        Some((shape, strides))
+    }
+
+    /// Try to convert this array into a [`nalgebra::MatrixSlice`] using the given shape and strides.
+    ///
+    /// # Safety
+    ///
+    /// The existence of an exclusive reference to the internal data, e.g. `&mut [T]` or `ArrayViewMut`, implies undefined behavior.
+    pub unsafe fn try_as_matrix<R, C, RStride, CStride>(
+        &self,
+    ) -> Option<nalgebra::MatrixSlice<N, R, C, RStride, CStride>>
+    where
+        R: nalgebra::Dim,
+        C: nalgebra::Dim,
+        RStride: nalgebra::Dim,
+        CStride: nalgebra::Dim,
+    {
+        let (shape, strides) = self.try_as_matrix_shape_strides()?;
+
+        let storage = nalgebra::SliceStorage::from_raw_parts(self.data(), shape, strides);
+
+        Some(nalgebra::Matrix::from_data(storage))
+    }
+
+    /// Try to convert this array into a [`nalgebra::MatrixSliceMut`] using the given shape and strides.
+    ///
+    /// # Safety
+    ///
+    /// The existence of another reference to the internal data, e.g. `&[T]` or `ArrayView`, implies undefined behavior.
+    pub unsafe fn try_as_matrix_mut<R, C, RStride, CStride>(
+        &self,
+    ) -> Option<nalgebra::MatrixSliceMut<N, R, C, RStride, CStride>>
+    where
+        R: nalgebra::Dim,
+        C: nalgebra::Dim,
+        RStride: nalgebra::Dim,
+        CStride: nalgebra::Dim,
+    {
+        let (shape, strides) = self.try_as_matrix_shape_strides()?;
+
+        let storage = nalgebra::SliceStorageMut::from_raw_parts(self.data(), shape, strides);
+
+        Some(nalgebra::Matrix::from_data(storage))
+    }
+}
+
 impl<D: Dimension> PyArray<PyObject, D> {
     /// Construct a NumPy array containing objects stored in a [`ndarray::Array`]
     ///
