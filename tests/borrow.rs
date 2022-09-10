@@ -342,3 +342,69 @@ fn resize_using_exclusive_borrow() {
         assert_eq!(array.as_slice_mut().unwrap(), &[0.0; 5]);
     });
 }
+
+#[cfg(feature = "nalgebra")]
+#[test]
+fn matrix_from_numpy() {
+    Python::with_gil(|py| {
+        let array = numpy::pyarray![py, [0, 1, 2], [3, 4, 5], [6, 7, 8]];
+
+        {
+            let array = array.readonly();
+
+            let matrix = array.as_matrix();
+            assert_eq!(matrix, nalgebra::Matrix3::new(0, 1, 2, 3, 4, 5, 6, 7, 8));
+
+            let matrix: nalgebra::MatrixSlice<
+                i32,
+                nalgebra::Const<3>,
+                nalgebra::Const<3>,
+                nalgebra::Const<3>,
+                nalgebra::Const<1>,
+            > = array.try_as_matrix().unwrap();
+            assert_eq!(matrix, nalgebra::Matrix3::new(0, 1, 2, 3, 4, 5, 6, 7, 8));
+        }
+
+        {
+            let array = array.readwrite();
+
+            let matrix = array.as_matrix_mut();
+            assert_eq!(matrix, nalgebra::Matrix3::new(0, 1, 2, 3, 4, 5, 6, 7, 8));
+
+            let matrix: nalgebra::MatrixSliceMut<
+                i32,
+                nalgebra::Const<3>,
+                nalgebra::Const<3>,
+                nalgebra::Const<3>,
+                nalgebra::Const<1>,
+            > = array.try_as_matrix_mut().unwrap();
+            assert_eq!(matrix, nalgebra::Matrix3::new(0, 1, 2, 3, 4, 5, 6, 7, 8));
+        }
+    });
+
+    Python::with_gil(|py| {
+        let array = numpy::pyarray![py, 0, 1, 2];
+
+        {
+            let array = array.readonly();
+
+            let matrix = array.as_matrix();
+            assert_eq!(matrix, nalgebra::Matrix3x1::new(0, 1, 2));
+
+            let matrix: nalgebra::MatrixSlice<i32, nalgebra::Const<3>, nalgebra::Const<1>> =
+                array.try_as_matrix().unwrap();
+            assert_eq!(matrix, nalgebra::Matrix3x1::new(0, 1, 2));
+        }
+
+        {
+            let array = array.readwrite();
+
+            let matrix = array.as_matrix_mut();
+            assert_eq!(matrix, nalgebra::Matrix3x1::new(0, 1, 2));
+
+            let matrix: nalgebra::MatrixSliceMut<i32, nalgebra::Const<3>, nalgebra::Const<1>> =
+                array.try_as_matrix_mut().unwrap();
+            assert_eq!(matrix, nalgebra::Matrix3x1::new(0, 1, 2));
+        }
+    });
+}

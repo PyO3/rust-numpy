@@ -474,6 +474,56 @@ where
     }
 }
 
+#[cfg(feature = "nalgebra")]
+impl<'py, N, D> PyReadonlyArray<'py, N, D>
+where
+    N: nalgebra::Scalar + Element,
+    D: Dimension,
+{
+    /// Try to convert this array into a [`nalgebra::MatrixSlice`] using the given shape and strides.
+    pub fn try_as_matrix<R, C, RStride, CStride>(
+        &self,
+    ) -> Option<nalgebra::MatrixSlice<N, R, C, RStride, CStride>>
+    where
+        R: nalgebra::Dim,
+        C: nalgebra::Dim,
+        RStride: nalgebra::Dim,
+        CStride: nalgebra::Dim,
+    {
+        unsafe { self.array.try_as_matrix() }
+    }
+}
+
+#[cfg(feature = "nalgebra")]
+impl<'py, N> PyReadonlyArray<'py, N, Ix1>
+where
+    N: nalgebra::Scalar + Element,
+{
+    /// Convert this one-dimensional array into a [`nalgebra::DMatrixSlice`] using dynamic strides.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the array has negative strides.
+    pub fn as_matrix(&self) -> nalgebra::DMatrixSlice<N, nalgebra::Dynamic, nalgebra::Dynamic> {
+        self.try_as_matrix().unwrap()
+    }
+}
+
+#[cfg(feature = "nalgebra")]
+impl<'py, N> PyReadonlyArray<'py, N, Ix2>
+where
+    N: nalgebra::Scalar + Element,
+{
+    /// Convert this two-dimensional array into a [`nalgebra::DMatrixSlice`] using dynamic strides.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the array has negative strides.
+    pub fn as_matrix(&self) -> nalgebra::DMatrixSlice<N, nalgebra::Dynamic, nalgebra::Dynamic> {
+        self.try_as_matrix().unwrap()
+    }
+}
+
 impl<'a, T, D> Clone for PyReadonlyArray<'a, T, D>
 where
     T: Element,
@@ -619,6 +669,60 @@ where
         I: NpyIndex<Dim = D>,
     {
         unsafe { self.array.get_mut(index) }
+    }
+}
+
+#[cfg(feature = "nalgebra")]
+impl<'py, N, D> PyReadwriteArray<'py, N, D>
+where
+    N: nalgebra::Scalar + Element,
+    D: Dimension,
+{
+    /// Try to convert this array into a [`nalgebra::MatrixSliceMut`] using the given shape and strides.
+    pub fn try_as_matrix_mut<R, C, RStride, CStride>(
+        &self,
+    ) -> Option<nalgebra::MatrixSliceMut<N, R, C, RStride, CStride>>
+    where
+        R: nalgebra::Dim,
+        C: nalgebra::Dim,
+        RStride: nalgebra::Dim,
+        CStride: nalgebra::Dim,
+    {
+        unsafe { self.array.try_as_matrix_mut() }
+    }
+}
+
+#[cfg(feature = "nalgebra")]
+impl<'py, N> PyReadwriteArray<'py, N, Ix1>
+where
+    N: nalgebra::Scalar + Element,
+{
+    /// Convert this one-dimensional array into a [`nalgebra::DMatrixSliceMut`] using dynamic strides.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the array has negative strides.
+    pub fn as_matrix_mut(
+        &self,
+    ) -> nalgebra::DMatrixSliceMut<N, nalgebra::Dynamic, nalgebra::Dynamic> {
+        self.try_as_matrix_mut().unwrap()
+    }
+}
+
+#[cfg(feature = "nalgebra")]
+impl<'py, N> PyReadwriteArray<'py, N, Ix2>
+where
+    N: nalgebra::Scalar + Element,
+{
+    /// Convert this two-dimensional array into a [`nalgebra::DMatrixSliceMut`] using dynamic strides.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the array has negative strides.
+    pub fn as_matrix_mut(
+        &self,
+    ) -> nalgebra::DMatrixSliceMut<N, nalgebra::Dynamic, nalgebra::Dynamic> {
+        self.try_as_matrix_mut().unwrap()
     }
 }
 
