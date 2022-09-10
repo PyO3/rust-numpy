@@ -303,6 +303,7 @@ fn slice_container_type_confusion() {
 #[test]
 fn matrix_to_numpy() {
     let matrix = nalgebra::Matrix3::<i32>::new(0, 1, 2, 3, 4, 5, 6, 7, 8);
+    assert!(nalgebra::RawStorage::is_contiguous(&matrix.data));
 
     Python::with_gil(|py| {
         let array = matrix.to_pyarray(py);
@@ -311,5 +312,14 @@ fn matrix_to_numpy() {
             array.readonly().as_array(),
             array![[0, 1, 2], [3, 4, 5], [6, 7, 8]],
         );
+    });
+
+    let matrix = matrix.row(0);
+    assert!(!nalgebra::RawStorage::is_contiguous(&matrix.data));
+
+    Python::with_gil(|py| {
+        let array = matrix.to_pyarray(py);
+
+        assert_eq!(array.readonly().as_array(), array![[0, 1, 2]]);
     });
 }
