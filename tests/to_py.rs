@@ -298,3 +298,18 @@ fn slice_container_type_confusion() {
         let _py_arr = vec![1, 2, 3].into_pyarray(py);
     });
 }
+
+#[cfg(feature = "nalgebra")]
+#[test]
+fn matrix_to_numpy() {
+    let matrix = nalgebra::Matrix3::<i32>::new(0, 1, 2, 3, 4, 5, 6, 7, 8);
+
+    Python::with_gil(|py| {
+        let array = matrix.to_pyarray(py);
+
+        assert_eq!(
+            array.readonly().as_array(),
+            array![[0, 1, 2], [3, 4, 5], [6, 7, 8]],
+        );
+    });
+}
