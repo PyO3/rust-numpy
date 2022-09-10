@@ -189,17 +189,21 @@ where
     N: nalgebra::Scalar + Element,
     R: nalgebra::Dim,
     C: nalgebra::Dim,
-    S: nalgebra::storage::Storage<N, R, C>,
+    S: nalgebra::Storage<N, R, C>,
 {
     type Item = N;
     type Dim = crate::Ix2;
 
     fn to_pyarray<'py>(&self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
         unsafe {
-            let array = PyArray::new(py, (self.nrows(), self.ncols()), false);
-            for r in 0..self.nrows() {
-                for c in 0..self.ncols() {
-                    *array.uget_mut((r, c)) = self.get_unchecked((r, c)).clone();
+            let array = PyArray::<N, _>::new(py, (self.nrows(), self.ncols()), true);
+            let mut data_ptr = array.data();
+            if self.data.is_contiguous() {
+                ptr::copy_nonoverlapping(self.data.ptr(), data_ptr, self.len());
+            } else {
+                for item in self.iter() {
+                    data_ptr.write(item.clone());
+                    data_ptr = data_ptr.add(1);
                 }
             }
             array
