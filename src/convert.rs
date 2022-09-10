@@ -183,6 +183,30 @@ where
     }
 }
 
+#[cfg(feature = "nalgebra")]
+impl<N, R, C, S> ToPyArray for nalgebra::Matrix<N, R, C, S>
+where
+    N: nalgebra::Scalar + Element,
+    R: nalgebra::Dim,
+    C: nalgebra::Dim,
+    S: nalgebra::storage::Storage<N, R, C>,
+{
+    type Item = N;
+    type Dim = crate::Ix2;
+
+    fn to_pyarray<'py>(&self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
+        unsafe {
+            let array = PyArray::new(py, (self.nrows(), self.ncols()), false);
+            for r in 0..self.nrows() {
+                for c in 0..self.ncols() {
+                    *array.uget_mut((r, c)) = self.get_unchecked((r, c)).clone();
+                }
+            }
+            array
+        }
+    }
+}
+
 pub(crate) trait ArrayExt {
     fn npy_strides(&self) -> [npyffi::npy_intp; 32];
     fn order(&self) -> Option<c_int>;
