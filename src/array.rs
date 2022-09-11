@@ -1106,6 +1106,7 @@ where
     /// # Safety
     ///
     /// The existence of an exclusive reference to the internal data, e.g. `&mut [T]` or `ArrayViewMut`, implies undefined behavior.
+    #[doc(alias = "nalgebra")]
     pub unsafe fn try_as_matrix<R, C, RStride, CStride>(
         &self,
     ) -> Option<nalgebra::MatrixSlice<N, R, C, RStride, CStride>>
@@ -1127,6 +1128,7 @@ where
     /// # Safety
     ///
     /// The existence of another reference to the internal data, e.g. `&[T]` or `ArrayView`, implies undefined behavior.
+    #[doc(alias = "nalgebra")]
     pub unsafe fn try_as_matrix_mut<R, C, RStride, CStride>(
         &self,
     ) -> Option<nalgebra::MatrixSliceMut<N, R, C, RStride, CStride>>

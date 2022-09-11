@@ -481,6 +481,7 @@ where
     D: Dimension,
 {
     /// Try to convert this array into a [`nalgebra::MatrixSlice`] using the given shape and strides.
+    #[doc(alias = "nalgebra")]
     pub fn try_as_matrix<R, C, RStride, CStride>(
         &self,
     ) -> Option<nalgebra::MatrixSlice<N, R, C, RStride, CStride>>
@@ -504,6 +505,7 @@ where
     /// # Panics
     ///
     /// Panics if the array has negative strides.
+    #[doc(alias = "nalgebra")]
     pub fn as_matrix(&self) -> nalgebra::DMatrixSlice<N, nalgebra::Dynamic, nalgebra::Dynamic> {
         self.try_as_matrix().unwrap()
     }
@@ -519,6 +521,7 @@ where
     /// # Panics
     ///
     /// Panics if the array has negative strides.
+    #[doc(alias = "nalgebra")]
     pub fn as_matrix(&self) -> nalgebra::DMatrixSlice<N, nalgebra::Dynamic, nalgebra::Dynamic> {
         self.try_as_matrix().unwrap()
     }
@@ -679,6 +682,7 @@ where
     D: Dimension,
 {
     /// Try to convert this array into a [`nalgebra::MatrixSliceMut`] using the given shape and strides.
+    #[doc(alias = "nalgebra")]
     pub fn try_as_matrix_mut<R, C, RStride, CStride>(
         &self,
     ) -> Option<nalgebra::MatrixSliceMut<N, R, C, RStride, CStride>>
@@ -702,6 +706,7 @@ where
     /// # Panics
     ///
     /// Panics if the array has negative strides.
+    #[doc(alias = "nalgebra")]
     pub fn as_matrix_mut(
         &self,
     ) -> nalgebra::DMatrixSliceMut<N, nalgebra::Dynamic, nalgebra::Dynamic> {
@@ -719,6 +724,7 @@ where
     /// # Panics
     ///
     /// Panics if the array has negative strides.
+    #[doc(alias = "nalgebra")]
     pub fn as_matrix_mut(
         &self,
     ) -> nalgebra::DMatrixSliceMut<N, nalgebra::Dynamic, nalgebra::Dynamic> {
