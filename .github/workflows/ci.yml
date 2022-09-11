@@ -97,25 +97,24 @@ jobs:
           manylinux: auto
           args: --manifest-path examples/simple/Cargo.toml
 
-  address-sanitizer:
+  valgrind:
     runs-on: ubuntu-22.04
     needs: [lint, check-msrv, examples]
     steps:
       - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly
+          toolchain: stable
           profile: minimal
-          components: rust-src
           default: true
       - uses: Swatinem/rust-cache@v2
         continue-on-error: true
       - run: |
+            sudo apt-get install --yes valgrind
             pip install numpy
-            cargo test -Zbuild-std --target x86_64-unknown-linux-gnu --release --lib --tests
+            cargo test --all-features --release
         env:
-          RUSTFLAGS: -Zsanitizer=address
-          ASAN_OPTIONS: detect_leaks=0
+          CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUNNER: valgrind --leak-check=no --error-exitcode=1
 
   check-msrv:
     runs-on: ubuntu-latest
