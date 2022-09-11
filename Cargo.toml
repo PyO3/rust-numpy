@@ -27,6 +27,7 @@ pyo3 = { version = "0.17", default-features = false, features = ["macros"] }
 
 [dev-dependencies]
 pyo3 = { version = "0.17", default-features = false, features = ["auto-initialize"] }
+nalgebra = { version = "0.31", default-features = false, features = ["std"] }
 
 [package.metadata.docs.rs]
 all-features = true

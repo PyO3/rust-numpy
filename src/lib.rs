@@ -12,6 +12,12 @@
 //! Loading NumPy is done automatically and on demand. So if it is not installed, the functions
 //! provided by this crate will panic instead of returning a result.
 //!
+#![cfg_attr(
+    feature = "nalgebra",
+    doc = "Integration with [`nalgebra`] is rovided via an implementation of [`ToPyArray`] for [`nalgebra::Matrix`] to convert nalgebra matrices into NumPy arrays
+as well as the [`PyReadonlyArray::try_as_matrix`] and [`PyReadwriteArray::try_as_matrix_mut`] methods to treat NumPy array as nalgebra matrix slices.
+"
+)]
 //! # Example
 //!
 //! ```
@@ -26,7 +32,39 @@
 //!         py_array.readonly().as_array(),
 //!         array![[1i64, 2], [3, 4]]
 //!     );
-//! })
+//! });
+//! ```
+//!
+#![cfg_attr(feature = "nalgebra", doc = "```")]
+#![cfg_attr(not(feature = "nalgebra"), doc = "```rust,ignore")]
+//! use numpy::pyo3::Python;
+//! use numpy::nalgebra::Matrix3;
+//! use numpy::{pyarray, ToPyArray};
+//!
+//! Python::with_gil(|py| {
+//!     let py_array = pyarray![py, [0, 1, 2], [3, 4, 5], [6, 7, 8]];
+//!
+//!     let py_array_square;
+//!
+//!     {
+//!         let py_array = py_array.readwrite();
+//!         let mut na_matrix = py_array.as_matrix_mut();
+//!
+//!         na_matrix.add_scalar_mut(1);
+//!
+//!         py_array_square = na_matrix.pow(2).to_pyarray(py);
+//!     }
+//!
+//!     assert_eq!(
+//!         py_array.readonly().as_matrix(),
+//!         Matrix3::new(1, 2, 3, 4, 5, 6, 7, 8, 9)
+//!     );
+//!
+//!     assert_eq!(
+//!         py_array_square.readonly().as_matrix(),
+//!         Matrix3::new(30, 36, 42, 66, 81, 96, 102, 126, 150)
+//!     );
+//! });
 //! ```
 //!
 //! [c-api]: https://numpy.org/doc/stable/reference/c-api
