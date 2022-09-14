@@ -322,4 +322,20 @@ fn matrix_to_numpy() {
 
         assert_eq!(array.readonly().as_array(), array![[0, 1, 2]]);
     });
+
+    let vector = nalgebra::Vector4::<i32>::new(-4, 1, 2, 3);
+
+    Python::with_gil(|py| {
+        let array = vector.to_pyarray(py);
+
+        assert_eq!(array.readonly().as_array(), array![[-4], [1], [2], [3]]);
+    });
+
+    let vector = nalgebra::RowVector2::<i32>::new(23, 42);
+
+    Python::with_gil(|py| {
+        let array = vector.to_pyarray(py);
+
+        assert_eq!(array.readonly().as_array(), array![[23, 42]]);
+    });
 }

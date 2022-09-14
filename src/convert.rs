@@ -194,6 +194,10 @@ where
     type Item = N;
     type Dim = crate::Ix2;
 
+    /// Note that the NumPy array always has Fortran memory layout
+    /// matching the [memory layout][memory-layout] used by [`nalgebra`].
+    ///
+    /// [memory-layout]: https://nalgebra.org/docs/faq/#what-is-the-memory-layout-of-matrices
     fn to_pyarray<'py>(&self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
         unsafe {
             let array = PyArray::<N, _>::new(py, (self.nrows(), self.ncols()), true);
