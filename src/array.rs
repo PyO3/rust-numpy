@@ -991,7 +991,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     ///
     /// # Safety
     ///
-    /// The existence of an exclusive reference to the internal data, e.g. `&mut [T]` or `ArrayViewMut`, implies undefined behavior.
+    /// Calling this method invalidates all exclusive references to the internal data, e.g. `&mut [T]` or `ArrayViewMut`.
     pub unsafe fn as_array(&self) -> ArrayView<'_, T, D> {
         self.as_view(|shape, ptr| ArrayView::from_shape_ptr(shape, ptr))
     }
@@ -1002,7 +1002,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     ///
     /// # Safety
     ///
-    /// The existence of another reference to the internal data, e.g. `&[T]` or `ArrayView`, implies undefined behavior.
+    /// Calling this method invalidates all other references to the internal data, e.g. `ArrayView` or `ArrayViewMut`.
     pub unsafe fn as_array_mut(&self) -> ArrayViewMut<'_, T, D> {
         self.as_view(|shape, ptr| ArrayViewMut::from_shape_ptr(shape, ptr))
     }
@@ -1105,7 +1105,7 @@ where
     ///
     /// # Safety
     ///
-    /// The existence of an exclusive reference to the internal data, e.g. `&mut [T]` or `ArrayViewMut`, implies undefined behavior.
+    /// Calling this method invalidates all exclusive references to the internal data, e.g. `ArrayViewMut` or `MatrixSliceMut`.
     #[doc(alias = "nalgebra")]
     pub unsafe fn try_as_matrix<R, C, RStride, CStride>(
         &self,
@@ -1127,7 +1127,7 @@ where
     ///
     /// # Safety
     ///
-    /// The existence of another reference to the internal data, e.g. `&[T]` or `ArrayView`, implies undefined behavior.
+    /// Calling this method invalidates all other references to the internal data, e.g. `ArrayView`, `MatrixSlice`, `ArrayViewMut` or `MatrixSliceMut`.
     #[doc(alias = "nalgebra")]
     pub unsafe fn try_as_matrix_mut<R, C, RStride, CStride>(
         &self,
