@@ -2,6 +2,9 @@
 
 - Unreleased
 
+- v0.17.2
+  - Fix unsound aliasing into `Box<[T]>` when converting them into NumPy arrays. ([#351](https://github.com/PyO3/rust-numpy/pull/351))
+
 - v0.17.1
   - Fix use-after-free in `PyArray::resize`, `PyArray::reshape` and `PyArray::reshape_with_order`. ([#341](https://github.com/PyO3/rust-numpy/pull/341))
   - Fix UB in `ToNpyDims::as_dims_ptr` with dimensions of dynamic size (-1). ([#344](https://github.com/PyO3/rust-numpy/pull/344))
