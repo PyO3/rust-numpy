@@ -512,16 +512,13 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         Self::from_owned_ptr(py, ptr)
     }
 
-    pub(crate) unsafe fn from_raw_parts<'py, ID>(
+    pub(crate) unsafe fn from_raw_parts<'py>(
         py: Python<'py>,
-        dims: ID,
+        dims: D,
         strides: *const npy_intp,
         data_ptr: *const T,
         container: PySliceContainer,
-    ) -> &'py Self
-    where
-        ID: IntoDimension<Dim = D>,
-    {
+    ) -> &'py Self {
         let container = PyClassInitializer::from(container)
             .create_cell(py)
             .expect("Failed to create slice container");

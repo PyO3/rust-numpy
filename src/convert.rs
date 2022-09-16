@@ -2,7 +2,7 @@
 
 use std::{mem, os::raw::c_int, ptr};
 
-use ndarray::{ArrayBase, Data, Dimension, IntoDimension, Ix1, OwnedRepr};
+use ndarray::{ArrayBase, Data, Dim, Dimension, IntoDimension, Ix1, OwnedRepr};
 use pyo3::Python;
 
 use crate::array::PyArray;
@@ -51,7 +51,7 @@ impl<T: Element> IntoPyArray for Box<[T]> {
 
     fn into_pyarray<'py>(self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
         let container = PySliceContainer::from(self);
-        let dims = [container.len];
+        let dims = Dim([container.len]);
         let strides = [mem::size_of::<T>() as npy_intp];
         // The data pointer is derived only after dissolving `Box` into `PySliceContainer`
         // to avoid unsound aliasing of Box<[T]> which is currently noalias,
@@ -66,7 +66,7 @@ impl<T: Element> IntoPyArray for Vec<T> {
     type Dim = Ix1;
 
     fn into_pyarray<'py>(mut self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
-        let dims = [self.len()];
+        let dims = Dim([self.len()]);
         let strides = [mem::size_of::<T>() as npy_intp];
         let data_ptr = self.as_mut_ptr();
         unsafe {
