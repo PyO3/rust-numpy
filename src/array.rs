@@ -676,9 +676,9 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     ///     assert_eq!(pyarray.readonly().as_array(), array![[1, 2], [3, 4]]);
     /// });
     /// ```
-    pub fn from_owned_array<'py>(py: Python<'py>, arr: Array<T, D>) -> &'py Self {
+    pub fn from_owned_array<'py>(py: Python<'py>, mut arr: Array<T, D>) -> &'py Self {
         let (strides, dims) = (arr.npy_strides(), arr.raw_dim());
-        let data_ptr = arr.as_ptr();
+        let data_ptr = arr.as_mut_ptr();
         unsafe { Self::from_raw_parts(py, dims, strides.as_ptr(), data_ptr, arr) }
     }
 
@@ -1071,9 +1071,9 @@ impl<D: Dimension> PyArray<PyObject, D> {
     ///     assert!(pyarray.readonly().as_array().get(0).unwrap().as_ref(py).is_instance_of::<CustomElement>().unwrap());
     /// });
     /// ```
-    pub fn from_owned_object_array<'py, T>(py: Python<'py>, arr: Array<Py<T>, D>) -> &'py Self {
+    pub fn from_owned_object_array<'py, T>(py: Python<'py>, mut arr: Array<Py<T>, D>) -> &'py Self {
         let (strides, dims) = (arr.npy_strides(), arr.raw_dim());
-        let data_ptr = arr.as_ptr() as *const PyObject;
+        let data_ptr = arr.as_mut_ptr() as *const PyObject;
         unsafe { PyArray::from_raw_parts(py, dims, strides.as_ptr(), data_ptr, arr) }
     }
 }
