@@ -407,4 +407,76 @@ fn matrix_from_numpy() {
             assert_eq!(matrix, nalgebra::Matrix3x1::new(0, 1, 2));
         }
     });
+
+    Python::with_gil(|py| {
+        let array = PyArray::<i32, _>::zeros(py, (2, 2, 2), false);
+        let array = array.readonly();
+
+        let matrix: Option<nalgebra::DMatrixSlice<i32, nalgebra::Dynamic, nalgebra::Dynamic>> =
+            array.try_as_matrix();
+        assert!(matrix.is_none());
+    });
+
+    Python::with_gil(|py| {
+        let array = numpy::pyarray![py, [0, 1, 2], [3, 4, 5], [6, 7, 8]];
+        let array: &PyArray2<i32> = py
+            .eval("a[::-1]", Some([("a", array)].into_py_dict(py)), None)
+            .unwrap()
+            .downcast()
+            .unwrap();
+        let array = array.readonly();
+
+        let matrix: Option<nalgebra::DMatrixSlice<i32, nalgebra::Dynamic, nalgebra::Dynamic>> =
+            array.try_as_matrix();
+        assert!(matrix.is_none());
+    });
+
+    Python::with_gil(|py| {
+        let array = numpy::pyarray![py, [0, 1, 2], [3, 4, 5], [6, 7, 8]];
+        let array = array.readonly();
+
+        let matrix: Option<
+            nalgebra::MatrixSlice<
+                i32,
+                nalgebra::Const<2>,
+                nalgebra::Const<3>,
+                nalgebra::Const<3>,
+                nalgebra::Const<1>,
+            >,
+        > = array.try_as_matrix();
+        assert!(matrix.is_none());
+
+        let matrix: Option<
+            nalgebra::MatrixSlice<
+                i32,
+                nalgebra::Const<3>,
+                nalgebra::Const<2>,
+                nalgebra::Const<3>,
+                nalgebra::Const<1>,
+            >,
+        > = array.try_as_matrix();
+        assert!(matrix.is_none());
+
+        let matrix: Option<
+            nalgebra::MatrixSlice<
+                i32,
+                nalgebra::Const<3>,
+                nalgebra::Const<3>,
+                nalgebra::Const<2>,
+                nalgebra::Const<1>,
+            >,
+        > = array.try_as_matrix();
+        assert!(matrix.is_none());
+
+        let matrix: Option<
+            nalgebra::MatrixSlice<
+                i32,
+                nalgebra::Const<3>,
+                nalgebra::Const<3>,
+                nalgebra::Const<3>,
+                nalgebra::Const<2>,
+            >,
+        > = array.try_as_matrix();
+        assert!(matrix.is_none());
+    });
 }
