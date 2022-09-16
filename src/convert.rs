@@ -10,6 +10,7 @@ use crate::dtype::Element;
 use crate::error::MAX_DIMENSIONALITY_ERR;
 use crate::npyffi::{self, npy_intp};
 use crate::sealed::Sealed;
+use crate::slice_container::PySliceContainer;
 
 /// Conversion trait from owning Rust types into [`PyArray`].
 ///
@@ -48,11 +49,15 @@ impl<T: Element> IntoPyArray for Box<[T]> {
     type Item = T;
     type Dim = Ix1;
 
-    fn into_pyarray<'py>(mut self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
-        let dims = [self.len()];
+    fn into_pyarray<'py>(self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
+        let container = PySliceContainer::from(self);
+        let dims = [container.len];
         let strides = [mem::size_of::<T>() as npy_intp];
-        let data_ptr = self.as_mut_ptr();
-        unsafe { PyArray::from_raw_parts(py, dims, strides.as_ptr(), data_ptr, self) }
+        // The data pointer is derived only after dissolving `Box` into `PySliceContainer`
+        // to avoid unsound aliasing of Box<[T]> which is currently noalias,
+        // c.f. https://github.com/rust-lang/unsafe-code-guidelines/issues/326
+        let data_ptr = container.ptr as *mut T;
+        unsafe { PyArray::from_raw_parts(py, dims, strides.as_ptr(), data_ptr, container) }
     }
 }
 
@@ -64,7 +69,15 @@ impl<T: Element> IntoPyArray for Vec<T> {
         let dims = [self.len()];
         let strides = [mem::size_of::<T>() as npy_intp];
         let data_ptr = self.as_mut_ptr();
-        unsafe { PyArray::from_raw_parts(py, dims, strides.as_ptr(), data_ptr, self) }
+        unsafe {
+            PyArray::from_raw_parts(
+                py,
+                dims,
+                strides.as_ptr(),
+                data_ptr,
+                PySliceContainer::from(self),
+            )
+        }
     }
 }
 
