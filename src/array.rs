@@ -451,7 +451,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     where
         ID: IntoDimension<Dim = D>,
     {
-        let flags = if is_fortran { 1 } else { 0 };
+        let flags = c_int::from(is_fortran);
         Self::new_uninit(py, dims, ptr::null_mut(), flags)
     }
 
@@ -512,18 +512,14 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         Self::from_owned_ptr(py, ptr)
     }
 
-    pub(crate) unsafe fn from_raw_parts<'py, ID, C>(
+    pub(crate) unsafe fn from_raw_parts<'py>(
         py: Python<'py>,
-        dims: ID,
+        dims: D,
         strides: *const npy_intp,
         data_ptr: *const T,
-        container: C,
-    ) -> &'py Self
-    where
-        ID: IntoDimension<Dim = D>,
-        PySliceContainer: From<C>,
-    {
-        let container = PyClassInitializer::from(PySliceContainer::from(container))
+        container: PySliceContainer,
+    ) -> &'py Self {
+        let container = PyClassInitializer::from(container)
             .create_cell(py)
             .expect("Failed to create slice container");
 
@@ -676,10 +672,18 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     ///     assert_eq!(pyarray.readonly().as_array(), array![[1, 2], [3, 4]]);
     /// });
     /// ```
-    pub fn from_owned_array<'py>(py: Python<'py>, arr: Array<T, D>) -> &'py Self {
+    pub fn from_owned_array<'py>(py: Python<'py>, mut arr: Array<T, D>) -> &'py Self {
         let (strides, dims) = (arr.npy_strides(), arr.raw_dim());
-        let data_ptr = arr.as_ptr();
-        unsafe { Self::from_raw_parts(py, dims, strides.as_ptr(), data_ptr, arr) }
+        let data_ptr = arr.as_mut_ptr();
+        unsafe {
+            Self::from_raw_parts(
+                py,
+                dims,
+                strides.as_ptr(),
+                data_ptr,
+                PySliceContainer::from(arr),
+            )
+        }
     }
 
     /// Get a reference of the specified element if the given index is valid.
@@ -1071,10 +1075,18 @@ impl<D: Dimension> PyArray<PyObject, D> {
     ///     assert!(pyarray.readonly().as_array().get(0).unwrap().as_ref(py).is_instance_of::<CustomElement>().unwrap());
     /// });
     /// ```
-    pub fn from_owned_object_array<'py, T>(py: Python<'py>, arr: Array<Py<T>, D>) -> &'py Self {
+    pub fn from_owned_object_array<'py, T>(py: Python<'py>, mut arr: Array<Py<T>, D>) -> &'py Self {
         let (strides, dims) = (arr.npy_strides(), arr.raw_dim());
-        let data_ptr = arr.as_ptr() as *const PyObject;
-        unsafe { PyArray::from_raw_parts(py, dims, strides.as_ptr(), data_ptr, arr) }
+        let data_ptr = arr.as_mut_ptr() as *const PyObject;
+        unsafe {
+            Self::from_raw_parts(
+                py,
+                dims,
+                strides.as_ptr(),
+                data_ptr,
+                PySliceContainer::from(arr),
+            )
+        }
     }
 }
 
