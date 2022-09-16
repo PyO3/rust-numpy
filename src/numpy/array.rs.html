@@ -1537,6 +1537,18 @@
 <span id="1531">1531</span>
 <span id="1532">1532</span>
 <span id="1533">1533</span>
+<span id="1534">1534</span>
+<span id="1535">1535</span>
+<span id="1536">1536</span>
+<span id="1537">1537</span>
+<span id="1538">1538</span>
+<span id="1539">1539</span>
+<span id="1540">1540</span>
+<span id="1541">1541</span>
+<span id="1542">1542</span>
+<span id="1543">1543</span>
+<span id="1544">1544</span>
+<span id="1545">1545</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Safe interface for NumPy&#39;s [N-dimensional arrays][ndarray]</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! [ndarray]: https://numpy.org/doc/stable/reference/arrays.ndarray.html</span>
@@ -1990,7 +2002,7 @@
     <span class="kw">where</span>
         <span class="ident">ID</span>: <span class="ident">IntoDimension</span><span class="op">&lt;</span><span class="ident">Dim</span> <span class="op">=</span> <span class="ident">D</span><span class="op">&gt;</span>,
     {
-        <span class="kw">let</span> <span class="ident">flags</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">is_fortran</span> { <span class="number">1</span> } <span class="kw">else</span> { <span class="number">0</span> };
+        <span class="kw">let</span> <span class="ident">flags</span> <span class="op">=</span> <span class="ident">c_int::from</span>(<span class="ident">is_fortran</span>);
         <span class="ident"><span class="self">Self</span>::new_uninit</span>(<span class="ident">py</span>, <span class="ident">dims</span>, <span class="ident">ptr::null_mut</span>(), <span class="ident">flags</span>)
     }
 
@@ -2051,18 +2063,14 @@
         <span class="ident"><span class="self">Self</span>::from_owned_ptr</span>(<span class="ident">py</span>, <span class="ident">ptr</span>)
     }
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">from_raw_parts</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">ID</span>, <span class="ident">C</span><span class="op">&gt;</span>(
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">from_raw_parts</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>(
         <span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>,
-        <span class="ident">dims</span>: <span class="ident">ID</span>,
+        <span class="ident">dims</span>: <span class="ident">D</span>,
         <span class="ident">strides</span>: <span class="kw-2">*const</span> <span class="ident">npy_intp</span>,
         <span class="ident">data_ptr</span>: <span class="kw-2">*const</span> <span class="ident">T</span>,
-        <span class="ident">container</span>: <span class="ident">C</span>,
-    ) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="self">Self</span>
-    <span class="kw">where</span>
-        <span class="ident">ID</span>: <span class="ident">IntoDimension</span><span class="op">&lt;</span><span class="ident">Dim</span> <span class="op">=</span> <span class="ident">D</span><span class="op">&gt;</span>,
-        <span class="ident">PySliceContainer</span>: <span class="ident">From</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
-    {
-        <span class="kw">let</span> <span class="ident">container</span> <span class="op">=</span> <span class="ident">PyClassInitializer::from</span>(<span class="ident">PySliceContainer::from</span>(<span class="ident">container</span>))
+        <span class="ident">container</span>: <span class="ident">PySliceContainer</span>,
+    ) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="self">Self</span> {
+        <span class="kw">let</span> <span class="ident">container</span> <span class="op">=</span> <span class="ident">PyClassInitializer::from</span>(<span class="ident">container</span>)
             .<span class="ident">create_cell</span>(<span class="ident">py</span>)
             .<span class="ident">expect</span>(<span class="string">&quot;Failed to create slice container&quot;</span>);
 
@@ -2215,10 +2223,18 @@
     <span class="doccomment">///     assert_eq!(pyarray.readonly().as_array(), array![[1, 2], [3, 4]]);</span>
     <span class="doccomment">/// });</span>
     <span class="doccomment">/// ```</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_owned_array</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>(<span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>, <span class="ident">arr</span>: <span class="ident">Array</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_owned_array</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>(<span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>, <span class="kw-2">mut</span> <span class="ident">arr</span>: <span class="ident">Array</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="self">Self</span> {
         <span class="kw">let</span> (<span class="ident">strides</span>, <span class="ident">dims</span>) <span class="op">=</span> (<span class="ident">arr</span>.<span class="ident">npy_strides</span>(), <span class="ident">arr</span>.<span class="ident">raw_dim</span>());
-        <span class="kw">let</span> <span class="ident">data_ptr</span> <span class="op">=</span> <span class="ident">arr</span>.<span class="ident">as_ptr</span>();
-        <span class="kw">unsafe</span> { <span class="ident"><span class="self">Self</span>::from_raw_parts</span>(<span class="ident">py</span>, <span class="ident">dims</span>, <span class="ident">strides</span>.<span class="ident">as_ptr</span>(), <span class="ident">data_ptr</span>, <span class="ident">arr</span>) }
+        <span class="kw">let</span> <span class="ident">data_ptr</span> <span class="op">=</span> <span class="ident">arr</span>.<span class="ident">as_mut_ptr</span>();
+        <span class="kw">unsafe</span> {
+            <span class="ident"><span class="self">Self</span>::from_raw_parts</span>(
+                <span class="ident">py</span>,
+                <span class="ident">dims</span>,
+                <span class="ident">strides</span>.<span class="ident">as_ptr</span>(),
+                <span class="ident">data_ptr</span>,
+                <span class="ident">PySliceContainer::from</span>(<span class="ident">arr</span>),
+            )
+        }
     }
 
     <span class="doccomment">/// Get a reference of the specified element if the given index is valid.</span>
@@ -2610,10 +2626,18 @@
     <span class="doccomment">///     assert!(pyarray.readonly().as_array().get(0).unwrap().as_ref(py).is_instance_of::&lt;CustomElement&gt;().unwrap());</span>
     <span class="doccomment">/// });</span>
     <span class="doccomment">/// ```</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_owned_object_array</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>, <span class="ident">arr</span>: <span class="ident">Array</span><span class="op">&lt;</span><span class="ident">Py</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">D</span><span class="op">&gt;</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_owned_object_array</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>, <span class="kw-2">mut</span> <span class="ident">arr</span>: <span class="ident">Array</span><span class="op">&lt;</span><span class="ident">Py</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">D</span><span class="op">&gt;</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="self">Self</span> {
         <span class="kw">let</span> (<span class="ident">strides</span>, <span class="ident">dims</span>) <span class="op">=</span> (<span class="ident">arr</span>.<span class="ident">npy_strides</span>(), <span class="ident">arr</span>.<span class="ident">raw_dim</span>());
-        <span class="kw">let</span> <span class="ident">data_ptr</span> <span class="op">=</span> <span class="ident">arr</span>.<span class="ident">as_ptr</span>() <span class="kw">as</span> <span class="kw-2">*const</span> <span class="ident">PyObject</span>;
-        <span class="kw">unsafe</span> { <span class="ident">PyArray::from_raw_parts</span>(<span class="ident">py</span>, <span class="ident">dims</span>, <span class="ident">strides</span>.<span class="ident">as_ptr</span>(), <span class="ident">data_ptr</span>, <span class="ident">arr</span>) }
+        <span class="kw">let</span> <span class="ident">data_ptr</span> <span class="op">=</span> <span class="ident">arr</span>.<span class="ident">as_mut_ptr</span>() <span class="kw">as</span> <span class="kw-2">*const</span> <span class="ident">PyObject</span>;
+        <span class="kw">unsafe</span> {
+            <span class="ident"><span class="self">Self</span>::from_raw_parts</span>(
+                <span class="ident">py</span>,
+                <span class="ident">dims</span>,
+                <span class="ident">strides</span>.<span class="ident">as_ptr</span>(),
+                <span class="ident">data_ptr</span>,
+                <span class="ident">PySliceContainer::from</span>(<span class="ident">arr</span>),
+            )
+        }
     }
 }
 

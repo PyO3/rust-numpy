@@ -283,11 +283,24 @@
 <span id="277">277</span>
 <span id="278">278</span>
 <span id="279">279</span>
+<span id="280">280</span>
+<span id="281">281</span>
+<span id="282">282</span>
+<span id="283">283</span>
+<span id="284">284</span>
+<span id="285">285</span>
+<span id="286">286</span>
+<span id="287">287</span>
+<span id="288">288</span>
+<span id="289">289</span>
+<span id="290">290</span>
+<span id="291">291</span>
+<span id="292">292</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Defines conversion traits between Rust types and NumPy data types.</span>
 
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">mem</span>, <span class="ident">os::raw::c_int</span>, <span class="ident">ptr</span>};
 
-<span class="kw">use</span> <span class="ident">ndarray</span>::{<span class="ident">ArrayBase</span>, <span class="ident">Data</span>, <span class="ident">Dimension</span>, <span class="ident">IntoDimension</span>, <span class="ident">Ix1</span>, <span class="ident">OwnedRepr</span>};
+<span class="kw">use</span> <span class="ident">ndarray</span>::{<span class="ident">ArrayBase</span>, <span class="ident">Data</span>, <span class="ident">Dim</span>, <span class="ident">Dimension</span>, <span class="ident">IntoDimension</span>, <span class="ident">Ix1</span>, <span class="ident">OwnedRepr</span>};
 <span class="kw">use</span> <span class="ident">pyo3::Python</span>;
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::array::PyArray</span>;
@@ -295,6 +308,7 @@
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::error::MAX_DIMENSIONALITY_ERR</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::npyffi</span>::{<span class="self">self</span>, <span class="ident">npy_intp</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::sealed::Sealed</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::slice_container::PySliceContainer</span>;
 
 <span class="doccomment">/// Conversion trait from owning Rust types into [`PyArray`].</span>
 <span class="doccomment">///</span>
@@ -334,10 +348,14 @@
     <span class="kw">type</span> <span class="ident">Dim</span> <span class="op">=</span> <span class="ident">Ix1</span>;
 
     <span class="kw">fn</span> <span class="ident">into_pyarray</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>(<span class="self">self</span>, <span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Item</span>, <span class="ident"><span class="self">Self</span>::Dim</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">dims</span> <span class="op">=</span> [<span class="self">self</span>.<span class="ident">len</span>()];
+        <span class="kw">let</span> <span class="ident">container</span> <span class="op">=</span> <span class="ident">PySliceContainer::from</span>(<span class="self">self</span>);
+        <span class="kw">let</span> <span class="ident">dims</span> <span class="op">=</span> <span class="ident">Dim</span>([<span class="ident">container</span>.<span class="ident">len</span>]);
         <span class="kw">let</span> <span class="ident">strides</span> <span class="op">=</span> [<span class="ident">mem::size_of</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>() <span class="kw">as</span> <span class="ident">npy_intp</span>];
-        <span class="kw">let</span> <span class="ident">data_ptr</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">as_ptr</span>();
-        <span class="kw">unsafe</span> { <span class="ident">PyArray::from_raw_parts</span>(<span class="ident">py</span>, <span class="ident">dims</span>, <span class="ident">strides</span>.<span class="ident">as_ptr</span>(), <span class="ident">data_ptr</span>, <span class="self">self</span>) }
+        <span class="comment">// The data pointer is derived only after dissolving `Box` into `PySliceContainer`</span>
+        <span class="comment">// to avoid unsound aliasing of Box&lt;[T]&gt; which is currently noalias,</span>
+        <span class="comment">// c.f. https://github.com/rust-lang/unsafe-code-guidelines/issues/326</span>
+        <span class="kw">let</span> <span class="ident">data_ptr</span> <span class="op">=</span> <span class="ident">container</span>.<span class="ident">ptr</span> <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="ident">T</span>;
+        <span class="kw">unsafe</span> { <span class="ident">PyArray::from_raw_parts</span>(<span class="ident">py</span>, <span class="ident">dims</span>, <span class="ident">strides</span>.<span class="ident">as_ptr</span>(), <span class="ident">data_ptr</span>, <span class="ident">container</span>) }
     }
 }
 
@@ -345,11 +363,19 @@
     <span class="kw">type</span> <span class="ident">Item</span> <span class="op">=</span> <span class="ident">T</span>;
     <span class="kw">type</span> <span class="ident">Dim</span> <span class="op">=</span> <span class="ident">Ix1</span>;
 
-    <span class="kw">fn</span> <span class="ident">into_pyarray</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>(<span class="self">self</span>, <span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Item</span>, <span class="ident"><span class="self">Self</span>::Dim</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">dims</span> <span class="op">=</span> [<span class="self">self</span>.<span class="ident">len</span>()];
+    <span class="kw">fn</span> <span class="ident">into_pyarray</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Item</span>, <span class="ident"><span class="self">Self</span>::Dim</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">dims</span> <span class="op">=</span> <span class="ident">Dim</span>([<span class="self">self</span>.<span class="ident">len</span>()]);
         <span class="kw">let</span> <span class="ident">strides</span> <span class="op">=</span> [<span class="ident">mem::size_of</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>() <span class="kw">as</span> <span class="ident">npy_intp</span>];
-        <span class="kw">let</span> <span class="ident">data_ptr</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">as_ptr</span>();
-        <span class="kw">unsafe</span> { <span class="ident">PyArray::from_raw_parts</span>(<span class="ident">py</span>, <span class="ident">dims</span>, <span class="ident">strides</span>.<span class="ident">as_ptr</span>(), <span class="ident">data_ptr</span>, <span class="self">self</span>) }
+        <span class="kw">let</span> <span class="ident">data_ptr</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">as_mut_ptr</span>();
+        <span class="kw">unsafe</span> {
+            <span class="ident">PyArray::from_raw_parts</span>(
+                <span class="ident">py</span>,
+                <span class="ident">dims</span>,
+                <span class="ident">strides</span>.<span class="ident">as_ptr</span>(),
+                <span class="ident">data_ptr</span>,
+                <span class="ident">PySliceContainer::from</span>(<span class="self">self</span>),
+            )
+        }
     }
 }
 
