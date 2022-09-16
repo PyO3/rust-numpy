@@ -6,8 +6,8 @@ use pyo3::pyclass;
 /// Utility type to safely store `Box<[_]>` or `Vec<_>` on the Python heap
 #[pyclass]
 pub(crate) struct PySliceContainer {
-    ptr: *mut u8,
-    len: usize,
+    pub(crate) ptr: *mut u8,
+    pub(crate) len: usize,
     cap: usize,
     drop: unsafe fn(*mut u8, usize, usize),
 }
@@ -22,12 +22,12 @@ impl<T: Send> From<Box<[T]>> for PySliceContainer {
 
         // FIXME(adamreichold): Use `Box::into_raw` when
         // `*mut [T]::{as_mut_ptr, len}` become stable and compatible with our MSRV.
-        let ptr = data.as_ptr() as *mut u8;
+        let mut data = mem::ManuallyDrop::new(data);
+
+        let ptr = data.as_mut_ptr() as *mut u8;
         let len = data.len();
         let cap = 0;
         let drop = drop_boxed_slice::<T>;
-
-        mem::forget(data);
 
         Self {
             ptr,
@@ -46,12 +46,12 @@ impl<T: Send> From<Vec<T>> for PySliceContainer {
 
         // FIXME(adamreichold): Use `Vec::into_raw_parts`
         // when it becomes stable and compatible with our MSRV.
-        let ptr = data.as_ptr() as *mut u8;
+        let mut data = mem::ManuallyDrop::new(data);
+
+        let ptr = data.as_mut_ptr() as *mut u8;
         let len = data.len();
         let cap = data.capacity();
         let drop = drop_vec::<T>;
-
-        mem::forget(data);
 
         Self {
             ptr,
