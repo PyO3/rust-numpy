@@ -1,4 +1,4 @@
-use std::{mem, slice};
+use std::{mem, ptr};
 
 use ndarray::{ArrayBase, Dimension, OwnedRepr};
 use pyo3::pyclass;
@@ -17,7 +17,7 @@ unsafe impl Send for PySliceContainer {}
 impl<T: Send> From<Box<[T]>> for PySliceContainer {
     fn from(data: Box<[T]>) -> Self {
         unsafe fn drop_boxed_slice<T>(ptr: *mut u8, len: usize, _cap: usize) {
-            let _ = Box::from_raw(slice::from_raw_parts_mut(ptr as *mut T, len) as *mut [T]);
+            let _ = Box::from_raw(ptr::slice_from_raw_parts_mut(ptr as *mut T, len));
         }
 
         // FIXME(adamreichold): Use `Box::into_raw` when

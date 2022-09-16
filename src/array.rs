@@ -451,7 +451,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     where
         ID: IntoDimension<Dim = D>,
     {
-        let flags = if is_fortran { 1 } else { 0 };
+        let flags = c_int::from(is_fortran);
         Self::new_uninit(py, dims, ptr::null_mut(), flags)
     }
 
