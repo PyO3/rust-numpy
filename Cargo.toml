@@ -16,7 +16,7 @@ license = "BSD-2-Clause"
 
 [dependencies]
 ahash = "0.7"
-half = { version = "1.8", default-features = false, optional = true }
+half = { version = "2.0", default-features = false, optional = true }
 libc = "0.2"
 nalgebra = { version = "0.31", default-features = false, optional = true }
 num-complex = ">= 0.2, < 0.5"
