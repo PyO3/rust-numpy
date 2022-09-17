@@ -123,6 +123,47 @@
 <span id="117">117</span>
 <span id="118">118</span>
 <span id="119">119</span>
+<span id="120">120</span>
+<span id="121">121</span>
+<span id="122">122</span>
+<span id="123">123</span>
+<span id="124">124</span>
+<span id="125">125</span>
+<span id="126">126</span>
+<span id="127">127</span>
+<span id="128">128</span>
+<span id="129">129</span>
+<span id="130">130</span>
+<span id="131">131</span>
+<span id="132">132</span>
+<span id="133">133</span>
+<span id="134">134</span>
+<span id="135">135</span>
+<span id="136">136</span>
+<span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
+<span id="144">144</span>
+<span id="145">145</span>
+<span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
+<span id="152">152</span>
+<span id="153">153</span>
+<span id="154">154</span>
+<span id="155">155</span>
+<span id="156">156</span>
+<span id="157">157</span>
+<span id="158">158</span>
+<span id="159">159</span>
+<span id="160">160</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This crate provides Rust interfaces for [NumPy C APIs][c-api],</span>
 <span class="doccomment">//! especially for the [ndarray][ndarray] class.</span>
 <span class="doccomment">//!</span>
@@ -137,6 +178,12 @@
 <span class="doccomment">//! Loading NumPy is done automatically and on demand. So if it is not installed, the functions</span>
 <span class="doccomment">//! provided by this crate will panic instead of returning a result.</span>
 <span class="doccomment">//!</span>
+<span class="attribute">#![<span class="ident">cfg_attr</span>(
+    <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;nalgebra&quot;</span>,
+    <span class="ident">doc</span> <span class="op">=</span> <span class="string">&quot;Integration with [`nalgebra`] is rovided via an implementation of [`ToPyArray`] for [`nalgebra::Matrix`] to convert nalgebra matrices into NumPy arrays
+as well as the [`PyReadonlyArray::try_as_matrix`] and [`PyReadwriteArray::try_as_matrix_mut`] methods to treat NumPy array as nalgebra matrix slices.
+&quot;</span>
+)]</span>
 <span class="doccomment">//! # Example</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! ```</span>
@@ -151,7 +198,39 @@
 <span class="doccomment">//!         py_array.readonly().as_array(),</span>
 <span class="doccomment">//!         array![[1i64, 2], [3, 4]]</span>
 <span class="doccomment">//!     );</span>
-<span class="doccomment">//! })</span>
+<span class="doccomment">//! });</span>
+<span class="doccomment">//! ```</span>
+<span class="doccomment">//!</span>
+<span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;nalgebra&quot;</span>, <span class="ident">doc</span> <span class="op">=</span> <span class="string">&quot;```&quot;</span>)]</span>
+<span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;nalgebra&quot;</span>), <span class="ident">doc</span> <span class="op">=</span> <span class="string">&quot;```rust,ignore&quot;</span>)]</span>
+<span class="doccomment">//! use numpy::pyo3::Python;</span>
+<span class="doccomment">//! use numpy::nalgebra::Matrix3;</span>
+<span class="doccomment">//! use numpy::{pyarray, ToPyArray};</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! Python::with_gil(|py| {</span>
+<span class="doccomment">//!     let py_array = pyarray![py, [0, 1, 2], [3, 4, 5], [6, 7, 8]];</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//!     let py_array_square;</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//!     {</span>
+<span class="doccomment">//!         let py_array = py_array.readwrite();</span>
+<span class="doccomment">//!         let mut na_matrix = py_array.as_matrix_mut();</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//!         na_matrix.add_scalar_mut(1);</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//!         py_array_square = na_matrix.pow(2).to_pyarray(py);</span>
+<span class="doccomment">//!     }</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//!     assert_eq!(</span>
+<span class="doccomment">//!         py_array.readonly().as_matrix(),</span>
+<span class="doccomment">//!         Matrix3::new(1, 2, 3, 4, 5, 6, 7, 8, 9)</span>
+<span class="doccomment">//!     );</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//!     assert_eq!(</span>
+<span class="doccomment">//!         py_array_square.readonly().as_matrix(),</span>
+<span class="doccomment">//!         Matrix3::new(30, 36, 42, 66, 81, 96, 102, 126, 150)</span>
+<span class="doccomment">//!     );</span>
+<span class="doccomment">//! });</span>
 <span class="doccomment">//! ```</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! [c-api]: https://numpy.org/doc/stable/reference/c-api</span>
@@ -173,6 +252,9 @@
 
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">ndarray</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">pyo3</span>;
+
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;nalgebra&quot;</span>)]</span>
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">nalgebra</span>;
 
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::array</span>::{
     <span class="ident">get_array_module</span>, <span class="ident">PyArray</span>, <span class="ident">PyArray0</span>, <span class="ident">PyArray1</span>, <span class="ident">PyArray2</span>, <span class="ident">PyArray3</span>, <span class="ident">PyArray4</span>, <span class="ident">PyArray5</span>,

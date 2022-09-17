@@ -296,6 +296,38 @@
 <span id="290">290</span>
 <span id="291">291</span>
 <span id="292">292</span>
+<span id="293">293</span>
+<span id="294">294</span>
+<span id="295">295</span>
+<span id="296">296</span>
+<span id="297">297</span>
+<span id="298">298</span>
+<span id="299">299</span>
+<span id="300">300</span>
+<span id="301">301</span>
+<span id="302">302</span>
+<span id="303">303</span>
+<span id="304">304</span>
+<span id="305">305</span>
+<span id="306">306</span>
+<span id="307">307</span>
+<span id="308">308</span>
+<span id="309">309</span>
+<span id="310">310</span>
+<span id="311">311</span>
+<span id="312">312</span>
+<span id="313">313</span>
+<span id="314">314</span>
+<span id="315">315</span>
+<span id="316">316</span>
+<span id="317">317</span>
+<span id="318">318</span>
+<span id="319">319</span>
+<span id="320">320</span>
+<span id="321">321</span>
+<span id="322">322</span>
+<span id="323">323</span>
+<span id="324">324</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Defines conversion traits between Rust types and NumPy data types.</span>
 
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">mem</span>, <span class="ident">os::raw::c_int</span>, <span class="ident">ptr</span>};
@@ -477,6 +509,38 @@
                     <span class="ident">array</span>
                 }
             }
+        }
+    }
+}
+
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;nalgebra&quot;</span>)]</span>
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">N</span>, <span class="ident">R</span>, <span class="ident">C</span>, <span class="ident">S</span><span class="op">&gt;</span> <span class="ident">ToPyArray</span> <span class="kw">for</span> <span class="ident">nalgebra::Matrix</span><span class="op">&lt;</span><span class="ident">N</span>, <span class="ident">R</span>, <span class="ident">C</span>, <span class="ident">S</span><span class="op">&gt;</span>
+<span class="kw">where</span>
+    <span class="ident">N</span>: <span class="ident">nalgebra::Scalar</span> <span class="op">+</span> <span class="ident">Element</span>,
+    <span class="ident">R</span>: <span class="ident">nalgebra::Dim</span>,
+    <span class="ident">C</span>: <span class="ident">nalgebra::Dim</span>,
+    <span class="ident">S</span>: <span class="ident">nalgebra::Storage</span><span class="op">&lt;</span><span class="ident">N</span>, <span class="ident">R</span>, <span class="ident">C</span><span class="op">&gt;</span>,
+{
+    <span class="kw">type</span> <span class="ident">Item</span> <span class="op">=</span> <span class="ident">N</span>;
+    <span class="kw">type</span> <span class="ident">Dim</span> <span class="op">=</span> <span class="ident"><span class="kw">crate</span>::Ix2</span>;
+
+    <span class="doccomment">/// Note that the NumPy array always has Fortran memory layout</span>
+    <span class="doccomment">/// matching the [memory layout][memory-layout] used by [`nalgebra`].</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// [memory-layout]: https://nalgebra.org/docs/faq/#what-is-the-memory-layout-of-matrices</span>
+    <span class="kw">fn</span> <span class="ident">to_pyarray</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Item</span>, <span class="ident"><span class="self">Self</span>::Dim</span><span class="op">&gt;</span> {
+        <span class="kw">unsafe</span> {
+            <span class="kw">let</span> <span class="ident">array</span> <span class="op">=</span> <span class="ident">PyArray</span>::<span class="op">&lt;</span><span class="ident">N</span>, <span class="kw">_</span><span class="op">&gt;</span><span class="ident">::new</span>(<span class="ident">py</span>, (<span class="self">self</span>.<span class="ident">nrows</span>(), <span class="self">self</span>.<span class="ident">ncols</span>()), <span class="bool-val">true</span>);
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">data_ptr</span> <span class="op">=</span> <span class="ident">array</span>.<span class="ident">data</span>();
+            <span class="kw">if</span> <span class="self">self</span>.<span class="ident">data</span>.<span class="ident">is_contiguous</span>() {
+                <span class="ident">ptr::copy_nonoverlapping</span>(<span class="self">self</span>.<span class="ident">data</span>.<span class="ident">ptr</span>(), <span class="ident">data_ptr</span>, <span class="self">self</span>.<span class="ident">len</span>());
+            } <span class="kw">else</span> {
+                <span class="kw">for</span> <span class="ident">item</span> <span class="kw">in</span> <span class="self">self</span>.<span class="ident">iter</span>() {
+                    <span class="ident">data_ptr</span>.<span class="ident">write</span>(<span class="ident">item</span>.<span class="ident">clone</span>());
+                    <span class="ident">data_ptr</span> <span class="op">=</span> <span class="ident">data_ptr</span>.<span class="ident">add</span>(<span class="number">1</span>);
+                }
+            }
+            <span class="ident">array</span>
         }
     }
 }
