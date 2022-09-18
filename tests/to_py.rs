@@ -6,7 +6,7 @@ use numpy::{IntoPyArray, PyArray, ToPyArray};
 use pyo3::{
     py_run,
     types::{PyDict, PyString},
-    Python, ToPyObject,
+    PyObject, Python, ToPyObject,
 };
 
 #[test]
@@ -337,5 +337,15 @@ fn matrix_to_numpy() {
         let array = vector.to_pyarray(py);
 
         assert_eq!(array.readonly().as_array(), array![[23, 42]]);
+    });
+}
+
+#[test]
+fn extract_vec_from_array() {
+    Python::with_gil(|py| {
+        let array: PyObject = array![1, 2, 3].into_pyarray(py).into();
+
+        let vec = array.extract::<Vec<i32>>(py).unwrap();
+        assert_eq!(vec, [1, 2, 3]);
     });
 }
