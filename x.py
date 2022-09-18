@@ -68,9 +68,6 @@ def check(args):
             "--",
             "--deny",
             "warnings",
-            # https://github.com/PyO3/pyo3/issues/2555
-            "--allow",
-            "clippy::borrow-deref-ref",
         )
 
 
