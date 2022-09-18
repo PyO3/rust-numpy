@@ -23,10 +23,10 @@ num-complex = ">= 0.2, < 0.5"
 num-integer = "0.1"
 num-traits = "0.2"
 ndarray = ">= 0.13, < 0.16"
-pyo3 = { version = "0.17", default-features = false, features = ["macros"] }
+pyo3 = { git = "https://github.com/PyO3/pyo3.git", default-features = false, features = ["macros"] }
 
 [dev-dependencies]
-pyo3 = { version = "0.17", default-features = false, features = ["auto-initialize"] }
+pyo3 = { git = "https://github.com/PyO3/pyo3.git", default-features = false, features = ["auto-initialize"] }
 nalgebra = { version = "0.31", default-features = false, features = ["std"] }
 
 [package.metadata.docs.rs]
