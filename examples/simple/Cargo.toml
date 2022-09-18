@@ -9,7 +9,7 @@ name = "rust_ext"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { git = "https://github.com/PyO3/pyo3.git", features = ["extension-module", "abi3-py37"] }
+pyo3 = { git = "https://github.com/PyO3/pyo3.git", branch = "relax-extract-sequence", features = ["extension-module", "abi3-py37"] }
 numpy = { path = "../.." }
 
 [workspace]
