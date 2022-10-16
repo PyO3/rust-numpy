@@ -116,6 +116,23 @@ jobs:
         env:
           CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUNNER: valgrind --leak-check=no --error-exitcode=1
 
+  careful:
+    runs-on: ubuntu-latest
+    needs: [lint, check-msrv, examples]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          profile: minimal
+          default: true
+      - uses: Swatinem/rust-cache@v2
+        continue-on-error: true
+      - run: |
+            pip install numpy
+            cargo install --locked cargo-careful
+            cargo careful test --all-features
+
   check-msrv:
     runs-on: ubuntu-latest
     steps:
