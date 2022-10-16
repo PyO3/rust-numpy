@@ -109,8 +109,8 @@ jobs:
           default: true
       - uses: Swatinem/rust-cache@v2
         continue-on-error: true
+      - uses: taiki-e/install-action@valgrind
       - run: |
-            sudo apt-get install --yes valgrind
             pip install numpy
             cargo test --all-features --release
         env:
