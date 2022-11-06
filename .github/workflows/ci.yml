@@ -17,12 +17,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
-          profile: minimal
           components: rustfmt, clippy
-          default: true
       - uses: Swatinem/rust-cache@v2
         continue-on-error: true
       - run: ./x.py check
@@ -34,7 +31,7 @@ jobs:
     strategy:
       fail-fast: ${{ !contains(github.event.pull_request.labels.*.name, 'CI-no-fail-fast') }}
       matrix:
-        python-version: ["3.7", "3.8", "3.9", "3.10"]
+        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11"]
         platform: [
           { os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" },
           { os: "macOS-latest",   python-architecture: "x64", rust-target: "x86_64-apple-darwin" },
@@ -50,17 +47,14 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
           architecture: ${{ matrix.platform.python-architecture }}
       - name: Install Rust
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
-          profile: minimal
-          target: ${{ matrix.platform.rust-target }}
-          default: true
+          targets: ${{ matrix.platform.rust-target }}
       - name: Install toml
         run: pip install toml
       - name: Edit Cargo.toml and enable new resolver
@@ -102,11 +96,7 @@ jobs:
     needs: [lint, check-msrv, examples]
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
-          default: true
+      - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         continue-on-error: true
       - uses: taiki-e/install-action@valgrind
@@ -121,11 +111,7 @@ jobs:
     needs: [lint, check-msrv, examples]
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly
-          profile: minimal
-          default: true
+      - uses: dtolnay/rust-toolchain@nightly
       - uses: Swatinem/rust-cache@v2
         continue-on-error: true
       - run: |
@@ -138,15 +124,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.8
       - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: 1.48.0
-          profile: minimal
-          default: true
+        uses: dtolnay/rust-toolchain@1.48.0
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: examples/simple
@@ -193,17 +175,13 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.8
       - name: Install OpenBLAS
         run: sudo apt install --yes libopenblas-dev
       - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
-          default: true
+        uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         continue-on-error: true
       - name: Test examples
@@ -218,7 +196,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.9
           architecture: x64
@@ -226,12 +204,9 @@ jobs:
         run: pip install numpy
       - uses: Swatinem/rust-cache@v2
         continue-on-error: true
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
-          profile: minimal
           components: llvm-tools-preview
-          default: true
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
       - name: Generate code coverage
