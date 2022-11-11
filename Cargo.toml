@@ -31,3 +31,8 @@ nalgebra = { version = "0.31", default-features = false, features = ["std"] }
 
 [package.metadata.docs.rs]
 all-features = true
+
+[package.metadata.pyo3-packaging]
+dependencies = [
+    "numpy>=1.19,<2.0"
+]
