@@ -63,8 +63,8 @@ use std::fmt;
 use std::hash::Hash;
 use std::marker::PhantomData;
 
-use ahash::AHashMap;
 use pyo3::{Py, Python};
+use rustc_hash::FxHashMap;
 
 use crate::dtype::{Element, PyArrayDescr};
 use crate::npyffi::{PyArray_DatetimeDTypeMetaData, NPY_DATETIMEUNIT, NPY_TYPES};
@@ -206,7 +206,7 @@ impl<U: Unit> fmt::Debug for Timedelta<U> {
 
 struct TypeDescriptors {
     npy_type: NPY_TYPES,
-    dtypes: UnsafeCell<Option<AHashMap<NPY_DATETIMEUNIT, Py<PyArrayDescr>>>>,
+    dtypes: UnsafeCell<Option<FxHashMap<NPY_DATETIMEUNIT, Py<PyArrayDescr>>>>,
 }
 
 unsafe impl Sync for TypeDescriptors {}
@@ -221,8 +221,8 @@ impl TypeDescriptors {
     }
 
     #[allow(clippy::mut_from_ref)]
-    unsafe fn get(&self) -> &mut AHashMap<NPY_DATETIMEUNIT, Py<PyArrayDescr>> {
-        (*self.dtypes.get()).get_or_insert_with(AHashMap::new)
+    unsafe fn get(&self) -> &mut FxHashMap<NPY_DATETIMEUNIT, Py<PyArrayDescr>> {
+        (*self.dtypes.get()).get_or_insert_with(Default::default)
     }
 
     #[allow(clippy::wrong_self_convention)]
