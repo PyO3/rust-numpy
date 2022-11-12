@@ -179,7 +179,7 @@ use crate::dtype::Element;
 use crate::error::{BorrowError, NotContiguousError};
 use crate::npyffi::{self, PyArrayObject, NPY_ARRAY_WRITEABLE};
 
-use shared::{BorrowKey, BORROW_FLAGS};
+use shared::{acquire, acquire_mut, release, release_mut, BorrowKey};
 
 /// Read-only borrow of an array.
 ///
@@ -247,7 +247,7 @@ where
         let address = base_address(array);
         let key = borrow_key(array);
 
-        BORROW_FLAGS.acquire(array.py(), address, key)?;
+        acquire(array.py(), address, key)?;
 
         Ok(Self {
             array,
@@ -339,9 +339,7 @@ where
     D: Dimension,
 {
     fn clone(&self) -> Self {
-        BORROW_FLAGS
-            .acquire(self.array.py(), self.address, self.key)
-            .unwrap();
+        acquire(self.array.py(), self.address, self.key).unwrap();
 
         Self {
             array: self.array,
@@ -357,7 +355,7 @@ where
     D: Dimension,
 {
     fn drop(&mut self) {
-        BORROW_FLAGS.release(self.array.py(), self.address, self.key);
+        release(self.array.py(), self.address, self.key);
     }
 }
 
@@ -448,7 +446,7 @@ where
         let address = base_address(array);
         let key = borrow_key(array);
 
-        BORROW_FLAGS.acquire_mut(array.py(), address, key)?;
+        acquire_mut(array.py(), address, key)?;
 
         Ok(Self {
             array,
@@ -581,7 +579,7 @@ where
     D: Dimension,
 {
     fn drop(&mut self) {
-        BORROW_FLAGS.release_mut(self.array.py(), self.address, self.key);
+        release_mut(self.array.py(), self.address, self.key);
     }
 }
 
