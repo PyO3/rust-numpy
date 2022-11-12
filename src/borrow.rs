@@ -256,7 +256,7 @@ impl BorrowFlags {
     fn acquire(&self, _py: Python, address: *mut u8, key: BorrowKey) -> Result<(), BorrowError> {
         // SAFETY: Having `_py` implies holding the GIL and
         // we are not calling into user code which might re-enter this function.
-        let borrow_flags = unsafe { BORROW_FLAGS.get() };
+        let borrow_flags = unsafe { self.get() };
 
         match borrow_flags.entry(address) {
             Entry::Occupied(entry) => {
@@ -299,7 +299,7 @@ impl BorrowFlags {
     fn release(&self, _py: Python, address: *mut u8, key: BorrowKey) {
         // SAFETY: Having `_py` implies holding the GIL and
         // we are not calling into user code which might re-enter this function.
-        let borrow_flags = unsafe { BORROW_FLAGS.get() };
+        let borrow_flags = unsafe { self.get() };
 
         let same_base_arrays = borrow_flags.get_mut(&address).unwrap();
 
@@ -324,7 +324,7 @@ impl BorrowFlags {
     ) -> Result<(), BorrowError> {
         // SAFETY: Having `_py` implies holding the GIL and
         // we are not calling into user code which might re-enter this function.
-        let borrow_flags = unsafe { BORROW_FLAGS.get() };
+        let borrow_flags = unsafe { self.get() };
 
         match borrow_flags.entry(address) {
             Entry::Occupied(entry) => {
@@ -361,7 +361,7 @@ impl BorrowFlags {
     fn release_mut(&self, _py: Python, address: *mut u8, key: BorrowKey) {
         // SAFETY: Having `_py` implies holding the GIL and
         // we are not calling into user code which might re-enter this function.
-        let borrow_flags = unsafe { BORROW_FLAGS.get() };
+        let borrow_flags = unsafe { self.get() };
 
         let same_base_arrays = borrow_flags.get_mut(&address).unwrap();
 
