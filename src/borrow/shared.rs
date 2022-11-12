@@ -1,12 +1,300 @@
-use std::cell::UnsafeCell;
+use std::cell::Cell;
 use std::collections::hash_map::Entry;
+use std::ffi::{c_void, CString};
+use std::os::raw::c_int;
+use std::ptr::null;
 
 use num_integer::gcd;
-use pyo3::Python;
+use pyo3::{exceptions::PyTypeError, types::PyCapsule, PyResult, PyTryInto, Python};
 use rustc_hash::FxHashMap;
 
+use crate::array::get_array_module;
 use crate::cold;
 use crate::error::BorrowError;
+
+/// Defines the shared C API used for borrow checking
+///
+/// This structure will be placed into a capsule at
+/// `numpy.core.multiarray._BORROW_CHECKING_API`.
+///
+/// All functions exposed here assume the GIL is held
+/// while they are called.
+///
+/// Versions are assumed to be backwards-compatible, i.e.
+/// an extension which knows version N will work using
+/// any API version M as long as M >= N holds.
+///
+/// Put differently, the only valid changes are adding
+/// fields (data or functions) at the end of the structure.
+#[repr(C)]
+struct Shared {
+    version: u64,
+    flags: *mut c_void,
+    acquire: unsafe extern "C" fn(
+        flags: *mut c_void,
+        address: *mut u8,
+        range_start: *mut u8,
+        range_end: *mut u8,
+        data_ptr: *mut u8,
+        gcd_strides: isize,
+    ) -> c_int,
+    acquire_mut: unsafe extern "C" fn(
+        flags: *mut c_void,
+        address: *mut u8,
+        range_start: *mut u8,
+        range_end: *mut u8,
+        data_ptr: *mut u8,
+        gcd_strides: isize,
+    ) -> c_int,
+    release: unsafe extern "C" fn(
+        flags: *mut c_void,
+        address: *mut u8,
+        range_start: *mut u8,
+        range_end: *mut u8,
+        data_ptr: *mut u8,
+        gcd_strides: isize,
+    ),
+    release_mut: unsafe extern "C" fn(
+        flags: *mut c_void,
+        address: *mut u8,
+        range_start: *mut u8,
+        range_end: *mut u8,
+        data_ptr: *mut u8,
+        gcd_strides: isize,
+    ),
+}
+
+unsafe impl Send for Shared {}
+
+// These are the entry points which implement the shared borrow checking API:
+
+unsafe extern "C" fn acquire_shared(
+    flags: *mut c_void,
+    address: *mut u8,
+    range_start: *mut u8,
+    range_end: *mut u8,
+    data_ptr: *mut u8,
+    gcd_strides: isize,
+) -> c_int {
+    // SAFETY: GIL must be held when calling `acquire_shared`.
+    let flags = &mut *(flags as *mut BorrowFlags);
+
+    let key = BorrowKey {
+        range: (range_start, range_end),
+        data_ptr,
+        gcd_strides,
+    };
+
+    match flags.acquire(address, key) {
+        Ok(()) => 0,
+        Err(()) => -1,
+    }
+}
+
+unsafe extern "C" fn acquire_mut_shared(
+    flags: *mut c_void,
+    address: *mut u8,
+    range_start: *mut u8,
+    range_end: *mut u8,
+    data_ptr: *mut u8,
+    gcd_strides: isize,
+) -> c_int {
+    // SAFETY: GIL must be held when calling `acquire_shared`.
+    let flags = &mut *(flags as *mut BorrowFlags);
+
+    let key = BorrowKey {
+        range: (range_start, range_end),
+        data_ptr,
+        gcd_strides,
+    };
+
+    match flags.acquire_mut(address, key) {
+        Ok(()) => 0,
+        Err(()) => -1,
+    }
+}
+
+unsafe extern "C" fn release_shared(
+    flags: *mut c_void,
+    address: *mut u8,
+    range_start: *mut u8,
+    range_end: *mut u8,
+    data_ptr: *mut u8,
+    gcd_strides: isize,
+) {
+    // SAFETY: GIL must be held when calling `acquire_shared`.
+    let flags = &mut *(flags as *mut BorrowFlags);
+
+    let key = BorrowKey {
+        range: (range_start, range_end),
+        data_ptr,
+        gcd_strides,
+    };
+
+    flags.release(address, key);
+}
+
+unsafe extern "C" fn release_mut_shared(
+    flags: *mut c_void,
+    address: *mut u8,
+    range_start: *mut u8,
+    range_end: *mut u8,
+    data_ptr: *mut u8,
+    gcd_strides: isize,
+) {
+    // SAFETY: GIL must be held when calling `acquire_shared`.
+    let flags = &mut *(flags as *mut BorrowFlags);
+
+    let key = BorrowKey {
+        range: (range_start, range_end),
+        data_ptr,
+        gcd_strides,
+    };
+
+    flags.release_mut(address, key);
+}
+
+// This global state is a cache used to access the shared borrow checking API from this extension:
+
+struct SharedPtr(Cell<*const Shared>);
+
+unsafe impl Sync for SharedPtr {}
+
+static SHARED: SharedPtr = SharedPtr(Cell::new(null()));
+
+fn get_or_insert_shared<'py>(py: Python<'py>) -> PyResult<&'py Shared> {
+    let mut shared = SHARED.0.get();
+
+    if shared.is_null() {
+        shared = insert_shared(py)?;
+    }
+
+    // SAFETY: We inserted the capsule if it was missing
+    // and verified that it contains a compatible version.
+    Ok(unsafe { &*shared })
+}
+
+// This function will publish this extensions version of the shared borrow checking API
+// as a capsule placed at `numpy.core.multiarray._BORROW_CHECKING_API` and
+// immediately initialize the cache used access it from this extension.
+
+#[cold]
+fn insert_shared(py: Python) -> PyResult<*const Shared> {
+    let module = get_array_module(py)?;
+
+    let capsule: &PyCapsule = match module.getattr("_BORROW_CHECKING_API") {
+        Ok(capsule) => capsule.try_into()?,
+        Err(_err) => {
+            let flags = Box::into_raw(Box::new(BorrowFlags::default()));
+
+            let shared = Shared {
+                version: 1,
+                flags: flags as *mut c_void,
+                acquire: acquire_shared,
+                acquire_mut: acquire_mut_shared,
+                release: release_shared,
+                release_mut: release_mut_shared,
+            };
+
+            let capsule = PyCapsule::new_with_destructor(
+                py,
+                shared,
+                Some(CString::new("_BORROW_CHECKING_API").unwrap()),
+                |shared, _ctx| {
+                    // SAFETY: `shared.flags` was initialized using `Box::into_raw`.
+                    let _ = unsafe { Box::from_raw(shared.flags as *mut BorrowFlags) };
+                },
+            )?;
+            module.setattr("_BORROW_CHECKING_API", capsule)?;
+            capsule
+        }
+    };
+
+    // SAFETY: All versions of the shared borrow checking API start with a version field.
+    let version = unsafe { *(capsule.pointer() as *mut u64) };
+    if version < 1 {
+        return Err(PyTypeError::new_err(format!(
+            "Version {} of borrow checking API is not supported by this version of rust-numpy",
+            version
+        )));
+    }
+
+    let shared = capsule.pointer() as *const Shared;
+    SHARED.0.set(shared);
+    Ok(shared)
+}
+
+// These entry points will be used to access the shared borrow checking API from this extension:
+
+pub fn acquire(py: Python, address: *mut u8, key: BorrowKey) -> Result<(), BorrowError> {
+    let shared = get_or_insert_shared(py).expect("Interal borrow checking API error");
+
+    let rc = unsafe {
+        (shared.acquire)(
+            shared.flags,
+            address,
+            key.range.0,
+            key.range.1,
+            key.data_ptr,
+            key.gcd_strides,
+        )
+    };
+
+    match rc {
+        0 => Ok(()),
+        _ => Err(BorrowError::AlreadyBorrowed),
+    }
+}
+
+pub fn acquire_mut(py: Python, address: *mut u8, key: BorrowKey) -> Result<(), BorrowError> {
+    let shared = get_or_insert_shared(py).expect("Interal borrow checking API error");
+
+    let rc = unsafe {
+        (shared.acquire_mut)(
+            shared.flags,
+            address,
+            key.range.0,
+            key.range.1,
+            key.data_ptr,
+            key.gcd_strides,
+        )
+    };
+
+    match rc {
+        0 => Ok(()),
+        _ => Err(BorrowError::AlreadyBorrowed),
+    }
+}
+
+pub fn release(py: Python, address: *mut u8, key: BorrowKey) {
+    let shared = get_or_insert_shared(py).expect("Interal borrow checking API error");
+
+    unsafe {
+        (shared.release)(
+            shared.flags,
+            address,
+            key.range.0,
+            key.range.1,
+            key.data_ptr,
+            key.gcd_strides,
+        );
+    }
+}
+
+pub fn release_mut(py: Python, address: *mut u8, key: BorrowKey) {
+    let shared = get_or_insert_shared(py).expect("Interal borrow checking API error");
+
+    unsafe {
+        (shared.release_mut)(
+            shared.flags,
+            address,
+            key.range.0,
+            key.range.1,
+            key.data_ptr,
+            key.gcd_strides,
+        );
+    }
+}
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct BorrowKey {
@@ -49,29 +337,12 @@ impl BorrowKey {
 
 type BorrowFlagsInner = FxHashMap<*mut u8, FxHashMap<BorrowKey, isize>>;
 
-pub struct BorrowFlags(UnsafeCell<Option<BorrowFlagsInner>>);
-
-unsafe impl Sync for BorrowFlags {}
+#[derive(Default)]
+struct BorrowFlags(BorrowFlagsInner);
 
 impl BorrowFlags {
-    const fn new() -> Self {
-        Self(UnsafeCell::new(None))
-    }
-
-    #[allow(clippy::mut_from_ref)]
-    unsafe fn get(&self) -> &mut BorrowFlagsInner {
-        (*self.0.get()).get_or_insert_with(Default::default)
-    }
-
-    pub fn acquire(
-        &self,
-        _py: Python,
-        address: *mut u8,
-        key: BorrowKey,
-    ) -> Result<(), BorrowError> {
-        // SAFETY: Having `_py` implies holding the GIL and
-        // we are not calling into user code which might re-enter this function.
-        let borrow_flags = unsafe { self.get() };
+    fn acquire(&mut self, address: *mut u8, key: BorrowKey) -> Result<(), ()> {
+        let borrow_flags = &mut self.0;
 
         match borrow_flags.entry(address) {
             Entry::Occupied(entry) => {
@@ -85,7 +356,7 @@ impl BorrowFlags {
 
                     if new_readers <= 0 {
                         cold();
-                        return Err(BorrowError::AlreadyBorrowed);
+                        return Err(());
                     }
 
                     *readers = new_readers;
@@ -95,7 +366,7 @@ impl BorrowFlags {
                         .any(|(other, readers)| key.conflicts(other) && *readers < 0)
                     {
                         cold();
-                        return Err(BorrowError::AlreadyBorrowed);
+                        return Err(());
                     }
 
                     same_base_arrays.insert(key, 1);
@@ -112,10 +383,8 @@ impl BorrowFlags {
         Ok(())
     }
 
-    pub fn release(&self, _py: Python, address: *mut u8, key: BorrowKey) {
-        // SAFETY: Having `_py` implies holding the GIL and
-        // we are not calling into user code which might re-enter this function.
-        let borrow_flags = unsafe { self.get() };
+    fn release(&mut self, address: *mut u8, key: BorrowKey) {
+        let borrow_flags = &mut self.0;
 
         let same_base_arrays = borrow_flags.get_mut(&address).unwrap();
 
@@ -132,15 +401,8 @@ impl BorrowFlags {
         }
     }
 
-    pub fn acquire_mut(
-        &self,
-        _py: Python,
-        address: *mut u8,
-        key: BorrowKey,
-    ) -> Result<(), BorrowError> {
-        // SAFETY: Having `_py` implies holding the GIL and
-        // we are not calling into user code which might re-enter this function.
-        let borrow_flags = unsafe { self.get() };
+    fn acquire_mut(&mut self, address: *mut u8, key: BorrowKey) -> Result<(), ()> {
+        let borrow_flags = &mut self.0;
 
         match borrow_flags.entry(address) {
             Entry::Occupied(entry) => {
@@ -151,14 +413,14 @@ impl BorrowFlags {
                     assert_ne!(*writers, 0);
 
                     cold();
-                    return Err(BorrowError::AlreadyBorrowed);
+                    return Err(());
                 } else {
                     if same_base_arrays
                         .iter()
                         .any(|(other, writers)| key.conflicts(other) && *writers != 0)
                     {
                         cold();
-                        return Err(BorrowError::AlreadyBorrowed);
+                        return Err(());
                     }
 
                     same_base_arrays.insert(key, -1);
@@ -175,10 +437,8 @@ impl BorrowFlags {
         Ok(())
     }
 
-    pub fn release_mut(&self, _py: Python, address: *mut u8, key: BorrowKey) {
-        // SAFETY: Having `_py` implies holding the GIL and
-        // we are not calling into user code which might re-enter this function.
-        let borrow_flags = unsafe { self.get() };
+    fn release_mut(&mut self, address: *mut u8, key: BorrowKey) {
+        let borrow_flags = &mut self.0;
 
         let same_base_arrays = borrow_flags.get_mut(&address).unwrap();
 
@@ -190,8 +450,6 @@ impl BorrowFlags {
     }
 }
 
-pub static BORROW_FLAGS: BorrowFlags = BorrowFlags::new();
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -201,6 +459,12 @@ mod tests {
     use crate::array::{PyArray, PyArray1};
 
     use super::super::{base_address, borrow_key};
+
+    fn get_borrow_flags<'py>(py: Python) -> &'py BorrowFlagsInner {
+        let shared = get_or_insert_shared(py).unwrap();
+        assert_eq!(shared.version, 1);
+        unsafe { &(*(shared.flags as *mut BorrowFlags)).0 }
+    }
 
     #[test]
     fn borrow_multiple_arrays() {
@@ -215,7 +479,7 @@ mod tests {
             let _exclusive1 = array1.readwrite();
 
             {
-                let borrow_flags = unsafe { BORROW_FLAGS.get() };
+                let borrow_flags = get_borrow_flags(py);
                 assert_eq!(borrow_flags.len(), 1);
 
                 let same_base_arrays = &borrow_flags[&base1];
@@ -229,7 +493,7 @@ mod tests {
             let _shared2 = array2.readonly();
 
             {
-                let borrow_flags = unsafe { BORROW_FLAGS.get() };
+                let borrow_flags = get_borrow_flags(py);
                 assert_eq!(borrow_flags.len(), 2);
 
                 let same_base_arrays = &borrow_flags[&base1];
@@ -265,7 +529,7 @@ mod tests {
             let exclusive1 = view1.readwrite();
 
             {
-                let borrow_flags = unsafe { BORROW_FLAGS.get() };
+                let borrow_flags = get_borrow_flags(py);
                 assert_eq!(borrow_flags.len(), 1);
 
                 let same_base_arrays = &borrow_flags[&base];
@@ -285,7 +549,7 @@ mod tests {
             let shared2 = view2.readonly();
 
             {
-                let borrow_flags = unsafe { BORROW_FLAGS.get() };
+                let borrow_flags = get_borrow_flags(py);
                 assert_eq!(borrow_flags.len(), 1);
 
                 let same_base_arrays = &borrow_flags[&base];
@@ -308,7 +572,7 @@ mod tests {
             let shared3 = view3.readonly();
 
             {
-                let borrow_flags = unsafe { BORROW_FLAGS.get() };
+                let borrow_flags = get_borrow_flags(py);
                 assert_eq!(borrow_flags.len(), 1);
 
                 let same_base_arrays = &borrow_flags[&base];
@@ -334,7 +598,7 @@ mod tests {
             let shared4 = view4.readonly();
 
             {
-                let borrow_flags = unsafe { BORROW_FLAGS.get() };
+                let borrow_flags = get_borrow_flags(py);
                 assert_eq!(borrow_flags.len(), 1);
 
                 let same_base_arrays = &borrow_flags[&base];
@@ -356,7 +620,7 @@ mod tests {
             drop(shared2);
 
             {
-                let borrow_flags = unsafe { BORROW_FLAGS.get() };
+                let borrow_flags = get_borrow_flags(py);
                 assert_eq!(borrow_flags.len(), 1);
 
                 let same_base_arrays = &borrow_flags[&base];
@@ -378,7 +642,7 @@ mod tests {
             drop(shared3);
 
             {
-                let borrow_flags = unsafe { BORROW_FLAGS.get() };
+                let borrow_flags = get_borrow_flags(py);
                 assert_eq!(borrow_flags.len(), 1);
 
                 let same_base_arrays = &borrow_flags[&base];
@@ -398,7 +662,7 @@ mod tests {
             drop(exclusive1);
 
             {
-                let borrow_flags = unsafe { BORROW_FLAGS.get() };
+                let borrow_flags = get_borrow_flags(py);
                 assert_eq!(borrow_flags.len(), 1);
 
                 let same_base_arrays = &borrow_flags[&base];
@@ -417,7 +681,7 @@ mod tests {
             drop(shared4);
 
             {
-                let borrow_flags = unsafe { BORROW_FLAGS.get() };
+                let borrow_flags = get_borrow_flags(py);
                 assert_eq!(borrow_flags.len(), 0);
             }
         });
