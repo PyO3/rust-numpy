@@ -15,7 +15,6 @@ keywords = ["python", "numpy", "ffi", "pyo3"]
 license = "BSD-2-Clause"
 
 [dependencies]
-ahash = "0.7"
 half = { version = "2.0", default-features = false, optional = true }
 libc = "0.2"
 nalgebra = { version = "0.31", default-features = false, optional = true }
@@ -24,6 +23,7 @@ num-integer = "0.1"
 num-traits = "0.2"
 ndarray = ">= 0.13, < 0.16"
 pyo3 = { version = "0.17", default-features = false, features = ["macros"] }
+rustc-hash = "1.1"
 
 [dev-dependencies]
 pyo3 = { version = "0.17", default-features = false, features = ["auto-initialize"] }
