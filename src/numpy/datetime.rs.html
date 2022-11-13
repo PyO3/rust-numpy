@@ -411,8 +411,8 @@
 <span class="kw">use</span> <span class="ident">std::hash::Hash</span>;
 <span class="kw">use</span> <span class="ident">std::marker::PhantomData</span>;
 
-<span class="kw">use</span> <span class="ident">ahash::AHashMap</span>;
 <span class="kw">use</span> <span class="ident">pyo3</span>::{<span class="ident">Py</span>, <span class="ident">Python</span>};
+<span class="kw">use</span> <span class="ident">rustc_hash::FxHashMap</span>;
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::dtype</span>::{<span class="ident">Element</span>, <span class="ident">PyArrayDescr</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::npyffi</span>::{<span class="ident">PyArray_DatetimeDTypeMetaData</span>, <span class="ident">NPY_DATETIMEUNIT</span>, <span class="ident">NPY_TYPES</span>};
@@ -554,7 +554,7 @@
 
 <span class="kw">struct</span> <span class="ident">TypeDescriptors</span> {
     <span class="ident">npy_type</span>: <span class="ident">NPY_TYPES</span>,
-    <span class="ident">dtypes</span>: <span class="ident">UnsafeCell</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">AHashMap</span><span class="op">&lt;</span><span class="ident">NPY_DATETIMEUNIT</span>, <span class="ident">Py</span><span class="op">&lt;</span><span class="ident">PyArrayDescr</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">dtypes</span>: <span class="ident">UnsafeCell</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">FxHashMap</span><span class="op">&lt;</span><span class="ident">NPY_DATETIMEUNIT</span>, <span class="ident">Py</span><span class="op">&lt;</span><span class="ident">PyArrayDescr</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">unsafe</span> <span class="kw">impl</span> <span class="ident">Sync</span> <span class="kw">for</span> <span class="ident">TypeDescriptors</span> {}
@@ -569,8 +569,8 @@
     }
 
     <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">clippy::mut_from_ref</span>)]</span>
-    <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut</span> <span class="ident">AHashMap</span><span class="op">&lt;</span><span class="ident">NPY_DATETIMEUNIT</span>, <span class="ident">Py</span><span class="op">&lt;</span><span class="ident">PyArrayDescr</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        (<span class="kw-2">*</span><span class="self">self</span>.<span class="ident">dtypes</span>.<span class="ident">get</span>()).<span class="ident">get_or_insert_with</span>(<span class="ident">AHashMap::new</span>)
+    <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut</span> <span class="ident">FxHashMap</span><span class="op">&lt;</span><span class="ident">NPY_DATETIMEUNIT</span>, <span class="ident">Py</span><span class="op">&lt;</span><span class="ident">PyArrayDescr</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+        (<span class="kw-2">*</span><span class="self">self</span>.<span class="ident">dtypes</span>.<span class="ident">get</span>()).<span class="ident">get_or_insert_with</span>(<span class="ident">Default::default</span>)
     }
 
     <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">clippy::wrong_self_convention</span>)]</span>
