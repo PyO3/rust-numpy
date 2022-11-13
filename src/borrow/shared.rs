@@ -15,7 +15,7 @@ use crate::error::BorrowError;
 /// Defines the shared C API used for borrow checking
 ///
 /// This structure will be placed into a capsule at
-/// `numpy.core.multiarray._BORROW_CHECKING_API`.
+/// `numpy.core.multiarray._RUST_NUMPY_BORROW_CHECKING_API`.
 ///
 /// All functions exposed here assume the GIL is held
 /// while they are called.
@@ -175,14 +175,14 @@ fn get_or_insert_shared<'py>(py: Python<'py>) -> PyResult<&'py Shared> {
 }
 
 // This function will publish this extensions version of the shared borrow checking API
-// as a capsule placed at `numpy.core.multiarray._BORROW_CHECKING_API` and
+// as a capsule placed at `numpy.core.multiarray._RUST_NUMPY_BORROW_CHECKING_API` and
 // immediately initialize the cache used access it from this extension.
 
 #[cold]
 fn insert_shared(py: Python) -> PyResult<*const Shared> {
     let module = get_array_module(py)?;
 
-    let capsule: &PyCapsule = match module.getattr("_BORROW_CHECKING_API") {
+    let capsule: &PyCapsule = match module.getattr("_RUST_NUMPY_BORROW_CHECKING_API") {
         Ok(capsule) => capsule.try_into()?,
         Err(_err) => {
             let flags = Box::into_raw(Box::new(BorrowFlags::default()));
@@ -199,13 +199,13 @@ fn insert_shared(py: Python) -> PyResult<*const Shared> {
             let capsule = PyCapsule::new_with_destructor(
                 py,
                 shared,
-                Some(CString::new("_BORROW_CHECKING_API").unwrap()),
+                Some(CString::new("_RUST_NUMPY_BORROW_CHECKING_API").unwrap()),
                 |shared, _ctx| {
                     // SAFETY: `shared.flags` was initialized using `Box::into_raw`.
                     let _ = unsafe { Box::from_raw(shared.flags as *mut BorrowFlags) };
                 },
             )?;
-            module.setattr("_BORROW_CHECKING_API", capsule)?;
+            module.setattr("_RUST_NUMPY_BORROW_CHECKING_API", capsule)?;
             capsule
         }
     };
