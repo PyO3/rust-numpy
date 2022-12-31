@@ -3,6 +3,7 @@
 - Unreleased
   - Add conversions from and to datatypes provided by the [`nalgebra` crate](https://nalgebra.org/). ([#347](https://github.com/PyO3/rust-numpy/pull/347))
   - Drop our wrapper for NumPy iterators which were deprecated in v0.16.0 as ndarray's iteration facilities are almost always preferable. ([#324](https://github.com/PyO3/rust-numpy/pull/324))
+  - Dynamic borrow checking now uses a capsule-based API and therefore works across multiple extensions using PyO3 and potentially other bindings or languages. ([#361](https://github.com/PyO3/rust-numpy/pull/361))
 
 - v0.17.2
   - Fix unsound aliasing into `Box<[T]>` when converting them into NumPy arrays. ([#351](https://github.com/PyO3/rust-numpy/pull/351))
