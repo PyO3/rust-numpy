@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/npyffi/mod.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>mod.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../numpy/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../numpy/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../numpy/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/npyffi/mod.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>mod.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../numpy/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../numpy/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../numpy/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -49,56 +49,56 @@
 <span id="49">49</span>
 <span id="50">50</span>
 <span id="51">51</span>
-</pre><pre class="rust"><code><span class="doccomment">//! Low-Level bindings for NumPy C API.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! &lt;https://numpy.org/doc/stable/reference/c-api&gt;</span>
-<span class="attribute">#![<span class="ident">allow</span>(
-    <span class="ident">non_camel_case_types</span>,
-    <span class="ident">missing_docs</span>,
-    <span class="ident">missing_debug_implementations</span>,
-    <span class="ident">clippy::too_many_arguments</span>,
-    <span class="ident">clippy::missing_safety_doc</span>
-)]</span>
+</pre><pre class="rust"><code><span class="doccomment">//! Low-Level bindings for NumPy C API.
+//!
+//! &lt;https://numpy.org/doc/stable/reference/c-api&gt;
+</span><span class="attribute">#![allow(
+    non_camel_case_types,
+    missing_docs,
+    missing_debug_implementations,
+    clippy::too_many_arguments,
+    clippy::missing_safety_doc
+)]
 
-<span class="kw">use</span> <span class="ident">pyo3</span>::{<span class="ident">ffi</span>, <span class="ident">Python</span>};
-<span class="kw">use</span> <span class="ident">std::ffi::CString</span>;
-<span class="kw">use</span> <span class="ident">std::os::raw::c_void</span>;
-<span class="kw">use</span> <span class="ident">std::ptr::null_mut</span>;
+</span><span class="kw">use </span>pyo3::{ffi, Python};
+<span class="kw">use </span>std::ffi::CString;
+<span class="kw">use </span>std::os::raw::c_void;
+<span class="kw">use </span>std::ptr::null_mut;
 
-<span class="kw">fn</span> <span class="ident">get_numpy_api</span>(<span class="ident">_py</span>: <span class="ident">Python</span>, <span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">capsule</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="kw-2">*const</span> <span class="kw-2">*const</span> <span class="ident">c_void</span> {
-    <span class="kw">let</span> <span class="ident">module</span> <span class="op">=</span> <span class="ident">CString::new</span>(<span class="ident">module</span>).<span class="ident">unwrap</span>();
-    <span class="kw">let</span> <span class="ident">capsule</span> <span class="op">=</span> <span class="ident">CString::new</span>(<span class="ident">capsule</span>).<span class="ident">unwrap</span>();
-    <span class="kw">unsafe</span> {
-        <span class="kw">let</span> <span class="ident">module</span> <span class="op">=</span> <span class="ident">ffi::PyImport_ImportModule</span>(<span class="ident">module</span>.<span class="ident">as_ptr</span>());
-        <span class="macro">assert!</span>(<span class="op">!</span><span class="ident">module</span>.<span class="ident">is_null</span>(), <span class="string">&quot;Failed to import NumPy module&quot;</span>);
-        <span class="kw">let</span> <span class="ident">capsule</span> <span class="op">=</span> <span class="ident">ffi::PyObject_GetAttrString</span>(<span class="ident">module</span> <span class="kw">as</span> <span class="kw">_</span>, <span class="ident">capsule</span>.<span class="ident">as_ptr</span>());
-        <span class="macro">assert!</span>(<span class="op">!</span><span class="ident">capsule</span>.<span class="ident">is_null</span>(), <span class="string">&quot;Failed to get NumPy API capsule&quot;</span>);
-        <span class="ident">ffi::PyCapsule_GetPointer</span>(<span class="ident">capsule</span>, <span class="ident">null_mut</span>()) <span class="kw">as</span> <span class="kw">_</span>
-    }
+<span class="kw">fn </span>get_numpy_api(_py: Python, module: <span class="kw-2">&amp;</span>str, capsule: <span class="kw-2">&amp;</span>str) -&gt; <span class="kw-2">*const *const </span>c_void {
+    <span class="kw">let </span>module = CString::new(module).unwrap();
+    <span class="kw">let </span>capsule = CString::new(capsule).unwrap();
+    <span class="kw">unsafe </span>{
+        <span class="kw">let </span>module = ffi::PyImport_ImportModule(module.as_ptr());
+        <span class="macro">assert!</span>(!module.is_null(), <span class="string">&quot;Failed to import NumPy module&quot;</span>);
+        <span class="kw">let </span>capsule = ffi::PyObject_GetAttrString(module <span class="kw">as _</span>, capsule.as_ptr());
+        <span class="macro">assert!</span>(!capsule.is_null(), <span class="string">&quot;Failed to get NumPy API capsule&quot;</span>);
+        ffi::PyCapsule_GetPointer(capsule, null_mut()) <span class="kw">as _
+    </span>}
 }
 
-<span class="comment">// Implements wrappers for NumPy&#39;s Array and UFunc API</span>
-<span class="macro">macro_rules!</span> <span class="ident">impl_api</span> {
-    [<span class="macro-nonterminal">$</span><span class="macro-nonterminal">offset</span>: <span class="ident">expr</span>; <span class="macro-nonterminal">$</span><span class="macro-nonterminal">fname</span>: <span class="ident">ident</span> ( $(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg</span>: <span class="ident">ident</span> : <span class="macro-nonterminal">$</span><span class="macro-nonterminal">t</span>: <span class="ident">ty</span>),<span class="op">*</span> $(,)<span class="question-mark">?</span>) $( -&gt; <span class="macro-nonterminal">$</span><span class="macro-nonterminal">ret</span>: <span class="ident">ty</span> )<span class="op">*</span> ] =&gt; {
-        <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">non_snake_case</span>)]</span>
-        <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">fname</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">py</span>: <span class="ident">Python</span>, $(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg</span> : <span class="macro-nonterminal">$</span><span class="macro-nonterminal">t</span>), <span class="kw-2">*</span>) $( -&gt; <span class="macro-nonterminal">$</span><span class="macro-nonterminal">ret</span> )<span class="op">*</span> {
-            <span class="kw">let</span> <span class="ident">fptr</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">get</span>(<span class="ident">py</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">offset</span>)
-                           <span class="kw">as</span> <span class="kw-2">*const</span> <span class="kw">extern</span> <span class="kw">fn</span> ($(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg</span> : <span class="macro-nonterminal">$</span><span class="macro-nonterminal">t</span>), <span class="kw-2">*</span>) $( -&gt; <span class="macro-nonterminal">$</span><span class="macro-nonterminal">ret</span> )<span class="kw-2">*</span>;
-            (<span class="kw-2">*</span><span class="ident">fptr</span>)($(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg</span>), <span class="kw-2">*</span>)
+<span class="comment">// Implements wrappers for NumPy&#39;s Array and UFunc API
+</span><span class="macro">macro_rules! </span>impl_api {
+    [<span class="macro-nonterminal">$offset</span>: expr; <span class="macro-nonterminal">$fname</span>: ident ( $(<span class="macro-nonterminal">$arg</span>: ident : <span class="macro-nonterminal">$t</span>: ty),* $(,)<span class="question-mark">?</span>) $( -&gt; <span class="macro-nonterminal">$ret</span>: ty )* ] =&gt; {
+        <span class="attribute">#[allow(non_snake_case)]
+        </span><span class="kw">pub unsafe fn </span><span class="macro-nonterminal">$fname</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, py: Python, $(<span class="macro-nonterminal">$arg </span>: <span class="macro-nonterminal">$t</span>), <span class="kw-2">*</span>) $( -&gt; <span class="macro-nonterminal">$ret </span>)* {
+            <span class="kw">let </span>fptr = <span class="self">self</span>.get(py, <span class="macro-nonterminal">$offset</span>)
+                           <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">extern fn </span>($(<span class="macro-nonterminal">$arg </span>: <span class="macro-nonterminal">$t</span>), <span class="kw-2">*</span>) $( -&gt; <span class="macro-nonterminal">$ret </span>)<span class="kw-2">*</span>;
+            (<span class="kw-2">*</span>fptr)($(<span class="macro-nonterminal">$arg</span>), <span class="kw-2">*</span>)
         }
     };
 }
 
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">array</span>;
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">flags</span>;
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">objects</span>;
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">types</span>;
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">ufunc</span>;
+<span class="kw">pub mod </span>array;
+<span class="kw">pub mod </span>flags;
+<span class="kw">pub mod </span>objects;
+<span class="kw">pub mod </span>types;
+<span class="kw">pub mod </span>ufunc;
 
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="self">self</span>::array</span>::<span class="kw-2">*</span>;
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="self">self</span>::flags</span>::<span class="kw-2">*</span>;
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="self">self</span>::objects</span>::<span class="kw-2">*</span>;
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="self">self</span>::types</span>::<span class="kw-2">*</span>;
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="self">self</span>::ufunc</span>::<span class="kw-2">*</span>;
+<span class="kw">pub use </span><span class="self">self</span>::array::<span class="kw-2">*</span>;
+<span class="kw">pub use </span><span class="self">self</span>::flags::<span class="kw-2">*</span>;
+<span class="kw">pub use </span><span class="self">self</span>::objects::<span class="kw-2">*</span>;
+<span class="kw">pub use </span><span class="self">self</span>::types::<span class="kw-2">*</span>;
+<span class="kw">pub use </span><span class="self">self</span>::ufunc::<span class="kw-2">*</span>;
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="numpy" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="numpy" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

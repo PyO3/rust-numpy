@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/npyffi/types.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>types.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../numpy/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../numpy/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../numpy/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/npyffi/types.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>types.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../numpy/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../numpy/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../numpy/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -270,277 +270,277 @@
 <span id="270">270</span>
 <span id="271">271</span>
 <span id="272">272</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">pyo3::ffi</span>::{<span class="ident">Py_hash_t</span>, <span class="ident">Py_intptr_t</span>, <span class="ident">Py_uintptr_t</span>};
-<span class="kw">use</span> <span class="ident">std::os::raw</span>::<span class="kw-2">*</span>;
+</pre><pre class="rust"><code><span class="kw">use </span>pyo3::ffi::{Py_hash_t, Py_intptr_t, Py_uintptr_t};
+<span class="kw">use </span>std::os::raw::<span class="kw-2">*</span>;
 
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">npy_intp</span> <span class="op">=</span> <span class="ident">Py_intptr_t</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">npy_uintp</span> <span class="op">=</span> <span class="ident">Py_uintptr_t</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">npy_longlong</span> <span class="op">=</span> <span class="ident">c_longlong</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">npy_ulonglong</span> <span class="op">=</span> <span class="ident">c_ulonglong</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">npy_bool</span> <span class="op">=</span> <span class="ident">c_uchar</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">npy_longdouble</span> <span class="op">=</span> <span class="ident">f64</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">npy_byte</span> <span class="op">=</span> <span class="ident">c_char</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">npy_ubyte</span> <span class="op">=</span> <span class="ident">c_uchar</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">npy_ushort</span> <span class="op">=</span> <span class="ident">c_ushort</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">npy_uint</span> <span class="op">=</span> <span class="ident">c_uint</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">npy_ulong</span> <span class="op">=</span> <span class="ident">c_ulong</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">npy_char</span> <span class="op">=</span> <span class="ident">c_char</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">npy_short</span> <span class="op">=</span> <span class="ident">c_short</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">npy_int</span> <span class="op">=</span> <span class="ident">c_int</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">npy_long</span> <span class="op">=</span> <span class="ident">c_long</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">npy_float</span> <span class="op">=</span> <span class="ident">f32</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">npy_double</span> <span class="op">=</span> <span class="ident">f64</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">npy_hash_t</span> <span class="op">=</span> <span class="ident">Py_hash_t</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">npy_int64</span> <span class="op">=</span> <span class="ident">c_long</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">npy_uint64</span> <span class="op">=</span> <span class="ident">c_ulong</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">npy_int32</span> <span class="op">=</span> <span class="ident">c_int</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">npy_uint32</span> <span class="op">=</span> <span class="ident">c_uint</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">npy_ucs4</span> <span class="op">=</span> <span class="ident">c_uint</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">npy_int16</span> <span class="op">=</span> <span class="ident">c_short</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">npy_uint16</span> <span class="op">=</span> <span class="ident">c_ushort</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">npy_int8</span> <span class="op">=</span> <span class="ident">c_char</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">npy_uint8</span> <span class="op">=</span> <span class="ident">c_uchar</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">npy_float64</span> <span class="op">=</span> <span class="ident">f64</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">npy_complex128</span> <span class="op">=</span> <span class="ident">npy_cdouble</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">npy_float32</span> <span class="op">=</span> <span class="ident">f32</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">npy_complex64</span> <span class="op">=</span> <span class="ident">npy_cfloat</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">npy_half</span> <span class="op">=</span> <span class="ident">npy_uint16</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">npy_float16</span> <span class="op">=</span> <span class="ident">npy_half</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">npy_float128</span> <span class="op">=</span> <span class="ident">npy_longdouble</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">npy_complex256</span> <span class="op">=</span> <span class="ident">npy_clongdouble</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">npy_timedelta</span> <span class="op">=</span> <span class="ident">npy_int64</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">npy_datetime</span> <span class="op">=</span> <span class="ident">npy_int64</span>;
+<span class="kw">pub type </span>npy_intp = Py_intptr_t;
+<span class="kw">pub type </span>npy_uintp = Py_uintptr_t;
+<span class="kw">pub type </span>npy_longlong = c_longlong;
+<span class="kw">pub type </span>npy_ulonglong = c_ulonglong;
+<span class="kw">pub type </span>npy_bool = c_uchar;
+<span class="kw">pub type </span>npy_longdouble = f64;
+<span class="kw">pub type </span>npy_byte = c_char;
+<span class="kw">pub type </span>npy_ubyte = c_uchar;
+<span class="kw">pub type </span>npy_ushort = c_ushort;
+<span class="kw">pub type </span>npy_uint = c_uint;
+<span class="kw">pub type </span>npy_ulong = c_ulong;
+<span class="kw">pub type </span>npy_char = c_char;
+<span class="kw">pub type </span>npy_short = c_short;
+<span class="kw">pub type </span>npy_int = c_int;
+<span class="kw">pub type </span>npy_long = c_long;
+<span class="kw">pub type </span>npy_float = f32;
+<span class="kw">pub type </span>npy_double = f64;
+<span class="kw">pub type </span>npy_hash_t = Py_hash_t;
+<span class="kw">pub type </span>npy_int64 = c_long;
+<span class="kw">pub type </span>npy_uint64 = c_ulong;
+<span class="kw">pub type </span>npy_int32 = c_int;
+<span class="kw">pub type </span>npy_uint32 = c_uint;
+<span class="kw">pub type </span>npy_ucs4 = c_uint;
+<span class="kw">pub type </span>npy_int16 = c_short;
+<span class="kw">pub type </span>npy_uint16 = c_ushort;
+<span class="kw">pub type </span>npy_int8 = c_char;
+<span class="kw">pub type </span>npy_uint8 = c_uchar;
+<span class="kw">pub type </span>npy_float64 = f64;
+<span class="kw">pub type </span>npy_complex128 = npy_cdouble;
+<span class="kw">pub type </span>npy_float32 = f32;
+<span class="kw">pub type </span>npy_complex64 = npy_cfloat;
+<span class="kw">pub type </span>npy_half = npy_uint16;
+<span class="kw">pub type </span>npy_float16 = npy_half;
+<span class="kw">pub type </span>npy_float128 = npy_longdouble;
+<span class="kw">pub type </span>npy_complex256 = npy_clongdouble;
+<span class="kw">pub type </span>npy_timedelta = npy_int64;
+<span class="kw">pub type </span>npy_datetime = npy_int64;
 
-<span class="attribute">#[<span class="ident">repr</span>(<span class="ident">C</span>)]</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">npy_cdouble</span> {
-    <span class="kw">pub</span> <span class="ident">real</span>: <span class="ident">f64</span>,
-    <span class="kw">pub</span> <span class="ident">imag</span>: <span class="ident">f64</span>,
+<span class="attribute">#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+</span><span class="kw">pub struct </span>npy_cdouble {
+    <span class="kw">pub </span>real: f64,
+    <span class="kw">pub </span>imag: f64,
 }
-<span class="attribute">#[<span class="ident">repr</span>(<span class="ident">C</span>)]</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">npy_cfloat</span> {
-    <span class="kw">pub</span> <span class="ident">real</span>: <span class="ident">f32</span>,
-    <span class="kw">pub</span> <span class="ident">imag</span>: <span class="ident">f32</span>,
-}
-
-<span class="attribute">#[<span class="ident">repr</span>(<span class="ident">C</span>)]</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">npy_clongdouble</span> {
-    <span class="kw">pub</span> <span class="ident">real</span>: <span class="ident">npy_longdouble</span>,
-    <span class="kw">pub</span> <span class="ident">imag</span>: <span class="ident">npy_longdouble</span>,
+<span class="attribute">#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+</span><span class="kw">pub struct </span>npy_cfloat {
+    <span class="kw">pub </span>real: f32,
+    <span class="kw">pub </span>imag: f32,
 }
 
-<span class="attribute">#[<span class="ident">repr</span>(<span class="ident">i32</span>)]</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">Hash</span>)]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">NPY_ORDER</span> {
-    <span class="ident">NPY_ANYORDER</span> <span class="op">=</span> <span class="op">-</span><span class="number">1</span>,
-    <span class="ident">NPY_CORDER</span> <span class="op">=</span> <span class="number">0</span>,
-    <span class="ident">NPY_FORTRANORDER</span> <span class="op">=</span> <span class="number">1</span>,
-    <span class="ident">NPY_KEEPORDER</span> <span class="op">=</span> <span class="number">2</span>,
+<span class="attribute">#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+</span><span class="kw">pub struct </span>npy_clongdouble {
+    <span class="kw">pub </span>real: npy_longdouble,
+    <span class="kw">pub </span>imag: npy_longdouble,
 }
 
-<span class="attribute">#[<span class="ident">repr</span>(<span class="ident">i32</span>)]</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">Hash</span>)]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">NPY_SCALARKIND</span> {
-    <span class="ident">NPY_NOSCALAR</span> <span class="op">=</span> <span class="op">-</span><span class="number">1</span>,
-    <span class="ident">NPY_BOOL_SCALAR</span> <span class="op">=</span> <span class="number">0</span>,
-    <span class="ident">NPY_INTPOS_SCALAR</span> <span class="op">=</span> <span class="number">1</span>,
-    <span class="ident">NPY_INTNEG_SCALAR</span> <span class="op">=</span> <span class="number">2</span>,
-    <span class="ident">NPY_FLOAT_SCALAR</span> <span class="op">=</span> <span class="number">3</span>,
-    <span class="ident">NPY_COMPLEX_SCALAR</span> <span class="op">=</span> <span class="number">4</span>,
-    <span class="ident">NPY_OBJECT_SCALAR</span> <span class="op">=</span> <span class="number">5</span>,
+<span class="attribute">#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+</span><span class="kw">pub enum </span>NPY_ORDER {
+    NPY_ANYORDER = -<span class="number">1</span>,
+    NPY_CORDER = <span class="number">0</span>,
+    NPY_FORTRANORDER = <span class="number">1</span>,
+    NPY_KEEPORDER = <span class="number">2</span>,
 }
 
-<span class="attribute">#[<span class="ident">repr</span>(<span class="ident">u32</span>)]</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">Hash</span>)]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">NPY_SORTKIND</span> {
-    <span class="ident">NPY_QUICKSORT</span> <span class="op">=</span> <span class="number">0</span>,
-    <span class="ident">NPY_HEAPSORT</span> <span class="op">=</span> <span class="number">1</span>,
-    <span class="ident">NPY_MERGESORT</span> <span class="op">=</span> <span class="number">2</span>,
+<span class="attribute">#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+</span><span class="kw">pub enum </span>NPY_SCALARKIND {
+    NPY_NOSCALAR = -<span class="number">1</span>,
+    NPY_BOOL_SCALAR = <span class="number">0</span>,
+    NPY_INTPOS_SCALAR = <span class="number">1</span>,
+    NPY_INTNEG_SCALAR = <span class="number">2</span>,
+    NPY_FLOAT_SCALAR = <span class="number">3</span>,
+    NPY_COMPLEX_SCALAR = <span class="number">4</span>,
+    NPY_OBJECT_SCALAR = <span class="number">5</span>,
 }
 
-<span class="attribute">#[<span class="ident">repr</span>(<span class="ident">u32</span>)]</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">Hash</span>)]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">NPY_SEARCHSIDE</span> {
-    <span class="ident">NPY_SEARCHLEFT</span> <span class="op">=</span> <span class="number">0</span>,
-    <span class="ident">NPY_SEARCHRIGHT</span> <span class="op">=</span> <span class="number">1</span>,
+<span class="attribute">#[repr(u32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+</span><span class="kw">pub enum </span>NPY_SORTKIND {
+    NPY_QUICKSORT = <span class="number">0</span>,
+    NPY_HEAPSORT = <span class="number">1</span>,
+    NPY_MERGESORT = <span class="number">2</span>,
 }
 
-<span class="attribute">#[<span class="ident">repr</span>(<span class="ident">u32</span>)]</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">Hash</span>)]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">NPY_DATETIMEUNIT</span> {
-    <span class="ident">NPY_FR_Y</span> <span class="op">=</span> <span class="number">0</span>,
-    <span class="ident">NPY_FR_M</span> <span class="op">=</span> <span class="number">1</span>,
-    <span class="ident">NPY_FR_W</span> <span class="op">=</span> <span class="number">2</span>,
-    <span class="ident">NPY_FR_D</span> <span class="op">=</span> <span class="number">4</span>,
-    <span class="ident">NPY_FR_h</span> <span class="op">=</span> <span class="number">5</span>,
-    <span class="ident">NPY_FR_m</span> <span class="op">=</span> <span class="number">6</span>,
-    <span class="ident">NPY_FR_s</span> <span class="op">=</span> <span class="number">7</span>,
-    <span class="ident">NPY_FR_ms</span> <span class="op">=</span> <span class="number">8</span>,
-    <span class="ident">NPY_FR_us</span> <span class="op">=</span> <span class="number">9</span>,
-    <span class="ident">NPY_FR_ns</span> <span class="op">=</span> <span class="number">10</span>,
-    <span class="ident">NPY_FR_ps</span> <span class="op">=</span> <span class="number">11</span>,
-    <span class="ident">NPY_FR_fs</span> <span class="op">=</span> <span class="number">12</span>,
-    <span class="ident">NPY_FR_as</span> <span class="op">=</span> <span class="number">13</span>,
-    <span class="ident">NPY_FR_GENERIC</span> <span class="op">=</span> <span class="number">14</span>,
+<span class="attribute">#[repr(u32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+</span><span class="kw">pub enum </span>NPY_SEARCHSIDE {
+    NPY_SEARCHLEFT = <span class="number">0</span>,
+    NPY_SEARCHRIGHT = <span class="number">1</span>,
 }
 
-<span class="attribute">#[<span class="ident">repr</span>(<span class="ident">u32</span>)]</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">Hash</span>, <span class="ident">PartialOrd</span>, <span class="ident">Ord</span>)]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">NPY_TYPES</span> {
-    <span class="ident">NPY_BOOL</span> <span class="op">=</span> <span class="number">0</span>,
-    <span class="ident">NPY_BYTE</span> <span class="op">=</span> <span class="number">1</span>,
-    <span class="ident">NPY_UBYTE</span> <span class="op">=</span> <span class="number">2</span>,
-    <span class="ident">NPY_SHORT</span> <span class="op">=</span> <span class="number">3</span>,
-    <span class="ident">NPY_USHORT</span> <span class="op">=</span> <span class="number">4</span>,
-    <span class="ident">NPY_INT</span> <span class="op">=</span> <span class="number">5</span>,
-    <span class="ident">NPY_UINT</span> <span class="op">=</span> <span class="number">6</span>,
-    <span class="ident">NPY_LONG</span> <span class="op">=</span> <span class="number">7</span>,
-    <span class="ident">NPY_ULONG</span> <span class="op">=</span> <span class="number">8</span>,
-    <span class="ident">NPY_LONGLONG</span> <span class="op">=</span> <span class="number">9</span>,
-    <span class="ident">NPY_ULONGLONG</span> <span class="op">=</span> <span class="number">10</span>,
-    <span class="ident">NPY_FLOAT</span> <span class="op">=</span> <span class="number">11</span>,
-    <span class="ident">NPY_DOUBLE</span> <span class="op">=</span> <span class="number">12</span>,
-    <span class="ident">NPY_LONGDOUBLE</span> <span class="op">=</span> <span class="number">13</span>,
-    <span class="ident">NPY_CFLOAT</span> <span class="op">=</span> <span class="number">14</span>,
-    <span class="ident">NPY_CDOUBLE</span> <span class="op">=</span> <span class="number">15</span>,
-    <span class="ident">NPY_CLONGDOUBLE</span> <span class="op">=</span> <span class="number">16</span>,
-    <span class="ident">NPY_OBJECT</span> <span class="op">=</span> <span class="number">17</span>,
-    <span class="ident">NPY_STRING</span> <span class="op">=</span> <span class="number">18</span>,
-    <span class="ident">NPY_UNICODE</span> <span class="op">=</span> <span class="number">19</span>,
-    <span class="ident">NPY_VOID</span> <span class="op">=</span> <span class="number">20</span>,
-    <span class="ident">NPY_DATETIME</span> <span class="op">=</span> <span class="number">21</span>,
-    <span class="ident">NPY_TIMEDELTA</span> <span class="op">=</span> <span class="number">22</span>,
-    <span class="ident">NPY_HALF</span> <span class="op">=</span> <span class="number">23</span>,
-    <span class="ident">NPY_NTYPES</span> <span class="op">=</span> <span class="number">24</span>,
-    <span class="ident">NPY_NOTYPE</span> <span class="op">=</span> <span class="number">25</span>,
-    <span class="ident">NPY_CHAR</span> <span class="op">=</span> <span class="number">26</span>,
-    <span class="ident">NPY_USERDEF</span> <span class="op">=</span> <span class="number">256</span>,
+<span class="attribute">#[repr(u32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+</span><span class="kw">pub enum </span>NPY_DATETIMEUNIT {
+    NPY_FR_Y = <span class="number">0</span>,
+    NPY_FR_M = <span class="number">1</span>,
+    NPY_FR_W = <span class="number">2</span>,
+    NPY_FR_D = <span class="number">4</span>,
+    NPY_FR_h = <span class="number">5</span>,
+    NPY_FR_m = <span class="number">6</span>,
+    NPY_FR_s = <span class="number">7</span>,
+    NPY_FR_ms = <span class="number">8</span>,
+    NPY_FR_us = <span class="number">9</span>,
+    NPY_FR_ns = <span class="number">10</span>,
+    NPY_FR_ps = <span class="number">11</span>,
+    NPY_FR_fs = <span class="number">12</span>,
+    NPY_FR_as = <span class="number">13</span>,
+    NPY_FR_GENERIC = <span class="number">14</span>,
 }
 
-<span class="attribute">#[<span class="ident">repr</span>(<span class="ident">u32</span>)]</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">Hash</span>)]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">NPY_SELECTKIND</span> {
-    <span class="ident">NPY_INTROSELECT</span> <span class="op">=</span> <span class="number">0</span>,
+<span class="attribute">#[repr(u32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+</span><span class="kw">pub enum </span>NPY_TYPES {
+    NPY_BOOL = <span class="number">0</span>,
+    NPY_BYTE = <span class="number">1</span>,
+    NPY_UBYTE = <span class="number">2</span>,
+    NPY_SHORT = <span class="number">3</span>,
+    NPY_USHORT = <span class="number">4</span>,
+    NPY_INT = <span class="number">5</span>,
+    NPY_UINT = <span class="number">6</span>,
+    NPY_LONG = <span class="number">7</span>,
+    NPY_ULONG = <span class="number">8</span>,
+    NPY_LONGLONG = <span class="number">9</span>,
+    NPY_ULONGLONG = <span class="number">10</span>,
+    NPY_FLOAT = <span class="number">11</span>,
+    NPY_DOUBLE = <span class="number">12</span>,
+    NPY_LONGDOUBLE = <span class="number">13</span>,
+    NPY_CFLOAT = <span class="number">14</span>,
+    NPY_CDOUBLE = <span class="number">15</span>,
+    NPY_CLONGDOUBLE = <span class="number">16</span>,
+    NPY_OBJECT = <span class="number">17</span>,
+    NPY_STRING = <span class="number">18</span>,
+    NPY_UNICODE = <span class="number">19</span>,
+    NPY_VOID = <span class="number">20</span>,
+    NPY_DATETIME = <span class="number">21</span>,
+    NPY_TIMEDELTA = <span class="number">22</span>,
+    NPY_HALF = <span class="number">23</span>,
+    NPY_NTYPES = <span class="number">24</span>,
+    NPY_NOTYPE = <span class="number">25</span>,
+    NPY_CHAR = <span class="number">26</span>,
+    NPY_USERDEF = <span class="number">256</span>,
 }
 
-<span class="attribute">#[<span class="ident">repr</span>(<span class="ident">u32</span>)]</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">Hash</span>)]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">NPY_CASTING</span> {
-    <span class="ident">NPY_NO_CASTING</span> <span class="op">=</span> <span class="number">0</span>,
-    <span class="ident">NPY_EQUIV_CASTING</span> <span class="op">=</span> <span class="number">1</span>,
-    <span class="ident">NPY_SAFE_CASTING</span> <span class="op">=</span> <span class="number">2</span>,
-    <span class="ident">NPY_SAME_KIND_CASTING</span> <span class="op">=</span> <span class="number">3</span>,
-    <span class="ident">NPY_UNSAFE_CASTING</span> <span class="op">=</span> <span class="number">4</span>,
+<span class="attribute">#[repr(u32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+</span><span class="kw">pub enum </span>NPY_SELECTKIND {
+    NPY_INTROSELECT = <span class="number">0</span>,
 }
 
-<span class="attribute">#[<span class="ident">repr</span>(<span class="ident">u32</span>)]</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">Hash</span>)]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">NPY_CLIPMODE</span> {
-    <span class="ident">NPY_CLIP</span> <span class="op">=</span> <span class="number">0</span>,
-    <span class="ident">NPY_WRAP</span> <span class="op">=</span> <span class="number">1</span>,
-    <span class="ident">NPY_RAISE</span> <span class="op">=</span> <span class="number">2</span>,
+<span class="attribute">#[repr(u32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+</span><span class="kw">pub enum </span>NPY_CASTING {
+    NPY_NO_CASTING = <span class="number">0</span>,
+    NPY_EQUIV_CASTING = <span class="number">1</span>,
+    NPY_SAFE_CASTING = <span class="number">2</span>,
+    NPY_SAME_KIND_CASTING = <span class="number">3</span>,
+    NPY_UNSAFE_CASTING = <span class="number">4</span>,
 }
 
-<span class="attribute">#[<span class="ident">repr</span>(<span class="ident">C</span>)]</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">npy_datetimestruct</span> {
-    <span class="kw">pub</span> <span class="ident">year</span>: <span class="ident">npy_int64</span>,
-    <span class="kw">pub</span> <span class="ident">month</span>: <span class="ident">npy_int32</span>,
-    <span class="kw">pub</span> <span class="ident">day</span>: <span class="ident">npy_int32</span>,
-    <span class="kw">pub</span> <span class="ident">hour</span>: <span class="ident">npy_int32</span>,
-    <span class="kw">pub</span> <span class="ident">min</span>: <span class="ident">npy_int32</span>,
-    <span class="kw">pub</span> <span class="ident">sec</span>: <span class="ident">npy_int32</span>,
-    <span class="kw">pub</span> <span class="ident">us</span>: <span class="ident">npy_int32</span>,
-    <span class="kw">pub</span> <span class="ident">ps</span>: <span class="ident">npy_int32</span>,
-    <span class="kw">pub</span> <span class="ident">as_</span>: <span class="ident">npy_int32</span>,
+<span class="attribute">#[repr(u32)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+</span><span class="kw">pub enum </span>NPY_CLIPMODE {
+    NPY_CLIP = <span class="number">0</span>,
+    NPY_WRAP = <span class="number">1</span>,
+    NPY_RAISE = <span class="number">2</span>,
 }
 
-<span class="attribute">#[<span class="ident">repr</span>(<span class="ident">C</span>)]</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">npy_timedeltastruct</span> {
-    <span class="kw">pub</span> <span class="ident">day</span>: <span class="ident">npy_int64</span>,
-    <span class="kw">pub</span> <span class="ident">sec</span>: <span class="ident">npy_int32</span>,
-    <span class="kw">pub</span> <span class="ident">us</span>: <span class="ident">npy_int32</span>,
-    <span class="kw">pub</span> <span class="ident">ps</span>: <span class="ident">npy_int32</span>,
-    <span class="kw">pub</span> <span class="ident">as_</span>: <span class="ident">npy_int32</span>,
+<span class="attribute">#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+</span><span class="kw">pub struct </span>npy_datetimestruct {
+    <span class="kw">pub </span>year: npy_int64,
+    <span class="kw">pub </span>month: npy_int32,
+    <span class="kw">pub </span>day: npy_int32,
+    <span class="kw">pub </span>hour: npy_int32,
+    <span class="kw">pub </span>min: npy_int32,
+    <span class="kw">pub </span>sec: npy_int32,
+    <span class="kw">pub </span>us: npy_int32,
+    <span class="kw">pub </span>ps: npy_int32,
+    <span class="kw">pub </span>as_: npy_int32,
 }
 
-<span class="attribute">#[<span class="ident">repr</span>(<span class="ident">C</span>)]</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">npy_stride_sort_item</span> {
-    <span class="kw">pub</span> <span class="ident">perm</span>: <span class="ident">npy_intp</span>,
-    <span class="kw">pub</span> <span class="ident">stride</span>: <span class="ident">npy_intp</span>,
+<span class="attribute">#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+</span><span class="kw">pub struct </span>npy_timedeltastruct {
+    <span class="kw">pub </span>day: npy_int64,
+    <span class="kw">pub </span>sec: npy_int32,
+    <span class="kw">pub </span>us: npy_int32,
+    <span class="kw">pub </span>ps: npy_int32,
+    <span class="kw">pub </span>as_: npy_int32,
 }
 
-<span class="attribute">#[<span class="ident">repr</span>(<span class="ident">u8</span>)]</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>)]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">NPY_TYPECHAR</span> {
-    <span class="ident">NPY_BOOLLTR</span> <span class="op">=</span> <span class="string">b&#39;?&#39;</span>,
-    <span class="ident">NPY_BYTELTR</span> <span class="op">=</span> <span class="string">b&#39;b&#39;</span>,
-    <span class="ident">NPY_UBYTELTR</span> <span class="op">=</span> <span class="string">b&#39;B&#39;</span>,
-    <span class="ident">NPY_SHORTLTR</span> <span class="op">=</span> <span class="string">b&#39;h&#39;</span>,
-    <span class="ident">NPY_USHORTLTR</span> <span class="op">=</span> <span class="string">b&#39;H&#39;</span>,
-    <span class="ident">NPY_INTLTR</span> <span class="op">=</span> <span class="string">b&#39;i&#39;</span>,
-    <span class="ident">NPY_UINTLTR</span> <span class="op">=</span> <span class="string">b&#39;I&#39;</span>,
-    <span class="ident">NPY_LONGLTR</span> <span class="op">=</span> <span class="string">b&#39;l&#39;</span>,
-    <span class="ident">NPY_ULONGLTR</span> <span class="op">=</span> <span class="string">b&#39;L&#39;</span>,
-    <span class="ident">NPY_LONGLONGLTR</span> <span class="op">=</span> <span class="string">b&#39;q&#39;</span>,
-    <span class="ident">NPY_ULONGLONGLTR</span> <span class="op">=</span> <span class="string">b&#39;Q&#39;</span>,
-    <span class="ident">NPY_HALFLTR</span> <span class="op">=</span> <span class="string">b&#39;e&#39;</span>,
-    <span class="ident">NPY_FLOATLTR</span> <span class="op">=</span> <span class="string">b&#39;f&#39;</span>,
-    <span class="ident">NPY_DOUBLELTR</span> <span class="op">=</span> <span class="string">b&#39;d&#39;</span>,
-    <span class="ident">NPY_LONGDOUBLELTR</span> <span class="op">=</span> <span class="string">b&#39;g&#39;</span>,
-    <span class="ident">NPY_CFLOATLTR</span> <span class="op">=</span> <span class="string">b&#39;F&#39;</span>,
-    <span class="ident">NPY_CDOUBLELTR</span> <span class="op">=</span> <span class="string">b&#39;D&#39;</span>,
-    <span class="ident">NPY_CLONGDOUBLELTR</span> <span class="op">=</span> <span class="string">b&#39;G&#39;</span>,
-    <span class="ident">NPY_OBJECTLTR</span> <span class="op">=</span> <span class="string">b&#39;O&#39;</span>,
-    <span class="ident">NPY_STRINGLTR</span> <span class="op">=</span> <span class="string">b&#39;S&#39;</span>,
-    <span class="ident">NPY_STRINGLTR2</span> <span class="op">=</span> <span class="string">b&#39;a&#39;</span>,
-    <span class="ident">NPY_UNICODELTR</span> <span class="op">=</span> <span class="string">b&#39;U&#39;</span>,
-    <span class="ident">NPY_VOIDLTR</span> <span class="op">=</span> <span class="string">b&#39;V&#39;</span>,
-    <span class="ident">NPY_DATETIMELTR</span> <span class="op">=</span> <span class="string">b&#39;M&#39;</span>,
-    <span class="ident">NPY_TIMEDELTALTR</span> <span class="op">=</span> <span class="string">b&#39;m&#39;</span>,
-    <span class="ident">NPY_CHARLTR</span> <span class="op">=</span> <span class="string">b&#39;c&#39;</span>,
-    <span class="ident">NPY_INTPLTR</span> <span class="op">=</span> <span class="string">b&#39;p&#39;</span>,
-    <span class="ident">NPY_UINTPLTR</span> <span class="op">=</span> <span class="string">b&#39;P&#39;</span>,
+<span class="attribute">#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+</span><span class="kw">pub struct </span>npy_stride_sort_item {
+    <span class="kw">pub </span>perm: npy_intp,
+    <span class="kw">pub </span>stride: npy_intp,
 }
 
-<span class="comment">// Note: NPY_TYPEKINDCHAR doesn&#39;t exist in the header and has been created here artificially</span>
-<span class="comment">// because the original C enum contained duplicate values - namely, those related to type kinds.</span>
-<span class="comment">// There&#39;s also a comment in the C code preceding this block of values and stating that they are</span>
-<span class="comment">// related to type kind chars and not type codes.</span>
-<span class="attribute">#[<span class="ident">repr</span>(<span class="ident">u8</span>)]</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>)]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">NPY_TYPEKINDCHAR</span> {
-    <span class="ident">NPY_GENBOOLLTR</span> <span class="op">=</span> <span class="string">b&#39;b&#39;</span>,
-    <span class="ident">NPY_SIGNEDLTR</span> <span class="op">=</span> <span class="string">b&#39;i&#39;</span>,
-    <span class="ident">NPY_UNSIGNEDLTR</span> <span class="op">=</span> <span class="string">b&#39;u&#39;</span>,
-    <span class="ident">NPY_FLOATINGLTR</span> <span class="op">=</span> <span class="string">b&#39;f&#39;</span>,
-    <span class="ident">NPY_COMPLEXLTR</span> <span class="op">=</span> <span class="string">b&#39;c&#39;</span>,
+<span class="attribute">#[repr(u8)]
+#[derive(Debug, Clone, Copy)]
+</span><span class="kw">pub enum </span>NPY_TYPECHAR {
+    NPY_BOOLLTR = <span class="string">b&#39;?&#39;</span>,
+    NPY_BYTELTR = <span class="string">b&#39;b&#39;</span>,
+    NPY_UBYTELTR = <span class="string">b&#39;B&#39;</span>,
+    NPY_SHORTLTR = <span class="string">b&#39;h&#39;</span>,
+    NPY_USHORTLTR = <span class="string">b&#39;H&#39;</span>,
+    NPY_INTLTR = <span class="string">b&#39;i&#39;</span>,
+    NPY_UINTLTR = <span class="string">b&#39;I&#39;</span>,
+    NPY_LONGLTR = <span class="string">b&#39;l&#39;</span>,
+    NPY_ULONGLTR = <span class="string">b&#39;L&#39;</span>,
+    NPY_LONGLONGLTR = <span class="string">b&#39;q&#39;</span>,
+    NPY_ULONGLONGLTR = <span class="string">b&#39;Q&#39;</span>,
+    NPY_HALFLTR = <span class="string">b&#39;e&#39;</span>,
+    NPY_FLOATLTR = <span class="string">b&#39;f&#39;</span>,
+    NPY_DOUBLELTR = <span class="string">b&#39;d&#39;</span>,
+    NPY_LONGDOUBLELTR = <span class="string">b&#39;g&#39;</span>,
+    NPY_CFLOATLTR = <span class="string">b&#39;F&#39;</span>,
+    NPY_CDOUBLELTR = <span class="string">b&#39;D&#39;</span>,
+    NPY_CLONGDOUBLELTR = <span class="string">b&#39;G&#39;</span>,
+    NPY_OBJECTLTR = <span class="string">b&#39;O&#39;</span>,
+    NPY_STRINGLTR = <span class="string">b&#39;S&#39;</span>,
+    NPY_STRINGLTR2 = <span class="string">b&#39;a&#39;</span>,
+    NPY_UNICODELTR = <span class="string">b&#39;U&#39;</span>,
+    NPY_VOIDLTR = <span class="string">b&#39;V&#39;</span>,
+    NPY_DATETIMELTR = <span class="string">b&#39;M&#39;</span>,
+    NPY_TIMEDELTALTR = <span class="string">b&#39;m&#39;</span>,
+    NPY_CHARLTR = <span class="string">b&#39;c&#39;</span>,
+    NPY_INTPLTR = <span class="string">b&#39;p&#39;</span>,
+    NPY_UINTPLTR = <span class="string">b&#39;P&#39;</span>,
 }
 
-<span class="attribute">#[<span class="ident">repr</span>(<span class="ident">u8</span>)]</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">Hash</span>)]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">NPY_BYTEORDER_CHAR</span> {
-    <span class="ident">NPY_LITTLE</span> <span class="op">=</span> <span class="string">b&#39;&lt;&#39;</span>,
-    <span class="ident">NPY_BIG</span> <span class="op">=</span> <span class="string">b&#39;&gt;&#39;</span>,
-    <span class="ident">NPY_NATIVE</span> <span class="op">=</span> <span class="string">b&#39;=&#39;</span>,
-    <span class="ident">NPY_SWAP</span> <span class="op">=</span> <span class="string">b&#39;s&#39;</span>,
-    <span class="ident">NPY_IGNORE</span> <span class="op">=</span> <span class="string">b&#39;|&#39;</span>,
+<span class="comment">// Note: NPY_TYPEKINDCHAR doesn&#39;t exist in the header and has been created here artificially
+// because the original C enum contained duplicate values - namely, those related to type kinds.
+// There&#39;s also a comment in the C code preceding this block of values and stating that they are
+// related to type kind chars and not type codes.
+</span><span class="attribute">#[repr(u8)]
+#[derive(Debug, Clone, Copy)]
+</span><span class="kw">pub enum </span>NPY_TYPEKINDCHAR {
+    NPY_GENBOOLLTR = <span class="string">b&#39;b&#39;</span>,
+    NPY_SIGNEDLTR = <span class="string">b&#39;i&#39;</span>,
+    NPY_UNSIGNEDLTR = <span class="string">b&#39;u&#39;</span>,
+    NPY_FLOATINGLTR = <span class="string">b&#39;f&#39;</span>,
+    NPY_COMPLEXLTR = <span class="string">b&#39;c&#39;</span>,
 }
 
-<span class="kw">impl</span> <span class="ident">NPY_BYTEORDER_CHAR</span> {
-    <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">target_endian</span> <span class="op">=</span> <span class="string">&quot;little&quot;</span>)]</span>
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_NATBYTE</span>: <span class="self">Self</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::NPY_LITTLE</span>;
-    <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">target_endian</span> <span class="op">=</span> <span class="string">&quot;little&quot;</span>)]</span>
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_OPPBYTE</span>: <span class="self">Self</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::NPY_BIG</span>;
+<span class="attribute">#[repr(u8)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+</span><span class="kw">pub enum </span>NPY_BYTEORDER_CHAR {
+    NPY_LITTLE = <span class="string">b&#39;&lt;&#39;</span>,
+    NPY_BIG = <span class="string">b&#39;&gt;&#39;</span>,
+    NPY_NATIVE = <span class="string">b&#39;=&#39;</span>,
+    NPY_SWAP = <span class="string">b&#39;s&#39;</span>,
+    NPY_IGNORE = <span class="string">b&#39;|&#39;</span>,
+}
 
-    <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">target_endian</span> <span class="op">=</span> <span class="string">&quot;big&quot;</span>)]</span>
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_NATBYTE</span>: <span class="self">Self</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::NPY_BIG</span>;
-    <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">target_endian</span> <span class="op">=</span> <span class="string">&quot;big&quot;</span>)]</span>
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_OPPBYTE</span>: <span class="self">Self</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::NPY_LITTLE</span>;
+<span class="kw">impl </span>NPY_BYTEORDER_CHAR {
+    <span class="attribute">#[cfg(target_endian = <span class="string">&quot;little&quot;</span>)]
+    </span><span class="kw">pub const </span>NPY_NATBYTE: <span class="self">Self </span>= <span class="self">Self</span>::NPY_LITTLE;
+    <span class="attribute">#[cfg(target_endian = <span class="string">&quot;little&quot;</span>)]
+    </span><span class="kw">pub const </span>NPY_OPPBYTE: <span class="self">Self </span>= <span class="self">Self</span>::NPY_BIG;
+
+    <span class="attribute">#[cfg(target_endian = <span class="string">&quot;big&quot;</span>)]
+    </span><span class="kw">pub const </span>NPY_NATBYTE: <span class="self">Self </span>= <span class="self">Self</span>::NPY_BIG;
+    <span class="attribute">#[cfg(target_endian = <span class="string">&quot;big&quot;</span>)]
+    </span><span class="kw">pub const </span>NPY_OPPBYTE: <span class="self">Self </span>= <span class="self">Self</span>::NPY_LITTLE;
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="numpy" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="numpy" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

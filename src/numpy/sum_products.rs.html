@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/sum_products.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>sum_products.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../numpy/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../numpy/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../numpy/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/sum_products.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>sum_products.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../numpy/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../numpy/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../numpy/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -193,200 +193,200 @@
 <span id="193">193</span>
 <span id="194">194</span>
 <span id="195">195</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::borrow::Cow</span>;
-<span class="kw">use</span> <span class="ident">std::ffi</span>::{<span class="ident">CStr</span>, <span class="ident">CString</span>};
-<span class="kw">use</span> <span class="ident">std::ptr::null_mut</span>;
+</pre><pre class="rust"><code><span class="kw">use </span>std::borrow::Cow;
+<span class="kw">use </span>std::ffi::{CStr, CString};
+<span class="kw">use </span>std::ptr::null_mut;
 
-<span class="kw">use</span> <span class="ident">ndarray</span>::{<span class="ident">Dimension</span>, <span class="ident">IxDyn</span>};
-<span class="kw">use</span> <span class="ident">pyo3</span>::{<span class="ident">AsPyPointer</span>, <span class="ident">FromPyObject</span>, <span class="ident">FromPyPointer</span>, <span class="ident">PyAny</span>, <span class="ident">PyNativeType</span>, <span class="ident">PyResult</span>};
+<span class="kw">use </span>ndarray::{Dimension, IxDyn};
+<span class="kw">use </span>pyo3::{AsPyPointer, FromPyObject, FromPyPointer, PyAny, PyNativeType, PyResult};
 
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::array::PyArray</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::dtype::Element</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::npyffi</span>::{<span class="ident">array::PY_ARRAY_API</span>, <span class="ident">NPY_CASTING</span>, <span class="ident">NPY_ORDER</span>};
+<span class="kw">use </span><span class="kw">crate</span>::array::PyArray;
+<span class="kw">use </span><span class="kw">crate</span>::dtype::Element;
+<span class="kw">use </span><span class="kw">crate</span>::npyffi::{array::PY_ARRAY_API, NPY_CASTING, NPY_ORDER};
 
-<span class="doccomment">/// Return value of a function that can yield either an array or a scalar.</span>
-<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">ArrayOrScalar</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span><span class="op">&gt;</span>: <span class="ident">FromPyObject</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span> {}
+<span class="doccomment">/// Return value of a function that can yield either an array or a scalar.
+</span><span class="kw">pub trait </span>ArrayOrScalar&lt;<span class="lifetime">&#39;py</span>, T&gt;: FromPyObject&lt;<span class="lifetime">&#39;py</span>&gt; {}
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span> <span class="ident">ArrayOrScalar</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-    <span class="ident">T</span>: <span class="ident">Element</span>,
-    <span class="ident">D</span>: <span class="ident">Dimension</span>,
+<span class="kw">impl</span>&lt;<span class="lifetime">&#39;py</span>, T, D&gt; ArrayOrScalar&lt;<span class="lifetime">&#39;py</span>, T&gt; <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span>PyArray&lt;T, D&gt;
+<span class="kw">where
+    </span>T: Element,
+    D: Dimension,
 {
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span><span class="op">&gt;</span> <span class="ident">ArrayOrScalar</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">T</span> <span class="kw">where</span> <span class="ident">T</span>: <span class="ident">Element</span> <span class="op">+</span> <span class="ident">FromPyObject</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span> {}
+<span class="kw">impl</span>&lt;<span class="lifetime">&#39;py</span>, T&gt; ArrayOrScalar&lt;<span class="lifetime">&#39;py</span>, T&gt; <span class="kw">for </span>T <span class="kw">where </span>T: Element + FromPyObject&lt;<span class="lifetime">&#39;py</span>&gt; {}
 
-<span class="doccomment">/// Return the inner product of two arrays.</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// [NumPy&#39;s documentation][inner] has the details.</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # Examples</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// Note that this function can either return a scalar...</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// ```</span>
-<span class="doccomment">/// use pyo3::Python;</span>
-<span class="doccomment">/// use numpy::{inner, pyarray, PyArray0};</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// Python::with_gil(|py| {</span>
-<span class="doccomment">///     let vector = pyarray![py, 1.0, 2.0, 3.0];</span>
-<span class="doccomment">///     let result: f64 = inner(vector, vector).unwrap();</span>
-<span class="doccomment">///     assert_eq!(result, 14.0);</span>
-<span class="doccomment">/// });</span>
-<span class="doccomment">/// ```</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// ...or an array depending on its arguments.</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// ```</span>
-<span class="doccomment">/// use pyo3::Python;</span>
-<span class="doccomment">/// use numpy::{inner, pyarray, PyArray0};</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// Python::with_gil(|py| {</span>
-<span class="doccomment">///     let vector = pyarray![py, 1, 2, 3];</span>
-<span class="doccomment">///     let result: &amp;PyArray0&lt;_&gt; = inner(vector, vector).unwrap();</span>
-<span class="doccomment">///     assert_eq!(result.item(), 14);</span>
-<span class="doccomment">/// });</span>
-<span class="doccomment">/// ```</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// [inner]: https://numpy.org/doc/stable/reference/generated/numpy.inner.html</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">inner</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">DIN1</span>, <span class="ident">DIN2</span>, <span class="ident">OUT</span><span class="op">&gt;</span>(
-    <span class="ident">array1</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">DIN1</span><span class="op">&gt;</span>,
-    <span class="ident">array2</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">DIN2</span><span class="op">&gt;</span>,
-) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">OUT</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-    <span class="ident">T</span>: <span class="ident">Element</span>,
-    <span class="ident">DIN1</span>: <span class="ident">Dimension</span>,
-    <span class="ident">DIN2</span>: <span class="ident">Dimension</span>,
-    <span class="ident">OUT</span>: <span class="ident">ArrayOrScalar</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span><span class="op">&gt;</span>,
+<span class="doccomment">/// Return the inner product of two arrays.
+///
+/// [NumPy&#39;s documentation][inner] has the details.
+///
+/// # Examples
+///
+/// Note that this function can either return a scalar...
+///
+/// ```
+/// use pyo3::Python;
+/// use numpy::{inner, pyarray, PyArray0};
+///
+/// Python::with_gil(|py| {
+///     let vector = pyarray![py, 1.0, 2.0, 3.0];
+///     let result: f64 = inner(vector, vector).unwrap();
+///     assert_eq!(result, 14.0);
+/// });
+/// ```
+///
+/// ...or an array depending on its arguments.
+///
+/// ```
+/// use pyo3::Python;
+/// use numpy::{inner, pyarray, PyArray0};
+///
+/// Python::with_gil(|py| {
+///     let vector = pyarray![py, 1, 2, 3];
+///     let result: &amp;PyArray0&lt;_&gt; = inner(vector, vector).unwrap();
+///     assert_eq!(result.item(), 14);
+/// });
+/// ```
+///
+/// [inner]: https://numpy.org/doc/stable/reference/generated/numpy.inner.html
+</span><span class="kw">pub fn </span>inner&lt;<span class="lifetime">&#39;py</span>, T, DIN1, DIN2, OUT&gt;(
+    array1: <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span>PyArray&lt;T, DIN1&gt;,
+    array2: <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span>PyArray&lt;T, DIN2&gt;,
+) -&gt; PyResult&lt;OUT&gt;
+<span class="kw">where
+    </span>T: Element,
+    DIN1: Dimension,
+    DIN2: Dimension,
+    OUT: ArrayOrScalar&lt;<span class="lifetime">&#39;py</span>, T&gt;,
 {
-    <span class="kw">let</span> <span class="ident">py</span> <span class="op">=</span> <span class="ident">array1</span>.<span class="ident">py</span>();
-    <span class="kw">let</span> <span class="ident">obj</span> <span class="op">=</span> <span class="kw">unsafe</span> {
-        <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="ident">PY_ARRAY_API</span>.<span class="ident">PyArray_InnerProduct</span>(<span class="ident">py</span>, <span class="ident">array1</span>.<span class="ident">as_ptr</span>(), <span class="ident">array2</span>.<span class="ident">as_ptr</span>());
-        <span class="ident">PyAny::from_owned_ptr_or_err</span>(<span class="ident">py</span>, <span class="ident">result</span>)<span class="question-mark">?</span>
-    };
-    <span class="ident">obj</span>.<span class="ident">extract</span>()
+    <span class="kw">let </span>py = array1.py();
+    <span class="kw">let </span>obj = <span class="kw">unsafe </span>{
+        <span class="kw">let </span>result = PY_ARRAY_API.PyArray_InnerProduct(py, array1.as_ptr(), array2.as_ptr());
+        PyAny::from_owned_ptr_or_err(py, result)<span class="question-mark">?
+    </span>};
+    obj.extract()
 }
 
-<span class="doccomment">/// Return the dot product of two arrays.</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// [NumPy&#39;s documentation][dot] has the details.</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # Examples</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// Note that this function can either return an array...</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// ```</span>
-<span class="doccomment">/// use pyo3::Python;</span>
-<span class="doccomment">/// use ndarray::array;</span>
-<span class="doccomment">/// use numpy::{dot, pyarray, PyArray2};</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// Python::with_gil(|py| {</span>
-<span class="doccomment">///     let matrix = pyarray![py, [1, 0], [0, 1]];</span>
-<span class="doccomment">///     let another_matrix = pyarray![py, [4, 1], [2, 2]];</span>
-<span class="doccomment">///</span>
-<span class="doccomment">///     let result: &amp;PyArray2&lt;_&gt; = numpy::dot(matrix, another_matrix).unwrap();</span>
-<span class="doccomment">///</span>
-<span class="doccomment">///     assert_eq!(</span>
-<span class="doccomment">///         result.readonly().as_array(),</span>
-<span class="doccomment">///         array![[4, 1], [2, 2]]</span>
-<span class="doccomment">///     );</span>
-<span class="doccomment">/// });</span>
-<span class="doccomment">/// ```</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// ...or a scalar depending on its arguments.</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// ```</span>
-<span class="doccomment">/// use pyo3::Python;</span>
-<span class="doccomment">/// use numpy::{dot, pyarray, PyArray0};</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// Python::with_gil(|py| {</span>
-<span class="doccomment">///     let vector = pyarray![py, 1.0, 2.0, 3.0];</span>
-<span class="doccomment">///     let result: f64 = dot(vector, vector).unwrap();</span>
-<span class="doccomment">///     assert_eq!(result, 14.0);</span>
-<span class="doccomment">/// });</span>
-<span class="doccomment">/// ```</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// [dot]: https://numpy.org/doc/stable/reference/generated/numpy.dot.html</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">dot</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">DIN1</span>, <span class="ident">DIN2</span>, <span class="ident">OUT</span><span class="op">&gt;</span>(
-    <span class="ident">array1</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">DIN1</span><span class="op">&gt;</span>,
-    <span class="ident">array2</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">DIN2</span><span class="op">&gt;</span>,
-) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">OUT</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-    <span class="ident">T</span>: <span class="ident">Element</span>,
-    <span class="ident">DIN1</span>: <span class="ident">Dimension</span>,
-    <span class="ident">DIN2</span>: <span class="ident">Dimension</span>,
-    <span class="ident">OUT</span>: <span class="ident">ArrayOrScalar</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span><span class="op">&gt;</span>,
+<span class="doccomment">/// Return the dot product of two arrays.
+///
+/// [NumPy&#39;s documentation][dot] has the details.
+///
+/// # Examples
+///
+/// Note that this function can either return an array...
+///
+/// ```
+/// use pyo3::Python;
+/// use ndarray::array;
+/// use numpy::{dot, pyarray, PyArray2};
+///
+/// Python::with_gil(|py| {
+///     let matrix = pyarray![py, [1, 0], [0, 1]];
+///     let another_matrix = pyarray![py, [4, 1], [2, 2]];
+///
+///     let result: &amp;PyArray2&lt;_&gt; = numpy::dot(matrix, another_matrix).unwrap();
+///
+///     assert_eq!(
+///         result.readonly().as_array(),
+///         array![[4, 1], [2, 2]]
+///     );
+/// });
+/// ```
+///
+/// ...or a scalar depending on its arguments.
+///
+/// ```
+/// use pyo3::Python;
+/// use numpy::{dot, pyarray, PyArray0};
+///
+/// Python::with_gil(|py| {
+///     let vector = pyarray![py, 1.0, 2.0, 3.0];
+///     let result: f64 = dot(vector, vector).unwrap();
+///     assert_eq!(result, 14.0);
+/// });
+/// ```
+///
+/// [dot]: https://numpy.org/doc/stable/reference/generated/numpy.dot.html
+</span><span class="kw">pub fn </span>dot&lt;<span class="lifetime">&#39;py</span>, T, DIN1, DIN2, OUT&gt;(
+    array1: <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span>PyArray&lt;T, DIN1&gt;,
+    array2: <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span>PyArray&lt;T, DIN2&gt;,
+) -&gt; PyResult&lt;OUT&gt;
+<span class="kw">where
+    </span>T: Element,
+    DIN1: Dimension,
+    DIN2: Dimension,
+    OUT: ArrayOrScalar&lt;<span class="lifetime">&#39;py</span>, T&gt;,
 {
-    <span class="kw">let</span> <span class="ident">py</span> <span class="op">=</span> <span class="ident">array1</span>.<span class="ident">py</span>();
-    <span class="kw">let</span> <span class="ident">obj</span> <span class="op">=</span> <span class="kw">unsafe</span> {
-        <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="ident">PY_ARRAY_API</span>.<span class="ident">PyArray_MatrixProduct</span>(<span class="ident">py</span>, <span class="ident">array1</span>.<span class="ident">as_ptr</span>(), <span class="ident">array2</span>.<span class="ident">as_ptr</span>());
-        <span class="ident">PyAny::from_owned_ptr_or_err</span>(<span class="ident">py</span>, <span class="ident">result</span>)<span class="question-mark">?</span>
-    };
-    <span class="ident">obj</span>.<span class="ident">extract</span>()
+    <span class="kw">let </span>py = array1.py();
+    <span class="kw">let </span>obj = <span class="kw">unsafe </span>{
+        <span class="kw">let </span>result = PY_ARRAY_API.PyArray_MatrixProduct(py, array1.as_ptr(), array2.as_ptr());
+        PyAny::from_owned_ptr_or_err(py, result)<span class="question-mark">?
+    </span>};
+    obj.extract()
 }
 
-<span class="doccomment">/// Return the Einstein summation convention of given tensors.</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// This is usually invoked via the the [`einsum!`][crate::einsum!] macro.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">einsum</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span>, <span class="ident">OUT</span><span class="op">&gt;</span>(<span class="ident">subscripts</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">arrays</span>: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyArray</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">IxDyn</span><span class="op">&gt;</span>]) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">OUT</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-    <span class="ident">T</span>: <span class="ident">Element</span>,
-    <span class="ident">OUT</span>: <span class="ident">ArrayOrScalar</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span>, <span class="ident">T</span><span class="op">&gt;</span>,
+<span class="doccomment">/// Return the Einstein summation convention of given tensors.
+///
+/// This is usually invoked via the the [`einsum!`][crate::einsum!] macro.
+</span><span class="kw">pub fn </span>einsum&lt;<span class="lifetime">&#39;py</span>, T, OUT&gt;(subscripts: <span class="kw-2">&amp;</span>str, arrays: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span>PyArray&lt;T, IxDyn&gt;]) -&gt; PyResult&lt;OUT&gt;
+<span class="kw">where
+    </span>T: Element,
+    OUT: ArrayOrScalar&lt;<span class="lifetime">&#39;py</span>, T&gt;,
 {
-    <span class="kw">let</span> <span class="ident">subscripts</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">CStr::from_bytes_with_nul</span>(<span class="ident">subscripts</span>.<span class="ident">as_bytes</span>()) {
-        <span class="prelude-val">Ok</span>(<span class="ident">subscripts</span>) =&gt; <span class="ident">Cow::Borrowed</span>(<span class="ident">subscripts</span>),
-        <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="ident">Cow::Owned</span>(<span class="ident">CString::new</span>(<span class="ident">subscripts</span>).<span class="ident">unwrap</span>()),
+    <span class="kw">let </span>subscripts = <span class="kw">match </span>CStr::from_bytes_with_nul(subscripts.as_bytes()) {
+        <span class="prelude-val">Ok</span>(subscripts) =&gt; Cow::Borrowed(subscripts),
+        <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; Cow::Owned(CString::new(subscripts).unwrap()),
     };
 
-    <span class="kw">let</span> <span class="ident">py</span> <span class="op">=</span> <span class="ident">arrays</span>[<span class="number">0</span>].<span class="ident">py</span>();
-    <span class="kw">let</span> <span class="ident">obj</span> <span class="op">=</span> <span class="kw">unsafe</span> {
-        <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="ident">PY_ARRAY_API</span>.<span class="ident">PyArray_EinsteinSum</span>(
-            <span class="ident">py</span>,
-            <span class="ident">subscripts</span>.<span class="ident">as_ptr</span>() <span class="kw">as</span> <span class="kw">_</span>,
-            <span class="ident">arrays</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="kw">_</span>,
-            <span class="ident">arrays</span>.<span class="ident">as_ptr</span>() <span class="kw">as</span> <span class="kw">_</span>,
-            <span class="ident">null_mut</span>(),
-            <span class="ident">NPY_ORDER::NPY_KEEPORDER</span>,
-            <span class="ident">NPY_CASTING::NPY_NO_CASTING</span>,
-            <span class="ident">null_mut</span>(),
+    <span class="kw">let </span>py = arrays[<span class="number">0</span>].py();
+    <span class="kw">let </span>obj = <span class="kw">unsafe </span>{
+        <span class="kw">let </span>result = PY_ARRAY_API.PyArray_EinsteinSum(
+            py,
+            subscripts.as_ptr() <span class="kw">as _</span>,
+            arrays.len() <span class="kw">as _</span>,
+            arrays.as_ptr() <span class="kw">as _</span>,
+            null_mut(),
+            NPY_ORDER::NPY_KEEPORDER,
+            NPY_CASTING::NPY_NO_CASTING,
+            null_mut(),
         );
-        <span class="ident">PyAny::from_owned_ptr_or_err</span>(<span class="ident">py</span>, <span class="ident">result</span>)<span class="question-mark">?</span>
-    };
-    <span class="ident">obj</span>.<span class="ident">extract</span>()
+        PyAny::from_owned_ptr_or_err(py, result)<span class="question-mark">?
+    </span>};
+    obj.extract()
 }
 
-<span class="doccomment">/// Return the Einstein summation convention of given tensors.</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// For more about the Einstein summation convention, please refer to</span>
-<span class="doccomment">/// [NumPy&#39;s documentation][einsum].</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # Example</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// ```</span>
-<span class="doccomment">/// use pyo3::Python;</span>
-<span class="doccomment">/// use ndarray::array;</span>
-<span class="doccomment">/// use numpy::{einsum, pyarray, PyArray, PyArray2};</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// Python::with_gil(|py| {</span>
-<span class="doccomment">///     let tensor = PyArray::arange(py, 0, 2 * 3 * 4, 1).reshape([2, 3, 4]).unwrap();</span>
-<span class="doccomment">///     let another_tensor = pyarray![py, [20, 30], [40, 50], [60, 70]];</span>
-<span class="doccomment">///</span>
-<span class="doccomment">///     let result: &amp;PyArray2&lt;_&gt; = einsum!(&quot;ijk,ji-&gt;ik&quot;, tensor, another_tensor).unwrap();</span>
-<span class="doccomment">///</span>
-<span class="doccomment">///     assert_eq!(</span>
-<span class="doccomment">///         result.readonly().as_array(),</span>
-<span class="doccomment">///         array![[640,  760,  880, 1000], [2560, 2710, 2860, 3010]]</span>
-<span class="doccomment">///     );</span>
-<span class="doccomment">/// });</span>
-<span class="doccomment">/// ```</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// [einsum]: https://numpy.org/doc/stable/reference/generated/numpy.einsum.html</span>
-<span class="attribute">#[<span class="ident">macro_export</span>]</span>
-<span class="macro">macro_rules!</span> <span class="ident">einsum</span> {
-    (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">subscripts</span>:<span class="ident">literal</span> $(,<span class="macro-nonterminal">$</span><span class="macro-nonterminal">array</span>:<span class="ident">ident</span>)<span class="op">+</span> $(,)<span class="kw-2">*</span>) =&gt; {{
-        <span class="kw">let</span> <span class="ident">arrays</span> <span class="op">=</span> [$(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">array</span>.<span class="ident">to_dyn</span>(),)<span class="op">+</span>];
-        <span class="macro-nonterminal">$</span><span class="macro-nonterminal">crate::einsum</span>(<span class="macro">concat!</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">subscripts</span>, <span class="string">&quot;\0&quot;</span>), <span class="kw-2">&amp;</span><span class="ident">arrays</span>)
+<span class="doccomment">/// Return the Einstein summation convention of given tensors.
+///
+/// For more about the Einstein summation convention, please refer to
+/// [NumPy&#39;s documentation][einsum].
+///
+/// # Example
+///
+/// ```
+/// use pyo3::Python;
+/// use ndarray::array;
+/// use numpy::{einsum, pyarray, PyArray, PyArray2};
+///
+/// Python::with_gil(|py| {
+///     let tensor = PyArray::arange(py, 0, 2 * 3 * 4, 1).reshape([2, 3, 4]).unwrap();
+///     let another_tensor = pyarray![py, [20, 30], [40, 50], [60, 70]];
+///
+///     let result: &amp;PyArray2&lt;_&gt; = einsum!(&quot;ijk,ji-&gt;ik&quot;, tensor, another_tensor).unwrap();
+///
+///     assert_eq!(
+///         result.readonly().as_array(),
+///         array![[640,  760,  880, 1000], [2560, 2710, 2860, 3010]]
+///     );
+/// });
+/// ```
+///
+/// [einsum]: https://numpy.org/doc/stable/reference/generated/numpy.einsum.html
+</span><span class="attribute">#[macro_export]
+</span><span class="macro">macro_rules! </span>einsum {
+    (<span class="macro-nonterminal">$subscripts</span>:literal $(,<span class="macro-nonterminal">$array</span>:ident)+ $(,)<span class="kw-2">*</span>) =&gt; {{
+        <span class="kw">let </span>arrays = [$(<span class="macro-nonterminal">$array</span>.to_dyn(),)+];
+        <span class="macro-nonterminal">$crate::einsum</span>(<span class="macro">concat!</span>(<span class="macro-nonterminal">$subscripts</span>, <span class="string">&quot;\0&quot;</span>), <span class="kw-2">&amp;</span>arrays)
     }};
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="numpy" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="numpy" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

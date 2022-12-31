@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/error.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>error.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../numpy/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../numpy/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../numpy/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/error.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>error.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../numpy/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../numpy/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../numpy/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -177,184 +177,184 @@
 <span id="177">177</span>
 <span id="178">178</span>
 <span id="179">179</span>
-</pre><pre class="rust"><code><span class="doccomment">//! Defines error types.</span>
+</pre><pre class="rust"><code><span class="doccomment">//! Defines error types.
 
-<span class="kw">use</span> <span class="ident">std::error::Error</span>;
-<span class="kw">use</span> <span class="ident">std::fmt</span>;
+</span><span class="kw">use </span>std::error::Error;
+<span class="kw">use </span>std::fmt;
 
-<span class="kw">use</span> <span class="ident">pyo3</span>::{<span class="ident">exceptions::PyTypeError</span>, <span class="ident">Py</span>, <span class="ident">PyErr</span>, <span class="ident">PyErrArguments</span>, <span class="ident">PyObject</span>, <span class="ident">Python</span>, <span class="ident">ToPyObject</span>};
+<span class="kw">use </span>pyo3::{exceptions::PyTypeError, Py, PyErr, PyErrArguments, PyObject, Python, ToPyObject};
 
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::dtype::PyArrayDescr</span>;
+<span class="kw">use </span><span class="kw">crate</span>::dtype::PyArrayDescr;
 
-<span class="doccomment">/// Array dimensionality should be limited by [`NPY_MAXDIMS`][NPY_MAXDIMS] which is currently 32.´</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// [NPY_MAXDIMS]: https://github.com/numpy/numpy/blob/4c60b3263ac50e5e72f6a909e156314fc3c9cba0/numpy/core/include/numpy/ndarraytypes.h#L40</span>
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const</span> <span class="ident">MAX_DIMENSIONALITY_ERR</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;unexpected dimensionality: NumPy is expected to limit arrays to 32 or fewer dimensions.\nPlease report a bug against the `rust-numpy` crate.&quot;</span>;
+<span class="doccomment">/// Array dimensionality should be limited by [`NPY_MAXDIMS`][NPY_MAXDIMS] which is currently 32.´
+///
+/// [NPY_MAXDIMS]: https://github.com/numpy/numpy/blob/4c60b3263ac50e5e72f6a909e156314fc3c9cba0/numpy/core/include/numpy/ndarraytypes.h#L40
+</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>MAX_DIMENSIONALITY_ERR: <span class="kw-2">&amp;</span>str = <span class="string">&quot;unexpected dimensionality: NumPy is expected to limit arrays to 32 or fewer dimensions.\nPlease report a bug against the `rust-numpy` crate.&quot;</span>;
 
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const</span> <span class="ident">DIMENSIONALITY_MISMATCH_ERR</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;inconsistent dimensionalities: The dimensionality expected by `PyArray` does not match that given by NumPy.\nPlease report a bug against the `rust-numpy` crate.&quot;</span>;
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>DIMENSIONALITY_MISMATCH_ERR: <span class="kw-2">&amp;</span>str = <span class="string">&quot;inconsistent dimensionalities: The dimensionality expected by `PyArray` does not match that given by NumPy.\nPlease report a bug against the `rust-numpy` crate.&quot;</span>;
 
-<span class="macro">macro_rules!</span> <span class="ident">impl_pyerr</span> {
-    (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">err_type</span>:<span class="ident">ty</span>) =&gt; {
-        <span class="kw">impl</span> <span class="ident">Error</span> <span class="kw">for</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">err_type</span> {}
+<span class="macro">macro_rules! </span>impl_pyerr {
+    (<span class="macro-nonterminal">$err_type</span>:ty) =&gt; {
+        <span class="kw">impl </span>Error <span class="kw">for </span><span class="macro-nonterminal">$err_type </span>{}
 
-        <span class="kw">impl</span> <span class="ident">PyErrArguments</span> <span class="kw">for</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">err_type</span> {
-            <span class="kw">fn</span> <span class="ident">arguments</span>(<span class="self">self</span>, <span class="ident">py</span>: <span class="ident">Python</span>) -&gt; <span class="ident">PyObject</span> {
-                <span class="self">self</span>.<span class="ident">to_string</span>().<span class="ident">to_object</span>(<span class="ident">py</span>)
+        <span class="kw">impl </span>PyErrArguments <span class="kw">for </span><span class="macro-nonterminal">$err_type </span>{
+            <span class="kw">fn </span>arguments(<span class="self">self</span>, py: Python) -&gt; PyObject {
+                <span class="self">self</span>.to_string().to_object(py)
             }
         }
 
-        <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="macro-nonterminal">$</span><span class="macro-nonterminal">err_type</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">PyErr</span> {
-            <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">err</span>: <span class="macro-nonterminal">$</span><span class="macro-nonterminal">err_type</span>) -&gt; <span class="ident">PyErr</span> {
-                <span class="ident">PyTypeError::new_err</span>(<span class="ident">err</span>)
+        <span class="kw">impl </span>From&lt;<span class="macro-nonterminal">$err_type</span>&gt; <span class="kw">for </span>PyErr {
+            <span class="kw">fn </span>from(err: <span class="macro-nonterminal">$err_type</span>) -&gt; PyErr {
+                PyTypeError::new_err(err)
             }
         }
     };
 }
 
-<span class="doccomment">/// Represents that dimensionalities of the given arrays do not match.</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">DimensionalityError</span> {
-    <span class="ident">from</span>: <span class="ident">usize</span>,
-    <span class="ident">to</span>: <span class="ident">usize</span>,
+<span class="doccomment">/// Represents that dimensionalities of the given arrays do not match.
+</span><span class="attribute">#[derive(Debug)]
+</span><span class="kw">pub struct </span>DimensionalityError {
+    from: usize,
+    to: usize,
 }
 
-<span class="kw">impl</span> <span class="ident">DimensionalityError</span> {
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">from</span>: <span class="ident">usize</span>, <span class="ident">to</span>: <span class="ident">usize</span>) -&gt; <span class="self">Self</span> {
-        <span class="self">Self</span> { <span class="ident">from</span>, <span class="ident">to</span> }
+<span class="kw">impl </span>DimensionalityError {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>new(from: usize, to: usize) -&gt; <span class="self">Self </span>{
+        <span class="self">Self </span>{ from, to }
     }
 }
 
-<span class="kw">impl</span> <span class="ident">fmt::Display</span> <span class="kw">for</span> <span class="ident">DimensionalityError</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;mut</span> <span class="ident">fmt::Formatter</span>) -&gt; <span class="ident">fmt::Result</span> {
+<span class="kw">impl </span>fmt::Display <span class="kw">for </span>DimensionalityError {
+    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter) -&gt; fmt::Result {
         <span class="macro">write!</span>(
-            <span class="ident">f</span>,
+            f,
             <span class="string">&quot;dimensionality mismatch:\n from={}, to={}&quot;</span>,
-            <span class="self">self</span>.<span class="ident">from</span>, <span class="self">self</span>.<span class="ident">to</span>
+            <span class="self">self</span>.from, <span class="self">self</span>.to
         )
     }
 }
 
-<span class="macro">impl_pyerr!</span>(<span class="ident">DimensionalityError</span>);
+<span class="macro">impl_pyerr!</span>(DimensionalityError);
 
-<span class="doccomment">/// Represents that types of the given arrays do not match.</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">TypeError</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
-    <span class="ident">from</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">PyArrayDescr</span>,
-    <span class="ident">to</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">PyArrayDescr</span>,
+<span class="doccomment">/// Represents that types of the given arrays do not match.
+</span><span class="attribute">#[derive(Debug)]
+</span><span class="kw">pub struct </span>TypeError&lt;<span class="lifetime">&#39;a</span>&gt; {
+    from: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>PyArrayDescr,
+    to: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>PyArrayDescr,
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">TypeError</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">from</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">PyArrayDescr</span>, <span class="ident">to</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">PyArrayDescr</span>) -&gt; <span class="self">Self</span> {
-        <span class="self">Self</span> { <span class="ident">from</span>, <span class="ident">to</span> }
+<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>&gt; TypeError&lt;<span class="lifetime">&#39;a</span>&gt; {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>new(from: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>PyArrayDescr, to: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>PyArrayDescr) -&gt; <span class="self">Self </span>{
+        <span class="self">Self </span>{ from, to }
     }
 }
 
-<span class="kw">impl</span> <span class="ident">fmt::Display</span> <span class="kw">for</span> <span class="ident">TypeError</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;mut</span> <span class="ident">fmt::Formatter</span>) -&gt; <span class="ident">fmt::Result</span> {
-        <span class="macro">write!</span>(<span class="ident">f</span>, <span class="string">&quot;type mismatch:\n from={}, to={}&quot;</span>, <span class="self">self</span>.<span class="ident">from</span>, <span class="self">self</span>.<span class="ident">to</span>)
+<span class="kw">impl </span>fmt::Display <span class="kw">for </span>TypeError&lt;<span class="lifetime">&#39;_</span>&gt; {
+    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter) -&gt; fmt::Result {
+        <span class="macro">write!</span>(f, <span class="string">&quot;type mismatch:\n from={}, to={}&quot;</span>, <span class="self">self</span>.from, <span class="self">self</span>.to)
     }
 }
 
-<span class="kw">impl</span> <span class="ident">Error</span> <span class="kw">for</span> <span class="ident">TypeError</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span> {}
+<span class="kw">impl </span>Error <span class="kw">for </span>TypeError&lt;<span class="lifetime">&#39;_</span>&gt; {}
 
-<span class="kw">struct</span> <span class="ident">TypeErrorArguments</span> {
-    <span class="ident">from</span>: <span class="ident">Py</span><span class="op">&lt;</span><span class="ident">PyArrayDescr</span><span class="op">&gt;</span>,
-    <span class="ident">to</span>: <span class="ident">Py</span><span class="op">&lt;</span><span class="ident">PyArrayDescr</span><span class="op">&gt;</span>,
+<span class="kw">struct </span>TypeErrorArguments {
+    from: Py&lt;PyArrayDescr&gt;,
+    to: Py&lt;PyArrayDescr&gt;,
 }
 
-<span class="kw">impl</span> <span class="ident">PyErrArguments</span> <span class="kw">for</span> <span class="ident">TypeErrorArguments</span> {
-    <span class="kw">fn</span> <span class="ident">arguments</span>(<span class="self">self</span>, <span class="ident">py</span>: <span class="ident">Python</span>) -&gt; <span class="ident">PyObject</span> {
-        <span class="kw">let</span> <span class="ident">err</span> <span class="op">=</span> <span class="ident">TypeError</span> {
-            <span class="ident">from</span>: <span class="self">self</span>.<span class="ident">from</span>.<span class="ident">as_ref</span>(<span class="ident">py</span>),
-            <span class="ident">to</span>: <span class="self">self</span>.<span class="ident">to</span>.<span class="ident">as_ref</span>(<span class="ident">py</span>),
+<span class="kw">impl </span>PyErrArguments <span class="kw">for </span>TypeErrorArguments {
+    <span class="kw">fn </span>arguments(<span class="self">self</span>, py: Python) -&gt; PyObject {
+        <span class="kw">let </span>err = TypeError {
+            from: <span class="self">self</span>.from.as_ref(py),
+            to: <span class="self">self</span>.to.as_ref(py),
         };
 
-        <span class="ident">err</span>.<span class="ident">to_string</span>().<span class="ident">to_object</span>(<span class="ident">py</span>)
+        err.to_string().to_object(py)
     }
 }
 
-<span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">TypeError</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">PyErr</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">err</span>: <span class="ident">TypeError</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) -&gt; <span class="ident">PyErr</span> {
-        <span class="kw">let</span> <span class="ident">args</span> <span class="op">=</span> <span class="ident">TypeErrorArguments</span> {
-            <span class="ident">from</span>: <span class="ident">err</span>.<span class="ident">from</span>.<span class="ident">into</span>(),
-            <span class="ident">to</span>: <span class="ident">err</span>.<span class="ident">to</span>.<span class="ident">into</span>(),
+<span class="kw">impl </span>From&lt;TypeError&lt;<span class="lifetime">&#39;_</span>&gt;&gt; <span class="kw">for </span>PyErr {
+    <span class="kw">fn </span>from(err: TypeError&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; PyErr {
+        <span class="kw">let </span>args = TypeErrorArguments {
+            from: err.from.into(),
+            to: err.to.into(),
         };
 
-        <span class="ident">PyTypeError::new_err</span>(<span class="ident">args</span>)
+        PyTypeError::new_err(args)
     }
 }
 
-<span class="doccomment">/// Represents that given `Vec` cannot be treated as an array.</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">FromVecError</span> {
-    <span class="ident">len</span>: <span class="ident">usize</span>,
-    <span class="ident">exp_len</span>: <span class="ident">usize</span>,
+<span class="doccomment">/// Represents that given `Vec` cannot be treated as an array.
+</span><span class="attribute">#[derive(Debug)]
+</span><span class="kw">pub struct </span>FromVecError {
+    len: usize,
+    exp_len: usize,
 }
 
-<span class="kw">impl</span> <span class="ident">FromVecError</span> {
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">len</span>: <span class="ident">usize</span>, <span class="ident">exp_len</span>: <span class="ident">usize</span>) -&gt; <span class="self">Self</span> {
-        <span class="self">Self</span> { <span class="ident">len</span>, <span class="ident">exp_len</span> }
+<span class="kw">impl </span>FromVecError {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>new(len: usize, exp_len: usize) -&gt; <span class="self">Self </span>{
+        <span class="self">Self </span>{ len, exp_len }
     }
 }
 
-<span class="kw">impl</span> <span class="ident">fmt::Display</span> <span class="kw">for</span> <span class="ident">FromVecError</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;mut</span> <span class="ident">fmt::Formatter</span>) -&gt; <span class="ident">fmt::Result</span> {
+<span class="kw">impl </span>fmt::Display <span class="kw">for </span>FromVecError {
+    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter) -&gt; fmt::Result {
         <span class="macro">write!</span>(
-            <span class="ident">f</span>,
+            f,
             <span class="string">&quot;invalid length: {}, but expected {}&quot;</span>,
-            <span class="self">self</span>.<span class="ident">len</span>, <span class="self">self</span>.<span class="ident">exp_len</span>
+            <span class="self">self</span>.len, <span class="self">self</span>.exp_len
         )
     }
 }
 
-<span class="macro">impl_pyerr!</span>(<span class="ident">FromVecError</span>);
+<span class="macro">impl_pyerr!</span>(FromVecError);
 
-<span class="doccomment">/// Represents that the given array is not contiguous.</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">NotContiguousError</span>;
+<span class="doccomment">/// Represents that the given array is not contiguous.
+</span><span class="attribute">#[derive(Debug)]
+</span><span class="kw">pub struct </span>NotContiguousError;
 
-<span class="kw">impl</span> <span class="ident">fmt::Display</span> <span class="kw">for</span> <span class="ident">NotContiguousError</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;mut</span> <span class="ident">fmt::Formatter</span>) -&gt; <span class="ident">fmt::Result</span> {
-        <span class="macro">write!</span>(<span class="ident">f</span>, <span class="string">&quot;The given array is not contiguous&quot;</span>)
+<span class="kw">impl </span>fmt::Display <span class="kw">for </span>NotContiguousError {
+    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter) -&gt; fmt::Result {
+        <span class="macro">write!</span>(f, <span class="string">&quot;The given array is not contiguous&quot;</span>)
     }
 }
 
-<span class="macro">impl_pyerr!</span>(<span class="ident">NotContiguousError</span>);
+<span class="macro">impl_pyerr!</span>(NotContiguousError);
 
-<span class="doccomment">/// Inidcates why borrowing an array failed.</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
-<span class="attribute">#[<span class="ident">non_exhaustive</span>]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">BorrowError</span> {
-    <span class="doccomment">/// The given array is already borrowed</span>
-    <span class="ident">AlreadyBorrowed</span>,
-    <span class="doccomment">/// The given array is not writeable</span>
-    <span class="ident">NotWriteable</span>,
+<span class="doccomment">/// Inidcates why borrowing an array failed.
+</span><span class="attribute">#[derive(Debug)]
+#[non_exhaustive]
+</span><span class="kw">pub enum </span>BorrowError {
+    <span class="doccomment">/// The given array is already borrowed
+    </span>AlreadyBorrowed,
+    <span class="doccomment">/// The given array is not writeable
+    </span>NotWriteable,
 }
 
-<span class="kw">impl</span> <span class="ident">fmt::Display</span> <span class="kw">for</span> <span class="ident">BorrowError</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;mut</span> <span class="ident">fmt::Formatter</span>) -&gt; <span class="ident">fmt::Result</span> {
-        <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident"><span class="self">Self</span>::AlreadyBorrowed</span> =&gt; <span class="macro">write!</span>(<span class="ident">f</span>, <span class="string">&quot;The given array is already borrowed&quot;</span>),
-            <span class="ident"><span class="self">Self</span>::NotWriteable</span> =&gt; <span class="macro">write!</span>(<span class="ident">f</span>, <span class="string">&quot;The given array is not writeable&quot;</span>),
+<span class="kw">impl </span>fmt::Display <span class="kw">for </span>BorrowError {
+    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter) -&gt; fmt::Result {
+        <span class="kw">match </span><span class="self">self </span>{
+            <span class="self">Self</span>::AlreadyBorrowed =&gt; <span class="macro">write!</span>(f, <span class="string">&quot;The given array is already borrowed&quot;</span>),
+            <span class="self">Self</span>::NotWriteable =&gt; <span class="macro">write!</span>(f, <span class="string">&quot;The given array is not writeable&quot;</span>),
         }
     }
 }
 
-<span class="macro">impl_pyerr!</span>(<span class="ident">BorrowError</span>);
+<span class="macro">impl_pyerr!</span>(BorrowError);
 
-<span class="doccomment">/// An internal type used to ignore certain error conditions</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// This is beneficial when those errors will never reach a public API anyway</span>
-<span class="doccomment">/// but dropping them will improve performance.</span>
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">IgnoreError</span>;
+<span class="doccomment">/// An internal type used to ignore certain error conditions
+///
+/// This is beneficial when those errors will never reach a public API anyway
+/// but dropping them will improve performance.
+</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>IgnoreError;
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">E</span><span class="op">&gt;</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">E</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">IgnoreError</span>
-<span class="kw">where</span>
-    <span class="ident">PyErr</span>: <span class="ident">From</span><span class="op">&lt;</span><span class="ident">E</span><span class="op">&gt;</span>,
+<span class="kw">impl</span>&lt;E&gt; From&lt;E&gt; <span class="kw">for </span>IgnoreError
+<span class="kw">where
+    </span>PyErr: From&lt;E&gt;,
 {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">_err</span>: <span class="ident">E</span>) -&gt; <span class="self">Self</span> {
-        <span class="self">Self</span>
-    }
+    <span class="kw">fn </span>from(_err: E) -&gt; <span class="self">Self </span>{
+        <span class="self">Self
+    </span>}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="numpy" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="numpy" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

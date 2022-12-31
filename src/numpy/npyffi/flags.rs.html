@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/npyffi/flags.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>flags.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../numpy/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../numpy/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../numpy/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/npyffi/flags.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>flags.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../numpy/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../numpy/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../numpy/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -81,88 +81,88 @@
 <span id="81">81</span>
 <span id="82">82</span>
 <span id="83">83</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="kw">super</span>::{<span class="ident">npy_char</span>, <span class="ident">npy_uint32</span>};
-<span class="kw">use</span> <span class="ident">std::os::raw::c_int</span>;
+</pre><pre class="rust"><code><span class="kw">use super</span>::{npy_char, npy_uint32};
+<span class="kw">use </span>std::os::raw::c_int;
 
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ARRAY_C_CONTIGUOUS</span>: <span class="ident">c_int</span> <span class="op">=</span> <span class="number">0x0001</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ARRAY_F_CONTIGUOUS</span>: <span class="ident">c_int</span> <span class="op">=</span> <span class="number">0x0002</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ARRAY_OWNDATA</span>: <span class="ident">c_int</span> <span class="op">=</span> <span class="number">0x0004</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ARRAY_FORCECAST</span>: <span class="ident">c_int</span> <span class="op">=</span> <span class="number">0x0010</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ARRAY_ENSURECOPY</span>: <span class="ident">c_int</span> <span class="op">=</span> <span class="number">0x0020</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ARRAY_ENSUREARRAY</span>: <span class="ident">c_int</span> <span class="op">=</span> <span class="number">0x0040</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ARRAY_ELEMENTSTRIDES</span>: <span class="ident">c_int</span> <span class="op">=</span> <span class="number">0x0080</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ARRAY_ALIGNED</span>: <span class="ident">c_int</span> <span class="op">=</span> <span class="number">0x0100</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ARRAY_NOTSWAPPED</span>: <span class="ident">c_int</span> <span class="op">=</span> <span class="number">0x0200</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ARRAY_WRITEABLE</span>: <span class="ident">c_int</span> <span class="op">=</span> <span class="number">0x0400</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ARRAY_UPDATEIFCOPY</span>: <span class="ident">c_int</span> <span class="op">=</span> <span class="number">0x1000</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ARRAY_WRITEBACKIFCOPY</span>: <span class="ident">c_int</span> <span class="op">=</span> <span class="number">0x2000</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ARRAY_BEHAVED</span>: <span class="ident">c_int</span> <span class="op">=</span> <span class="ident">NPY_ARRAY_ALIGNED</span> <span class="op">|</span> <span class="ident">NPY_ARRAY_WRITEABLE</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ARRAY_BEHAVED_NS</span>: <span class="ident">c_int</span> <span class="op">=</span> <span class="ident">NPY_ARRAY_BEHAVED</span> <span class="op">|</span> <span class="ident">NPY_ARRAY_NOTSWAPPED</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ARRAY_CARRAY</span>: <span class="ident">c_int</span> <span class="op">=</span> <span class="ident">NPY_ARRAY_C_CONTIGUOUS</span> <span class="op">|</span> <span class="ident">NPY_ARRAY_BEHAVED</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ARRAY_CARRAY_RO</span>: <span class="ident">c_int</span> <span class="op">=</span> <span class="ident">NPY_ARRAY_C_CONTIGUOUS</span> <span class="op">|</span> <span class="ident">NPY_ARRAY_ALIGNED</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ARRAY_FARRAY</span>: <span class="ident">c_int</span> <span class="op">=</span> <span class="ident">NPY_ARRAY_F_CONTIGUOUS</span> <span class="op">|</span> <span class="ident">NPY_ARRAY_BEHAVED</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ARRAY_FARRAY_RO</span>: <span class="ident">c_int</span> <span class="op">=</span> <span class="ident">NPY_ARRAY_F_CONTIGUOUS</span> <span class="op">|</span> <span class="ident">NPY_ARRAY_ALIGNED</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ARRAY_DEFAULT</span>: <span class="ident">c_int</span> <span class="op">=</span> <span class="ident">NPY_ARRAY_CARRAY</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ARRAY_IN_ARRAY</span>: <span class="ident">c_int</span> <span class="op">=</span> <span class="ident">NPY_ARRAY_CARRAY_RO</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ARRAY_OUT_ARRAY</span>: <span class="ident">c_int</span> <span class="op">=</span> <span class="ident">NPY_ARRAY_CARRAY</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ARRAY_INOUT_ARRAY</span>: <span class="ident">c_int</span> <span class="op">=</span> <span class="ident">NPY_ARRAY_CARRAY</span> <span class="op">|</span> <span class="ident">NPY_ARRAY_UPDATEIFCOPY</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ARRAY_INOUT_ARRAY2</span>: <span class="ident">c_int</span> <span class="op">=</span> <span class="ident">NPY_ARRAY_CARRAY</span> <span class="op">|</span> <span class="ident">NPY_ARRAY_WRITEBACKIFCOPY</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ARRAY_IN_FARRAY</span>: <span class="ident">c_int</span> <span class="op">=</span> <span class="ident">NPY_ARRAY_FARRAY_RO</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ARRAY_OUT_FARRAY</span>: <span class="ident">c_int</span> <span class="op">=</span> <span class="ident">NPY_ARRAY_FARRAY</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ARRAY_INOUT_FARRAY</span>: <span class="ident">c_int</span> <span class="op">=</span> <span class="ident">NPY_ARRAY_FARRAY</span> <span class="op">|</span> <span class="ident">NPY_ARRAY_UPDATEIFCOPY</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ARRAY_INOUT_FARRAY2</span>: <span class="ident">c_int</span> <span class="op">=</span> <span class="ident">NPY_ARRAY_FARRAY</span> <span class="op">|</span> <span class="ident">NPY_ARRAY_WRITEBACKIFCOPY</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ARRAY_UPDATE_ALL</span>: <span class="ident">c_int</span> <span class="op">=</span> <span class="ident">NPY_ARRAY_C_CONTIGUOUS</span> <span class="op">|</span> <span class="ident">NPY_ARRAY_F_CONTIGUOUS</span>;
+<span class="kw">pub const </span>NPY_ARRAY_C_CONTIGUOUS: c_int = <span class="number">0x0001</span>;
+<span class="kw">pub const </span>NPY_ARRAY_F_CONTIGUOUS: c_int = <span class="number">0x0002</span>;
+<span class="kw">pub const </span>NPY_ARRAY_OWNDATA: c_int = <span class="number">0x0004</span>;
+<span class="kw">pub const </span>NPY_ARRAY_FORCECAST: c_int = <span class="number">0x0010</span>;
+<span class="kw">pub const </span>NPY_ARRAY_ENSURECOPY: c_int = <span class="number">0x0020</span>;
+<span class="kw">pub const </span>NPY_ARRAY_ENSUREARRAY: c_int = <span class="number">0x0040</span>;
+<span class="kw">pub const </span>NPY_ARRAY_ELEMENTSTRIDES: c_int = <span class="number">0x0080</span>;
+<span class="kw">pub const </span>NPY_ARRAY_ALIGNED: c_int = <span class="number">0x0100</span>;
+<span class="kw">pub const </span>NPY_ARRAY_NOTSWAPPED: c_int = <span class="number">0x0200</span>;
+<span class="kw">pub const </span>NPY_ARRAY_WRITEABLE: c_int = <span class="number">0x0400</span>;
+<span class="kw">pub const </span>NPY_ARRAY_UPDATEIFCOPY: c_int = <span class="number">0x1000</span>;
+<span class="kw">pub const </span>NPY_ARRAY_WRITEBACKIFCOPY: c_int = <span class="number">0x2000</span>;
+<span class="kw">pub const </span>NPY_ARRAY_BEHAVED: c_int = NPY_ARRAY_ALIGNED | NPY_ARRAY_WRITEABLE;
+<span class="kw">pub const </span>NPY_ARRAY_BEHAVED_NS: c_int = NPY_ARRAY_BEHAVED | NPY_ARRAY_NOTSWAPPED;
+<span class="kw">pub const </span>NPY_ARRAY_CARRAY: c_int = NPY_ARRAY_C_CONTIGUOUS | NPY_ARRAY_BEHAVED;
+<span class="kw">pub const </span>NPY_ARRAY_CARRAY_RO: c_int = NPY_ARRAY_C_CONTIGUOUS | NPY_ARRAY_ALIGNED;
+<span class="kw">pub const </span>NPY_ARRAY_FARRAY: c_int = NPY_ARRAY_F_CONTIGUOUS | NPY_ARRAY_BEHAVED;
+<span class="kw">pub const </span>NPY_ARRAY_FARRAY_RO: c_int = NPY_ARRAY_F_CONTIGUOUS | NPY_ARRAY_ALIGNED;
+<span class="kw">pub const </span>NPY_ARRAY_DEFAULT: c_int = NPY_ARRAY_CARRAY;
+<span class="kw">pub const </span>NPY_ARRAY_IN_ARRAY: c_int = NPY_ARRAY_CARRAY_RO;
+<span class="kw">pub const </span>NPY_ARRAY_OUT_ARRAY: c_int = NPY_ARRAY_CARRAY;
+<span class="kw">pub const </span>NPY_ARRAY_INOUT_ARRAY: c_int = NPY_ARRAY_CARRAY | NPY_ARRAY_UPDATEIFCOPY;
+<span class="kw">pub const </span>NPY_ARRAY_INOUT_ARRAY2: c_int = NPY_ARRAY_CARRAY | NPY_ARRAY_WRITEBACKIFCOPY;
+<span class="kw">pub const </span>NPY_ARRAY_IN_FARRAY: c_int = NPY_ARRAY_FARRAY_RO;
+<span class="kw">pub const </span>NPY_ARRAY_OUT_FARRAY: c_int = NPY_ARRAY_FARRAY;
+<span class="kw">pub const </span>NPY_ARRAY_INOUT_FARRAY: c_int = NPY_ARRAY_FARRAY | NPY_ARRAY_UPDATEIFCOPY;
+<span class="kw">pub const </span>NPY_ARRAY_INOUT_FARRAY2: c_int = NPY_ARRAY_FARRAY | NPY_ARRAY_WRITEBACKIFCOPY;
+<span class="kw">pub const </span>NPY_ARRAY_UPDATE_ALL: c_int = NPY_ARRAY_C_CONTIGUOUS | NPY_ARRAY_F_CONTIGUOUS;
 
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ITER_C_INDEX</span>: <span class="ident">npy_uint32</span> <span class="op">=</span> <span class="number">0x00000001</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ITER_F_INDEX</span>: <span class="ident">npy_uint32</span> <span class="op">=</span> <span class="number">0x00000002</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ITER_MULTI_INDEX</span>: <span class="ident">npy_uint32</span> <span class="op">=</span> <span class="number">0x00000004</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ITER_EXTERNAL_LOOP</span>: <span class="ident">npy_uint32</span> <span class="op">=</span> <span class="number">0x00000008</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ITER_COMMON_DTYPE</span>: <span class="ident">npy_uint32</span> <span class="op">=</span> <span class="number">0x00000010</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ITER_REFS_OK</span>: <span class="ident">npy_uint32</span> <span class="op">=</span> <span class="number">0x00000020</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ITER_ZEROSIZE_OK</span>: <span class="ident">npy_uint32</span> <span class="op">=</span> <span class="number">0x00000040</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ITER_REDUCE_OK</span>: <span class="ident">npy_uint32</span> <span class="op">=</span> <span class="number">0x00000080</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ITER_RANGED</span>: <span class="ident">npy_uint32</span> <span class="op">=</span> <span class="number">0x00000100</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ITER_BUFFERED</span>: <span class="ident">npy_uint32</span> <span class="op">=</span> <span class="number">0x00000200</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ITER_GROWINNER</span>: <span class="ident">npy_uint32</span> <span class="op">=</span> <span class="number">0x00000400</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ITER_DELAY_BUFALLOC</span>: <span class="ident">npy_uint32</span> <span class="op">=</span> <span class="number">0x00000800</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ITER_DONT_NEGATE_STRIDES</span>: <span class="ident">npy_uint32</span> <span class="op">=</span> <span class="number">0x00001000</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ITER_COPY_IF_OVERLAP</span>: <span class="ident">npy_uint32</span> <span class="op">=</span> <span class="number">0x00002000</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ITER_READWRITE</span>: <span class="ident">npy_uint32</span> <span class="op">=</span> <span class="number">0x00010000</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ITER_READONLY</span>: <span class="ident">npy_uint32</span> <span class="op">=</span> <span class="number">0x00020000</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ITER_WRITEONLY</span>: <span class="ident">npy_uint32</span> <span class="op">=</span> <span class="number">0x00040000</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ITER_NBO</span>: <span class="ident">npy_uint32</span> <span class="op">=</span> <span class="number">0x00080000</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ITER_ALIGNED</span>: <span class="ident">npy_uint32</span> <span class="op">=</span> <span class="number">0x00100000</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ITER_CONTIG</span>: <span class="ident">npy_uint32</span> <span class="op">=</span> <span class="number">0x00200000</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ITER_COPY</span>: <span class="ident">npy_uint32</span> <span class="op">=</span> <span class="number">0x00400000</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ITER_UPDATEIFCOPY</span>: <span class="ident">npy_uint32</span> <span class="op">=</span> <span class="number">0x00800000</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ITER_ALLOCATE</span>: <span class="ident">npy_uint32</span> <span class="op">=</span> <span class="number">0x01000000</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ITER_NO_SUBTYPE</span>: <span class="ident">npy_uint32</span> <span class="op">=</span> <span class="number">0x02000000</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ITER_VIRTUAL</span>: <span class="ident">npy_uint32</span> <span class="op">=</span> <span class="number">0x04000000</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ITER_NO_BROADCAST</span>: <span class="ident">npy_uint32</span> <span class="op">=</span> <span class="number">0x08000000</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ITER_WRITEMASKED</span>: <span class="ident">npy_uint32</span> <span class="op">=</span> <span class="number">0x10000000</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ITER_ARRAYMASK</span>: <span class="ident">npy_uint32</span> <span class="op">=</span> <span class="number">0x20000000</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ITER_OVERLAP_ASSUME_ELEMENTWISE</span>: <span class="ident">npy_uint32</span> <span class="op">=</span> <span class="number">0x40000000</span>;
+<span class="kw">pub const </span>NPY_ITER_C_INDEX: npy_uint32 = <span class="number">0x00000001</span>;
+<span class="kw">pub const </span>NPY_ITER_F_INDEX: npy_uint32 = <span class="number">0x00000002</span>;
+<span class="kw">pub const </span>NPY_ITER_MULTI_INDEX: npy_uint32 = <span class="number">0x00000004</span>;
+<span class="kw">pub const </span>NPY_ITER_EXTERNAL_LOOP: npy_uint32 = <span class="number">0x00000008</span>;
+<span class="kw">pub const </span>NPY_ITER_COMMON_DTYPE: npy_uint32 = <span class="number">0x00000010</span>;
+<span class="kw">pub const </span>NPY_ITER_REFS_OK: npy_uint32 = <span class="number">0x00000020</span>;
+<span class="kw">pub const </span>NPY_ITER_ZEROSIZE_OK: npy_uint32 = <span class="number">0x00000040</span>;
+<span class="kw">pub const </span>NPY_ITER_REDUCE_OK: npy_uint32 = <span class="number">0x00000080</span>;
+<span class="kw">pub const </span>NPY_ITER_RANGED: npy_uint32 = <span class="number">0x00000100</span>;
+<span class="kw">pub const </span>NPY_ITER_BUFFERED: npy_uint32 = <span class="number">0x00000200</span>;
+<span class="kw">pub const </span>NPY_ITER_GROWINNER: npy_uint32 = <span class="number">0x00000400</span>;
+<span class="kw">pub const </span>NPY_ITER_DELAY_BUFALLOC: npy_uint32 = <span class="number">0x00000800</span>;
+<span class="kw">pub const </span>NPY_ITER_DONT_NEGATE_STRIDES: npy_uint32 = <span class="number">0x00001000</span>;
+<span class="kw">pub const </span>NPY_ITER_COPY_IF_OVERLAP: npy_uint32 = <span class="number">0x00002000</span>;
+<span class="kw">pub const </span>NPY_ITER_READWRITE: npy_uint32 = <span class="number">0x00010000</span>;
+<span class="kw">pub const </span>NPY_ITER_READONLY: npy_uint32 = <span class="number">0x00020000</span>;
+<span class="kw">pub const </span>NPY_ITER_WRITEONLY: npy_uint32 = <span class="number">0x00040000</span>;
+<span class="kw">pub const </span>NPY_ITER_NBO: npy_uint32 = <span class="number">0x00080000</span>;
+<span class="kw">pub const </span>NPY_ITER_ALIGNED: npy_uint32 = <span class="number">0x00100000</span>;
+<span class="kw">pub const </span>NPY_ITER_CONTIG: npy_uint32 = <span class="number">0x00200000</span>;
+<span class="kw">pub const </span>NPY_ITER_COPY: npy_uint32 = <span class="number">0x00400000</span>;
+<span class="kw">pub const </span>NPY_ITER_UPDATEIFCOPY: npy_uint32 = <span class="number">0x00800000</span>;
+<span class="kw">pub const </span>NPY_ITER_ALLOCATE: npy_uint32 = <span class="number">0x01000000</span>;
+<span class="kw">pub const </span>NPY_ITER_NO_SUBTYPE: npy_uint32 = <span class="number">0x02000000</span>;
+<span class="kw">pub const </span>NPY_ITER_VIRTUAL: npy_uint32 = <span class="number">0x04000000</span>;
+<span class="kw">pub const </span>NPY_ITER_NO_BROADCAST: npy_uint32 = <span class="number">0x08000000</span>;
+<span class="kw">pub const </span>NPY_ITER_WRITEMASKED: npy_uint32 = <span class="number">0x10000000</span>;
+<span class="kw">pub const </span>NPY_ITER_ARRAYMASK: npy_uint32 = <span class="number">0x20000000</span>;
+<span class="kw">pub const </span>NPY_ITER_OVERLAP_ASSUME_ELEMENTWISE: npy_uint32 = <span class="number">0x40000000</span>;
 
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ITER_GLOBAL_FLAGS</span>: <span class="ident">npy_uint32</span> <span class="op">=</span> <span class="number">0x0000ffff</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ITER_PER_OP_FLAGS</span>: <span class="ident">npy_uint32</span> <span class="op">=</span> <span class="number">0xffff0000</span>;
+<span class="kw">pub const </span>NPY_ITER_GLOBAL_FLAGS: npy_uint32 = <span class="number">0x0000ffff</span>;
+<span class="kw">pub const </span>NPY_ITER_PER_OP_FLAGS: npy_uint32 = <span class="number">0xffff0000</span>;
 
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ITEM_REFCOUNT</span>: <span class="ident">npy_char</span> <span class="op">=</span> <span class="number">0x01</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ITEM_HASOBJECT</span>: <span class="ident">npy_char</span> <span class="op">=</span> <span class="number">0x01</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_LIST_PICKLE</span>: <span class="ident">npy_char</span> <span class="op">=</span> <span class="number">0x02</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ITEM_IS_POINTER</span>: <span class="ident">npy_char</span> <span class="op">=</span> <span class="number">0x04</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_NEEDS_INIT</span>: <span class="ident">npy_char</span> <span class="op">=</span> <span class="number">0x08</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_NEEDS_PYAPI</span>: <span class="ident">npy_char</span> <span class="op">=</span> <span class="number">0x10</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_USE_GETITEM</span>: <span class="ident">npy_char</span> <span class="op">=</span> <span class="number">0x20</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_USE_SETITEM</span>: <span class="ident">npy_char</span> <span class="op">=</span> <span class="number">0x40</span>;
-<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">overflowing_literals</span>)]</span>
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_ALIGNED_STRUCT</span>: <span class="ident">npy_char</span> <span class="op">=</span> <span class="number">0x80</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_FROM_FIELDS</span>: <span class="ident">npy_char</span> <span class="op">=</span>
-    <span class="ident">NPY_NEEDS_INIT</span> <span class="op">|</span> <span class="ident">NPY_LIST_PICKLE</span> <span class="op">|</span> <span class="ident">NPY_ITEM_REFCOUNT</span> <span class="op">|</span> <span class="ident">NPY_NEEDS_PYAPI</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NPY_OBJECT_DTYPE_FLAGS</span>: <span class="ident">npy_char</span> <span class="op">=</span> <span class="ident">NPY_LIST_PICKLE</span>
-    <span class="op">|</span> <span class="ident">NPY_USE_GETITEM</span>
-    <span class="op">|</span> <span class="ident">NPY_ITEM_IS_POINTER</span>
-    <span class="op">|</span> <span class="ident">NPY_ITEM_REFCOUNT</span>
-    <span class="op">|</span> <span class="ident">NPY_NEEDS_INIT</span>
-    <span class="op">|</span> <span class="ident">NPY_NEEDS_PYAPI</span>;
+<span class="kw">pub const </span>NPY_ITEM_REFCOUNT: npy_char = <span class="number">0x01</span>;
+<span class="kw">pub const </span>NPY_ITEM_HASOBJECT: npy_char = <span class="number">0x01</span>;
+<span class="kw">pub const </span>NPY_LIST_PICKLE: npy_char = <span class="number">0x02</span>;
+<span class="kw">pub const </span>NPY_ITEM_IS_POINTER: npy_char = <span class="number">0x04</span>;
+<span class="kw">pub const </span>NPY_NEEDS_INIT: npy_char = <span class="number">0x08</span>;
+<span class="kw">pub const </span>NPY_NEEDS_PYAPI: npy_char = <span class="number">0x10</span>;
+<span class="kw">pub const </span>NPY_USE_GETITEM: npy_char = <span class="number">0x20</span>;
+<span class="kw">pub const </span>NPY_USE_SETITEM: npy_char = <span class="number">0x40</span>;
+<span class="attribute">#[allow(overflowing_literals)]
+</span><span class="kw">pub const </span>NPY_ALIGNED_STRUCT: npy_char = <span class="number">0x80</span>;
+<span class="kw">pub const </span>NPY_FROM_FIELDS: npy_char =
+    NPY_NEEDS_INIT | NPY_LIST_PICKLE | NPY_ITEM_REFCOUNT | NPY_NEEDS_PYAPI;
+<span class="kw">pub const </span>NPY_OBJECT_DTYPE_FLAGS: npy_char = NPY_LIST_PICKLE
+    | NPY_USE_GETITEM
+    | NPY_ITEM_IS_POINTER
+    | NPY_ITEM_REFCOUNT
+    | NPY_NEEDS_INIT
+    | NPY_NEEDS_PYAPI;
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="numpy" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="numpy" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

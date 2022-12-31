@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../numpy/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../numpy/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../numpy/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../numpy/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../numpy/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../numpy/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -158,165 +158,165 @@
 <span id="158">158</span>
 <span id="159">159</span>
 <span id="160">160</span>
-</pre><pre class="rust"><code><span class="doccomment">//! This crate provides Rust interfaces for [NumPy C APIs][c-api],</span>
-<span class="doccomment">//! especially for the [ndarray][ndarray] class.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! It uses [`pyo3`] for Rust bindings to CPython, and uses</span>
-<span class="doccomment">//! [`ndarray`] as the Rust matrix library.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! To resolve its dependency on NumPy, it calls `import numpy.core` internally.</span>
-<span class="doccomment">//! This means that this crate should work if you can use NumPy in your Python environment,</span>
-<span class="doccomment">//! e.g. after installing it by `pip install numpy`. It does not matter whether you use</span>
-<span class="doccomment">//! the system environment or a dedicated virtual environment.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Loading NumPy is done automatically and on demand. So if it is not installed, the functions</span>
-<span class="doccomment">//! provided by this crate will panic instead of returning a result.</span>
-<span class="doccomment">//!</span>
-<span class="attribute">#![<span class="ident">cfg_attr</span>(
-    <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;nalgebra&quot;</span>,
-    <span class="ident">doc</span> <span class="op">=</span> <span class="string">&quot;Integration with [`nalgebra`] is rovided via an implementation of [`ToPyArray`] for [`nalgebra::Matrix`] to convert nalgebra matrices into NumPy arrays
+</pre><pre class="rust"><code><span class="doccomment">//! This crate provides Rust interfaces for [NumPy C APIs][c-api],
+//! especially for the [ndarray][ndarray] class.
+//!
+//! It uses [`pyo3`] for Rust bindings to CPython, and uses
+//! [`ndarray`] as the Rust matrix library.
+//!
+//! To resolve its dependency on NumPy, it calls `import numpy.core` internally.
+//! This means that this crate should work if you can use NumPy in your Python environment,
+//! e.g. after installing it by `pip install numpy`. It does not matter whether you use
+//! the system environment or a dedicated virtual environment.
+//!
+//! Loading NumPy is done automatically and on demand. So if it is not installed, the functions
+//! provided by this crate will panic instead of returning a result.
+//!
+</span><span class="attribute">#![cfg_attr(
+    feature = <span class="string">&quot;nalgebra&quot;</span>,
+    doc = <span class="string">&quot;Integration with [`nalgebra`] is rovided via an implementation of [`ToPyArray`] for [`nalgebra::Matrix`] to convert nalgebra matrices into NumPy arrays
 as well as the [`PyReadonlyArray::try_as_matrix`] and [`PyReadwriteArray::try_as_matrix_mut`] methods to treat NumPy array as nalgebra matrix slices.
-&quot;</span>
-)]</span>
-<span class="doccomment">//! # Example</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//! use numpy::pyo3::Python;</span>
-<span class="doccomment">//! use numpy::ndarray::array;</span>
-<span class="doccomment">//! use numpy::{ToPyArray, PyArray};</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Python::with_gil(|py| {</span>
-<span class="doccomment">//!     let py_array = array![[1i64, 2], [3, 4]].to_pyarray(py);</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//!     assert_eq!(</span>
-<span class="doccomment">//!         py_array.readonly().as_array(),</span>
-<span class="doccomment">//!         array![[1i64, 2], [3, 4]]</span>
-<span class="doccomment">//!     );</span>
-<span class="doccomment">//! });</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;nalgebra&quot;</span>, <span class="ident">doc</span> <span class="op">=</span> <span class="string">&quot;```&quot;</span>)]</span>
-<span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;nalgebra&quot;</span>), <span class="ident">doc</span> <span class="op">=</span> <span class="string">&quot;```rust,ignore&quot;</span>)]</span>
-<span class="doccomment">//! use numpy::pyo3::Python;</span>
-<span class="doccomment">//! use numpy::nalgebra::Matrix3;</span>
-<span class="doccomment">//! use numpy::{pyarray, ToPyArray};</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Python::with_gil(|py| {</span>
-<span class="doccomment">//!     let py_array = pyarray![py, [0, 1, 2], [3, 4, 5], [6, 7, 8]];</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//!     let py_array_square;</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//!     {</span>
-<span class="doccomment">//!         let py_array = py_array.readwrite();</span>
-<span class="doccomment">//!         let mut na_matrix = py_array.as_matrix_mut();</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//!         na_matrix.add_scalar_mut(1);</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//!         py_array_square = na_matrix.pow(2).to_pyarray(py);</span>
-<span class="doccomment">//!     }</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//!     assert_eq!(</span>
-<span class="doccomment">//!         py_array.readonly().as_matrix(),</span>
-<span class="doccomment">//!         Matrix3::new(1, 2, 3, 4, 5, 6, 7, 8, 9)</span>
-<span class="doccomment">//!     );</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//!     assert_eq!(</span>
-<span class="doccomment">//!         py_array_square.readonly().as_matrix(),</span>
-<span class="doccomment">//!         Matrix3::new(30, 36, 42, 66, 81, 96, 102, 126, 150)</span>
-<span class="doccomment">//!     );</span>
-<span class="doccomment">//! });</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! [c-api]: https://numpy.org/doc/stable/reference/c-api</span>
-<span class="doccomment">//! [ndarray]: https://numpy.org/doc/stable/reference/arrays.ndarray.html</span>
+&quot;
+</span>)]
+</span><span class="doccomment">//! # Example
+//!
+//! ```
+//! use numpy::pyo3::Python;
+//! use numpy::ndarray::array;
+//! use numpy::{ToPyArray, PyArray};
+//!
+//! Python::with_gil(|py| {
+//!     let py_array = array![[1i64, 2], [3, 4]].to_pyarray(py);
+//!
+//!     assert_eq!(
+//!         py_array.readonly().as_array(),
+//!         array![[1i64, 2], [3, 4]]
+//!     );
+//! });
+//! ```
+//!
+</span><span class="attribute">#![cfg_attr(feature = <span class="string">&quot;nalgebra&quot;</span>, doc = <span class="string">&quot;```&quot;</span>)]
+#![cfg_attr(not(feature = <span class="string">&quot;nalgebra&quot;</span>), doc = <span class="string">&quot;```rust,ignore&quot;</span>)]
+</span><span class="doccomment">//! use numpy::pyo3::Python;
+//! use numpy::nalgebra::Matrix3;
+//! use numpy::{pyarray, ToPyArray};
+//!
+//! Python::with_gil(|py| {
+//!     let py_array = pyarray![py, [0, 1, 2], [3, 4, 5], [6, 7, 8]];
+//!
+//!     let py_array_square;
+//!
+//!     {
+//!         let py_array = py_array.readwrite();
+//!         let mut na_matrix = py_array.as_matrix_mut();
+//!
+//!         na_matrix.add_scalar_mut(1);
+//!
+//!         py_array_square = na_matrix.pow(2).to_pyarray(py);
+//!     }
+//!
+//!     assert_eq!(
+//!         py_array.readonly().as_matrix(),
+//!         Matrix3::new(1, 2, 3, 4, 5, 6, 7, 8, 9)
+//!     );
+//!
+//!     assert_eq!(
+//!         py_array_square.readonly().as_matrix(),
+//!         Matrix3::new(30, 36, 42, 66, 81, 96, 102, 126, 150)
+//!     );
+//! });
+//! ```
+//!
+//! [c-api]: https://numpy.org/doc/stable/reference/c-api
+//! [ndarray]: https://numpy.org/doc/stable/reference/arrays.ndarray.html
 
-<span class="attribute">#![<span class="ident">deny</span>(<span class="ident">missing_docs</span>, <span class="ident">missing_debug_implementations</span>)]</span>
-<span class="comment">// We often want to make the GIL lifetime explicit.</span>
-<span class="attribute">#![<span class="ident">allow</span>(<span class="ident">clippy::needless_lifetimes</span>)]</span>
+</span><span class="attribute">#![deny(missing_docs, missing_debug_implementations)]
+</span><span class="comment">// We often want to make the GIL lifetime explicit.
+</span><span class="attribute">#![allow(clippy::needless_lifetimes)]
 
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">array</span>;
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">borrow</span>;
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">convert</span>;
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">datetime</span>;
-<span class="kw">mod</span> <span class="ident">dtype</span>;
-<span class="kw">mod</span> <span class="ident">error</span>;
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">npyffi</span>;
-<span class="kw">mod</span> <span class="ident">slice_container</span>;
-<span class="kw">mod</span> <span class="ident">sum_products</span>;
+</span><span class="kw">pub mod </span>array;
+<span class="kw">pub mod </span>borrow;
+<span class="kw">pub mod </span>convert;
+<span class="kw">pub mod </span>datetime;
+<span class="kw">mod </span>dtype;
+<span class="kw">mod </span>error;
+<span class="kw">pub mod </span>npyffi;
+<span class="kw">mod </span>slice_container;
+<span class="kw">mod </span>sum_products;
 
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">ndarray</span>;
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">pyo3</span>;
+<span class="kw">pub use </span>ndarray;
+<span class="kw">pub use </span>pyo3;
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;nalgebra&quot;</span>)]</span>
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">nalgebra</span>;
+<span class="attribute">#[cfg(feature = <span class="string">&quot;nalgebra&quot;</span>)]
+</span><span class="kw">pub use </span>nalgebra;
 
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::array</span>::{
-    <span class="ident">get_array_module</span>, <span class="ident">PyArray</span>, <span class="ident">PyArray0</span>, <span class="ident">PyArray1</span>, <span class="ident">PyArray2</span>, <span class="ident">PyArray3</span>, <span class="ident">PyArray4</span>, <span class="ident">PyArray5</span>,
-    <span class="ident">PyArray6</span>, <span class="ident">PyArrayDyn</span>,
+<span class="kw">pub use </span><span class="kw">crate</span>::array::{
+    get_array_module, PyArray, PyArray0, PyArray1, PyArray2, PyArray3, PyArray4, PyArray5,
+    PyArray6, PyArrayDyn,
 };
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::borrow</span>::{
-    <span class="ident">PyReadonlyArray</span>, <span class="ident">PyReadonlyArray1</span>, <span class="ident">PyReadonlyArray2</span>, <span class="ident">PyReadonlyArray3</span>, <span class="ident">PyReadonlyArray4</span>,
-    <span class="ident">PyReadonlyArray5</span>, <span class="ident">PyReadonlyArray6</span>, <span class="ident">PyReadonlyArrayDyn</span>, <span class="ident">PyReadwriteArray</span>, <span class="ident">PyReadwriteArray1</span>,
-    <span class="ident">PyReadwriteArray2</span>, <span class="ident">PyReadwriteArray3</span>, <span class="ident">PyReadwriteArray4</span>, <span class="ident">PyReadwriteArray5</span>, <span class="ident">PyReadwriteArray6</span>,
-    <span class="ident">PyReadwriteArrayDyn</span>,
+<span class="kw">pub use </span><span class="kw">crate</span>::borrow::{
+    PyReadonlyArray, PyReadonlyArray1, PyReadonlyArray2, PyReadonlyArray3, PyReadonlyArray4,
+    PyReadonlyArray5, PyReadonlyArray6, PyReadonlyArrayDyn, PyReadwriteArray, PyReadwriteArray1,
+    PyReadwriteArray2, PyReadwriteArray3, PyReadwriteArray4, PyReadwriteArray5, PyReadwriteArray6,
+    PyReadwriteArrayDyn,
 };
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::convert</span>::{<span class="ident">IntoPyArray</span>, <span class="ident">NpyIndex</span>, <span class="ident">ToNpyDims</span>, <span class="ident">ToPyArray</span>};
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::dtype</span>::{<span class="ident">dtype</span>, <span class="ident">Complex32</span>, <span class="ident">Complex64</span>, <span class="ident">Element</span>, <span class="ident">PyArrayDescr</span>};
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::error</span>::{<span class="ident">BorrowError</span>, <span class="ident">FromVecError</span>, <span class="ident">NotContiguousError</span>};
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::npyffi</span>::{<span class="ident">PY_ARRAY_API</span>, <span class="ident">PY_UFUNC_API</span>};
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::sum_products</span>::{<span class="ident">dot</span>, <span class="ident">einsum</span>, <span class="ident">inner</span>};
+<span class="kw">pub use </span><span class="kw">crate</span>::convert::{IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
+<span class="kw">pub use </span><span class="kw">crate</span>::dtype::{dtype, Complex32, Complex64, Element, PyArrayDescr};
+<span class="kw">pub use </span><span class="kw">crate</span>::error::{BorrowError, FromVecError, NotContiguousError};
+<span class="kw">pub use </span><span class="kw">crate</span>::npyffi::{PY_ARRAY_API, PY_UFUNC_API};
+<span class="kw">pub use </span><span class="kw">crate</span>::sum_products::{dot, einsum, inner};
 
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">ndarray</span>::{<span class="ident">array</span>, <span class="ident">Ix1</span>, <span class="ident">Ix2</span>, <span class="ident">Ix3</span>, <span class="ident">Ix4</span>, <span class="ident">Ix5</span>, <span class="ident">Ix6</span>, <span class="ident">IxDyn</span>};
+<span class="kw">pub use </span>ndarray::{array, Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">doctest</span>)]</span>
-<span class="kw">mod</span> <span class="ident">doctest</span> {
-    <span class="macro">macro_rules!</span> <span class="ident">doc_comment</span> {
-        (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">doc_string</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">mod_name</span>:<span class="ident">ident</span>) =&gt; {
-            <span class="attribute">#[<span class="ident">doc</span> <span class="op">=</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">doc_string</span>]</span>
-            <span class="kw">mod</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">mod_name</span> {}
+<span class="attribute">#[cfg(doctest)]
+</span><span class="kw">mod </span>doctest {
+    <span class="macro">macro_rules! </span>doc_comment {
+        (<span class="macro-nonterminal">$doc_string</span>:expr, <span class="macro-nonterminal">$mod_name</span>:ident) =&gt; {
+            <span class="attribute">#[doc = <span class="macro-nonterminal">$doc_string</span>]
+            </span><span class="kw">mod </span><span class="macro-nonterminal">$mod_name </span>{}
         };
     }
-    <span class="macro">doc_comment!</span>(<span class="macro">include_str!</span>(<span class="string">&quot;../README.md&quot;</span>), <span class="ident">readme</span>);
+    <span class="macro">doc_comment!</span>(<span class="macro">include_str!</span>(<span class="string">&quot;../README.md&quot;</span>), readme);
 }
 
-<span class="kw">mod</span> <span class="ident">sealed</span> {
-    <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Sealed</span> {}
+<span class="kw">mod </span>sealed {
+    <span class="kw">pub trait </span>Sealed {}
 }
 
-<span class="attribute">#[<span class="ident">cold</span>]</span>
-<span class="attribute">#[<span class="ident">inline</span>(<span class="ident">always</span>)]</span>
-<span class="kw">fn</span> <span class="ident">cold</span>() {}
+<span class="attribute">#[cold]
+#[inline(always)]
+</span><span class="kw">fn </span>cold() {}
 
-<span class="doccomment">/// Create a [`PyArray`] with one, two or three dimensions.</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// This macro is backed by [`ndarray::array`].</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # Example</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// ```</span>
-<span class="doccomment">/// use numpy::pyo3::Python;</span>
-<span class="doccomment">/// use numpy::ndarray::array;</span>
-<span class="doccomment">/// use numpy::pyarray;</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// Python::with_gil(|py| {</span>
-<span class="doccomment">///     let array = pyarray![py, [1, 2], [3, 4]];</span>
-<span class="doccomment">///</span>
-<span class="doccomment">///     assert_eq!(</span>
-<span class="doccomment">///         array.readonly().as_array(),</span>
-<span class="doccomment">///         array![[1, 2], [3, 4]]</span>
-<span class="doccomment">///     );</span>
-<span class="doccomment">/// });</span>
-<span class="attribute">#[<span class="ident">macro_export</span>]</span>
-<span class="macro">macro_rules!</span> <span class="ident">pyarray</span> {
-    (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">py</span>: <span class="ident">ident</span>, $([$([$(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">x</span>:<span class="ident">expr</span>),<span class="op">*</span> $(,)<span class="kw-2">*</span>]),<span class="op">+</span> $(,)<span class="kw-2">*</span>]),<span class="op">+</span> $(,)<span class="kw-2">*</span>) =&gt; {{
-        <span class="macro-nonterminal">$</span><span class="macro-nonterminal">crate::IntoPyArray::into_pyarray</span>(<span class="macro-nonterminal">$</span><span class="macro">crate::array!</span>[$([$([$(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">x</span>,)<span class="kw-2">*</span>],)<span class="kw-2">*</span>],)<span class="kw-2">*</span>], <span class="macro-nonterminal">$</span><span class="macro-nonterminal">py</span>)
+<span class="doccomment">/// Create a [`PyArray`] with one, two or three dimensions.
+///
+/// This macro is backed by [`ndarray::array`].
+///
+/// # Example
+///
+/// ```
+/// use numpy::pyo3::Python;
+/// use numpy::ndarray::array;
+/// use numpy::pyarray;
+///
+/// Python::with_gil(|py| {
+///     let array = pyarray![py, [1, 2], [3, 4]];
+///
+///     assert_eq!(
+///         array.readonly().as_array(),
+///         array![[1, 2], [3, 4]]
+///     );
+/// });
+</span><span class="attribute">#[macro_export]
+</span><span class="macro">macro_rules! </span>pyarray {
+    (<span class="macro-nonterminal">$py</span>: ident, $([$([$(<span class="macro-nonterminal">$x</span>:expr),* $(,)<span class="kw-2">*</span>]),+ $(,)<span class="kw-2">*</span>]),+ $(,)<span class="kw-2">*</span>) =&gt; {{
+        <span class="macro-nonterminal">$crate::IntoPyArray::into_pyarray</span>(<span class="macro-nonterminal">$</span><span class="macro">crate::array!</span>[$([$([$(<span class="macro-nonterminal">$x</span>,)<span class="kw-2">*</span>],)<span class="kw-2">*</span>],)<span class="kw-2">*</span>], <span class="macro-nonterminal">$py</span>)
     }};
-    (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">py</span>: <span class="ident">ident</span>, $([$(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">x</span>:<span class="ident">expr</span>),<span class="op">*</span> $(,)<span class="kw-2">*</span>]),<span class="op">+</span> $(,)<span class="kw-2">*</span>) =&gt; {{
-        <span class="macro-nonterminal">$</span><span class="macro-nonterminal">crate::IntoPyArray::into_pyarray</span>(<span class="macro-nonterminal">$</span><span class="macro">crate::array!</span>[$([$(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">x</span>,)<span class="kw-2">*</span>],)<span class="kw-2">*</span>], <span class="macro-nonterminal">$</span><span class="macro-nonterminal">py</span>)
+    (<span class="macro-nonterminal">$py</span>: ident, $([$(<span class="macro-nonterminal">$x</span>:expr),* $(,)<span class="kw-2">*</span>]),+ $(,)<span class="kw-2">*</span>) =&gt; {{
+        <span class="macro-nonterminal">$crate::IntoPyArray::into_pyarray</span>(<span class="macro-nonterminal">$</span><span class="macro">crate::array!</span>[$([$(<span class="macro-nonterminal">$x</span>,)<span class="kw-2">*</span>],)<span class="kw-2">*</span>], <span class="macro-nonterminal">$py</span>)
     }};
-    (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">py</span>: <span class="ident">ident</span>, $(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">x</span>:<span class="ident">expr</span>),<span class="op">*</span> $(,)<span class="kw-2">*</span>) =&gt; {{
-        <span class="macro-nonterminal">$</span><span class="macro-nonterminal">crate::IntoPyArray::into_pyarray</span>(<span class="macro-nonterminal">$</span><span class="macro">crate::array!</span>[$(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">x</span>,)<span class="kw-2">*</span>], <span class="macro-nonterminal">$</span><span class="macro-nonterminal">py</span>)
+    (<span class="macro-nonterminal">$py</span>: ident, $(<span class="macro-nonterminal">$x</span>:expr),* $(,)<span class="kw-2">*</span>) =&gt; {{
+        <span class="macro-nonterminal">$crate::IntoPyArray::into_pyarray</span>(<span class="macro-nonterminal">$</span><span class="macro">crate::array!</span>[$(<span class="macro-nonterminal">$x</span>,)<span class="kw-2">*</span>], <span class="macro-nonterminal">$py</span>)
     }};
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="numpy" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="numpy" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

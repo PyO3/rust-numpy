@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/datetime.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>datetime.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../numpy/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../numpy/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../numpy/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/datetime.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>datetime.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../numpy/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../numpy/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../numpy/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -346,353 +346,353 @@
 <span id="346">346</span>
 <span id="347">347</span>
 <span id="348">348</span>
-</pre><pre class="rust"><code><span class="doccomment">//! Support datetimes and timedeltas</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! This module provides wrappers for NumPy&#39;s [`datetime64`][scalars-datetime64] and [`timedelta64`][scalars-timedelta64] types</span>
-<span class="doccomment">//! which are used for time keeping with with an emphasis on scientific applications.</span>
-<span class="doccomment">//! This means that while these types differentiate absolute and relative quantities, they ignore calendars (a month is always 30.44 days) and time zones.</span>
-<span class="doccomment">//! On the other hand, their flexible units enable them to support either a large range (up to 2&lt;sup&gt;64&lt;/sup&gt; years) or high precision (down to 10&lt;sup&gt;-18&lt;/sup&gt; seconds).</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! [The corresponding section][datetime] of the NumPy documentation contains more information.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Example</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//! use numpy::{datetime::{units, Datetime, Timedelta}, PyArray1};</span>
-<span class="doccomment">//! use pyo3::Python;</span>
-<span class="doccomment">//! # use pyo3::types::PyDict;</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Python::with_gil(|py| {</span>
-<span class="doccomment">//! #    let locals = py</span>
-<span class="doccomment">//! #        .eval(&quot;{ &#39;np&#39;: __import__(&#39;numpy&#39;) }&quot;, None, None)</span>
-<span class="doccomment">//! #        .unwrap()</span>
-<span class="doccomment">//! #        .downcast::&lt;PyDict&gt;()</span>
-<span class="doccomment">//! #        .unwrap();</span>
-<span class="doccomment">//! #</span>
-<span class="doccomment">//!     let array = py</span>
-<span class="doccomment">//!         .eval(</span>
-<span class="doccomment">//!             &quot;np.array([np.datetime64(&#39;2017-04-21&#39;)])&quot;,</span>
-<span class="doccomment">//!             None,</span>
-<span class="doccomment">//!             Some(locals),</span>
-<span class="doccomment">//!         )</span>
-<span class="doccomment">//!         .unwrap()</span>
-<span class="doccomment">//!         .downcast::&lt;PyArray1&lt;Datetime&lt;units::Days&gt;&gt;&gt;()</span>
-<span class="doccomment">//!         .unwrap();</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//!     assert_eq!(</span>
-<span class="doccomment">//!         array.get_owned(0).unwrap(),</span>
-<span class="doccomment">//!         Datetime::&lt;units::Days&gt;::from(17_277)</span>
-<span class="doccomment">//!     );</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//!     let array = py</span>
-<span class="doccomment">//!         .eval(</span>
-<span class="doccomment">//!             &quot;np.array([np.datetime64(&#39;2022-03-29&#39;)]) - np.array([np.datetime64(&#39;2017-04-21&#39;)])&quot;,</span>
-<span class="doccomment">//!             None,</span>
-<span class="doccomment">//!             Some(locals),</span>
-<span class="doccomment">//!         )</span>
-<span class="doccomment">//!         .unwrap()</span>
-<span class="doccomment">//!         .downcast::&lt;PyArray1&lt;Timedelta&lt;units::Days&gt;&gt;&gt;()</span>
-<span class="doccomment">//!         .unwrap();</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//!     assert_eq!(</span>
-<span class="doccomment">//!         array.get_owned(0).unwrap(),</span>
-<span class="doccomment">//!         Timedelta::&lt;units::Days&gt;::from(1_803)</span>
-<span class="doccomment">//!     );</span>
-<span class="doccomment">//! });</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! [datetime]: https://numpy.org/doc/stable/reference/arrays.datetime.html</span>
-<span class="doccomment">//! [scalars-datetime64]: https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.datetime64</span>
-<span class="doccomment">//! [scalars-timedelta64]: https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.timedelta64</span>
+</pre><pre class="rust"><code><span class="doccomment">//! Support datetimes and timedeltas
+//!
+//! This module provides wrappers for NumPy&#39;s [`datetime64`][scalars-datetime64] and [`timedelta64`][scalars-timedelta64] types
+//! which are used for time keeping with with an emphasis on scientific applications.
+//! This means that while these types differentiate absolute and relative quantities, they ignore calendars (a month is always 30.44 days) and time zones.
+//! On the other hand, their flexible units enable them to support either a large range (up to 2&lt;sup&gt;64&lt;/sup&gt; years) or high precision (down to 10&lt;sup&gt;-18&lt;/sup&gt; seconds).
+//!
+//! [The corresponding section][datetime] of the NumPy documentation contains more information.
+//!
+//! # Example
+//!
+//! ```
+//! use numpy::{datetime::{units, Datetime, Timedelta}, PyArray1};
+//! use pyo3::Python;
+//! # use pyo3::types::PyDict;
+//!
+//! Python::with_gil(|py| {
+//! #    let locals = py
+//! #        .eval(&quot;{ &#39;np&#39;: __import__(&#39;numpy&#39;) }&quot;, None, None)
+//! #        .unwrap()
+//! #        .downcast::&lt;PyDict&gt;()
+//! #        .unwrap();
+//! #
+//!     let array = py
+//!         .eval(
+//!             &quot;np.array([np.datetime64(&#39;2017-04-21&#39;)])&quot;,
+//!             None,
+//!             Some(locals),
+//!         )
+//!         .unwrap()
+//!         .downcast::&lt;PyArray1&lt;Datetime&lt;units::Days&gt;&gt;&gt;()
+//!         .unwrap();
+//!
+//!     assert_eq!(
+//!         array.get_owned(0).unwrap(),
+//!         Datetime::&lt;units::Days&gt;::from(17_277)
+//!     );
+//!
+//!     let array = py
+//!         .eval(
+//!             &quot;np.array([np.datetime64(&#39;2022-03-29&#39;)]) - np.array([np.datetime64(&#39;2017-04-21&#39;)])&quot;,
+//!             None,
+//!             Some(locals),
+//!         )
+//!         .unwrap()
+//!         .downcast::&lt;PyArray1&lt;Timedelta&lt;units::Days&gt;&gt;&gt;()
+//!         .unwrap();
+//!
+//!     assert_eq!(
+//!         array.get_owned(0).unwrap(),
+//!         Timedelta::&lt;units::Days&gt;::from(1_803)
+//!     );
+//! });
+//! ```
+//!
+//! [datetime]: https://numpy.org/doc/stable/reference/arrays.datetime.html
+//! [scalars-datetime64]: https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.datetime64
+//! [scalars-timedelta64]: https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.timedelta64
 
-<span class="kw">use</span> <span class="ident">std::cell::UnsafeCell</span>;
-<span class="kw">use</span> <span class="ident">std::collections::hash_map::Entry</span>;
-<span class="kw">use</span> <span class="ident">std::fmt</span>;
-<span class="kw">use</span> <span class="ident">std::hash::Hash</span>;
-<span class="kw">use</span> <span class="ident">std::marker::PhantomData</span>;
+</span><span class="kw">use </span>std::cell::UnsafeCell;
+<span class="kw">use </span>std::collections::hash_map::Entry;
+<span class="kw">use </span>std::fmt;
+<span class="kw">use </span>std::hash::Hash;
+<span class="kw">use </span>std::marker::PhantomData;
 
-<span class="kw">use</span> <span class="ident">pyo3</span>::{<span class="ident">Py</span>, <span class="ident">Python</span>};
-<span class="kw">use</span> <span class="ident">rustc_hash::FxHashMap</span>;
+<span class="kw">use </span>pyo3::{Py, Python};
+<span class="kw">use </span>rustc_hash::FxHashMap;
 
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::dtype</span>::{<span class="ident">Element</span>, <span class="ident">PyArrayDescr</span>};
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::npyffi</span>::{<span class="ident">PyArray_DatetimeDTypeMetaData</span>, <span class="ident">NPY_DATETIMEUNIT</span>, <span class="ident">NPY_TYPES</span>};
+<span class="kw">use </span><span class="kw">crate</span>::dtype::{Element, PyArrayDescr};
+<span class="kw">use </span><span class="kw">crate</span>::npyffi::{PyArray_DatetimeDTypeMetaData, NPY_DATETIMEUNIT, NPY_TYPES};
 
-<span class="doccomment">/// Represents the [datetime units][datetime-units] supported by NumPy</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// [datetime-units]: https://numpy.org/doc/stable/reference/arrays.datetime.html#datetime-units</span>
-<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Unit</span>: <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">Copy</span> <span class="op">+</span> <span class="ident">PartialEq</span> <span class="op">+</span> <span class="ident">Eq</span> <span class="op">+</span> <span class="ident">Hash</span> <span class="op">+</span> <span class="ident">PartialOrd</span> <span class="op">+</span> <span class="ident">Ord</span> {
-    <span class="doccomment">/// The matching NumPy [datetime unit code][NPY_DATETIMEUNIT]</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// [NPY_DATETIMEUNIT]: https://github.com/numpy/numpy/blob/4c60b3263ac50e5e72f6a909e156314fc3c9cba0/numpy/core/include/numpy/ndarraytypes.h#L276</span>
-    <span class="kw">const</span> <span class="ident">UNIT</span>: <span class="ident">NPY_DATETIMEUNIT</span>;
+<span class="doccomment">/// Represents the [datetime units][datetime-units] supported by NumPy
+///
+/// [datetime-units]: https://numpy.org/doc/stable/reference/arrays.datetime.html#datetime-units
+</span><span class="kw">pub trait </span>Unit: Send + Sync + Clone + Copy + PartialEq + Eq + Hash + PartialOrd + Ord {
+    <span class="doccomment">/// The matching NumPy [datetime unit code][NPY_DATETIMEUNIT]
+    ///
+    /// [NPY_DATETIMEUNIT]: https://github.com/numpy/numpy/blob/4c60b3263ac50e5e72f6a909e156314fc3c9cba0/numpy/core/include/numpy/ndarraytypes.h#L276
+    </span><span class="kw">const </span>UNIT: NPY_DATETIMEUNIT;
 
-    <span class="doccomment">/// The abbrevation used for debug formatting</span>
-    <span class="kw">const</span> <span class="ident">ABBREV</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span>;
+    <span class="doccomment">/// The abbrevation used for debug formatting
+    </span><span class="kw">const </span>ABBREV: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str;
 }
 
-<span class="macro">macro_rules!</span> <span class="ident">define_units</span> {
-    ($($(<span class="attribute">#[<span class="macro-nonterminal">$</span><span class="macro-nonterminal">meta</span>:<span class="ident">meta</span>]</span>)<span class="op">*</span> <span class="macro-nonterminal">$</span><span class="kw">struct</span>:<span class="macro-nonterminal">ident</span> =&gt; <span class="macro-nonterminal">$</span><span class="macro-nonterminal">unit</span>:<span class="ident">ident</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">abbrev</span>:<span class="ident">literal</span>,)<span class="op">+</span>) =&gt; {
+<span class="macro">macro_rules! </span>define_units {
+    ($($(<span class="attribute">#[<span class="macro-nonterminal">$meta</span>:meta]</span>)* <span class="macro-nonterminal">$</span><span class="kw">struct</span>:<span class="macro-nonterminal">ident </span>=&gt; <span class="macro-nonterminal">$unit</span>:ident <span class="macro-nonterminal">$abbrev</span>:literal,)+) =&gt; {
         $(
 
-        $(<span class="attribute">#[<span class="macro-nonterminal">$</span><span class="macro-nonterminal">meta</span>]</span>)<span class="op">*</span>
-        <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">Debug</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">Hash</span>, <span class="ident">PartialOrd</span>, <span class="ident">Ord</span>)]</span>
-        <span class="kw">pub</span> <span class="kw">struct</span> <span class="macro-nonterminal">$</span><span class="kw">struct</span>;
+        $(<span class="attribute">#[<span class="macro-nonterminal">$meta</span>]</span>)*
+        <span class="attribute">#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+        </span><span class="kw">pub struct </span><span class="macro-nonterminal">$</span><span class="kw">struct</span>;
 
-        <span class="kw">impl</span> <span class="macro-nonterminal">Unit</span> <span class="kw">for</span> <span class="macro-nonterminal">$</span><span class="kw">struct</span> {
-            <span class="kw">const</span> <span class="macro-nonterminal">UNIT</span>: <span class="ident">NPY_DATETIMEUNIT</span> <span class="op">=</span> <span class="ident">NPY_DATETIMEUNIT</span>::<span class="macro-nonterminal">$</span><span class="macro-nonterminal">unit</span>;
+        <span class="kw">impl </span><span class="macro-nonterminal">Unit </span><span class="kw">for </span><span class="macro-nonterminal">$</span><span class="kw">struct </span>{
+            <span class="kw">const </span><span class="macro-nonterminal">UNIT</span>: NPY_DATETIMEUNIT = NPY_DATETIMEUNIT::<span class="macro-nonterminal">$unit</span>;
 
-            <span class="kw">const</span> <span class="ident">ABBREV</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span> <span class="op">=</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">abbrev</span>;
+            <span class="kw">const </span>ABBREV: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str = <span class="macro-nonterminal">$abbrev</span>;
         }
 
-        )<span class="op">+</span>
+        )+
     };
 }
 
-<span class="doccomment">/// Predefined implementors of the [`Unit`] trait</span>
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">units</span> {
-    <span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
+<span class="doccomment">/// Predefined implementors of the [`Unit`] trait
+</span><span class="kw">pub mod </span>units {
+    <span class="kw">use super</span>::<span class="kw-2">*</span>;
 
     <span class="macro">define_units!</span>(
-        <span class="attribute">#[<span class="ident">doc</span> <span class="op">=</span> <span class="string">&quot;Years, i.e. 12 months&quot;</span>]</span>
-        <span class="ident">Years</span> =&gt; <span class="ident">NPY_FR_Y</span> <span class="string">&quot;a&quot;</span>,
-        <span class="attribute">#[<span class="ident">doc</span> <span class="op">=</span> <span class="string">&quot;Months, i.e. 30 days&quot;</span>]</span>
-        <span class="ident">Months</span> =&gt; <span class="ident">NPY_FR_M</span> <span class="string">&quot;mo&quot;</span>,
-        <span class="attribute">#[<span class="ident">doc</span> <span class="op">=</span> <span class="string">&quot;Weeks, i.e. 7 days&quot;</span>]</span>
-        <span class="ident">Weeks</span> =&gt; <span class="ident">NPY_FR_W</span> <span class="string">&quot;w&quot;</span>,
-        <span class="attribute">#[<span class="ident">doc</span> <span class="op">=</span> <span class="string">&quot;Days, i.e. 24 hours&quot;</span>]</span>
-        <span class="ident">Days</span> =&gt; <span class="ident">NPY_FR_D</span> <span class="string">&quot;d&quot;</span>,
-        <span class="attribute">#[<span class="ident">doc</span> <span class="op">=</span> <span class="string">&quot;Hours, i.e. 60 minutes&quot;</span>]</span>
-        <span class="ident">Hours</span> =&gt; <span class="ident">NPY_FR_h</span> <span class="string">&quot;h&quot;</span>,
-        <span class="attribute">#[<span class="ident">doc</span> <span class="op">=</span> <span class="string">&quot;Minutes, i.e. 60 seconds&quot;</span>]</span>
-        <span class="ident">Minutes</span> =&gt; <span class="ident">NPY_FR_m</span> <span class="string">&quot;min&quot;</span>,
-        <span class="attribute">#[<span class="ident">doc</span> <span class="op">=</span> <span class="string">&quot;Seconds&quot;</span>]</span>
-        <span class="ident">Seconds</span> =&gt; <span class="ident">NPY_FR_s</span> <span class="string">&quot;s&quot;</span>,
-        <span class="attribute">#[<span class="ident">doc</span> <span class="op">=</span> <span class="string">&quot;Milliseconds, i.e. 10^-3 seconds&quot;</span>]</span>
-        <span class="ident">Milliseconds</span> =&gt; <span class="ident">NPY_FR_ms</span> <span class="string">&quot;ms&quot;</span>,
-        <span class="attribute">#[<span class="ident">doc</span> <span class="op">=</span> <span class="string">&quot;Microseconds, i.e. 10^-6 seconds&quot;</span>]</span>
-        <span class="ident">Microseconds</span> =&gt; <span class="ident">NPY_FR_us</span> <span class="string">&quot;µs&quot;</span>,
-        <span class="attribute">#[<span class="ident">doc</span> <span class="op">=</span> <span class="string">&quot;Nanoseconds, i.e. 10^-9 seconds&quot;</span>]</span>
-        <span class="ident">Nanoseconds</span> =&gt; <span class="ident">NPY_FR_ns</span> <span class="string">&quot;ns&quot;</span>,
-        <span class="attribute">#[<span class="ident">doc</span> <span class="op">=</span> <span class="string">&quot;Picoseconds, i.e. 10^-12 seconds&quot;</span>]</span>
-        <span class="ident">Picoseconds</span> =&gt; <span class="ident">NPY_FR_ps</span> <span class="string">&quot;ps&quot;</span>,
-        <span class="attribute">#[<span class="ident">doc</span> <span class="op">=</span> <span class="string">&quot;Femtoseconds, i.e. 10^-15 seconds&quot;</span>]</span>
-        <span class="ident">Femtoseconds</span> =&gt; <span class="ident">NPY_FR_fs</span> <span class="string">&quot;fs&quot;</span>,
-        <span class="attribute">#[<span class="ident">doc</span> <span class="op">=</span> <span class="string">&quot;Attoseconds, i.e. 10^-18 seconds&quot;</span>]</span>
-        <span class="ident">Attoseconds</span> =&gt; <span class="ident">NPY_FR_as</span> <span class="string">&quot;as&quot;</span>,
+        <span class="attribute">#[doc = <span class="string">&quot;Years, i.e. 12 months&quot;</span>]
+        </span>Years =&gt; NPY_FR_Y <span class="string">&quot;a&quot;</span>,
+        <span class="attribute">#[doc = <span class="string">&quot;Months, i.e. 30 days&quot;</span>]
+        </span>Months =&gt; NPY_FR_M <span class="string">&quot;mo&quot;</span>,
+        <span class="attribute">#[doc = <span class="string">&quot;Weeks, i.e. 7 days&quot;</span>]
+        </span>Weeks =&gt; NPY_FR_W <span class="string">&quot;w&quot;</span>,
+        <span class="attribute">#[doc = <span class="string">&quot;Days, i.e. 24 hours&quot;</span>]
+        </span>Days =&gt; NPY_FR_D <span class="string">&quot;d&quot;</span>,
+        <span class="attribute">#[doc = <span class="string">&quot;Hours, i.e. 60 minutes&quot;</span>]
+        </span>Hours =&gt; NPY_FR_h <span class="string">&quot;h&quot;</span>,
+        <span class="attribute">#[doc = <span class="string">&quot;Minutes, i.e. 60 seconds&quot;</span>]
+        </span>Minutes =&gt; NPY_FR_m <span class="string">&quot;min&quot;</span>,
+        <span class="attribute">#[doc = <span class="string">&quot;Seconds&quot;</span>]
+        </span>Seconds =&gt; NPY_FR_s <span class="string">&quot;s&quot;</span>,
+        <span class="attribute">#[doc = <span class="string">&quot;Milliseconds, i.e. 10^-3 seconds&quot;</span>]
+        </span>Milliseconds =&gt; NPY_FR_ms <span class="string">&quot;ms&quot;</span>,
+        <span class="attribute">#[doc = <span class="string">&quot;Microseconds, i.e. 10^-6 seconds&quot;</span>]
+        </span>Microseconds =&gt; NPY_FR_us <span class="string">&quot;µs&quot;</span>,
+        <span class="attribute">#[doc = <span class="string">&quot;Nanoseconds, i.e. 10^-9 seconds&quot;</span>]
+        </span>Nanoseconds =&gt; NPY_FR_ns <span class="string">&quot;ns&quot;</span>,
+        <span class="attribute">#[doc = <span class="string">&quot;Picoseconds, i.e. 10^-12 seconds&quot;</span>]
+        </span>Picoseconds =&gt; NPY_FR_ps <span class="string">&quot;ps&quot;</span>,
+        <span class="attribute">#[doc = <span class="string">&quot;Femtoseconds, i.e. 10^-15 seconds&quot;</span>]
+        </span>Femtoseconds =&gt; NPY_FR_fs <span class="string">&quot;fs&quot;</span>,
+        <span class="attribute">#[doc = <span class="string">&quot;Attoseconds, i.e. 10^-18 seconds&quot;</span>]
+        </span>Attoseconds =&gt; NPY_FR_as <span class="string">&quot;as&quot;</span>,
     );
 }
 
-<span class="doccomment">/// Corresponds to the [`datetime64`][scalars-datetime64] scalar type</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// [scalars-datetime64]: https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.datetime64</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">Hash</span>, <span class="ident">PartialOrd</span>, <span class="ident">Ord</span>)]</span>
-<span class="attribute">#[<span class="ident">repr</span>(<span class="ident">transparent</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Datetime</span><span class="op">&lt;</span><span class="ident">U</span>: <span class="ident">Unit</span><span class="op">&gt;</span>(<span class="ident">i64</span>, <span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">U</span><span class="op">&gt;</span>);
+<span class="doccomment">/// Corresponds to the [`datetime64`][scalars-datetime64] scalar type
+///
+/// [scalars-datetime64]: https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.datetime64
+</span><span class="attribute">#[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[repr(transparent)]
+</span><span class="kw">pub struct </span>Datetime&lt;U: Unit&gt;(i64, PhantomData&lt;U&gt;);
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">U</span>: <span class="ident">Unit</span><span class="op">&gt;</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">i64</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Datetime</span><span class="op">&lt;</span><span class="ident">U</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">val</span>: <span class="ident">i64</span>) -&gt; <span class="self">Self</span> {
-        <span class="self">Self</span>(<span class="ident">val</span>, <span class="ident">PhantomData</span>)
+<span class="kw">impl</span>&lt;U: Unit&gt; From&lt;i64&gt; <span class="kw">for </span>Datetime&lt;U&gt; {
+    <span class="kw">fn </span>from(val: i64) -&gt; <span class="self">Self </span>{
+        <span class="self">Self</span>(val, PhantomData)
     }
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">U</span>: <span class="ident">Unit</span><span class="op">&gt;</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Datetime</span><span class="op">&lt;</span><span class="ident">U</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">i64</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">val</span>: <span class="ident">Datetime</span><span class="op">&lt;</span><span class="ident">U</span><span class="op">&gt;</span>) -&gt; <span class="self">Self</span> {
-        <span class="ident">val</span>.<span class="number">0</span>
+<span class="kw">impl</span>&lt;U: Unit&gt; From&lt;Datetime&lt;U&gt;&gt; <span class="kw">for </span>i64 {
+    <span class="kw">fn </span>from(val: Datetime&lt;U&gt;) -&gt; <span class="self">Self </span>{
+        val.<span class="number">0
+    </span>}
+}
+
+<span class="kw">unsafe impl</span>&lt;U: Unit&gt; Element <span class="kw">for </span>Datetime&lt;U&gt; {
+    <span class="kw">const </span>IS_COPY: bool = <span class="bool-val">true</span>;
+
+    <span class="kw">fn </span>get_dtype(py: Python) -&gt; <span class="kw-2">&amp;</span>PyArrayDescr {
+        <span class="kw">static </span>DTYPES: TypeDescriptors = <span class="kw">unsafe </span>{ TypeDescriptors::new(NPY_TYPES::NPY_DATETIME) };
+
+        DTYPES.from_unit(py, U::UNIT)
     }
 }
 
-<span class="kw">unsafe</span> <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">U</span>: <span class="ident">Unit</span><span class="op">&gt;</span> <span class="ident">Element</span> <span class="kw">for</span> <span class="ident">Datetime</span><span class="op">&lt;</span><span class="ident">U</span><span class="op">&gt;</span> {
-    <span class="kw">const</span> <span class="ident">IS_COPY</span>: <span class="ident">bool</span> <span class="op">=</span> <span class="bool-val">true</span>;
-
-    <span class="kw">fn</span> <span class="ident">get_dtype</span>(<span class="ident">py</span>: <span class="ident">Python</span>) -&gt; <span class="kw-2">&amp;</span><span class="ident">PyArrayDescr</span> {
-        <span class="kw">static</span> <span class="ident">DTYPES</span>: <span class="ident">TypeDescriptors</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="ident">TypeDescriptors::new</span>(<span class="ident">NPY_TYPES::NPY_DATETIME</span>) };
-
-        <span class="ident">DTYPES</span>.<span class="ident">from_unit</span>(<span class="ident">py</span>, <span class="ident">U::UNIT</span>)
+<span class="kw">impl</span>&lt;U: Unit&gt; fmt::Debug <span class="kw">for </span>Datetime&lt;U&gt; {
+    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; fmt::Result {
+        <span class="macro">write!</span>(f, <span class="string">&quot;Datetime({} {})&quot;</span>, <span class="self">self</span>.<span class="number">0</span>, U::ABBREV)
     }
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">U</span>: <span class="ident">Unit</span><span class="op">&gt;</span> <span class="ident">fmt::Debug</span> <span class="kw">for</span> <span class="ident">Datetime</span><span class="op">&lt;</span><span class="ident">U</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;mut</span> <span class="ident">fmt::Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) -&gt; <span class="ident">fmt::Result</span> {
-        <span class="macro">write!</span>(<span class="ident">f</span>, <span class="string">&quot;Datetime({} {})&quot;</span>, <span class="self">self</span>.<span class="number">0</span>, <span class="ident">U::ABBREV</span>)
+<span class="doccomment">/// Corresponds to the [`timedelta64`][scalars-datetime64] scalar type
+///
+/// [scalars-timedelta64]: https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.timedelta64
+</span><span class="attribute">#[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[repr(transparent)]
+</span><span class="kw">pub struct </span>Timedelta&lt;U: Unit&gt;(i64, PhantomData&lt;U&gt;);
+
+<span class="kw">impl</span>&lt;U: Unit&gt; From&lt;i64&gt; <span class="kw">for </span>Timedelta&lt;U&gt; {
+    <span class="kw">fn </span>from(val: i64) -&gt; <span class="self">Self </span>{
+        <span class="self">Self</span>(val, PhantomData)
     }
 }
 
-<span class="doccomment">/// Corresponds to the [`timedelta64`][scalars-datetime64] scalar type</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// [scalars-timedelta64]: https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.timedelta64</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">Hash</span>, <span class="ident">PartialOrd</span>, <span class="ident">Ord</span>)]</span>
-<span class="attribute">#[<span class="ident">repr</span>(<span class="ident">transparent</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Timedelta</span><span class="op">&lt;</span><span class="ident">U</span>: <span class="ident">Unit</span><span class="op">&gt;</span>(<span class="ident">i64</span>, <span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">U</span><span class="op">&gt;</span>);
+<span class="kw">impl</span>&lt;U: Unit&gt; From&lt;Timedelta&lt;U&gt;&gt; <span class="kw">for </span>i64 {
+    <span class="kw">fn </span>from(val: Timedelta&lt;U&gt;) -&gt; <span class="self">Self </span>{
+        val.<span class="number">0
+    </span>}
+}
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">U</span>: <span class="ident">Unit</span><span class="op">&gt;</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">i64</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Timedelta</span><span class="op">&lt;</span><span class="ident">U</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">val</span>: <span class="ident">i64</span>) -&gt; <span class="self">Self</span> {
-        <span class="self">Self</span>(<span class="ident">val</span>, <span class="ident">PhantomData</span>)
+<span class="kw">unsafe impl</span>&lt;U: Unit&gt; Element <span class="kw">for </span>Timedelta&lt;U&gt; {
+    <span class="kw">const </span>IS_COPY: bool = <span class="bool-val">true</span>;
+
+    <span class="kw">fn </span>get_dtype(py: Python) -&gt; <span class="kw-2">&amp;</span>PyArrayDescr {
+        <span class="kw">static </span>DTYPES: TypeDescriptors = <span class="kw">unsafe </span>{ TypeDescriptors::new(NPY_TYPES::NPY_TIMEDELTA) };
+
+        DTYPES.from_unit(py, U::UNIT)
     }
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">U</span>: <span class="ident">Unit</span><span class="op">&gt;</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Timedelta</span><span class="op">&lt;</span><span class="ident">U</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">i64</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">val</span>: <span class="ident">Timedelta</span><span class="op">&lt;</span><span class="ident">U</span><span class="op">&gt;</span>) -&gt; <span class="self">Self</span> {
-        <span class="ident">val</span>.<span class="number">0</span>
+<span class="kw">impl</span>&lt;U: Unit&gt; fmt::Debug <span class="kw">for </span>Timedelta&lt;U&gt; {
+    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; fmt::Result {
+        <span class="macro">write!</span>(f, <span class="string">&quot;Timedelta({} {})&quot;</span>, <span class="self">self</span>.<span class="number">0</span>, U::ABBREV)
     }
 }
 
-<span class="kw">unsafe</span> <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">U</span>: <span class="ident">Unit</span><span class="op">&gt;</span> <span class="ident">Element</span> <span class="kw">for</span> <span class="ident">Timedelta</span><span class="op">&lt;</span><span class="ident">U</span><span class="op">&gt;</span> {
-    <span class="kw">const</span> <span class="ident">IS_COPY</span>: <span class="ident">bool</span> <span class="op">=</span> <span class="bool-val">true</span>;
-
-    <span class="kw">fn</span> <span class="ident">get_dtype</span>(<span class="ident">py</span>: <span class="ident">Python</span>) -&gt; <span class="kw-2">&amp;</span><span class="ident">PyArrayDescr</span> {
-        <span class="kw">static</span> <span class="ident">DTYPES</span>: <span class="ident">TypeDescriptors</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="ident">TypeDescriptors::new</span>(<span class="ident">NPY_TYPES::NPY_TIMEDELTA</span>) };
-
-        <span class="ident">DTYPES</span>.<span class="ident">from_unit</span>(<span class="ident">py</span>, <span class="ident">U::UNIT</span>)
-    }
+<span class="kw">struct </span>TypeDescriptors {
+    npy_type: NPY_TYPES,
+    dtypes: UnsafeCell&lt;<span class="prelude-ty">Option</span>&lt;FxHashMap&lt;NPY_DATETIMEUNIT, Py&lt;PyArrayDescr&gt;&gt;&gt;&gt;,
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">U</span>: <span class="ident">Unit</span><span class="op">&gt;</span> <span class="ident">fmt::Debug</span> <span class="kw">for</span> <span class="ident">Timedelta</span><span class="op">&lt;</span><span class="ident">U</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;mut</span> <span class="ident">fmt::Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) -&gt; <span class="ident">fmt::Result</span> {
-        <span class="macro">write!</span>(<span class="ident">f</span>, <span class="string">&quot;Timedelta({} {})&quot;</span>, <span class="self">self</span>.<span class="number">0</span>, <span class="ident">U::ABBREV</span>)
-    }
-}
+<span class="kw">unsafe impl </span>Sync <span class="kw">for </span>TypeDescriptors {}
 
-<span class="kw">struct</span> <span class="ident">TypeDescriptors</span> {
-    <span class="ident">npy_type</span>: <span class="ident">NPY_TYPES</span>,
-    <span class="ident">dtypes</span>: <span class="ident">UnsafeCell</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">FxHashMap</span><span class="op">&lt;</span><span class="ident">NPY_DATETIMEUNIT</span>, <span class="ident">Py</span><span class="op">&lt;</span><span class="ident">PyArrayDescr</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-}
-
-<span class="kw">unsafe</span> <span class="kw">impl</span> <span class="ident">Sync</span> <span class="kw">for</span> <span class="ident">TypeDescriptors</span> {}
-
-<span class="kw">impl</span> <span class="ident">TypeDescriptors</span> {
-    <span class="doccomment">/// `npy_type` must be either `NPY_DATETIME` or `NPY_TIMEDELTA`.</span>
-    <span class="kw">const</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">npy_type</span>: <span class="ident">NPY_TYPES</span>) -&gt; <span class="self">Self</span> {
-        <span class="self">Self</span> {
-            <span class="ident">npy_type</span>,
-            <span class="ident">dtypes</span>: <span class="ident">UnsafeCell::new</span>(<span class="prelude-val">None</span>),
+<span class="kw">impl </span>TypeDescriptors {
+    <span class="doccomment">/// `npy_type` must be either `NPY_DATETIME` or `NPY_TIMEDELTA`.
+    </span><span class="kw">const unsafe fn </span>new(npy_type: NPY_TYPES) -&gt; <span class="self">Self </span>{
+        <span class="self">Self </span>{
+            npy_type,
+            dtypes: UnsafeCell::new(<span class="prelude-val">None</span>),
         }
     }
 
-    <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">clippy::mut_from_ref</span>)]</span>
-    <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut</span> <span class="ident">FxHashMap</span><span class="op">&lt;</span><span class="ident">NPY_DATETIMEUNIT</span>, <span class="ident">Py</span><span class="op">&lt;</span><span class="ident">PyArrayDescr</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        (<span class="kw-2">*</span><span class="self">self</span>.<span class="ident">dtypes</span>.<span class="ident">get</span>()).<span class="ident">get_or_insert_with</span>(<span class="ident">Default::default</span>)
+    <span class="attribute">#[allow(clippy::mut_from_ref)]
+    </span><span class="kw">unsafe fn </span>get(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut </span>FxHashMap&lt;NPY_DATETIMEUNIT, Py&lt;PyArrayDescr&gt;&gt; {
+        (<span class="kw-2">*</span><span class="self">self</span>.dtypes.get()).get_or_insert_with(Default::default)
     }
 
-    <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">clippy::wrong_self_convention</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">from_unit</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="self">self</span>, <span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;py</span><span class="op">&gt;</span>, <span class="ident">unit</span>: <span class="ident">NPY_DATETIMEUNIT</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py</span> <span class="ident">PyArrayDescr</span> {
-        <span class="comment">// SAFETY: We hold the GIL and we do not call into user code which might re-enter.</span>
-        <span class="kw">let</span> <span class="ident">dtypes</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="self">self</span>.<span class="ident">get</span>() };
+    <span class="attribute">#[allow(clippy::wrong_self_convention)]
+    </span><span class="kw">fn </span>from_unit&lt;<span class="lifetime">&#39;py</span>&gt;(<span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span><span class="self">self</span>, py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, unit: NPY_DATETIMEUNIT) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span>PyArrayDescr {
+        <span class="comment">// SAFETY: We hold the GIL and we do not call into user code which might re-enter.
+        </span><span class="kw">let </span>dtypes = <span class="kw">unsafe </span>{ <span class="self">self</span>.get() };
 
-        <span class="kw">match</span> <span class="ident">dtypes</span>.<span class="ident">entry</span>(<span class="ident">unit</span>) {
-            <span class="ident">Entry::Occupied</span>(<span class="ident">entry</span>) =&gt; <span class="ident">entry</span>.<span class="ident">into_mut</span>().<span class="ident">as_ref</span>(<span class="ident">py</span>),
-            <span class="ident">Entry::Vacant</span>(<span class="ident">entry</span>) =&gt; {
-                <span class="kw">let</span> <span class="ident">dtype</span> <span class="op">=</span> <span class="ident">PyArrayDescr::new_from_npy_type</span>(<span class="ident">py</span>, <span class="self">self</span>.<span class="ident">npy_type</span>);
+        <span class="kw">match </span>dtypes.entry(unit) {
+            Entry::Occupied(entry) =&gt; entry.into_mut().as_ref(py),
+            Entry::Vacant(entry) =&gt; {
+                <span class="kw">let </span>dtype = PyArrayDescr::new_from_npy_type(py, <span class="self">self</span>.npy_type);
 
-                <span class="comment">// SAFETY: `self.npy_type` is either `NPY_DATETIME` or `NPY_TIMEDELTA` which implies the type of `c_metadata`.</span>
-                <span class="kw">unsafe</span> {
-                    <span class="kw">let</span> <span class="ident">metadata</span> <span class="op">=</span> <span class="kw-2">&amp;mut</span> <span class="kw-2">*</span>((<span class="kw-2">*</span><span class="ident">dtype</span>.<span class="ident">as_dtype_ptr</span>()).<span class="ident">c_metadata</span>
-                        <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="ident">PyArray_DatetimeDTypeMetaData</span>);
+                <span class="comment">// SAFETY: `self.npy_type` is either `NPY_DATETIME` or `NPY_TIMEDELTA` which implies the type of `c_metadata`.
+                </span><span class="kw">unsafe </span>{
+                    <span class="kw">let </span>metadata = <span class="kw-2">&amp;mut *</span>((<span class="kw-2">*</span>dtype.as_dtype_ptr()).c_metadata
+                        <span class="kw">as </span><span class="kw-2">*mut </span>PyArray_DatetimeDTypeMetaData);
 
-                    <span class="ident">metadata</span>.<span class="ident">meta</span>.<span class="ident">base</span> <span class="op">=</span> <span class="ident">unit</span>;
-                    <span class="ident">metadata</span>.<span class="ident">meta</span>.<span class="ident">num</span> <span class="op">=</span> <span class="number">1</span>;
+                    metadata.meta.base = unit;
+                    metadata.meta.num = <span class="number">1</span>;
                 }
 
-                <span class="ident">entry</span>.<span class="ident">insert</span>(<span class="ident">dtype</span>.<span class="ident">into</span>()).<span class="ident">as_ref</span>(<span class="ident">py</span>)
+                entry.insert(dtype.into()).as_ref(py)
             }
         }
     }
 }
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
-<span class="kw">mod</span> <span class="ident">tests</span> {
-    <span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
+<span class="attribute">#[cfg(test)]
+</span><span class="kw">mod </span>tests {
+    <span class="kw">use super</span>::<span class="kw-2">*</span>;
 
-    <span class="kw">use</span> <span class="ident">pyo3</span>::{
-        <span class="ident">py_run</span>,
-        <span class="ident">types</span>::{<span class="ident">PyDict</span>, <span class="ident">PyModule</span>},
+    <span class="kw">use </span>pyo3::{
+        py_run,
+        types::{PyDict, PyModule},
     };
 
-    <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::array::PyArray1</span>;
+    <span class="kw">use </span><span class="kw">crate</span>::array::PyArray1;
 
-    <span class="attribute">#[<span class="ident">test</span>]</span>
-    <span class="kw">fn</span> <span class="ident">from_python_to_rust</span>() {
-        <span class="ident">Python::with_gil</span>(<span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
-            <span class="kw">let</span> <span class="ident">locals</span> <span class="op">=</span> <span class="ident">py</span>
-                .<span class="ident">eval</span>(<span class="string">&quot;{ &#39;np&#39;: __import__(&#39;numpy&#39;) }&quot;</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>)
-                .<span class="ident">unwrap</span>()
-                .<span class="ident">downcast</span>::<span class="op">&lt;</span><span class="ident">PyDict</span><span class="op">&gt;</span>()
-                .<span class="ident">unwrap</span>();
+    <span class="attribute">#[test]
+    </span><span class="kw">fn </span>from_python_to_rust() {
+        Python::with_gil(|py| {
+            <span class="kw">let </span>locals = py
+                .eval(<span class="string">&quot;{ &#39;np&#39;: __import__(&#39;numpy&#39;) }&quot;</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>)
+                .unwrap()
+                .downcast::&lt;PyDict&gt;()
+                .unwrap();
 
-            <span class="kw">let</span> <span class="ident">array</span> <span class="op">=</span> <span class="ident">py</span>
-                .<span class="ident">eval</span>(
+            <span class="kw">let </span>array = py
+                .eval(
                     <span class="string">&quot;np.array([np.datetime64(&#39;1970-01-01&#39;)])&quot;</span>,
                     <span class="prelude-val">None</span>,
-                    <span class="prelude-val">Some</span>(<span class="ident">locals</span>),
+                    <span class="prelude-val">Some</span>(locals),
                 )
-                .<span class="ident">unwrap</span>()
-                .<span class="ident">downcast</span>::<span class="op">&lt;</span><span class="ident">PyArray1</span><span class="op">&lt;</span><span class="ident">Datetime</span><span class="op">&lt;</span><span class="ident">units::Days</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>()
-                .<span class="ident">unwrap</span>();
+                .unwrap()
+                .downcast::&lt;PyArray1&lt;Datetime&lt;units::Days&gt;&gt;&gt;()
+                .unwrap();
 
-            <span class="kw">let</span> <span class="ident">value</span>: <span class="ident">i64</span> <span class="op">=</span> <span class="ident">array</span>.<span class="ident">get_owned</span>(<span class="number">0</span>).<span class="ident">unwrap</span>().<span class="ident">into</span>();
-            <span class="macro">assert_eq!</span>(<span class="ident">value</span>, <span class="number">0</span>);
+            <span class="kw">let </span>value: i64 = array.get_owned(<span class="number">0</span>).unwrap().into();
+            <span class="macro">assert_eq!</span>(value, <span class="number">0</span>);
         });
     }
 
-    <span class="attribute">#[<span class="ident">test</span>]</span>
-    <span class="kw">fn</span> <span class="ident">from_rust_to_python</span>() {
-        <span class="ident">Python::with_gil</span>(<span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
-            <span class="kw">let</span> <span class="ident">array</span> <span class="op">=</span> <span class="ident">PyArray1</span>::<span class="op">&lt;</span><span class="ident">Timedelta</span><span class="op">&lt;</span><span class="ident">units::Minutes</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::zeros</span>(<span class="ident">py</span>, <span class="number">1</span>, <span class="bool-val">false</span>);
+    <span class="attribute">#[test]
+    </span><span class="kw">fn </span>from_rust_to_python() {
+        Python::with_gil(|py| {
+            <span class="kw">let </span>array = PyArray1::&lt;Timedelta&lt;units::Minutes&gt;&gt;::zeros(py, <span class="number">1</span>, <span class="bool-val">false</span>);
 
-            <span class="kw-2">*</span><span class="ident">array</span>.<span class="ident">readwrite</span>().<span class="ident">get_mut</span>(<span class="number">0</span>).<span class="ident">unwrap</span>() <span class="op">=</span> <span class="ident">Timedelta</span>::<span class="op">&lt;</span><span class="ident">units::Minutes</span><span class="op">&gt;</span><span class="ident">::from</span>(<span class="number">5</span>);
+            <span class="kw-2">*</span>array.readwrite().get_mut(<span class="number">0</span>).unwrap() = Timedelta::&lt;units::Minutes&gt;::from(<span class="number">5</span>);
 
-            <span class="kw">let</span> <span class="ident">np</span> <span class="op">=</span> <span class="ident">py</span>
-                .<span class="ident">eval</span>(<span class="string">&quot;__import__(&#39;numpy&#39;)&quot;</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>)
-                .<span class="ident">unwrap</span>()
-                .<span class="ident">downcast</span>::<span class="op">&lt;</span><span class="ident">PyModule</span><span class="op">&gt;</span>()
-                .<span class="ident">unwrap</span>();
+            <span class="kw">let </span>np = py
+                .eval(<span class="string">&quot;__import__(&#39;numpy&#39;)&quot;</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>)
+                .unwrap()
+                .downcast::&lt;PyModule&gt;()
+                .unwrap();
 
-            <span class="macro">py_run!</span>(<span class="ident">py</span>, <span class="ident">array</span> <span class="ident">np</span>, <span class="string">&quot;assert array.dtype == np.dtype(&#39;timedelta64[m]&#39;)&quot;</span>);
-            <span class="macro">py_run!</span>(<span class="ident">py</span>, <span class="ident">array</span> <span class="ident">np</span>, <span class="string">&quot;assert array[0] == np.timedelta64(5, &#39;m&#39;)&quot;</span>);
+            <span class="macro">py_run!</span>(py, array np, <span class="string">&quot;assert array.dtype == np.dtype(&#39;timedelta64[m]&#39;)&quot;</span>);
+            <span class="macro">py_run!</span>(py, array np, <span class="string">&quot;assert array[0] == np.timedelta64(5, &#39;m&#39;)&quot;</span>);
         });
     }
 
-    <span class="attribute">#[<span class="ident">test</span>]</span>
-    <span class="kw">fn</span> <span class="ident">debug_formatting</span>() {
+    <span class="attribute">#[test]
+    </span><span class="kw">fn </span>debug_formatting() {
         <span class="macro">assert_eq!</span>(
-            <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">Datetime</span>::<span class="op">&lt;</span><span class="ident">units::Days</span><span class="op">&gt;</span><span class="ident">::from</span>(<span class="number">28</span>)),
-            <span class="string">&quot;Datetime(28 d)&quot;</span>
-        );
+            <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, Datetime::&lt;units::Days&gt;::from(<span class="number">28</span>)),
+            <span class="string">&quot;Datetime(28 d)&quot;
+        </span>);
 
         <span class="macro">assert_eq!</span>(
-            <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">Timedelta</span>::<span class="op">&lt;</span><span class="ident">units::Milliseconds</span><span class="op">&gt;</span><span class="ident">::from</span>(<span class="number">160</span>)),
-            <span class="string">&quot;Timedelta(160 ms)&quot;</span>
-        );
+            <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, Timedelta::&lt;units::Milliseconds&gt;::from(<span class="number">160</span>)),
+            <span class="string">&quot;Timedelta(160 ms)&quot;
+        </span>);
     }
 
-    <span class="attribute">#[<span class="ident">test</span>]</span>
-    <span class="kw">fn</span> <span class="ident">unit_conversion</span>() {
-        <span class="attribute">#[<span class="ident">track_caller</span>]</span>
-        <span class="kw">fn</span> <span class="ident">convert</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">Unit</span>, <span class="ident">D</span>: <span class="ident">Unit</span><span class="op">&gt;</span>(<span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>, <span class="ident">expected_value</span>: <span class="ident">i64</span>) {
-            <span class="kw">let</span> <span class="ident">array</span> <span class="op">=</span> <span class="ident">PyArray1</span>::<span class="op">&lt;</span><span class="ident">Timedelta</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::from_slice</span>(<span class="ident">py</span>, <span class="kw-2">&amp;</span>[<span class="ident">Timedelta</span>::<span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span><span class="ident">::from</span>(<span class="number">1</span>)]);
-            <span class="kw">let</span> <span class="ident">array</span> <span class="op">=</span> <span class="ident">array</span>.<span class="ident">cast</span>::<span class="op">&lt;</span><span class="ident">Timedelta</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="bool-val">false</span>).<span class="ident">unwrap</span>();
+    <span class="attribute">#[test]
+    </span><span class="kw">fn </span>unit_conversion() {
+        <span class="attribute">#[track_caller]
+        </span><span class="kw">fn </span>convert&lt;S: Unit, D: Unit&gt;(py: Python&lt;<span class="lifetime">&#39;_</span>&gt;, expected_value: i64) {
+            <span class="kw">let </span>array = PyArray1::&lt;Timedelta&lt;S&gt;&gt;::from_slice(py, <span class="kw-2">&amp;</span>[Timedelta::&lt;S&gt;::from(<span class="number">1</span>)]);
+            <span class="kw">let </span>array = array.cast::&lt;Timedelta&lt;D&gt;&gt;(<span class="bool-val">false</span>).unwrap();
 
-            <span class="kw">let</span> <span class="ident">value</span>: <span class="ident">i64</span> <span class="op">=</span> <span class="ident">array</span>.<span class="ident">get_owned</span>(<span class="number">0</span>).<span class="ident">unwrap</span>().<span class="ident">into</span>();
-            <span class="macro">assert_eq!</span>(<span class="ident">value</span>, <span class="ident">expected_value</span>);
+            <span class="kw">let </span>value: i64 = array.get_owned(<span class="number">0</span>).unwrap().into();
+            <span class="macro">assert_eq!</span>(value, expected_value);
         }
 
-        <span class="ident">Python::with_gil</span>(<span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
-            <span class="ident">convert</span>::<span class="op">&lt;</span><span class="ident">units::Years</span>, <span class="ident">units::Days</span><span class="op">&gt;</span>(<span class="ident">py</span>, (<span class="number">97</span> <span class="op">+</span> <span class="number">400</span> <span class="op">*</span> <span class="number">365</span>) <span class="op">/</span> <span class="number">400</span>);
-            <span class="ident">convert</span>::<span class="op">&lt;</span><span class="ident">units::Months</span>, <span class="ident">units::Days</span><span class="op">&gt;</span>(<span class="ident">py</span>, (<span class="number">97</span> <span class="op">+</span> <span class="number">400</span> <span class="op">*</span> <span class="number">365</span>) <span class="op">/</span> <span class="number">400</span> <span class="op">/</span> <span class="number">12</span>);
+        Python::with_gil(|py| {
+            convert::&lt;units::Years, units::Days&gt;(py, (<span class="number">97 </span>+ <span class="number">400 </span>* <span class="number">365</span>) / <span class="number">400</span>);
+            convert::&lt;units::Months, units::Days&gt;(py, (<span class="number">97 </span>+ <span class="number">400 </span>* <span class="number">365</span>) / <span class="number">400 </span>/ <span class="number">12</span>);
 
-            <span class="ident">convert</span>::<span class="op">&lt;</span><span class="ident">units::Weeks</span>, <span class="ident">units::Seconds</span><span class="op">&gt;</span>(<span class="ident">py</span>, <span class="number">7</span> <span class="op">*</span> <span class="number">24</span> <span class="op">*</span> <span class="number">60</span> <span class="op">*</span> <span class="number">60</span>);
-            <span class="ident">convert</span>::<span class="op">&lt;</span><span class="ident">units::Days</span>, <span class="ident">units::Seconds</span><span class="op">&gt;</span>(<span class="ident">py</span>, <span class="number">24</span> <span class="op">*</span> <span class="number">60</span> <span class="op">*</span> <span class="number">60</span>);
-            <span class="ident">convert</span>::<span class="op">&lt;</span><span class="ident">units::Hours</span>, <span class="ident">units::Seconds</span><span class="op">&gt;</span>(<span class="ident">py</span>, <span class="number">60</span> <span class="op">*</span> <span class="number">60</span>);
-            <span class="ident">convert</span>::<span class="op">&lt;</span><span class="ident">units::Minutes</span>, <span class="ident">units::Seconds</span><span class="op">&gt;</span>(<span class="ident">py</span>, <span class="number">60</span>);
+            convert::&lt;units::Weeks, units::Seconds&gt;(py, <span class="number">7 </span>* <span class="number">24 </span>* <span class="number">60 </span>* <span class="number">60</span>);
+            convert::&lt;units::Days, units::Seconds&gt;(py, <span class="number">24 </span>* <span class="number">60 </span>* <span class="number">60</span>);
+            convert::&lt;units::Hours, units::Seconds&gt;(py, <span class="number">60 </span>* <span class="number">60</span>);
+            convert::&lt;units::Minutes, units::Seconds&gt;(py, <span class="number">60</span>);
 
-            <span class="ident">convert</span>::<span class="op">&lt;</span><span class="ident">units::Seconds</span>, <span class="ident">units::Milliseconds</span><span class="op">&gt;</span>(<span class="ident">py</span>, <span class="number">1_000</span>);
-            <span class="ident">convert</span>::<span class="op">&lt;</span><span class="ident">units::Seconds</span>, <span class="ident">units::Microseconds</span><span class="op">&gt;</span>(<span class="ident">py</span>, <span class="number">1_000_000</span>);
-            <span class="ident">convert</span>::<span class="op">&lt;</span><span class="ident">units::Seconds</span>, <span class="ident">units::Nanoseconds</span><span class="op">&gt;</span>(<span class="ident">py</span>, <span class="number">1_000_000_000</span>);
-            <span class="ident">convert</span>::<span class="op">&lt;</span><span class="ident">units::Seconds</span>, <span class="ident">units::Picoseconds</span><span class="op">&gt;</span>(<span class="ident">py</span>, <span class="number">1_000_000_000_000</span>);
-            <span class="ident">convert</span>::<span class="op">&lt;</span><span class="ident">units::Seconds</span>, <span class="ident">units::Femtoseconds</span><span class="op">&gt;</span>(<span class="ident">py</span>, <span class="number">1_000_000_000_000_000</span>);
+            convert::&lt;units::Seconds, units::Milliseconds&gt;(py, <span class="number">1_000</span>);
+            convert::&lt;units::Seconds, units::Microseconds&gt;(py, <span class="number">1_000_000</span>);
+            convert::&lt;units::Seconds, units::Nanoseconds&gt;(py, <span class="number">1_000_000_000</span>);
+            convert::&lt;units::Seconds, units::Picoseconds&gt;(py, <span class="number">1_000_000_000_000</span>);
+            convert::&lt;units::Seconds, units::Femtoseconds&gt;(py, <span class="number">1_000_000_000_000_000</span>);
 
-            <span class="ident">convert</span>::<span class="op">&lt;</span><span class="ident">units::Femtoseconds</span>, <span class="ident">units::Attoseconds</span><span class="op">&gt;</span>(<span class="ident">py</span>, <span class="number">1_000</span>);
+            convert::&lt;units::Femtoseconds, units::Attoseconds&gt;(py, <span class="number">1_000</span>);
         });
     }
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="numpy" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="numpy" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

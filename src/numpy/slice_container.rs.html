@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/slice_container.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>slice_container.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../numpy/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../numpy/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../numpy/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/slice_container.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>slice_container.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../numpy/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../numpy/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../numpy/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -79,86 +79,86 @@
 <span id="79">79</span>
 <span id="80">80</span>
 <span id="81">81</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">mem</span>, <span class="ident">ptr</span>};
+</pre><pre class="rust"><code><span class="kw">use </span>std::{mem, ptr};
 
-<span class="kw">use</span> <span class="ident">ndarray</span>::{<span class="ident">ArrayBase</span>, <span class="ident">Dimension</span>, <span class="ident">OwnedRepr</span>};
-<span class="kw">use</span> <span class="ident">pyo3::pyclass</span>;
+<span class="kw">use </span>ndarray::{ArrayBase, Dimension, OwnedRepr};
+<span class="kw">use </span>pyo3::pyclass;
 
-<span class="doccomment">/// Utility type to safely store `Box&lt;[_]&gt;` or `Vec&lt;_&gt;` on the Python heap</span>
-<span class="attribute">#[<span class="ident">pyclass</span>]</span>
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">PySliceContainer</span> {
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">ptr</span>: <span class="kw-2">*mut</span> <span class="ident">u8</span>,
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">len</span>: <span class="ident">usize</span>,
-    <span class="ident">cap</span>: <span class="ident">usize</span>,
-    <span class="ident">drop</span>: <span class="kw">unsafe</span> <span class="kw">fn</span>(<span class="kw-2">*mut</span> <span class="ident">u8</span>, <span class="ident">usize</span>, <span class="ident">usize</span>),
+<span class="doccomment">/// Utility type to safely store `Box&lt;[_]&gt;` or `Vec&lt;_&gt;` on the Python heap
+</span><span class="attribute">#[pyclass]
+</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>PySliceContainer {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) ptr: <span class="kw-2">*mut </span>u8,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) len: usize,
+    cap: usize,
+    drop: <span class="kw">unsafe fn</span>(<span class="kw-2">*mut </span>u8, usize, usize),
 }
 
-<span class="kw">unsafe</span> <span class="kw">impl</span> <span class="ident">Send</span> <span class="kw">for</span> <span class="ident">PySliceContainer</span> {}
+<span class="kw">unsafe impl </span>Send <span class="kw">for </span>PySliceContainer {}
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Send</span><span class="op">&gt;</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span>[<span class="ident">T</span>]<span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">PySliceContainer</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">data</span>: <span class="ident">Box</span><span class="op">&lt;</span>[<span class="ident">T</span>]<span class="op">&gt;</span>) -&gt; <span class="self">Self</span> {
-        <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">drop_boxed_slice</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">ptr</span>: <span class="kw-2">*mut</span> <span class="ident">u8</span>, <span class="ident">len</span>: <span class="ident">usize</span>, <span class="ident">_cap</span>: <span class="ident">usize</span>) {
-            <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">Box::from_raw</span>(<span class="ident">ptr::slice_from_raw_parts_mut</span>(<span class="ident">ptr</span> <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="ident">T</span>, <span class="ident">len</span>));
+<span class="kw">impl</span>&lt;T: Send&gt; From&lt;Box&lt;[T]&gt;&gt; <span class="kw">for </span>PySliceContainer {
+    <span class="kw">fn </span>from(data: Box&lt;[T]&gt;) -&gt; <span class="self">Self </span>{
+        <span class="kw">unsafe fn </span>drop_boxed_slice&lt;T&gt;(ptr: <span class="kw-2">*mut </span>u8, len: usize, _cap: usize) {
+            <span class="kw">let _ </span>= Box::from_raw(ptr::slice_from_raw_parts_mut(ptr <span class="kw">as </span><span class="kw-2">*mut </span>T, len));
         }
 
-        <span class="comment">// FIXME(adamreichold): Use `Box::into_raw` when</span>
-        <span class="comment">// `*mut [T]::{as_mut_ptr, len}` become stable and compatible with our MSRV.</span>
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">data</span> <span class="op">=</span> <span class="ident">mem::ManuallyDrop::new</span>(<span class="ident">data</span>);
+        <span class="comment">// FIXME(adamreichold): Use `Box::into_raw` when
+        // `*mut [T]::{as_mut_ptr, len}` become stable and compatible with our MSRV.
+        </span><span class="kw">let </span><span class="kw-2">mut </span>data = mem::ManuallyDrop::new(data);
 
-        <span class="kw">let</span> <span class="ident">ptr</span> <span class="op">=</span> <span class="ident">data</span>.<span class="ident">as_mut_ptr</span>() <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="ident">u8</span>;
-        <span class="kw">let</span> <span class="ident">len</span> <span class="op">=</span> <span class="ident">data</span>.<span class="ident">len</span>();
-        <span class="kw">let</span> <span class="ident">cap</span> <span class="op">=</span> <span class="number">0</span>;
-        <span class="kw">let</span> <span class="ident">drop</span> <span class="op">=</span> <span class="ident">drop_boxed_slice</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>;
+        <span class="kw">let </span>ptr = data.as_mut_ptr() <span class="kw">as </span><span class="kw-2">*mut </span>u8;
+        <span class="kw">let </span>len = data.len();
+        <span class="kw">let </span>cap = <span class="number">0</span>;
+        <span class="kw">let </span>drop = drop_boxed_slice::&lt;T&gt;;
 
-        <span class="self">Self</span> {
-            <span class="ident">ptr</span>,
-            <span class="ident">len</span>,
-            <span class="ident">cap</span>,
-            <span class="ident">drop</span>,
+        <span class="self">Self </span>{
+            ptr,
+            len,
+            cap,
+            drop,
         }
     }
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Send</span><span class="op">&gt;</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">PySliceContainer</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">data</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>) -&gt; <span class="self">Self</span> {
-        <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">drop_vec</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">ptr</span>: <span class="kw-2">*mut</span> <span class="ident">u8</span>, <span class="ident">len</span>: <span class="ident">usize</span>, <span class="ident">cap</span>: <span class="ident">usize</span>) {
-            <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">Vec::from_raw_parts</span>(<span class="ident">ptr</span> <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="ident">T</span>, <span class="ident">len</span>, <span class="ident">cap</span>);
+<span class="kw">impl</span>&lt;T: Send&gt; From&lt;Vec&lt;T&gt;&gt; <span class="kw">for </span>PySliceContainer {
+    <span class="kw">fn </span>from(data: Vec&lt;T&gt;) -&gt; <span class="self">Self </span>{
+        <span class="kw">unsafe fn </span>drop_vec&lt;T&gt;(ptr: <span class="kw-2">*mut </span>u8, len: usize, cap: usize) {
+            <span class="kw">let _ </span>= Vec::from_raw_parts(ptr <span class="kw">as </span><span class="kw-2">*mut </span>T, len, cap);
         }
 
-        <span class="comment">// FIXME(adamreichold): Use `Vec::into_raw_parts`</span>
-        <span class="comment">// when it becomes stable and compatible with our MSRV.</span>
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">data</span> <span class="op">=</span> <span class="ident">mem::ManuallyDrop::new</span>(<span class="ident">data</span>);
+        <span class="comment">// FIXME(adamreichold): Use `Vec::into_raw_parts`
+        // when it becomes stable and compatible with our MSRV.
+        </span><span class="kw">let </span><span class="kw-2">mut </span>data = mem::ManuallyDrop::new(data);
 
-        <span class="kw">let</span> <span class="ident">ptr</span> <span class="op">=</span> <span class="ident">data</span>.<span class="ident">as_mut_ptr</span>() <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="ident">u8</span>;
-        <span class="kw">let</span> <span class="ident">len</span> <span class="op">=</span> <span class="ident">data</span>.<span class="ident">len</span>();
-        <span class="kw">let</span> <span class="ident">cap</span> <span class="op">=</span> <span class="ident">data</span>.<span class="ident">capacity</span>();
-        <span class="kw">let</span> <span class="ident">drop</span> <span class="op">=</span> <span class="ident">drop_vec</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>;
+        <span class="kw">let </span>ptr = data.as_mut_ptr() <span class="kw">as </span><span class="kw-2">*mut </span>u8;
+        <span class="kw">let </span>len = data.len();
+        <span class="kw">let </span>cap = data.capacity();
+        <span class="kw">let </span>drop = drop_vec::&lt;T&gt;;
 
-        <span class="self">Self</span> {
-            <span class="ident">ptr</span>,
-            <span class="ident">len</span>,
-            <span class="ident">cap</span>,
-            <span class="ident">drop</span>,
+        <span class="self">Self </span>{
+            ptr,
+            len,
+            cap,
+            drop,
         }
     }
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">A</span>, <span class="ident">D</span><span class="op">&gt;</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">ArrayBase</span><span class="op">&lt;</span><span class="ident">OwnedRepr</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>, <span class="ident">D</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">PySliceContainer</span>
-<span class="kw">where</span>
-    <span class="ident">A</span>: <span class="ident">Send</span>,
-    <span class="ident">D</span>: <span class="ident">Dimension</span>,
+<span class="kw">impl</span>&lt;A, D&gt; From&lt;ArrayBase&lt;OwnedRepr&lt;A&gt;, D&gt;&gt; <span class="kw">for </span>PySliceContainer
+<span class="kw">where
+    </span>A: Send,
+    D: Dimension,
 {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">data</span>: <span class="ident">ArrayBase</span><span class="op">&lt;</span><span class="ident">OwnedRepr</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>, <span class="ident">D</span><span class="op">&gt;</span>) -&gt; <span class="self">Self</span> {
-        <span class="ident"><span class="self">Self</span>::from</span>(<span class="ident">data</span>.<span class="ident">into_raw_vec</span>())
+    <span class="kw">fn </span>from(data: ArrayBase&lt;OwnedRepr&lt;A&gt;, D&gt;) -&gt; <span class="self">Self </span>{
+        <span class="self">Self</span>::from(data.into_raw_vec())
     }
 }
 
-<span class="kw">impl</span> <span class="ident">Drop</span> <span class="kw">for</span> <span class="ident">PySliceContainer</span> {
-    <span class="kw">fn</span> <span class="ident">drop</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) {
-        <span class="kw">unsafe</span> {
-            (<span class="self">self</span>.<span class="ident">drop</span>)(<span class="self">self</span>.<span class="ident">ptr</span>, <span class="self">self</span>.<span class="ident">len</span>, <span class="self">self</span>.<span class="ident">cap</span>);
+<span class="kw">impl </span>Drop <span class="kw">for </span>PySliceContainer {
+    <span class="kw">fn </span>drop(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
+        <span class="kw">unsafe </span>{
+            (<span class="self">self</span>.drop)(<span class="self">self</span>.ptr, <span class="self">self</span>.len, <span class="self">self</span>.cap);
         }
     }
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="numpy" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="numpy" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>
