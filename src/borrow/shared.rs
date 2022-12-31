@@ -127,7 +127,7 @@ fn insert_shared(py: Python) -> PyResult<*const Shared> {
     let capsule: &PyCapsule = match module.getattr("_RUST_NUMPY_BORROW_CHECKING_API") {
         Ok(capsule) => capsule.try_into()?,
         Err(_err) => {
-            let flags = Box::into_raw(Box::new(BorrowFlags::default()));
+            let flags: *mut BorrowFlags = Box::into_raw(Box::default());
 
             let shared = Shared {
                 version: 1,
