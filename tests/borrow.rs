@@ -355,7 +355,7 @@ fn matrix_from_numpy() {
             let matrix = array.as_matrix();
             assert_eq!(matrix, nalgebra::Matrix3::new(0, 1, 2, 3, 4, 5, 6, 7, 8));
 
-            let matrix: nalgebra::MatrixSlice<
+            let matrix: nalgebra::MatrixView<
                 i32,
                 nalgebra::Const<3>,
                 nalgebra::Const<3>,
@@ -371,7 +371,7 @@ fn matrix_from_numpy() {
             let matrix = array.as_matrix_mut();
             assert_eq!(matrix, nalgebra::Matrix3::new(0, 1, 2, 3, 4, 5, 6, 7, 8));
 
-            let matrix: nalgebra::MatrixSliceMut<
+            let matrix: nalgebra::MatrixViewMut<
                 i32,
                 nalgebra::Const<3>,
                 nalgebra::Const<3>,
@@ -391,7 +391,7 @@ fn matrix_from_numpy() {
             let matrix = array.as_matrix();
             assert_eq!(matrix, nalgebra::Matrix3x1::new(0, 1, 2));
 
-            let matrix: nalgebra::MatrixSlice<i32, nalgebra::Const<3>, nalgebra::Const<1>> =
+            let matrix: nalgebra::MatrixView<i32, nalgebra::Const<3>, nalgebra::Const<1>> =
                 array.try_as_matrix().unwrap();
             assert_eq!(matrix, nalgebra::Matrix3x1::new(0, 1, 2));
         }
@@ -402,7 +402,7 @@ fn matrix_from_numpy() {
             let matrix = array.as_matrix_mut();
             assert_eq!(matrix, nalgebra::Matrix3x1::new(0, 1, 2));
 
-            let matrix: nalgebra::MatrixSliceMut<i32, nalgebra::Const<3>, nalgebra::Const<1>> =
+            let matrix: nalgebra::MatrixViewMut<i32, nalgebra::Const<3>, nalgebra::Const<1>> =
                 array.try_as_matrix_mut().unwrap();
             assert_eq!(matrix, nalgebra::Matrix3x1::new(0, 1, 2));
         }
@@ -412,7 +412,7 @@ fn matrix_from_numpy() {
         let array = PyArray::<i32, _>::zeros(py, (2, 2, 2), false);
         let array = array.readonly();
 
-        let matrix: Option<nalgebra::DMatrixSlice<i32, nalgebra::Dynamic, nalgebra::Dynamic>> =
+        let matrix: Option<nalgebra::DMatrixView<i32, nalgebra::Dyn, nalgebra::Dyn>> =
             array.try_as_matrix();
         assert!(matrix.is_none());
     });
@@ -426,7 +426,7 @@ fn matrix_from_numpy() {
             .unwrap();
         let array = array.readonly();
 
-        let matrix: Option<nalgebra::DMatrixSlice<i32, nalgebra::Dynamic, nalgebra::Dynamic>> =
+        let matrix: Option<nalgebra::DMatrixView<i32, nalgebra::Dyn, nalgebra::Dyn>> =
             array.try_as_matrix();
         assert!(matrix.is_none());
     });
@@ -436,7 +436,7 @@ fn matrix_from_numpy() {
         let array = array.readonly();
 
         let matrix: Option<
-            nalgebra::MatrixSlice<
+            nalgebra::MatrixView<
                 i32,
                 nalgebra::Const<2>,
                 nalgebra::Const<3>,
@@ -447,7 +447,7 @@ fn matrix_from_numpy() {
         assert!(matrix.is_none());
 
         let matrix: Option<
-            nalgebra::MatrixSlice<
+            nalgebra::MatrixView<
                 i32,
                 nalgebra::Const<3>,
                 nalgebra::Const<2>,
@@ -458,7 +458,7 @@ fn matrix_from_numpy() {
         assert!(matrix.is_none());
 
         let matrix: Option<
-            nalgebra::MatrixSlice<
+            nalgebra::MatrixView<
                 i32,
                 nalgebra::Const<3>,
                 nalgebra::Const<3>,
@@ -469,7 +469,7 @@ fn matrix_from_numpy() {
         assert!(matrix.is_none());
 
         let matrix: Option<
-            nalgebra::MatrixSlice<
+            nalgebra::MatrixView<
                 i32,
                 nalgebra::Const<3>,
                 nalgebra::Const<3>,
