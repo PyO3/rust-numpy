@@ -1101,7 +1101,7 @@ where
         Some((shape, strides))
     }
 
-    /// Try to convert this array into a [`nalgebra::MatrixSlice`] using the given shape and strides.
+    /// Try to convert this array into a [`nalgebra::MatrixView`] using the given shape and strides.
     ///
     /// # Safety
     ///
@@ -1109,7 +1109,7 @@ where
     #[doc(alias = "nalgebra")]
     pub unsafe fn try_as_matrix<R, C, RStride, CStride>(
         &self,
-    ) -> Option<nalgebra::MatrixSlice<N, R, C, RStride, CStride>>
+    ) -> Option<nalgebra::MatrixView<N, R, C, RStride, CStride>>
     where
         R: nalgebra::Dim,
         C: nalgebra::Dim,
@@ -1118,12 +1118,12 @@ where
     {
         let (shape, strides) = self.try_as_matrix_shape_strides()?;
 
-        let storage = nalgebra::SliceStorage::from_raw_parts(self.data(), shape, strides);
+        let storage = nalgebra::ViewStorage::from_raw_parts(self.data(), shape, strides);
 
         Some(nalgebra::Matrix::from_data(storage))
     }
 
-    /// Try to convert this array into a [`nalgebra::MatrixSliceMut`] using the given shape and strides.
+    /// Try to convert this array into a [`nalgebra::MatrixViewMut`] using the given shape and strides.
     ///
     /// # Safety
     ///
@@ -1131,7 +1131,7 @@ where
     #[doc(alias = "nalgebra")]
     pub unsafe fn try_as_matrix_mut<R, C, RStride, CStride>(
         &self,
-    ) -> Option<nalgebra::MatrixSliceMut<N, R, C, RStride, CStride>>
+    ) -> Option<nalgebra::MatrixViewMut<N, R, C, RStride, CStride>>
     where
         R: nalgebra::Dim,
         C: nalgebra::Dim,
@@ -1140,7 +1140,7 @@ where
     {
         let (shape, strides) = self.try_as_matrix_shape_strides()?;
 
-        let storage = nalgebra::SliceStorageMut::from_raw_parts(self.data(), shape, strides);
+        let storage = nalgebra::ViewStorageMut::from_raw_parts(self.data(), shape, strides);
 
         Some(nalgebra::Matrix::from_data(storage))
     }

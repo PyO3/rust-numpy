@@ -274,11 +274,11 @@ where
     N: nalgebra::Scalar + Element,
     D: Dimension,
 {
-    /// Try to convert this array into a [`nalgebra::MatrixSlice`] using the given shape and strides.
+    /// Try to convert this array into a [`nalgebra::MatrixView`] using the given shape and strides.
     #[doc(alias = "nalgebra")]
     pub fn try_as_matrix<R, C, RStride, CStride>(
         &self,
-    ) -> Option<nalgebra::MatrixSlice<N, R, C, RStride, CStride>>
+    ) -> Option<nalgebra::MatrixView<N, R, C, RStride, CStride>>
     where
         R: nalgebra::Dim,
         C: nalgebra::Dim,
@@ -294,13 +294,13 @@ impl<'py, N> PyReadonlyArray<'py, N, Ix1>
 where
     N: nalgebra::Scalar + Element,
 {
-    /// Convert this one-dimensional array into a [`nalgebra::DMatrixSlice`] using dynamic strides.
+    /// Convert this one-dimensional array into a [`nalgebra::DMatrixView`] using dynamic strides.
     ///
     /// # Panics
     ///
     /// Panics if the array has negative strides.
     #[doc(alias = "nalgebra")]
-    pub fn as_matrix(&self) -> nalgebra::DMatrixSlice<N, nalgebra::Dynamic, nalgebra::Dynamic> {
+    pub fn as_matrix(&self) -> nalgebra::DMatrixView<N, nalgebra::Dyn, nalgebra::Dyn> {
         self.try_as_matrix().unwrap()
     }
 }
@@ -310,13 +310,13 @@ impl<'py, N> PyReadonlyArray<'py, N, Ix2>
 where
     N: nalgebra::Scalar + Element,
 {
-    /// Convert this two-dimensional array into a [`nalgebra::DMatrixSlice`] using dynamic strides.
+    /// Convert this two-dimensional array into a [`nalgebra::DMatrixView`] using dynamic strides.
     ///
     /// # Panics
     ///
     /// Panics if the array has negative strides.
     #[doc(alias = "nalgebra")]
-    pub fn as_matrix(&self) -> nalgebra::DMatrixSlice<N, nalgebra::Dynamic, nalgebra::Dynamic> {
+    pub fn as_matrix(&self) -> nalgebra::DMatrixView<N, nalgebra::Dyn, nalgebra::Dyn> {
         self.try_as_matrix().unwrap()
     }
 }
@@ -456,11 +456,11 @@ where
     N: nalgebra::Scalar + Element,
     D: Dimension,
 {
-    /// Try to convert this array into a [`nalgebra::MatrixSliceMut`] using the given shape and strides.
+    /// Try to convert this array into a [`nalgebra::MatrixViewMut`] using the given shape and strides.
     #[doc(alias = "nalgebra")]
     pub fn try_as_matrix_mut<R, C, RStride, CStride>(
         &self,
-    ) -> Option<nalgebra::MatrixSliceMut<N, R, C, RStride, CStride>>
+    ) -> Option<nalgebra::MatrixViewMut<N, R, C, RStride, CStride>>
     where
         R: nalgebra::Dim,
         C: nalgebra::Dim,
@@ -476,15 +476,13 @@ impl<'py, N> PyReadwriteArray<'py, N, Ix1>
 where
     N: nalgebra::Scalar + Element,
 {
-    /// Convert this one-dimensional array into a [`nalgebra::DMatrixSliceMut`] using dynamic strides.
+    /// Convert this one-dimensional array into a [`nalgebra::DMatrixViewMut`] using dynamic strides.
     ///
     /// # Panics
     ///
     /// Panics if the array has negative strides.
     #[doc(alias = "nalgebra")]
-    pub fn as_matrix_mut(
-        &self,
-    ) -> nalgebra::DMatrixSliceMut<N, nalgebra::Dynamic, nalgebra::Dynamic> {
+    pub fn as_matrix_mut(&self) -> nalgebra::DMatrixViewMut<N, nalgebra::Dyn, nalgebra::Dyn> {
         self.try_as_matrix_mut().unwrap()
     }
 }
@@ -494,15 +492,13 @@ impl<'py, N> PyReadwriteArray<'py, N, Ix2>
 where
     N: nalgebra::Scalar + Element,
 {
-    /// Convert this two-dimensional array into a [`nalgebra::DMatrixSliceMut`] using dynamic strides.
+    /// Convert this two-dimensional array into a [`nalgebra::DMatrixViewMut`] using dynamic strides.
     ///
     /// # Panics
     ///
     /// Panics if the array has negative strides.
     #[doc(alias = "nalgebra")]
-    pub fn as_matrix_mut(
-        &self,
-    ) -> nalgebra::DMatrixSliceMut<N, nalgebra::Dynamic, nalgebra::Dynamic> {
+    pub fn as_matrix_mut(&self) -> nalgebra::DMatrixViewMut<N, nalgebra::Dyn, nalgebra::Dyn> {
         self.try_as_matrix_mut().unwrap()
     }
 }
