@@ -402,30 +402,19 @@
 <span id="402">402</span>
 <span id="403">403</span>
 <span id="404">404</span>
-<span id="405">405</span>
-<span id="406">406</span>
-<span id="407">407</span>
-<span id="408">408</span>
-<span id="409">409</span>
-<span id="410">410</span>
-<span id="411">411</span>
-<span id="412">412</span>
-<span id="413">413</span>
-<span id="414">414</span>
-<span id="415">415</span>
-<span id="416">416</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Low-Level binding for [Array API](https://numpy.org/doc/stable/reference/c-api/array.html)
 //!
 //! Note that NumPy&#39;s low-level allocation functions `PyArray_{malloc,realloc,free}` are not part of this module.
 //! The reason is that they would be re-exports of the `PyMem_Raw{Malloc,Realloc,Free}` functions from PyO3,
 //! but those are not unconditionally exported, i.e. they are not available when using the limited Python C-API.
 
-</span><span class="kw">use </span>std::cell::Cell;
-<span class="kw">use </span>std::os::raw::<span class="kw-2">*</span>;
-<span class="kw">use </span>std::ptr::null;
+</span><span class="kw">use </span>std::os::raw::<span class="kw-2">*</span>;
 
 <span class="kw">use </span>libc::FILE;
-<span class="kw">use </span>pyo3::ffi::{<span class="self">self</span>, PyObject, PyTypeObject};
+<span class="kw">use </span>pyo3::{
+    ffi::{<span class="self">self</span>, PyObject, PyTypeObject},
+    once_cell::GILOnceCell,
+};
 
 <span class="kw">use </span><span class="kw">crate</span>::npyffi::<span class="kw-2">*</span>;
 
@@ -450,34 +439,21 @@
 ///     assert_eq!(array.readonly().as_slice().unwrap(), &amp;[2, 3, 4]);
 /// })
 /// ```
-</span><span class="kw">pub static </span>PY_ARRAY_API: PyArrayAPI = PyArrayAPI::new();
+</span><span class="kw">pub static </span>PY_ARRAY_API: PyArrayAPI = PyArrayAPI(GILOnceCell::new());
 
 <span class="doccomment">/// See [PY_ARRAY_API] for more.
-</span><span class="kw">pub struct </span>PyArrayAPI {
-    api: Cell&lt;<span class="kw-2">*const *const </span>c_void&gt;,
-}
+</span><span class="kw">pub struct </span>PyArrayAPI(GILOnceCell&lt;<span class="kw-2">*const *const </span>c_void&gt;);
 
 <span class="kw">unsafe impl </span>Send <span class="kw">for </span>PyArrayAPI {}
 
 <span class="kw">unsafe impl </span>Sync <span class="kw">for </span>PyArrayAPI {}
 
 <span class="kw">impl </span>PyArrayAPI {
-    <span class="kw">const fn </span>new() -&gt; <span class="self">Self </span>{
-        <span class="self">Self </span>{
-            api: Cell::new(null()),
-        }
-    }
-    <span class="attribute">#[cold]
-    </span><span class="kw">fn </span>init(<span class="kw-2">&amp;</span><span class="self">self</span>, py: Python) -&gt; <span class="kw-2">*const *const </span>c_void {
-        <span class="kw">let </span>api = get_numpy_api(py, MOD_NAME, CAPSULE_NAME);
-        <span class="self">self</span>.api.set(api);
-        api
-    }
     <span class="kw">unsafe fn </span>get(<span class="kw-2">&amp;</span><span class="self">self</span>, py: Python, offset: isize) -&gt; <span class="kw-2">*const *const </span>c_void {
-        <span class="kw">let </span><span class="kw-2">mut </span>api = <span class="self">self</span>.api.get();
-        <span class="kw">if </span>api.is_null() {
-            api = <span class="self">self</span>.init(py);
-        }
+        <span class="kw">let </span>api = <span class="self">self
+            </span>.<span class="number">0
+            </span>.get_or_init(py, || get_numpy_api(py, MOD_NAME, CAPSULE_NAME));
+
         api.offset(offset)
     }
 }
@@ -831,4 +807,4 @@
     }
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="numpy" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0 (69f9c33d7 2022-12-12)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="numpy" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.1 (90743e729 2023-01-10)" ></div></body></html>
