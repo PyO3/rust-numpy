@@ -4,12 +4,13 @@
 //! The reason is that they would be re-exports of the `PyMem_Raw{Malloc,Realloc,Free}` functions from PyO3,
 //! but those are not unconditionally exported, i.e. they are not available when using the limited Python C-API.
 
-use std::cell::Cell;
 use std::os::raw::*;
-use std::ptr::null;
 
 use libc::FILE;
-use pyo3::ffi::{self, PyObject, PyTypeObject};
+use pyo3::{
+    ffi::{self, PyObject, PyTypeObject},
+    once_cell::GILOnceCell,
+};
 
 use crate::npyffi::*;
 
@@ -34,34 +35,21 @@ const CAPSULE_NAME: &str = "_ARRAY_API";
 ///     assert_eq!(array.readonly().as_slice().unwrap(), &[2, 3, 4]);
 /// })
 /// ```
-pub static PY_ARRAY_API: PyArrayAPI = PyArrayAPI::new();
+pub static PY_ARRAY_API: PyArrayAPI = PyArrayAPI(GILOnceCell::new());
 
 /// See [PY_ARRAY_API] for more.
-pub struct PyArrayAPI {
-    api: Cell<*const *const c_void>,
-}
+pub struct PyArrayAPI(GILOnceCell<*const *const c_void>);
 
 unsafe impl Send for PyArrayAPI {}
 
 unsafe impl Sync for PyArrayAPI {}
 
 impl PyArrayAPI {
-    const fn new() -> Self {
-        Self {
-            api: Cell::new(null()),
-        }
-    }
-    #[cold]
-    fn init(&self, py: Python) -> *const *const c_void {
-        let api = get_numpy_api(py, MOD_NAME, CAPSULE_NAME);
-        self.api.set(api);
-        api
-    }
     unsafe fn get(&self, py: Python, offset: isize) -> *const *const c_void {
-        let mut api = self.api.get();
-        if api.is_null() {
-            api = self.init(py);
-        }
+        let api = self
+            .0
+            .get_or_init(py, || get_numpy_api(py, MOD_NAME, CAPSULE_NAME));
+
         api.offset(offset)
     }
 }

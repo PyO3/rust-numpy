@@ -1,10 +1,8 @@
 //! Low-Level binding for [UFunc API](https://numpy.org/doc/stable/reference/c-api/ufunc.html)
 
-use std::cell::Cell;
 use std::os::raw::*;
-use std::ptr::null;
 
-use pyo3::ffi::PyObject;
+use pyo3::{ffi::PyObject, once_cell::GILOnceCell};
 
 use crate::npyffi::*;
 
@@ -13,33 +11,20 @@ const CAPSULE_NAME: &str = "_UFUNC_API";
 
 /// A global variable which stores a ['capsule'](https://docs.python.org/3/c-api/capsule.html)
 /// pointer to [Numpy UFunc API](https://numpy.org/doc/stable/reference/c-api/ufunc.html).
-pub static PY_UFUNC_API: PyUFuncAPI = PyUFuncAPI::new();
+pub static PY_UFUNC_API: PyUFuncAPI = PyUFuncAPI(GILOnceCell::new());
 
-pub struct PyUFuncAPI {
-    api: Cell<*const *const c_void>,
-}
+pub struct PyUFuncAPI(GILOnceCell<*const *const c_void>);
 
 unsafe impl Send for PyUFuncAPI {}
 
 unsafe impl Sync for PyUFuncAPI {}
 
 impl PyUFuncAPI {
-    const fn new() -> Self {
-        Self {
-            api: Cell::new(null()),
-        }
-    }
-    #[cold]
-    fn init(&self, py: Python) -> *const *const c_void {
-        let api = get_numpy_api(py, MOD_NAME, CAPSULE_NAME);
-        self.api.set(api);
-        api
-    }
     unsafe fn get(&self, py: Python, offset: isize) -> *const *const c_void {
-        let mut api = self.api.get();
-        if api.is_null() {
-            api = self.init(py);
-        }
+        let api = self
+            .0
+            .get_or_init(py, || get_numpy_api(py, MOD_NAME, CAPSULE_NAME));
+
         api.offset(offset)
     }
 }
