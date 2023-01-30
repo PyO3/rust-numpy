@@ -2,7 +2,6 @@
 
 import argparse
 import os
-import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -128,17 +127,7 @@ def format_(args):
 
 
 def prune(args):
-    shutil.rmtree("target", ignore_errors=True)
-    Path("Cargo.lock").unlink(missing_ok=True)
-
-    for target_dir in gen_examples("target"):
-        shutil.rmtree(target_dir, ignore_errors=True)
-
-    for lock_file in gen_examples("Cargo.lock"):
-        lock_file.unlink(missing_ok=True)
-
-    for nox_dir in gen_examples(".nox"):
-        shutil.rmtree(nox_dir, ignore_errors=True)
+    run("git", "clean", "--force", "-x", ".")
 
 
 if __name__ == "__main__":
