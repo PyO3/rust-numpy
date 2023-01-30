@@ -85,7 +85,7 @@
 <span class="kw">use </span>pyo3::pyclass;
 
 <span class="doccomment">/// Utility type to safely store `Box&lt;[_]&gt;` or `Vec&lt;_&gt;` on the Python heap
-</span><span class="attribute">#[pyclass]
+</span><span class="attribute">#[pyclass(frozen)]
 </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>PySliceContainer {
     <span class="kw">pub</span>(<span class="kw">crate</span>) ptr: <span class="kw-2">*mut </span>u8,
     <span class="kw">pub</span>(<span class="kw">crate</span>) len: usize,
