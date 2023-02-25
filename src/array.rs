@@ -1248,32 +1248,6 @@ impl<T: Element> PyArray<T, Ix1> {
         vec.into_pyarray(py)
     }
 
-    /// Construct a one-dimensional array from an [`ExactSizeIterator`].
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use numpy::PyArray;
-    /// use pyo3::Python;
-    ///
-    /// Python::with_gil(|py| {
-    ///     let pyarray = PyArray::from_exact_iter(py, [1, 2, 3, 4, 5].into_iter().copied());
-    ///     assert_eq!(pyarray.readonly().as_slice().unwrap(), &[1, 2, 3, 4, 5]);
-    /// });
-    /// ```
-    #[deprecated(
-        since = "0.17.0",
-        note = "`from_exact_iter` is deprecated as it does not provide any benefit over `from_iter`."
-    )]
-    #[inline(always)]
-    pub fn from_exact_iter<I>(py: Python<'_>, iter: I) -> &Self
-    where
-        I: IntoIterator<Item = T>,
-        I::IntoIter: ExactSizeIterator,
-    {
-        Self::from_iter(py, iter)
-    }
-
     /// Construct a one-dimensional array from an [`Iterator`].
     ///
     /// If no reliable [`size_hint`][Iterator::size_hint] is available,
