@@ -5,6 +5,7 @@
 use std::{
     marker::PhantomData,
     mem,
+    ops::Deref,
     os::raw::{c_int, c_void},
     ptr, slice,
 };
@@ -16,7 +17,7 @@ use ndarray::{
 };
 use num_traits::AsPrimitive;
 use pyo3::{
-    ffi, pyobject_native_type_named, types::PyModule, AsPyPointer, FromPyObject, IntoPy, Py, PyAny,
+    ffi, pyobject_native_type_base, types::PyModule, AsPyPointer, FromPyObject, IntoPy, Py, PyAny,
     PyClassInitializer, PyDowncastError, PyErr, PyNativeType, PyObject, PyResult, PyTypeInfo,
     Python, ToPyObject,
 };
@@ -24,13 +25,14 @@ use pyo3::{
 use crate::borrow::{PyReadonlyArray, PyReadwriteArray};
 use crate::cold;
 use crate::convert::{ArrayExt, IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
-use crate::dtype::{Element, PyArrayDescr};
+use crate::dtype::Element;
 use crate::error::{
     BorrowError, DimensionalityError, FromVecError, IgnoreError, NotContiguousError, TypeError,
     DIMENSIONALITY_MISMATCH_ERR, MAX_DIMENSIONALITY_ERR,
 };
 use crate::npyffi::{self, npy_intp, NPY_ORDER, PY_ARRAY_API};
 use crate::slice_container::PySliceContainer;
+use crate::untyped_array::PyUntypedArray;
 
 /// A safe, statically-typed wrapper for NumPy's [`ndarray`][ndarray] class.
 ///
@@ -135,7 +137,50 @@ unsafe impl<T: Element, D: Dimension> PyTypeInfo for PyArray<T, D> {
     }
 }
 
-pyobject_native_type_named!(PyArray<T, D>; T; D);
+pyobject_native_type_base!(PyArray<T, D>; T; D);
+
+impl<T, D> AsRef<PyAny> for PyArray<T, D> {
+    #[inline]
+    fn as_ref(&self) -> &PyAny {
+        &self.0
+    }
+}
+
+impl<T, D> Deref for PyArray<T, D> {
+    type Target = PyUntypedArray;
+
+    #[inline]
+    fn deref(&self) -> &Self::Target {
+        unsafe { &*(self as *const Self as *const PyUntypedArray) }
+    }
+}
+
+impl<T, D> AsPyPointer for PyArray<T, D> {
+    #[inline]
+    fn as_ptr(&self) -> *mut ffi::PyObject {
+        self.0.as_ptr()
+    }
+}
+
+impl<T, D> IntoPy<Py<PyArray<T, D>>> for &'_ PyArray<T, D> {
+    #[inline]
+    fn into_py(self, py: Python<'_>) -> Py<PyArray<T, D>> {
+        unsafe { Py::from_borrowed_ptr(py, self.as_ptr()) }
+    }
+}
+
+impl<T, D> From<&'_ PyArray<T, D>> for Py<PyArray<T, D>> {
+    #[inline]
+    fn from(other: &PyArray<T, D>) -> Self {
+        unsafe { Py::from_borrowed_ptr(other.py(), other.as_ptr()) }
+    }
+}
+
+impl<'a, T, D> From<&'a PyArray<T, D>> for &'a PyAny {
+    fn from(ob: &'a PyArray<T, D>) -> Self {
+        unsafe { &*(ob as *const PyArray<T, D> as *const PyAny) }
+    }
+}
 
 impl<T, D> IntoPy<PyObject> for PyArray<T, D> {
     fn into_py(self, py: Python<'_>) -> PyObject {
@@ -150,78 +195,6 @@ impl<'py, T: Element, D: Dimension> FromPyObject<'py> for &'py PyArray<T, D> {
 }
 
 impl<T, D> PyArray<T, D> {
-    /// Returns a raw pointer to the underlying [`PyArrayObject`][npyffi::PyArrayObject].
-    #[inline]
-    pub fn as_array_ptr(&self) -> *mut npyffi::PyArrayObject {
-        self.as_ptr() as _
-    }
-
-    /// Returns the `dtype` of the array.
-    ///
-    /// See also [`ndarray.dtype`][ndarray-dtype] and [`PyArray_DTYPE`][PyArray_DTYPE].
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use numpy::{dtype, PyArray};
-    /// use pyo3::Python;
-    ///
-    /// Python::with_gil(|py| {
-    ///    let array = PyArray::from_vec(py, vec![1_i32, 2, 3]);
-    ///
-    ///    assert!(array.dtype().is_equiv_to(dtype::<i32>(py)));
-    /// });
-    /// ```
-    ///
-    /// [ndarray-dtype]: https://numpy.org/doc/stable/reference/generated/numpy.ndarray.dtype.html
-    /// [PyArray_DTYPE]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_DTYPE
-    pub fn dtype(&self) -> &PyArrayDescr {
-        unsafe {
-            let descr_ptr = (*self.as_array_ptr()).descr;
-            self.py().from_borrowed_ptr(descr_ptr as _)
-        }
-    }
-
-    #[inline(always)]
-    pub(crate) fn check_flags(&self, flags: c_int) -> bool {
-        unsafe { (*self.as_array_ptr()).flags & flags != 0 }
-    }
-
-    /// Returns `true` if the internal data of the array is contiguous,
-    /// indepedently of whether C-style/row-major or Fortran-style/column-major.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use numpy::PyArray1;
-    /// use pyo3::{types::IntoPyDict, Python};
-    ///
-    /// Python::with_gil(|py| {
-    ///     let array = PyArray1::arange(py, 0, 10, 1);
-    ///     assert!(array.is_contiguous());
-    ///
-    ///     let view = py
-    ///         .eval("array[::2]", None, Some([("array", array)].into_py_dict(py)))
-    ///         .unwrap()
-    ///         .downcast::<PyArray1<i32>>()
-    ///         .unwrap();
-    ///     assert!(!view.is_contiguous());
-    /// });
-    /// ```
-    pub fn is_contiguous(&self) -> bool {
-        self.check_flags(npyffi::NPY_ARRAY_C_CONTIGUOUS | npyffi::NPY_ARRAY_F_CONTIGUOUS)
-    }
-
-    /// Returns `true` if the internal data of the array is Fortran-style/column-major contiguous.
-    pub fn is_fortran_contiguous(&self) -> bool {
-        self.check_flags(npyffi::NPY_ARRAY_F_CONTIGUOUS)
-    }
-
-    /// Returns `true` if the internal data of the array is C-style/row-major contiguous.
-    pub fn is_c_contiguous(&self) -> bool {
-        self.check_flags(npyffi::NPY_ARRAY_C_CONTIGUOUS)
-    }
-
     /// Turn `&PyArray<T,D>` into `Py<PyArray<T,D>>`,
     /// i.e. a pointer into Python's heap which is independent of the GIL lifetime.
     ///
@@ -264,105 +237,6 @@ impl<T, D> PyArray<T, D> {
         py.from_borrowed_ptr(ptr)
     }
 
-    /// Returns the number of dimensions of the array.
-    ///
-    /// See also [`ndarray.ndim`][ndarray-ndim] and [`PyArray_NDIM`][PyArray_NDIM].
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use numpy::PyArray3;
-    /// use pyo3::Python;
-    ///
-    /// Python::with_gil(|py| {
-    ///     let arr = PyArray3::<f64>::zeros(py, [4, 5, 6], false);
-    ///
-    ///     assert_eq!(arr.ndim(), 3);
-    /// });
-    /// ```
-    ///
-    /// [ndarray-ndim]: https://numpy.org/doc/stable/reference/generated/numpy.ndarray.ndim.html
-    /// [PyArray_NDIM]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_NDIM
-    #[inline]
-    pub fn ndim(&self) -> usize {
-        unsafe { (*self.as_array_ptr()).nd as usize }
-    }
-
-    /// Returns a slice indicating how many bytes to advance when iterating along each axis.
-    ///
-    /// See also [`ndarray.strides`][ndarray-strides] and [`PyArray_STRIDES`][PyArray_STRIDES].
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use numpy::PyArray3;
-    /// use pyo3::Python;
-    ///
-    /// Python::with_gil(|py| {
-    ///     let arr = PyArray3::<f64>::zeros(py, [4, 5, 6], false);
-    ///
-    ///     assert_eq!(arr.strides(), &[240, 48, 8]);
-    /// });
-    /// ```
-    /// [ndarray-strides]: https://numpy.org/doc/stable/reference/generated/numpy.ndarray.strides.html
-    /// [PyArray_STRIDES]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_STRIDES
-    #[inline]
-    pub fn strides(&self) -> &[isize] {
-        let n = self.ndim();
-        if n == 0 {
-            cold();
-            return &[];
-        }
-        let ptr = self.as_array_ptr();
-        unsafe {
-            let p = (*ptr).strides;
-            slice::from_raw_parts(p, n)
-        }
-    }
-
-    /// Returns a slice which contains dimmensions of the array.
-    ///
-    /// See also [`ndarray.shape`][ndaray-shape] and [`PyArray_DIMS`][PyArray_DIMS].
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use numpy::PyArray3;
-    /// use pyo3::Python;
-    ///
-    /// Python::with_gil(|py| {
-    ///     let arr = PyArray3::<f64>::zeros(py, [4, 5, 6], false);
-    ///
-    ///     assert_eq!(arr.shape(), &[4, 5, 6]);
-    /// });
-    /// ```
-    ///
-    /// [ndarray-shape]: https://numpy.org/doc/stable/reference/generated/numpy.ndarray.shape.html
-    /// [PyArray_DIMS]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_DIMS
-    #[inline]
-    pub fn shape(&self) -> &[usize] {
-        let n = self.ndim();
-        if n == 0 {
-            cold();
-            return &[];
-        }
-        let ptr = self.as_array_ptr();
-        unsafe {
-            let p = (*ptr).dimensions as *mut usize;
-            slice::from_raw_parts(p, n)
-        }
-    }
-
-    /// Calculates the total number of elements in the array.
-    pub fn len(&self) -> usize {
-        self.shape().iter().product()
-    }
-
-    /// Returns `true` if the there are no elements in the array.
-    pub fn is_empty(&self) -> bool {
-        self.shape().iter().any(|dim| *dim == 0)
-    }
-
     /// Returns a pointer to the first element of the array.
     #[inline(always)]
     pub fn data(&self) -> *mut T {
@@ -401,7 +275,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         Ok(array)
     }
 
-    /// Same as [`shape`][Self::shape], but returns `D` insead of `&[usize]`.
+    /// Same as [`shape`][PyUntypedArray::shape], but returns `D` insead of `&[usize]`.
     #[inline(always)]
     pub fn dims(&self) -> D {
         D::from_dimension(&Dim(self.shape())).expect(DIMENSIONALITY_MISMATCH_ERR)
@@ -1499,7 +1373,7 @@ impl<T: Element, D> PyArray<T, D> {
 
     /// Extends or truncates the dimensions of an array.
     ///
-    /// This method works only on [contiguous][`Self::is_contiguous`] arrays.
+    /// This method works only on [contiguous][PyUntypedArray::is_contiguous] arrays.
     /// Missing elements will be initialized as if calling [`zeros`][Self::zeros].
     ///
     /// See also [`ndarray.resize`][ndarray-resize] and [`PyArray_Resize`][PyArray_Resize].

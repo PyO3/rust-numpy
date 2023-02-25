@@ -83,6 +83,7 @@ mod error;
 pub mod npyffi;
 mod slice_container;
 mod sum_products;
+mod untyped_array;
 
 pub use ndarray;
 pub use pyo3;
@@ -105,6 +106,7 @@ pub use crate::dtype::{dtype, Complex32, Complex64, Element, PyArrayDescr};
 pub use crate::error::{BorrowError, FromVecError, NotContiguousError};
 pub use crate::npyffi::{PY_ARRAY_API, PY_UFUNC_API};
 pub use crate::sum_products::{dot, einsum, inner};
+pub use crate::untyped_array::PyUntypedArray;
 
 pub use ndarray::{array, Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};
 
