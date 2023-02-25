@@ -1,6 +1,7 @@
 # Changelog
 
 - Unreleased
+  - Drop deprecated `PyArray::from_exact_iter` as it does not provide any benefits over `PyArray::from_iter`. ([#370](https://github.com/PyO3/rust-numpy/pull/370))
 
 - v0.18.0
   - Add conversions from and to datatypes provided by the [`nalgebra` crate](https://nalgebra.org/). ([#347](https://github.com/PyO3/rust-numpy/pull/347))
