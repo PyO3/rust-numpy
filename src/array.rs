@@ -151,7 +151,7 @@ impl<T, D> Deref for PyArray<T, D> {
 
     #[inline]
     fn deref(&self) -> &Self::Target {
-        unsafe { &*(self as *const Self as *const PyUntypedArray) }
+        self.as_untyped()
     }
 }
 
@@ -195,6 +195,12 @@ impl<'py, T: Element, D: Dimension> FromPyObject<'py> for &'py PyArray<T, D> {
 }
 
 impl<T, D> PyArray<T, D> {
+    /// Access an untyped representation of this array.
+    #[inline(always)]
+    pub fn as_untyped(&self) -> &PyUntypedArray {
+        unsafe { &*(self as *const Self as *const PyUntypedArray) }
+    }
+
     /// Turn `&PyArray<T,D>` into `Py<PyArray<T,D>>`,
     /// i.e. a pointer into Python's heap which is independent of the GIL lifetime.
     ///
