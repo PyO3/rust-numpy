@@ -14,7 +14,7 @@
 //!
 #![cfg_attr(
     feature = "nalgebra",
-    doc = "Integration with [`nalgebra`] is rovided via an implementation of [`ToPyArray`] for [`nalgebra::Matrix`] to convert nalgebra matrices into NumPy arrays
+    doc = "Integration with [`nalgebra`] is provided via an implementation of [`ToPyArray`] for [`nalgebra::Matrix`] to convert nalgebra matrices into NumPy arrays
 as well as the [`PyReadonlyArray::try_as_matrix`] and [`PyReadwriteArray::try_as_matrix_mut`] methods to treat NumPy array as nalgebra matrix slices.
 "
 )]
