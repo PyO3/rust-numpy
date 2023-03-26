@@ -1058,7 +1058,7 @@ impl<D: Dimension> PyArray<PyObject, D> {
     ///
     ///     let pyarray = PyArray::from_owned_object_array(py, array);
     ///
-    ///     assert!(pyarray.readonly().as_array().get(0).unwrap().as_ref(py).is_instance_of::<CustomElement>().unwrap());
+    ///     assert!(pyarray.readonly().as_array().get(0).unwrap().as_ref(py).is_instance_of::<CustomElement>());
     /// });
     /// ```
     pub fn from_owned_object_array<'py, T>(py: Python<'py>, mut arr: Array<Py<T>, D>) -> &'py Self {
