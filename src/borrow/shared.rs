@@ -1,12 +1,14 @@
-use std::cell::Cell;
 use std::collections::hash_map::Entry;
 use std::ffi::{c_void, CString};
+use std::mem::forget;
 use std::os::raw::{c_char, c_int};
-use std::ptr::null;
 use std::slice::from_raw_parts;
 
 use num_integer::gcd;
-use pyo3::{exceptions::PyTypeError, types::PyCapsule, PyResult, PyTryInto, Python};
+use pyo3::{
+    exceptions::PyTypeError, once_cell::GILOnceCell, types::PyCapsule, Py, PyResult, PyTryInto,
+    Python,
+};
 use rustc_hash::FxHashMap;
 
 use crate::array::get_array_module;
@@ -98,25 +100,23 @@ unsafe extern "C" fn release_mut_shared(flags: *mut c_void, array: *mut PyArrayO
 
 // This global state is a cache used to access the shared borrow checking API from this extension:
 
-struct SharedPtr(Cell<*const Shared>);
+struct SharedPtr(GILOnceCell<*const Shared>);
+
+unsafe impl Send for SharedPtr {}
 
 unsafe impl Sync for SharedPtr {}
 
-static SHARED: SharedPtr = SharedPtr(Cell::new(null()));
+static SHARED: SharedPtr = SharedPtr(GILOnceCell::new());
 
 fn get_or_insert_shared<'py>(py: Python<'py>) -> PyResult<&'py Shared> {
-    let mut shared = SHARED.0.get();
-
-    if shared.is_null() {
-        shared = insert_shared(py)?;
-    }
+    let shared = SHARED.0.get_or_try_init(py, || insert_shared(py))?;
 
     // SAFETY: We inserted the capsule if it was missing
     // and verified that it contains a compatible version.
-    Ok(unsafe { &*shared })
+    Ok(unsafe { &**shared })
 }
 
-// This function will publish this extensions version of the shared borrow checking API
+// This function will publish this extension's version of the shared borrow checking API
 // as a capsule placed at `numpy.core.multiarray._RUST_NUMPY_BORROW_CHECKING_API` and
 // immediately initialize the cache used access it from this extension.
 
@@ -161,9 +161,11 @@ fn insert_shared(py: Python) -> PyResult<*const Shared> {
         )));
     }
 
-    let shared = capsule.pointer() as *const Shared;
-    SHARED.0.set(shared);
-    Ok(shared)
+    // Intentionally leak a reference to the capsule
+    // so we can safely cache a pointer into its interior.
+    forget(Py::<PyCapsule>::from(capsule));
+
+    Ok(capsule.pointer() as *const Shared)
 }
 
 // These entry points will be used to access the shared borrow checking API from this extension:
