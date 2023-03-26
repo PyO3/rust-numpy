@@ -57,13 +57,13 @@
 //! [scalars-datetime64]: https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.datetime64
 //! [scalars-timedelta64]: https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.timedelta64
 
-use std::cell::UnsafeCell;
+use std::cell::RefCell;
 use std::collections::hash_map::Entry;
 use std::fmt;
 use std::hash::Hash;
 use std::marker::PhantomData;
 
-use pyo3::{Py, Python};
+use pyo3::{sync::GILProtected, Py, Python};
 use rustc_hash::FxHashMap;
 
 use crate::dtype::{Element, PyArrayDescr};
@@ -206,32 +206,25 @@ impl<U: Unit> fmt::Debug for Timedelta<U> {
 
 struct TypeDescriptors {
     npy_type: NPY_TYPES,
-    dtypes: UnsafeCell<Option<FxHashMap<NPY_DATETIMEUNIT, Py<PyArrayDescr>>>>,
+    #[allow(clippy::type_complexity)]
+    dtypes: GILProtected<RefCell<Option<FxHashMap<NPY_DATETIMEUNIT, Py<PyArrayDescr>>>>>,
 }
-
-unsafe impl Sync for TypeDescriptors {}
 
 impl TypeDescriptors {
     /// `npy_type` must be either `NPY_DATETIME` or `NPY_TIMEDELTA`.
     const unsafe fn new(npy_type: NPY_TYPES) -> Self {
         Self {
             npy_type,
-            dtypes: UnsafeCell::new(None),
+            dtypes: GILProtected::new(RefCell::new(None)),
         }
-    }
-
-    #[allow(clippy::mut_from_ref)]
-    unsafe fn get(&self) -> &mut FxHashMap<NPY_DATETIMEUNIT, Py<PyArrayDescr>> {
-        (*self.dtypes.get()).get_or_insert_with(Default::default)
     }
 
     #[allow(clippy::wrong_self_convention)]
     fn from_unit<'py>(&'py self, py: Python<'py>, unit: NPY_DATETIMEUNIT) -> &'py PyArrayDescr {
-        // SAFETY: We hold the GIL and we do not call into user code which might re-enter.
-        let dtypes = unsafe { self.get() };
+        let mut dtypes = self.dtypes.get(py).borrow_mut();
 
-        match dtypes.entry(unit) {
-            Entry::Occupied(entry) => entry.into_mut().as_ref(py),
+        match dtypes.get_or_insert_with(Default::default).entry(unit) {
+            Entry::Occupied(entry) => entry.into_mut().clone().into_ref(py),
             Entry::Vacant(entry) => {
                 let dtype = PyArrayDescr::new_from_npy_type(py, self.npy_type);
 
@@ -244,7 +237,7 @@ impl TypeDescriptors {
                     metadata.meta.num = 1;
                 }
 
-                entry.insert(dtype.into()).as_ref(py)
+                entry.insert(dtype.into()).clone().into_ref(py)
             }
         }
     }
