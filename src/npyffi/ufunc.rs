@@ -23,7 +23,8 @@ impl PyUFuncAPI {
     unsafe fn get(&self, py: Python, offset: isize) -> *const *const c_void {
         let api = self
             .0
-            .get_or_init(py, || get_numpy_api(py, MOD_NAME, CAPSULE_NAME));
+            .get_or_try_init(py, || get_numpy_api(py, MOD_NAME, CAPSULE_NAME))
+            .expect("Failed to access NumPy ufunc API capsule");
 
         api.offset(offset)
     }
