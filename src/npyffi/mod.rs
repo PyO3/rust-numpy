@@ -9,21 +9,25 @@
     clippy::missing_safety_doc
 )]
 
-use pyo3::{ffi, Python};
-use std::ffi::CString;
+use std::mem::forget;
 use std::os::raw::c_void;
-use std::ptr::null_mut;
 
-fn get_numpy_api(_py: Python, module: &str, capsule: &str) -> *const *const c_void {
-    let module = CString::new(module).unwrap();
-    let capsule = CString::new(capsule).unwrap();
-    unsafe {
-        let module = ffi::PyImport_ImportModule(module.as_ptr());
-        assert!(!module.is_null(), "Failed to import NumPy module");
-        let capsule = ffi::PyObject_GetAttrString(module as _, capsule.as_ptr());
-        assert!(!capsule.is_null(), "Failed to get NumPy API capsule");
-        ffi::PyCapsule_GetPointer(capsule, null_mut()) as _
-    }
+use pyo3::{
+    types::{PyCapsule, PyModule},
+    Py, PyResult, PyTryInto, Python,
+};
+
+fn get_numpy_api(py: Python, module: &str, capsule: &str) -> PyResult<*const *const c_void> {
+    let module = PyModule::import(py, module)?;
+    let capsule: &PyCapsule = module.getattr(capsule)?.try_into()?;
+
+    let api = capsule.pointer() as *const *const c_void;
+
+    // Intentionally leak a reference to the capsule
+    // so we can safely cache a pointer into its interior.
+    forget(Py::<PyCapsule>::from(capsule));
+
+    Ok(api)
 }
 
 // Implements wrappers for NumPy's Array and UFunc API
