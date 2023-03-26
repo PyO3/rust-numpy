@@ -184,8 +184,8 @@ fn is_instance() {
     Python::with_gil(|py| {
         let arr = PyArray2::<f64>::zeros(py, [3, 5], false);
 
-        assert!(arr.is_instance_of::<PyArray2<f64>>().unwrap());
-        assert!(!arr.is_instance_of::<PyList>().unwrap());
+        assert!(arr.is_instance_of::<PyArray2<f64>>());
+        assert!(!arr.is_instance_of::<PyList>());
     });
 }
 

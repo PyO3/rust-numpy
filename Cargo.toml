@@ -22,11 +22,11 @@ num-complex = ">= 0.2, < 0.5"
 num-integer = "0.1"
 num-traits = "0.2"
 ndarray = ">= 0.13, < 0.16"
-pyo3 = { version = "0.18", default-features = false, features = ["macros"] }
+pyo3 = { version = "0.19", default-features = false, features = ["macros"] }
 rustc-hash = "1.1"
 
 [dev-dependencies]
-pyo3 = { version = "0.18", default-features = false, features = ["auto-initialize"] }
+pyo3 = { version = "0.19", default-features = false, features = ["auto-initialize"] }
 nalgebra = { version = "0.32", default-features = false, features = ["std"] }
 
 [package.metadata.docs.rs]
