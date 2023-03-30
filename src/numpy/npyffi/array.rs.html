@@ -402,6 +402,7 @@
 <a href="#402" id="402">402</a>
 <a href="#403" id="403">403</a>
 <a href="#404" id="404">404</a>
+<a href="#405" id="405">405</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Low-Level binding for [Array API](https://numpy.org/doc/stable/reference/c-api/array.html)
 //!
 //! Note that NumPy&#39;s low-level allocation functions `PyArray_{malloc,realloc,free}` are not part of this module.
@@ -452,7 +453,8 @@
     <span class="kw">unsafe fn </span>get(<span class="kw-2">&amp;</span><span class="self">self</span>, py: Python, offset: isize) -&gt; <span class="kw-2">*const *const </span>c_void {
         <span class="kw">let </span>api = <span class="self">self
             </span>.<span class="number">0
-            </span>.get_or_init(py, || get_numpy_api(py, MOD_NAME, CAPSULE_NAME));
+            </span>.get_or_try_init(py, || get_numpy_api(py, MOD_NAME, CAPSULE_NAME))
+            .expect(<span class="string">&quot;Failed to access NumPy array API capsule&quot;</span>);
 
         api.offset(offset)
     }
@@ -807,4 +809,4 @@
     }
 }
 </code></pre></div>
-</section></main><div id="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="numpy" data-themes="" data-resource-suffix="" data-rustdoc-version="1.68.0 (2c8cc3432 2023-03-06)" data-search-js="search-98d53477a794af0b.js" data-settings-js="settings-c3c521c753752a1a.js" data-settings-css="settings-08ddfdda51b8ee2e.css" ></div></body></html>
+</section></main><div id="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="numpy" data-themes="" data-resource-suffix="" data-rustdoc-version="1.68.1 (8460ca823 2023-03-20)" data-search-js="search-98d53477a794af0b.js" data-settings-js="settings-c3c521c753752a1a.js" data-settings-css="settings-08ddfdda51b8ee2e.css" ></div></body></html>

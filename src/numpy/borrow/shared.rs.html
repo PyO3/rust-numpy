@@ -990,15 +990,19 @@
 <a href="#990" id="990">990</a>
 <a href="#991" id="991">991</a>
 <a href="#992" id="992">992</a>
-</pre><pre class="rust"><code><span class="kw">use </span>std::cell::Cell;
-<span class="kw">use </span>std::collections::hash_map::Entry;
+<a href="#993" id="993">993</a>
+<a href="#994" id="994">994</a>
+</pre><pre class="rust"><code><span class="kw">use </span>std::collections::hash_map::Entry;
 <span class="kw">use </span>std::ffi::{c_void, CString};
+<span class="kw">use </span>std::mem::forget;
 <span class="kw">use </span>std::os::raw::{c_char, c_int};
-<span class="kw">use </span>std::ptr::null;
 <span class="kw">use </span>std::slice::from_raw_parts;
 
 <span class="kw">use </span>num_integer::gcd;
-<span class="kw">use </span>pyo3::{exceptions::PyTypeError, types::PyCapsule, PyResult, PyTryInto, Python};
+<span class="kw">use </span>pyo3::{
+    exceptions::PyTypeError, once_cell::GILOnceCell, types::PyCapsule, Py, PyResult, PyTryInto,
+    Python,
+};
 <span class="kw">use </span>rustc_hash::FxHashMap;
 
 <span class="kw">use </span><span class="kw">crate</span>::array::get_array_module;
@@ -1090,25 +1094,23 @@
 
 <span class="comment">// This global state is a cache used to access the shared borrow checking API from this extension:
 
-</span><span class="kw">struct </span>SharedPtr(Cell&lt;<span class="kw-2">*const </span>Shared&gt;);
+</span><span class="kw">struct </span>SharedPtr(GILOnceCell&lt;<span class="kw-2">*const </span>Shared&gt;);
+
+<span class="kw">unsafe impl </span>Send <span class="kw">for </span>SharedPtr {}
 
 <span class="kw">unsafe impl </span>Sync <span class="kw">for </span>SharedPtr {}
 
-<span class="kw">static </span>SHARED: SharedPtr = SharedPtr(Cell::new(null()));
+<span class="kw">static </span>SHARED: SharedPtr = SharedPtr(GILOnceCell::new());
 
 <span class="kw">fn </span>get_or_insert_shared&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;) -&gt; PyResult&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span>Shared&gt; {
-    <span class="kw">let </span><span class="kw-2">mut </span>shared = SHARED.<span class="number">0</span>.get();
-
-    <span class="kw">if </span>shared.is_null() {
-        shared = insert_shared(py)<span class="question-mark">?</span>;
-    }
+    <span class="kw">let </span>shared = SHARED.<span class="number">0</span>.get_or_try_init(py, || insert_shared(py))<span class="question-mark">?</span>;
 
     <span class="comment">// SAFETY: We inserted the capsule if it was missing
     // and verified that it contains a compatible version.
-    </span><span class="prelude-val">Ok</span>(<span class="kw">unsafe </span>{ <span class="kw-2">&amp;*</span>shared })
+    </span><span class="prelude-val">Ok</span>(<span class="kw">unsafe </span>{ <span class="kw-2">&amp;**</span>shared })
 }
 
-<span class="comment">// This function will publish this extensions version of the shared borrow checking API
+<span class="comment">// This function will publish this extension&#39;s version of the shared borrow checking API
 // as a capsule placed at `numpy.core.multiarray._RUST_NUMPY_BORROW_CHECKING_API` and
 // immediately initialize the cache used access it from this extension.
 
@@ -1153,9 +1155,11 @@
         )));
     }
 
-    <span class="kw">let </span>shared = capsule.pointer() <span class="kw">as </span><span class="kw-2">*const </span>Shared;
-    SHARED.<span class="number">0</span>.set(shared);
-    <span class="prelude-val">Ok</span>(shared)
+    <span class="comment">// Intentionally leak a reference to the capsule
+    // so we can safely cache a pointer into its interior.
+    </span>forget(Py::&lt;PyCapsule&gt;::from(capsule));
+
+    <span class="prelude-val">Ok</span>(capsule.pointer() <span class="kw">as </span><span class="kw-2">*const </span>Shared)
 }
 
 <span class="comment">// These entry points will be used to access the shared borrow checking API from this extension:
@@ -1983,4 +1987,4 @@
     }
 }
 </code></pre></div>
-</section></main><div id="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="numpy" data-themes="" data-resource-suffix="" data-rustdoc-version="1.68.0 (2c8cc3432 2023-03-06)" data-search-js="search-98d53477a794af0b.js" data-settings-js="settings-c3c521c753752a1a.js" data-settings-css="settings-08ddfdda51b8ee2e.css" ></div></body></html>
+</section></main><div id="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="numpy" data-themes="" data-resource-suffix="" data-rustdoc-version="1.68.1 (8460ca823 2023-03-20)" data-search-js="search-98d53477a794af0b.js" data-settings-js="settings-c3c521c753752a1a.js" data-settings-css="settings-08ddfdda51b8ee2e.css" ></div></body></html>

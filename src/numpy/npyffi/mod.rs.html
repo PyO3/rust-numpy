@@ -49,6 +49,10 @@
 <a href="#49" id="49">49</a>
 <a href="#50" id="50">50</a>
 <a href="#51" id="51">51</a>
+<a href="#52" id="52">52</a>
+<a href="#53" id="53">53</a>
+<a href="#54" id="54">54</a>
+<a href="#55" id="55">55</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Low-Level bindings for NumPy C API.
 //!
 //! &lt;https://numpy.org/doc/stable/reference/c-api&gt;
@@ -60,21 +64,25 @@
     clippy::missing_safety_doc
 )]
 
-</span><span class="kw">use </span>pyo3::{ffi, Python};
-<span class="kw">use </span>std::ffi::CString;
+</span><span class="kw">use </span>std::mem::forget;
 <span class="kw">use </span>std::os::raw::c_void;
-<span class="kw">use </span>std::ptr::null_mut;
 
-<span class="kw">fn </span>get_numpy_api(_py: Python, module: <span class="kw-2">&amp;</span>str, capsule: <span class="kw-2">&amp;</span>str) -&gt; <span class="kw-2">*const *const </span>c_void {
-    <span class="kw">let </span>module = CString::new(module).unwrap();
-    <span class="kw">let </span>capsule = CString::new(capsule).unwrap();
-    <span class="kw">unsafe </span>{
-        <span class="kw">let </span>module = ffi::PyImport_ImportModule(module.as_ptr());
-        <span class="macro">assert!</span>(!module.is_null(), <span class="string">&quot;Failed to import NumPy module&quot;</span>);
-        <span class="kw">let </span>capsule = ffi::PyObject_GetAttrString(module <span class="kw">as _</span>, capsule.as_ptr());
-        <span class="macro">assert!</span>(!capsule.is_null(), <span class="string">&quot;Failed to get NumPy API capsule&quot;</span>);
-        ffi::PyCapsule_GetPointer(capsule, null_mut()) <span class="kw">as _
-    </span>}
+<span class="kw">use </span>pyo3::{
+    types::{PyCapsule, PyModule},
+    Py, PyResult, PyTryInto, Python,
+};
+
+<span class="kw">fn </span>get_numpy_api(py: Python, module: <span class="kw-2">&amp;</span>str, capsule: <span class="kw-2">&amp;</span>str) -&gt; PyResult&lt;<span class="kw-2">*const *const </span>c_void&gt; {
+    <span class="kw">let </span>module = PyModule::import(py, module)<span class="question-mark">?</span>;
+    <span class="kw">let </span>capsule: <span class="kw-2">&amp;</span>PyCapsule = module.getattr(capsule)<span class="question-mark">?</span>.try_into()<span class="question-mark">?</span>;
+
+    <span class="kw">let </span>api = capsule.pointer() <span class="kw">as </span><span class="kw-2">*const *const </span>c_void;
+
+    <span class="comment">// Intentionally leak a reference to the capsule
+    // so we can safely cache a pointer into its interior.
+    </span>forget(Py::&lt;PyCapsule&gt;::from(capsule));
+
+    <span class="prelude-val">Ok</span>(api)
 }
 
 <span class="comment">// Implements wrappers for NumPy&#39;s Array and UFunc API
@@ -101,4 +109,4 @@
 <span class="kw">pub use </span><span class="self">self</span>::types::<span class="kw-2">*</span>;
 <span class="kw">pub use </span><span class="self">self</span>::ufunc::<span class="kw-2">*</span>;
 </code></pre></div>
-</section></main><div id="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="numpy" data-themes="" data-resource-suffix="" data-rustdoc-version="1.68.0 (2c8cc3432 2023-03-06)" data-search-js="search-98d53477a794af0b.js" data-settings-js="settings-c3c521c753752a1a.js" data-settings-css="settings-08ddfdda51b8ee2e.css" ></div></body></html>
+</section></main><div id="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="numpy" data-themes="" data-resource-suffix="" data-rustdoc-version="1.68.1 (8460ca823 2023-03-20)" data-search-js="search-98d53477a794af0b.js" data-settings-js="settings-c3c521c753752a1a.js" data-settings-css="settings-08ddfdda51b8ee2e.css" ></div></body></html>
