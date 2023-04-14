@@ -140,7 +140,7 @@ this will currently depend on both version `0.13.1` and `0.15.3` of `ndarray` by
 even though `0.13.1` is within the range `>= 0.13, < 0.16`. To fix this, you can run
 
 ```sh
-cargo update ---package ndarray:0.15.3 --precise 0.13.1
+cargo update --package ndarray:0.15.3 --precise 0.13.1
 ```
 
 to achieve a single dependency on version `0.13.1` of `ndarray`.
