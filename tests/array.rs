@@ -5,7 +5,7 @@ use half::f16;
 use ndarray::{array, s, Array1, Dim};
 use numpy::{
     dtype, get_array_module, npyffi::NPY_ORDER, pyarray, PyArray, PyArray1, PyArray2, PyArrayDescr,
-    PyArrayDyn, ToPyArray,
+    PyArrayDyn, PyFixedString, PyFixedUnicode, ToPyArray,
 };
 use pyo3::{
     py_run, pyclass, pymethods,
@@ -560,5 +560,154 @@ fn half_works() {
             array np,
             "np.testing.assert_array_almost_equal(array, np.array([[2, 4], [6, 8]], dtype='float16'))"
         );
+    });
+}
+
+#[test]
+fn ascii_strings_with_explicit_dtype_works() {
+    Python::with_gil(|py| {
+        let np = py.eval("__import__('numpy')", None, None).unwrap();
+        let locals = [("np", np)].into_py_dict(py);
+
+        let array = py
+            .eval(
+                "np.array([b'foo', b'bar', b'foobar'], dtype='S6')",
+                None,
+                Some(locals),
+            )
+            .unwrap()
+            .downcast::<PyArray1<PyFixedString<6>>>()
+            .unwrap();
+
+        {
+            let array = array.readonly();
+            let array = array.as_array();
+
+            assert_eq!(array[0].0, [b'f', b'o', b'o', 0, 0, 0]);
+            assert_eq!(array[1].0, [b'b', b'a', b'r', 0, 0, 0]);
+            assert_eq!(array[2].0, [b'f', b'o', b'o', b'b', b'a', b'r']);
+        }
+
+        {
+            let mut array = array.readwrite();
+            let mut array = array.as_array_mut();
+
+            array[2].0[5] = b'z';
+        }
+
+        py_run!(py, array np, "assert array[2] == b'foobaz'");
+    });
+}
+
+#[test]
+fn unicode_strings_with_explicit_dtype_works() {
+    Python::with_gil(|py| {
+        let np = py.eval("__import__('numpy')", None, None).unwrap();
+        let locals = [("np", np)].into_py_dict(py);
+
+        let array = py
+            .eval(
+                "np.array(['foo', 'bar', 'foobar'], dtype='U6')",
+                None,
+                Some(locals),
+            )
+            .unwrap()
+            .downcast::<PyArray1<PyFixedUnicode<6>>>()
+            .unwrap();
+
+        {
+            let array = array.readonly();
+            let array = array.as_array();
+
+            assert_eq!(array[0].0, [b'f' as _, b'o' as _, b'o' as _, 0, 0, 0]);
+            assert_eq!(array[1].0, [b'b' as _, b'a' as _, b'r' as _, 0, 0, 0]);
+            assert_eq!(
+                array[2].0,
+                [b'f' as _, b'o' as _, b'o' as _, b'b' as _, b'a' as _, b'r' as _]
+            );
+        }
+
+        {
+            let mut array = array.readwrite();
+            let mut array = array.as_array_mut();
+
+            array[2].0[5] = b'z' as _;
+        }
+
+        py_run!(py, array np, "assert array[2] == 'foobaz'");
+    });
+}
+
+#[test]
+fn ascii_strings_ignore_byteorder() {
+    Python::with_gil(|py| {
+        let np = py.eval("__import__('numpy')", None, None).unwrap();
+        let locals = [("np", np)].into_py_dict(py);
+
+        let native_endian_works = py
+            .eval(
+                "np.array([b'foo', b'bar'], dtype='=S3')",
+                None,
+                Some(locals),
+            )
+            .unwrap()
+            .downcast::<PyArray1<PyFixedString<3>>>()
+            .is_ok();
+
+        let little_endian_works = py
+            .eval(
+                "np.array(['bfoo', b'bar'], dtype='<S3')",
+                None,
+                Some(locals),
+            )
+            .unwrap()
+            .downcast::<PyArray1<PyFixedString<3>>>()
+            .is_ok();
+
+        let big_endian_works = py
+            .eval(
+                "np.array([b'foo', b'bar'], dtype='>S3')",
+                None,
+                Some(locals),
+            )
+            .unwrap()
+            .downcast::<PyArray1<PyFixedString<3>>>()
+            .is_ok();
+
+        match (native_endian_works, little_endian_works, big_endian_works) {
+            (true, true, true) => (),
+            _ => panic!("All byteorders should work",),
+        }
+    });
+}
+
+#[test]
+fn unicode_strings_respect_byteorder() {
+    Python::with_gil(|py| {
+        let np = py.eval("__import__('numpy')", None, None).unwrap();
+        let locals = [("np", np)].into_py_dict(py);
+
+        let native_endian_works = py
+            .eval("np.array(['foo', 'bar'], dtype='=U3')", None, Some(locals))
+            .unwrap()
+            .downcast::<PyArray1<PyFixedUnicode<3>>>()
+            .is_ok();
+
+        let little_endian_works = py
+            .eval("np.array(['foo', 'bar'], dtype='<U3')", None, Some(locals))
+            .unwrap()
+            .downcast::<PyArray1<PyFixedUnicode<3>>>()
+            .is_ok();
+
+        let big_endian_works = py
+            .eval("np.array(['foo', 'bar'], dtype='>U3')", None, Some(locals))
+            .unwrap()
+            .downcast::<PyArray1<PyFixedUnicode<3>>>()
+            .is_ok();
+
+        match (native_endian_works, little_endian_works, big_endian_works) {
+            (true, true, false) | (true, false, true) => (),
+            _ => panic!("Only native byteorder should work"),
+        }
     });
 }

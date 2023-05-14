@@ -223,8 +223,8 @@ impl TypeDescriptors {
     fn from_unit<'py>(&'py self, py: Python<'py>, unit: NPY_DATETIMEUNIT) -> &'py PyArrayDescr {
         let mut dtypes = self.dtypes.get(py).borrow_mut();
 
-        match dtypes.get_or_insert_with(Default::default).entry(unit) {
-            Entry::Occupied(entry) => entry.into_mut().clone().into_ref(py),
+        let dtype = match dtypes.get_or_insert_with(Default::default).entry(unit) {
+            Entry::Occupied(entry) => entry.into_mut(),
             Entry::Vacant(entry) => {
                 let dtype = PyArrayDescr::new_from_npy_type(py, self.npy_type);
 
@@ -237,9 +237,11 @@ impl TypeDescriptors {
                     metadata.meta.num = 1;
                 }
 
-                entry.insert(dtype.into()).clone().into_ref(py)
+                entry.insert(dtype.into())
             }
-        }
+        };
+
+        dtype.clone().into_ref(py)
     }
 }
 

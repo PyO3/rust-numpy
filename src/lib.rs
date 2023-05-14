@@ -82,6 +82,7 @@ mod dtype;
 mod error;
 pub mod npyffi;
 mod slice_container;
+mod strings;
 mod sum_products;
 mod untyped_array;
 
@@ -105,6 +106,7 @@ pub use crate::convert::{IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
 pub use crate::dtype::{dtype, Complex32, Complex64, Element, PyArrayDescr};
 pub use crate::error::{BorrowError, FromVecError, NotContiguousError};
 pub use crate::npyffi::{PY_ARRAY_API, PY_UFUNC_API};
+pub use crate::strings::{PyFixedString, PyFixedUnicode};
 pub use crate::sum_products::{dot, einsum, inner};
 pub use crate::untyped_array::PyUntypedArray;
 
