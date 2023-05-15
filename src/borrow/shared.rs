@@ -125,7 +125,7 @@ fn insert_shared(py: Python) -> PyResult<*const Shared> {
     let module = get_array_module(py)?;
 
     let capsule: &PyCapsule = match module.getattr("_RUST_NUMPY_BORROW_CHECKING_API") {
-        Ok(capsule) => capsule.try_into()?,
+        Ok(capsule) => PyTryInto::try_into(capsule)?,
         Err(_err) => {
             let flags: *mut BorrowFlags = Box::into_raw(Box::default());
 
@@ -437,17 +437,7 @@ fn gcd_strides(array: *mut PyArrayObject) -> isize {
 
     let strides = unsafe { from_raw_parts((*array).strides, nd) };
 
-    reduce(strides.iter().copied(), gcd).unwrap_or(1)
-}
-
-// FIXME(adamreichold): Use `Iterator::reduce` from std when our MSRV reaches 1.51.
-fn reduce<I, F>(mut iter: I, f: F) -> Option<I::Item>
-where
-    I: Iterator,
-    F: FnMut(I::Item, I::Item) -> I::Item,
-{
-    let first = iter.next()?;
-    Some(iter.fold(first, f))
+    strides.iter().copied().reduce(gcd).unwrap_or(1)
 }
 
 #[cfg(test)]
