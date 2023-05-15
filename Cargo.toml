@@ -7,8 +7,8 @@ authors = [
 ]
 description = "PyO3-based Rust bindings of the NumPy C-API"
 documentation = "https://docs.rs/numpy"
-edition = "2018"
-rust-version = "1.48"
+edition = "2021"
+rust-version = "1.56"
 repository = "https://github.com/PyO3/rust-numpy"
 categories = ["api-bindings", "development-tools::ffi", "science"]
 keywords = ["python", "numpy", "ffi", "pyo3"]

@@ -19,7 +19,7 @@ use pyo3::{
 
 fn get_numpy_api(py: Python, module: &str, capsule: &str) -> PyResult<*const *const c_void> {
     let module = PyModule::import(py, module)?;
-    let capsule: &PyCapsule = module.getattr(capsule)?.try_into()?;
+    let capsule: &PyCapsule = PyTryInto::try_into(module.getattr(capsule)?)?;
 
     let api = capsule.pointer() as *const *const c_void;
 
