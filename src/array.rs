@@ -281,7 +281,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         Ok(array)
     }
 
-    /// Same as [`shape`][PyUntypedArray::shape], but returns `D` insead of `&[usize]`.
+    /// Same as [`shape`][PyUntypedArray::shape], but returns `D` instead of `&[usize]`.
     #[inline(always)]
     pub fn dims(&self) -> D {
         D::from_dimension(&Dim(self.shape())).expect(DIMENSIONALITY_MISMATCH_ERR)
