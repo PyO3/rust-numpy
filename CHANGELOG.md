@@ -1,6 +1,8 @@
 # Changelog
 
 - Unreleased
+
+- v0.19.0
   - Add `PyUntypedArray` as an untyped base type for `PyArray` which can be used to inspect arguments before more targeted downcasts. This is accompanied by some methods like `dtype` and `shape` moving from `PyArray` to `PyUntypedArray`. They are still accessible though, as `PyArray` dereferences to `PyUntypedArray` via the `Deref` trait. ([#369](https://github.com/PyO3/rust-numpy/pull/369))
   - Drop deprecated `PyArray::from_exact_iter` as it does not provide any benefits over `PyArray::from_iter`. ([#370](https://github.com/PyO3/rust-numpy/pull/370))
 
