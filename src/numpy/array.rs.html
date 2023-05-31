@@ -2563,7 +2563,7 @@
     ///
     ///     let pyarray = PyArray::from_owned_object_array(py, array);
     ///
-    ///     assert!(pyarray.readonly().as_array().get(0).unwrap().as_ref(py).is_instance_of::&lt;CustomElement&gt;().unwrap());
+    ///     assert!(pyarray.readonly().as_array().get(0).unwrap().as_ref(py).is_instance_of::&lt;CustomElement&gt;());
     /// });
     /// ```
     </span><span class="kw">pub fn </span>from_owned_object_array&lt;<span class="lifetime">&#39;py</span>, T&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, <span class="kw-2">mut </span>arr: Array&lt;Py&lt;T&gt;, D&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span><span class="self">Self </span>{
