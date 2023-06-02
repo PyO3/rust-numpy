@@ -74,7 +74,7 @@
 
 <span class="kw">fn </span>get_numpy_api(py: Python, module: <span class="kw-2">&amp;</span>str, capsule: <span class="kw-2">&amp;</span>str) -&gt; PyResult&lt;<span class="kw-2">*const *const </span>c_void&gt; {
     <span class="kw">let </span>module = PyModule::import(py, module)<span class="question-mark">?</span>;
-    <span class="kw">let </span>capsule: <span class="kw-2">&amp;</span>PyCapsule = module.getattr(capsule)<span class="question-mark">?</span>.try_into()<span class="question-mark">?</span>;
+    <span class="kw">let </span>capsule: <span class="kw-2">&amp;</span>PyCapsule = PyTryInto::try_into(module.getattr(capsule)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let </span>api = capsule.pointer() <span class="kw">as </span><span class="kw-2">*const *const </span>c_void;
 

@@ -982,16 +982,6 @@
 <a href="#982" id="982">982</a>
 <a href="#983" id="983">983</a>
 <a href="#984" id="984">984</a>
-<a href="#985" id="985">985</a>
-<a href="#986" id="986">986</a>
-<a href="#987" id="987">987</a>
-<a href="#988" id="988">988</a>
-<a href="#989" id="989">989</a>
-<a href="#990" id="990">990</a>
-<a href="#991" id="991">991</a>
-<a href="#992" id="992">992</a>
-<a href="#993" id="993">993</a>
-<a href="#994" id="994">994</a>
 </pre><pre class="rust"><code><span class="kw">use </span>std::collections::hash_map::Entry;
 <span class="kw">use </span>std::ffi::{c_void, CString};
 <span class="kw">use </span>std::mem::forget;
@@ -1119,7 +1109,7 @@
     <span class="kw">let </span>module = get_array_module(py)<span class="question-mark">?</span>;
 
     <span class="kw">let </span>capsule: <span class="kw-2">&amp;</span>PyCapsule = <span class="kw">match </span>module.getattr(<span class="string">&quot;_RUST_NUMPY_BORROW_CHECKING_API&quot;</span>) {
-        <span class="prelude-val">Ok</span>(capsule) =&gt; capsule.try_into()<span class="question-mark">?</span>,
+        <span class="prelude-val">Ok</span>(capsule) =&gt; PyTryInto::try_into(capsule)<span class="question-mark">?</span>,
         <span class="prelude-val">Err</span>(_err) =&gt; {
             <span class="kw">let </span>flags: <span class="kw-2">*mut </span>BorrowFlags = Box::into_raw(Box::default());
 
@@ -1431,17 +1421,7 @@
 
     <span class="kw">let </span>strides = <span class="kw">unsafe </span>{ from_raw_parts((<span class="kw-2">*</span>array).strides, nd) };
 
-    reduce(strides.iter().copied(), gcd).unwrap_or(<span class="number">1</span>)
-}
-
-<span class="comment">// FIXME(adamreichold): Use `Iterator::reduce` from std when our MSRV reaches 1.51.
-</span><span class="kw">fn </span>reduce&lt;I, F&gt;(<span class="kw-2">mut </span>iter: I, f: F) -&gt; <span class="prelude-ty">Option</span>&lt;I::Item&gt;
-<span class="kw">where
-    </span>I: Iterator,
-    F: FnMut(I::Item, I::Item) -&gt; I::Item,
-{
-    <span class="kw">let </span>first = iter.next()<span class="question-mark">?</span>;
-    <span class="prelude-val">Some</span>(iter.fold(first, f))
+    strides.iter().copied().reduce(gcd).unwrap_or(<span class="number">1</span>)
 }
 
 <span class="attr">#[cfg(test)]

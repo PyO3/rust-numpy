@@ -339,6 +339,8 @@
 <a href="#339" id="339">339</a>
 <a href="#340" id="340">340</a>
 <a href="#341" id="341">341</a>
+<a href="#342" id="342">342</a>
+<a href="#343" id="343">343</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Support datetimes and timedeltas
 //!
 //! This module provides wrappers for NumPy&#39;s [`datetime64`][scalars-datetime64] and [`timedelta64`][scalars-timedelta64] types
@@ -564,8 +566,8 @@
     </span><span class="kw">fn </span>from_unit&lt;<span class="lifetime">&#39;py</span>&gt;(<span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span><span class="self">self</span>, py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, unit: NPY_DATETIMEUNIT) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span>PyArrayDescr {
         <span class="kw">let </span><span class="kw-2">mut </span>dtypes = <span class="self">self</span>.dtypes.get(py).borrow_mut();
 
-        <span class="kw">match </span>dtypes.get_or_insert_with(Default::default).entry(unit) {
-            Entry::Occupied(entry) =&gt; entry.into_mut().clone().into_ref(py),
+        <span class="kw">let </span>dtype = <span class="kw">match </span>dtypes.get_or_insert_with(Default::default).entry(unit) {
+            Entry::Occupied(entry) =&gt; entry.into_mut(),
             Entry::Vacant(entry) =&gt; {
                 <span class="kw">let </span>dtype = PyArrayDescr::new_from_npy_type(py, <span class="self">self</span>.npy_type);
 
@@ -578,9 +580,11 @@
                     metadata.meta.num = <span class="number">1</span>;
                 }
 
-                entry.insert(dtype.into()).clone().into_ref(py)
+                entry.insert(dtype.into())
             }
-        }
+        };
+
+        dtype.clone().into_ref(py)
     }
 }
 
