@@ -5,7 +5,7 @@ use std::os::raw::{
 use std::ptr;
 
 #[cfg(feature = "half")]
-use half::f16;
+use half::{bf16, f16};
 use num_traits::{Bounded, Zero};
 use pyo3::{
     exceptions::{PyIndexError, PyValueError},
@@ -15,6 +15,8 @@ use pyo3::{
     AsPyPointer, FromPyObject, FromPyPointer, IntoPyPointer, PyAny, PyNativeType, PyObject,
     PyResult, PyTypeInfo, Python, ToPyObject,
 };
+#[cfg(feature = "half")]
+use pyo3::{sync::GILOnceCell, IntoPy, Py};
 
 use crate::npyffi::{
     NpyTypes, PyArray_Descr, NPY_ALIGNED_STRUCT, NPY_BYTEORDER_CHAR, NPY_ITEM_HASOBJECT, NPY_TYPES,
@@ -476,6 +478,22 @@ impl_element_scalar!(f64 => NPY_DOUBLE);
 
 #[cfg(feature = "half")]
 impl_element_scalar!(f16 => NPY_HALF);
+
+#[cfg(feature = "half")]
+unsafe impl Element for bf16 {
+    const IS_COPY: bool = true;
+
+    fn get_dtype(py: Python) -> &PyArrayDescr {
+        static DTYPE: GILOnceCell<Py<PyArrayDescr>> = GILOnceCell::new();
+
+        DTYPE
+            .get_or_init(py, || {
+                PyArrayDescr::new(py, "bfloat16").expect("A package which provides a `bfloat16` data type for NumPy is required to use the `half::bf16` element type.").into_py(py)
+            })
+            .clone()
+            .into_ref(py)
+    }
+}
 
 impl_element_scalar!(Complex32 => NPY_CFLOAT,
     #[doc = "Complex type with `f32` components which maps to `numpy.csingle` (`numpy.complex64`)."]);
