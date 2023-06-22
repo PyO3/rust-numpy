@@ -67,7 +67,7 @@ jobs:
         shell: python
       - name: Test
         run: |
-            pip install numpy
+            pip install numpy ml_dtypes
             cargo test --all-features
         # Not on PyPy, because no embedding API
         if: ${{ !startsWith(matrix.python-version, 'pypy') }}
@@ -101,7 +101,7 @@ jobs:
         continue-on-error: true
       - uses: taiki-e/install-action@valgrind
       - run: |
-            pip install numpy
+            pip install numpy ml_dtypes
             cargo test --all-features --release
         env:
           CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUNNER: valgrind --leak-check=no --error-exitcode=1
@@ -115,7 +115,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         continue-on-error: true
       - run: |
-            pip install numpy
+            pip install numpy ml_dtypes
             cargo install --locked cargo-careful
             cargo careful test --all-features
 
@@ -201,7 +201,7 @@ jobs:
           python-version: 3.9
           architecture: x64
       - name: Install numpy
-        run: pip install numpy
+        run: pip install numpy ml_dtypes
       - uses: Swatinem/rust-cache@v2
         continue-on-error: true
       - uses: dtolnay/rust-toolchain@stable
