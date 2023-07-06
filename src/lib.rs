@@ -73,6 +73,7 @@ as well as the [`PyReadonlyArray::try_as_matrix`] and [`PyReadwriteArray::try_as
 #![deny(missing_docs, missing_debug_implementations)]
 
 pub mod array;
+mod array_like;
 pub mod borrow;
 pub mod convert;
 pub mod datetime;
@@ -93,6 +94,10 @@ pub use nalgebra;
 pub use crate::array::{
     get_array_module, PyArray, PyArray0, PyArray1, PyArray2, PyArray3, PyArray4, PyArray5,
     PyArray6, PyArrayDyn,
+};
+pub use crate::array_like::{
+    AllowTypeChange, PyArrayLike, PyArrayLike0, PyArrayLike1, PyArrayLike2, PyArrayLike3,
+    PyArrayLike4, PyArrayLike5, PyArrayLike6, PyArrayLikeDyn, TypeMustMatch,
 };
 pub use crate::borrow::{
     PyReadonlyArray, PyReadonlyArray0, PyReadonlyArray1, PyReadonlyArray2, PyReadonlyArray3,
