@@ -184,7 +184,7 @@ use shared::{acquire, acquire_mut, release, release_mut};
 /// i.e. that only shared references into the interior of the array can be created safely.
 ///
 /// See the [module-level documentation](self) for more.
-#[repr(C)]
+#[repr(transparent)]
 pub struct PyReadonlyArray<'py, T, D>
 where
     T: Element,
@@ -365,7 +365,7 @@ where
 /// i.e. that only a single exclusive reference into the interior of the array can be created safely.
 ///
 /// See the [module-level documentation](self) for more.
-#[repr(C)]
+#[repr(transparent)]
 pub struct PyReadwriteArray<'py, T, D>
 where
     T: Element,
