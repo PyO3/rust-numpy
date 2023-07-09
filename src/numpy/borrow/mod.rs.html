@@ -824,7 +824,7 @@
 /// i.e. that only shared references into the interior of the array can be created safely.
 ///
 /// See the [module-level documentation](self) for more.
-</span><span class="attr">#[repr(C)]
+</span><span class="attr">#[repr(transparent)]
 </span><span class="kw">pub struct </span>PyReadonlyArray&lt;<span class="lifetime">&#39;py</span>, T, D&gt;
 <span class="kw">where
     </span>T: Element,
@@ -1005,7 +1005,7 @@
 /// i.e. that only a single exclusive reference into the interior of the array can be created safely.
 ///
 /// See the [module-level documentation](self) for more.
-</span><span class="attr">#[repr(C)]
+</span><span class="attr">#[repr(transparent)]
 </span><span class="kw">pub struct </span>PyReadwriteArray&lt;<span class="lifetime">&#39;py</span>, T, D&gt;
 <span class="kw">where
     </span>T: Element,

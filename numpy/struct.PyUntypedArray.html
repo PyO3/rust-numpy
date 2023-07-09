@@ -106,12 +106,17 @@ the equality of two objects (the <code>==</code> operator), use <a href="PyAny::
 <p>This is equivalent to the Python expression <code>hasattr(self, attr_name)</code>.</p>
 <p>To avoid repeated temporary allocations of Python strings, the [<code>intern!</code>] macro can be used
 to intern <code>attr_name</code>.</p>
+<h5 id="example-interning-the-attribute-name"><a href="#example-interning-the-attribute-name">Example: <code>intern!</code>ing the attribute name</a></h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="attr">#[pyfunction]
+</span><span class="kw">fn </span>has_version(sys: <span class="kw-2">&amp;</span>PyModule) -&gt; PyResult&lt;bool&gt; {
+    sys.hasattr(<span class="macro">intern!</span>(sys.py(), <span class="string">&quot;version&quot;</span>))
+}</code></pre></div>
 </div></details><details class="toggle method-toggle" open><summary><section id="method.getattr" class="method"><h4 class="code-header">pub fn <a href="#method.getattr" class="fn">getattr</a>&lt;N&gt;(&amp;self, attr_name: N) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.70.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;&amp;PyAny, PyErr&gt;<span class="where fmt-newline">where
     N: IntoPy&lt;Py&lt;PyString&gt;&gt;,</span></h4></section></summary><div class="docblock"><p>Retrieves an attribute value.</p>
 <p>This is equivalent to the Python expression <code>self.attr_name</code>.</p>
 <p>To avoid repeated temporary allocations of Python strings, the [<code>intern!</code>] macro can be used
 to intern <code>attr_name</code>.</p>
-<h5 id="example-interning-the-attribute-name"><a href="#example-interning-the-attribute-name">Example: <code>intern!</code>ing the attribute name</a></h5>
+<h5 id="example-interning-the-attribute-name-1"><a href="#example-interning-the-attribute-name-1">Example: <code>intern!</code>ing the attribute name</a></h5>
 <div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="attr">#[pyfunction]
 </span><span class="kw">fn </span>version(sys: <span class="kw-2">&amp;</span>PyModule) -&gt; PyResult&lt;<span class="kw-2">&amp;</span>PyAny&gt; {
     sys.getattr(<span class="macro">intern!</span>(sys.py(), <span class="string">&quot;version&quot;</span>))
@@ -122,7 +127,7 @@ to intern <code>attr_name</code>.</p>
 <p>This is equivalent to the Python expression <code>self.attr_name = value</code>.</p>
 <p>To avoid repeated temporary allocations of Python strings, the [<code>intern!</code>] macro can be used
 to intern <code>name</code>.</p>
-<h5 id="example-interning-the-attribute-name-1"><a href="#example-interning-the-attribute-name-1">Example: <code>intern!</code>ing the attribute name</a></h5>
+<h5 id="example-interning-the-attribute-name-2"><a href="#example-interning-the-attribute-name-2">Example: <code>intern!</code>ing the attribute name</a></h5>
 <div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="attr">#[pyfunction]
 </span><span class="kw">fn </span>set_answer(ob: <span class="kw-2">&amp;</span>PyAny) -&gt; PyResult&lt;()&gt; {
     ob.setattr(<span class="macro">intern!</span>(ob.py(), <span class="string">&quot;answer&quot;</span>), <span class="number">42</span>)
