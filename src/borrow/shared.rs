@@ -121,7 +121,7 @@ fn get_or_insert_shared<'py>(py: Python<'py>) -> PyResult<&'py Shared> {
 // immediately initialize the cache used access it from this extension.
 
 #[cold]
-fn insert_shared(py: Python) -> PyResult<*const Shared> {
+fn insert_shared<'py>(py: Python<'py>) -> PyResult<*const Shared> {
     let module = get_array_module(py)?;
 
     let capsule: &PyCapsule = match module.getattr("_RUST_NUMPY_BORROW_CHECKING_API") {
@@ -170,7 +170,7 @@ fn insert_shared(py: Python) -> PyResult<*const Shared> {
 
 // These entry points will be used to access the shared borrow checking API from this extension:
 
-pub fn acquire(py: Python, array: *mut PyArrayObject) -> Result<(), BorrowError> {
+pub fn acquire<'py>(py: Python<'py>, array: *mut PyArrayObject) -> Result<(), BorrowError> {
     let shared = get_or_insert_shared(py).expect("Interal borrow checking API error");
 
     let rc = unsafe { (shared.acquire)(shared.flags, array) };
@@ -182,7 +182,7 @@ pub fn acquire(py: Python, array: *mut PyArrayObject) -> Result<(), BorrowError>
     }
 }
 
-pub fn acquire_mut(py: Python, array: *mut PyArrayObject) -> Result<(), BorrowError> {
+pub fn acquire_mut<'py>(py: Python<'py>, array: *mut PyArrayObject) -> Result<(), BorrowError> {
     let shared = get_or_insert_shared(py).expect("Interal borrow checking API error");
 
     let rc = unsafe { (shared.acquire_mut)(shared.flags, array) };
@@ -195,7 +195,7 @@ pub fn acquire_mut(py: Python, array: *mut PyArrayObject) -> Result<(), BorrowEr
     }
 }
 
-pub fn release(py: Python, array: *mut PyArrayObject) {
+pub fn release<'py>(py: Python<'py>, array: *mut PyArrayObject) {
     let shared = get_or_insert_shared(py).expect("Interal borrow checking API error");
 
     unsafe {
@@ -203,7 +203,7 @@ pub fn release(py: Python, array: *mut PyArrayObject) {
     }
 }
 
-pub fn release_mut(py: Python, array: *mut PyArrayObject) {
+pub fn release_mut<'py>(py: Python<'py>, array: *mut PyArrayObject) {
     let shared = get_or_insert_shared(py).expect("Interal borrow checking API error");
 
     unsafe {
@@ -365,7 +365,7 @@ impl BorrowFlags {
     }
 }
 
-fn base_address(py: Python, mut array: *mut PyArrayObject) -> *mut c_void {
+fn base_address<'py>(py: Python<'py>, mut array: *mut PyArrayObject) -> *mut c_void {
     loop {
         let base = unsafe { (*array).base };
 
@@ -450,7 +450,7 @@ mod tests {
     use crate::array::{PyArray, PyArray1, PyArray2, PyArray3};
     use crate::convert::IntoPyArray;
 
-    fn get_borrow_flags<'py>(py: Python) -> &'py BorrowFlagsInner {
+    fn get_borrow_flags<'py>(py: Python<'py>) -> &'py BorrowFlagsInner {
         let shared = get_or_insert_shared(py).unwrap();
         assert_eq!(shared.version, 1);
         unsafe { &(*(shared.flags as *mut BorrowFlags)).0 }

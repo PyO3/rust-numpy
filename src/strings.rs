@@ -63,7 +63,7 @@ use crate::npyffi::NPY_TYPES;
 pub struct PyFixedString<const N: usize>(pub [Py_UCS1; N]);
 
 impl<const N: usize> fmt::Display for PyFixedString<N> {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt.write_str(str::from_utf8(&self.0).unwrap().trim_end_matches('\0'))
     }
 }
@@ -77,7 +77,7 @@ impl<const N: usize> From<[Py_UCS1; N]> for PyFixedString<N> {
 unsafe impl<const N: usize> Element for PyFixedString<N> {
     const IS_COPY: bool = true;
 
-    fn get_dtype(py: Python) -> &PyArrayDescr {
+    fn get_dtype<'py>(py: Python<'py>) -> &PyArrayDescr {
         static DTYPES: TypeDescriptors = TypeDescriptors::new();
 
         unsafe { DTYPES.from_size(py, NPY_TYPES::NPY_STRING, b'|' as _, size_of::<Self>()) }
@@ -126,7 +126,7 @@ unsafe impl<const N: usize> Element for PyFixedString<N> {
 pub struct PyFixedUnicode<const N: usize>(pub [Py_UCS4; N]);
 
 impl<const N: usize> fmt::Display for PyFixedUnicode<N> {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
         for character in self.0 {
             if character == 0 {
                 break;
@@ -148,7 +148,7 @@ impl<const N: usize> From<[Py_UCS4; N]> for PyFixedUnicode<N> {
 unsafe impl<const N: usize> Element for PyFixedUnicode<N> {
     const IS_COPY: bool = true;
 
-    fn get_dtype(py: Python) -> &PyArrayDescr {
+    fn get_dtype<'py>(py: Python<'py>) -> &PyArrayDescr {
         static DTYPES: TypeDescriptors = TypeDescriptors::new();
 
         unsafe { DTYPES.from_size(py, NPY_TYPES::NPY_UNICODE, b'=' as _, size_of::<Self>()) }

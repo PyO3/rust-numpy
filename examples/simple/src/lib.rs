@@ -14,38 +14,41 @@ use pyo3::{
 };
 
 #[pymodule]
-fn rust_ext(_py: Python, m: &PyModule) -> PyResult<()> {
+fn rust_ext<'py>(_py: Python<'py>, m: &'py PyModule) -> PyResult<()> {
     // example using generic PyObject
-    fn head(x: ArrayViewD<PyObject>) -> PyResult<PyObject> {
+    fn head(x: ArrayViewD<'_, PyObject>) -> PyResult<PyObject> {
         x.get(0)
             .cloned()
             .ok_or_else(|| PyIndexError::new_err("array index out of range"))
     }
 
     // example using immutable borrows producing a new array
-    fn axpy(a: f64, x: ArrayViewD<f64>, y: ArrayViewD<f64>) -> ArrayD<f64> {
+    fn axpy(a: f64, x: ArrayViewD<'_, f64>, y: ArrayViewD<'_, f64>) -> ArrayD<f64> {
         a * &x + &y
     }
 
     // example using a mutable borrow to modify an array in-place
-    fn mult(a: f64, mut x: ArrayViewMutD<f64>) {
+    fn mult(a: f64, mut x: ArrayViewMutD<'_, f64>) {
         x *= a;
     }
 
     // example using complex numbers
-    fn conj(x: ArrayViewD<Complex64>) -> ArrayD<Complex64> {
+    fn conj(x: ArrayViewD<'_, Complex64>) -> ArrayD<Complex64> {
         x.map(|c| c.conj())
     }
 
     // example using generics
-    fn generic_add<T: Copy + Add<Output = T>>(x: ArrayView1<T>, y: ArrayView1<T>) -> Array1<T> {
+    fn generic_add<T: Copy + Add<Output = T>>(
+        x: ArrayView1<'_, T>,
+        y: ArrayView1<'_, T>,
+    ) -> Array1<T> {
         &x + &y
     }
 
     // wrapper of `head`
     #[pyfn(m)]
     #[pyo3(name = "head")]
-    fn head_py(_py: Python, x: PyReadonlyArrayDyn<PyObject>) -> PyResult<PyObject> {
+    fn head_py<'py>(x: PyReadonlyArrayDyn<'py, PyObject>) -> PyResult<PyObject> {
         head(x.as_array())
     }
 
@@ -55,8 +58,8 @@ fn rust_ext(_py: Python, m: &PyModule) -> PyResult<()> {
     fn axpy_py<'py>(
         py: Python<'py>,
         a: f64,
-        x: PyReadonlyArrayDyn<f64>,
-        y: PyReadonlyArrayDyn<f64>,
+        x: PyReadonlyArrayDyn<'py, f64>,
+        y: PyReadonlyArrayDyn<'py, f64>,
     ) -> &'py PyArrayDyn<f64> {
         let x = x.as_array();
         let y = y.as_array();
@@ -67,7 +70,7 @@ fn rust_ext(_py: Python, m: &PyModule) -> PyResult<()> {
     // wrapper of `mult`
     #[pyfn(m)]
     #[pyo3(name = "mult")]
-    fn mult_py(a: f64, mut x: PyReadwriteArrayDyn<f64>) {
+    fn mult_py<'py>(a: f64, mut x: PyReadwriteArrayDyn<'py, f64>) {
         let x = x.as_array_mut();
         mult(a, x);
     }
@@ -77,7 +80,7 @@ fn rust_ext(_py: Python, m: &PyModule) -> PyResult<()> {
     #[pyo3(name = "conj")]
     fn conj_py<'py>(
         py: Python<'py>,
-        x: PyReadonlyArrayDyn<Complex64>,
+        x: PyReadonlyArrayDyn<'py, Complex64>,
     ) -> &'py PyArrayDyn<Complex64> {
         conj(x.as_array()).into_pyarray(py)
     }
@@ -96,9 +99,9 @@ fn rust_ext(_py: Python, m: &PyModule) -> PyResult<()> {
 
     // example using timedelta64 array
     #[pyfn(m)]
-    fn add_minutes_to_seconds(
-        mut x: PyReadwriteArray1<Timedelta<units::Seconds>>,
-        y: PyReadonlyArray1<Timedelta<units::Minutes>>,
+    fn add_minutes_to_seconds<'py>(
+        mut x: PyReadwriteArray1<'py, Timedelta<units::Seconds>>,
+        y: PyReadonlyArray1<'py, Timedelta<units::Minutes>>,
     ) {
         #[allow(deprecated)]
         Zip::from(x.as_array_mut())

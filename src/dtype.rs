@@ -59,7 +59,7 @@ unsafe impl PyTypeInfo for PyArrayDescr {
     const MODULE: Option<&'static str> = Some("numpy");
 
     #[inline]
-    fn type_object_raw(py: Python) -> *mut ffi::PyTypeObject {
+    fn type_object_raw<'py>(py: Python<'py>) -> *mut ffi::PyTypeObject {
         unsafe { PY_ARRAY_API.get_type_object(py, NpyTypes::PyArrayDescr_Type) }
     }
 
@@ -71,7 +71,7 @@ unsafe impl PyTypeInfo for PyArrayDescr {
 pyobject_native_type_extract!(PyArrayDescr);
 
 /// Returns the type descriptor ("dtype") for a registered type.
-pub fn dtype<T: Element>(py: Python) -> &PyArrayDescr {
+pub fn dtype<'py, T: Element>(py: Python<'py>) -> &'py PyArrayDescr {
     T::get_dtype(py)
 }
 
@@ -108,12 +108,12 @@ impl PyArrayDescr {
     }
 
     /// Shortcut for creating a type descriptor of `object` type.
-    pub fn object(py: Python) -> &Self {
+    pub fn object<'py>(py: Python<'py>) -> &'py Self {
         Self::from_npy_type(py, NPY_TYPES::NPY_OBJECT)
     }
 
     /// Returns the type descriptor for a registered type.
-    pub fn of<T: Element>(py: Python) -> &Self {
+    pub fn of<'py, T: Element>(py: Python<'py>) -> &'py Self {
         T::get_dtype(py)
     }
 
@@ -128,14 +128,14 @@ impl PyArrayDescr {
         }
     }
 
-    fn from_npy_type(py: Python, npy_type: NPY_TYPES) -> &Self {
+    fn from_npy_type<'py>(py: Python<'py>, npy_type: NPY_TYPES) -> &'py Self {
         unsafe {
             let descr = PY_ARRAY_API.PyArray_DescrFromType(py, npy_type as _);
             py.from_owned_ptr(descr as _)
         }
     }
 
-    pub(crate) fn new_from_npy_type(py: Python, npy_type: NPY_TYPES) -> &Self {
+    pub(crate) fn new_from_npy_type<'py>(py: Python<'py>, npy_type: NPY_TYPES) -> &'py Self {
         unsafe {
             let descr = PY_ARRAY_API.PyArray_DescrNewFromType(py, npy_type as _);
             py.from_owned_ptr(descr as _)
@@ -401,7 +401,7 @@ pub unsafe trait Element: Clone + Send {
     const IS_COPY: bool;
 
     /// Returns the associated type descriptor ("dtype") for the given element type.
-    fn get_dtype(py: Python) -> &PyArrayDescr;
+    fn get_dtype<'py>(py: Python<'py>) -> &'py PyArrayDescr;
 }
 
 fn npy_int_type_lookup<T, T0, T1, T2>(npy_types: [NPY_TYPES; 3]) -> NPY_TYPES {
@@ -455,7 +455,7 @@ macro_rules! impl_element_scalar {
         unsafe impl Element for $ty {
             const IS_COPY: bool = true;
 
-            fn get_dtype(py: Python) -> &PyArrayDescr {
+            fn get_dtype<'py>(py: Python<'py>) -> &'py PyArrayDescr {
                 PyArrayDescr::from_npy_type(py, $npy_type)
             }
         }
@@ -483,7 +483,7 @@ impl_element_scalar!(f16 => NPY_HALF);
 unsafe impl Element for bf16 {
     const IS_COPY: bool = true;
 
-    fn get_dtype(py: Python) -> &PyArrayDescr {
+    fn get_dtype<'py>(py: Python<'py>) -> &PyArrayDescr {
         static DTYPE: GILOnceCell<Py<PyArrayDescr>> = GILOnceCell::new();
 
         DTYPE
@@ -506,7 +506,7 @@ impl_element_scalar!(usize, isize);
 unsafe impl Element for PyObject {
     const IS_COPY: bool = false;
 
-    fn get_dtype(py: Python) -> &PyArrayDescr {
+    fn get_dtype<'py>(py: Python<'py>) -> &PyArrayDescr {
         PyArrayDescr::object(py)
     }
 }
@@ -538,7 +538,7 @@ mod tests {
 
     #[test]
     fn test_dtype_names() {
-        fn type_name<T: Element>(py: Python) -> &str {
+        fn type_name<'py, T: Element>(py: Python<'py>) -> &str {
             dtype::<T>(py).typeobj().name().unwrap()
         }
         Python::with_gil(|py| {

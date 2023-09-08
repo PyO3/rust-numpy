@@ -44,6 +44,16 @@ def default(args):
 
 
 def check(args):
+    LINT_CONFIG = (
+        "--deny",
+        "warnings",
+        # We usually want to make the GIL lifetime explicit.
+        "--deny",
+        "elided-lifetimes-in-paths",
+        "--allow",
+        "clippy::needless-lifetimes",
+    )
+
     run("cargo", "fmt", "--", "--check")
 
     run(
@@ -52,8 +62,7 @@ def check(args):
         "--all-features",
         "--tests",
         "--",
-        "--deny",
-        "warnings",
+        *LINT_CONFIG,
     )
 
     for manifest in gen_examples("Cargo.toml"):
@@ -65,8 +74,7 @@ def check(args):
             "--manifest-path",
             manifest,
             "--",
-            "--deny",
-            "warnings",
+            *LINT_CONFIG,
         )
 
 

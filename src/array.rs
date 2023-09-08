@@ -118,7 +118,7 @@ pub type PyArray6<T> = PyArray<T, Ix6>;
 pub type PyArrayDyn<T> = PyArray<T, IxDyn>;
 
 /// Returns a handle to NumPy's multiarray module.
-pub fn get_array_module(py: Python<'_>) -> PyResult<&PyModule> {
+pub fn get_array_module<'py>(py: Python<'py>) -> PyResult<&PyModule> {
     PyModule::import(py, npyffi::array::MOD_NAME)
 }
 
@@ -128,7 +128,7 @@ unsafe impl<T: Element, D: Dimension> PyTypeInfo for PyArray<T, D> {
     const NAME: &'static str = "PyArray<T, D>";
     const MODULE: Option<&'static str> = Some("numpy");
 
-    fn type_object_raw(py: Python) -> *mut ffi::PyTypeObject {
+    fn type_object_raw<'py>(py: Python<'py>) -> *mut ffi::PyTypeObject {
         unsafe { npyffi::PY_ARRAY_API.get_type_object(py, npyffi::NpyTypes::PyArray_Type) }
     }
 
@@ -164,7 +164,7 @@ impl<T, D> AsPyPointer for PyArray<T, D> {
 
 impl<T, D> IntoPy<Py<PyArray<T, D>>> for &'_ PyArray<T, D> {
     #[inline]
-    fn into_py(self, py: Python<'_>) -> Py<PyArray<T, D>> {
+    fn into_py<'py>(self, py: Python<'py>) -> Py<PyArray<T, D>> {
         unsafe { Py::from_borrowed_ptr(py, self.as_ptr()) }
     }
 }
@@ -183,7 +183,7 @@ impl<'a, T, D> From<&'a PyArray<T, D>> for &'a PyAny {
 }
 
 impl<T, D> IntoPy<PyObject> for PyArray<T, D> {
-    fn into_py(self, py: Python<'_>) -> PyObject {
+    fn into_py<'py>(self, py: Python<'py>) -> PyObject {
         unsafe { PyObject::from_borrowed_ptr(py, self.as_ptr()) }
     }
 }
@@ -327,7 +327,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     ///     assert_eq!(arr.shape(), &[4, 5, 6]);
     /// });
     /// ```
-    pub unsafe fn new<ID>(py: Python, dims: ID, is_fortran: bool) -> &Self
+    pub unsafe fn new<'py, ID>(py: Python<'py>, dims: ID, is_fortran: bool) -> &Self
     where
         ID: IntoDimension<Dim = D>,
     {
@@ -335,8 +335,8 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         Self::new_uninit(py, dims, ptr::null_mut(), flags)
     }
 
-    pub(crate) unsafe fn new_uninit<ID>(
-        py: Python,
+    pub(crate) unsafe fn new_uninit<'py, ID>(
+        py: Python<'py>,
         dims: ID,
         strides: *const npy_intp,
         flag: c_int,
@@ -484,7 +484,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     ///
     /// [numpy-zeros]: https://numpy.org/doc/stable/reference/generated/numpy.zeros.html
     /// [PyArray_Zeros]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_Zeros
-    pub fn zeros<ID>(py: Python, dims: ID, is_fortran: bool) -> &Self
+    pub fn zeros<'py, ID>(py: Python<'py>, dims: ID, is_fortran: bool) -> &Self
     where
         ID: IntoDimension<Dim = D>,
     {
@@ -989,7 +989,7 @@ where
     #[doc(alias = "nalgebra")]
     pub unsafe fn try_as_matrix<R, C, RStride, CStride>(
         &self,
-    ) -> Option<nalgebra::MatrixView<N, R, C, RStride, CStride>>
+    ) -> Option<nalgebra::MatrixView<'_, N, R, C, RStride, CStride>>
     where
         R: nalgebra::Dim,
         C: nalgebra::Dim,
@@ -1011,7 +1011,7 @@ where
     #[doc(alias = "nalgebra")]
     pub unsafe fn try_as_matrix_mut<R, C, RStride, CStride>(
         &self,
-    ) -> Option<nalgebra::MatrixViewMut<N, R, C, RStride, CStride>>
+    ) -> Option<nalgebra::MatrixViewMut<'_, N, R, C, RStride, CStride>>
     where
         R: nalgebra::Dim,
         C: nalgebra::Dim,
@@ -1086,7 +1086,7 @@ impl<T: Copy + Element> PyArray<T, Ix0> {
 }
 
 impl<T: Element> PyArray<T, Ix1> {
-    /// Construct a one-dimensional array from a [slice][std::slice].
+    /// Construct a one-dimensional array from a [mod@slice].
     ///
     /// # Example
     ///
@@ -1144,7 +1144,7 @@ impl<T: Element> PyArray<T, Ix1> {
     ///     assert_eq!(pyarray.readonly().as_slice().unwrap(), &[97, 98, 99, 100, 101]);
     /// });
     /// ```
-    pub fn from_iter<I>(py: Python<'_>, iter: I) -> &Self
+    pub fn from_iter<'py, I>(py: Python<'py>, iter: I) -> &'py Self
     where
         I: IntoIterator<Item = T>,
     {
@@ -1448,7 +1448,7 @@ impl<T: Element + AsPrimitive<f64>> PyArray<T, Ix1> {
     ///
     /// [numpy.arange]: https://numpy.org/doc/stable/reference/generated/numpy.arange.html
     /// [PyArray_Arange]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_Arange
-    pub fn arange(py: Python, start: T, stop: T, step: T) -> &Self {
+    pub fn arange<'py>(py: Python<'py>, start: T, stop: T, step: T) -> &Self {
         unsafe {
             let ptr = PY_ARRAY_API.PyArray_Arange(
                 py,
