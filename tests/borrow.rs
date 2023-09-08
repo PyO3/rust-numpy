@@ -81,7 +81,7 @@ fn exclusive_borrow_requires_writeable() {
 }
 
 #[test]
-#[should_panic(expected = "Unwrapped panic from Python code")]
+#[should_panic(expected = "AlreadyBorrowed")]
 fn borrows_span_frames() {
     #[pyclass]
     struct Borrower;
