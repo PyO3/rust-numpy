@@ -19,7 +19,7 @@ macro_rules! impl_pyerr {
         impl Error for $err_type {}
 
         impl PyErrArguments for $err_type {
-            fn arguments(self, py: Python) -> PyObject {
+            fn arguments<'py>(self, py: Python<'py>) -> PyObject {
                 self.to_string().to_object(py)
             }
         }
@@ -46,7 +46,7 @@ impl DimensionalityError {
 }
 
 impl fmt::Display for DimensionalityError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "dimensionality mismatch:\n from={}, to={}",
@@ -71,7 +71,7 @@ impl<'a> TypeError<'a> {
 }
 
 impl fmt::Display for TypeError<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "type mismatch:\n from={}, to={}", self.from, self.to)
     }
 }
@@ -84,7 +84,7 @@ struct TypeErrorArguments {
 }
 
 impl PyErrArguments for TypeErrorArguments {
-    fn arguments(self, py: Python) -> PyObject {
+    fn arguments<'py>(self, py: Python<'py>) -> PyObject {
         let err = TypeError {
             from: self.from.as_ref(py),
             to: self.to.as_ref(py),
@@ -119,7 +119,7 @@ impl FromVecError {
 }
 
 impl fmt::Display for FromVecError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "invalid length: {}, but expected {}",
@@ -135,7 +135,7 @@ impl_pyerr!(FromVecError);
 pub struct NotContiguousError;
 
 impl fmt::Display for NotContiguousError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "The given array is not contiguous")
     }
 }
@@ -153,7 +153,7 @@ pub enum BorrowError {
 }
 
 impl fmt::Display for BorrowError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::AlreadyBorrowed => write!(f, "The given array is already borrowed"),
             Self::NotWriteable => write!(f, "The given array is not writeable"),

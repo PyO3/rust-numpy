@@ -156,7 +156,7 @@ impl<U: Unit> From<Datetime<U>> for i64 {
 unsafe impl<U: Unit> Element for Datetime<U> {
     const IS_COPY: bool = true;
 
-    fn get_dtype(py: Python) -> &PyArrayDescr {
+    fn get_dtype<'py>(py: Python<'py>) -> &'py PyArrayDescr {
         static DTYPES: TypeDescriptors = unsafe { TypeDescriptors::new(NPY_TYPES::NPY_DATETIME) };
 
         DTYPES.from_unit(py, U::UNIT)
@@ -191,7 +191,7 @@ impl<U: Unit> From<Timedelta<U>> for i64 {
 unsafe impl<U: Unit> Element for Timedelta<U> {
     const IS_COPY: bool = true;
 
-    fn get_dtype(py: Python) -> &PyArrayDescr {
+    fn get_dtype<'py>(py: Python<'py>) -> &'py PyArrayDescr {
         static DTYPES: TypeDescriptors = unsafe { TypeDescriptors::new(NPY_TYPES::NPY_TIMEDELTA) };
 
         DTYPES.from_unit(py, U::UNIT)
@@ -314,7 +314,7 @@ mod tests {
     #[test]
     fn unit_conversion() {
         #[track_caller]
-        fn convert<S: Unit, D: Unit>(py: Python<'_>, expected_value: i64) {
+        fn convert<'py, S: Unit, D: Unit>(py: Python<'py>, expected_value: i64) {
             let array = PyArray1::<Timedelta<S>>::from_slice(py, &[Timedelta::<S>::from(1)]);
             let array = array.cast::<Timedelta<D>>(false).unwrap();
 

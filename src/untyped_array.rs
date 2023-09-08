@@ -66,7 +66,7 @@ unsafe impl PyTypeInfo for PyUntypedArray {
     const NAME: &'static str = "PyUntypedArray";
     const MODULE: Option<&'static str> = Some("numpy");
 
-    fn type_object_raw(py: Python) -> *mut ffi::PyTypeObject {
+    fn type_object_raw<'py>(py: Python<'py>) -> *mut ffi::PyTypeObject {
         unsafe { npyffi::PY_ARRAY_API.get_type_object(py, npyffi::NpyTypes::PyArray_Type) }
     }
 
@@ -78,7 +78,7 @@ unsafe impl PyTypeInfo for PyUntypedArray {
 pyobject_native_type_named!(PyUntypedArray);
 
 impl IntoPy<PyObject> for PyUntypedArray {
-    fn into_py(self, py: Python<'_>) -> PyObject {
+    fn into_py<'py>(self, py: Python<'py>) -> PyObject {
         unsafe { PyObject::from_borrowed_ptr(py, self.as_ptr()) }
     }
 }

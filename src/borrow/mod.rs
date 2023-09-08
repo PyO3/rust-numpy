@@ -246,7 +246,7 @@ where
 
     /// Provides an immutable array view of the interior of the NumPy array.
     #[inline(always)]
-    pub fn as_array(&self) -> ArrayView<T, D> {
+    pub fn as_array(&self) -> ArrayView<'_, T, D> {
         // SAFETY: Global borrow flags ensure aliasing discipline.
         unsafe { self.array.as_array() }
     }
@@ -278,7 +278,7 @@ where
     #[doc(alias = "nalgebra")]
     pub fn try_as_matrix<R, C, RStride, CStride>(
         &self,
-    ) -> Option<nalgebra::MatrixView<N, R, C, RStride, CStride>>
+    ) -> Option<nalgebra::MatrixView<'_, N, R, C, RStride, CStride>>
     where
         R: nalgebra::Dim,
         C: nalgebra::Dim,
@@ -300,7 +300,7 @@ where
     ///
     /// Panics if the array has negative strides.
     #[doc(alias = "nalgebra")]
-    pub fn as_matrix(&self) -> nalgebra::DMatrixView<N, nalgebra::Dyn, nalgebra::Dyn> {
+    pub fn as_matrix(&self) -> nalgebra::DMatrixView<'_, N, nalgebra::Dyn, nalgebra::Dyn> {
         self.try_as_matrix().unwrap()
     }
 }
@@ -316,7 +316,7 @@ where
     ///
     /// Panics if the array has negative strides.
     #[doc(alias = "nalgebra")]
-    pub fn as_matrix(&self) -> nalgebra::DMatrixView<N, nalgebra::Dyn, nalgebra::Dyn> {
+    pub fn as_matrix(&self) -> nalgebra::DMatrixView<'_, N, nalgebra::Dyn, nalgebra::Dyn> {
         self.try_as_matrix().unwrap()
     }
 }
@@ -428,7 +428,7 @@ where
 
     /// Provides a mutable array view of the interior of the NumPy array.
     #[inline(always)]
-    pub fn as_array_mut(&mut self) -> ArrayViewMut<T, D> {
+    pub fn as_array_mut(&mut self) -> ArrayViewMut<'_, T, D> {
         // SAFETY: Global borrow flags ensure aliasing discipline.
         unsafe { self.array.as_array_mut() }
     }
@@ -460,7 +460,7 @@ where
     #[doc(alias = "nalgebra")]
     pub fn try_as_matrix_mut<R, C, RStride, CStride>(
         &self,
-    ) -> Option<nalgebra::MatrixViewMut<N, R, C, RStride, CStride>>
+    ) -> Option<nalgebra::MatrixViewMut<'_, N, R, C, RStride, CStride>>
     where
         R: nalgebra::Dim,
         C: nalgebra::Dim,
@@ -482,7 +482,7 @@ where
     ///
     /// Panics if the array has negative strides.
     #[doc(alias = "nalgebra")]
-    pub fn as_matrix_mut(&self) -> nalgebra::DMatrixViewMut<N, nalgebra::Dyn, nalgebra::Dyn> {
+    pub fn as_matrix_mut(&self) -> nalgebra::DMatrixViewMut<'_, N, nalgebra::Dyn, nalgebra::Dyn> {
         self.try_as_matrix_mut().unwrap()
     }
 }
@@ -498,7 +498,7 @@ where
     ///
     /// Panics if the array has negative strides.
     #[doc(alias = "nalgebra")]
-    pub fn as_matrix_mut(&self) -> nalgebra::DMatrixViewMut<N, nalgebra::Dyn, nalgebra::Dyn> {
+    pub fn as_matrix_mut(&self) -> nalgebra::DMatrixViewMut<'_, N, nalgebra::Dyn, nalgebra::Dyn> {
         self.try_as_matrix_mut().unwrap()
     }
 }

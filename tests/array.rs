@@ -13,11 +13,11 @@ use pyo3::{
     IntoPy, Py, PyAny, PyCell, PyResult, Python,
 };
 
-fn get_np_locals(py: Python) -> &PyDict {
+fn get_np_locals<'py>(py: Python<'py>) -> &'py PyDict {
     [("np", get_array_module(py).unwrap())].into_py_dict(py)
 }
 
-fn not_contiguous_array(py: Python) -> &PyArray1<i32> {
+fn not_contiguous_array<'py>(py: Python<'py>) -> &'py PyArray1<i32> {
     py.eval(
         "np.array([1, 2, 3, 4], dtype='int32')[::2]",
         None,

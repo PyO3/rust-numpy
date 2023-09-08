@@ -45,7 +45,7 @@ unsafe impl Send for PyArrayAPI {}
 unsafe impl Sync for PyArrayAPI {}
 
 impl PyArrayAPI {
-    unsafe fn get(&self, py: Python, offset: isize) -> *const *const c_void {
+    unsafe fn get<'py>(&self, py: Python<'py>, offset: isize) -> *const *const c_void {
         let api = self
             .0
             .get_or_try_init(py, || get_numpy_api(py, MOD_NAME, CAPSULE_NAME))
@@ -326,7 +326,7 @@ macro_rules! impl_array_type {
 
         impl PyArrayAPI {
             /// Get a pointer of the type object assocaited with `ty`.
-            pub unsafe fn get_type_object(&self, py: Python, ty: NpyTypes) -> *mut PyTypeObject {
+            pub unsafe fn get_type_object<'py>(&self, py: Python<'py>, ty: NpyTypes) -> *mut PyTypeObject {
                 match ty {
                     $( NpyTypes::$tname => *(self.get(py, $offset)) as _ ),*
                 }
@@ -379,13 +379,13 @@ impl_array_type! {
 
 /// Checks that `op` is an instance of `PyArray` or not.
 #[allow(non_snake_case)]
-pub unsafe fn PyArray_Check(py: Python, op: *mut PyObject) -> c_int {
+pub unsafe fn PyArray_Check<'py>(py: Python<'py>, op: *mut PyObject) -> c_int {
     ffi::PyObject_TypeCheck(op, PY_ARRAY_API.get_type_object(py, NpyTypes::PyArray_Type))
 }
 
 /// Checks that `op` is an exact instance of `PyArray` or not.
 #[allow(non_snake_case)]
-pub unsafe fn PyArray_CheckExact(py: Python, op: *mut PyObject) -> c_int {
+pub unsafe fn PyArray_CheckExact<'py>(py: Python<'py>, op: *mut PyObject) -> c_int {
     (ffi::Py_TYPE(op) == PY_ARRAY_API.get_type_object(py, NpyTypes::PyArray_Type)) as _
 }
 

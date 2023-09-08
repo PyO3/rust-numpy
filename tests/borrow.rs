@@ -88,9 +88,9 @@ fn borrows_span_frames() {
 
     #[pymethods]
     impl Borrower {
-        fn shared(&self, _array: PyReadonlyArray3<f64>) {}
+        fn shared(&self, _array: PyReadonlyArray3<'_, f64>) {}
 
-        fn exclusive(&self, _array: PyReadwriteArray3<f64>) {}
+        fn exclusive(&self, _array: PyReadwriteArray3<'_, f64>) {}
     }
 
     Python::with_gil(|py| {
@@ -290,7 +290,7 @@ fn interleaved_views_do_not_conflict() {
 fn extract_readonly() {
     Python::with_gil(|py| {
         let ob: &PyAny = PyArray::<f64, _>::zeros(py, (1, 2, 3), false);
-        ob.extract::<PyReadonlyArray3<f64>>().unwrap();
+        ob.extract::<PyReadonlyArray3<'_, f64>>().unwrap();
     });
 }
 
@@ -298,7 +298,7 @@ fn extract_readonly() {
 fn extract_readwrite() {
     Python::with_gil(|py| {
         let ob: &PyAny = PyArray::<f64, _>::zeros(py, (1, 2, 3), false);
-        ob.extract::<PyReadwriteArray3<f64>>().unwrap();
+        ob.extract::<PyReadwriteArray3<'_, f64>>().unwrap();
     });
 }
 
@@ -356,6 +356,7 @@ fn matrix_from_numpy() {
             assert_eq!(matrix, nalgebra::Matrix3::new(0, 1, 2, 3, 4, 5, 6, 7, 8));
 
             let matrix: nalgebra::MatrixView<
+                '_,
                 i32,
                 nalgebra::Const<3>,
                 nalgebra::Const<3>,
@@ -372,6 +373,7 @@ fn matrix_from_numpy() {
             assert_eq!(matrix, nalgebra::Matrix3::new(0, 1, 2, 3, 4, 5, 6, 7, 8));
 
             let matrix: nalgebra::MatrixViewMut<
+                '_,
                 i32,
                 nalgebra::Const<3>,
                 nalgebra::Const<3>,
@@ -391,7 +393,7 @@ fn matrix_from_numpy() {
             let matrix = array.as_matrix();
             assert_eq!(matrix, nalgebra::Matrix3x1::new(0, 1, 2));
 
-            let matrix: nalgebra::MatrixView<i32, nalgebra::Const<3>, nalgebra::Const<1>> =
+            let matrix: nalgebra::MatrixView<'_, i32, nalgebra::Const<3>, nalgebra::Const<1>> =
                 array.try_as_matrix().unwrap();
             assert_eq!(matrix, nalgebra::Matrix3x1::new(0, 1, 2));
         }
@@ -402,7 +404,7 @@ fn matrix_from_numpy() {
             let matrix = array.as_matrix_mut();
             assert_eq!(matrix, nalgebra::Matrix3x1::new(0, 1, 2));
 
-            let matrix: nalgebra::MatrixViewMut<i32, nalgebra::Const<3>, nalgebra::Const<1>> =
+            let matrix: nalgebra::MatrixViewMut<'_, i32, nalgebra::Const<3>, nalgebra::Const<1>> =
                 array.try_as_matrix_mut().unwrap();
             assert_eq!(matrix, nalgebra::Matrix3x1::new(0, 1, 2));
         }
@@ -412,7 +414,7 @@ fn matrix_from_numpy() {
         let array = PyArray::<i32, _>::zeros(py, (2, 2, 2), false);
         let array = array.readonly();
 
-        let matrix: Option<nalgebra::DMatrixView<i32, nalgebra::Dyn, nalgebra::Dyn>> =
+        let matrix: Option<nalgebra::DMatrixView<'_, i32, nalgebra::Dyn, nalgebra::Dyn>> =
             array.try_as_matrix();
         assert!(matrix.is_none());
     });
@@ -426,7 +428,7 @@ fn matrix_from_numpy() {
             .unwrap();
         let array = array.readonly();
 
-        let matrix: Option<nalgebra::DMatrixView<i32, nalgebra::Dyn, nalgebra::Dyn>> =
+        let matrix: Option<nalgebra::DMatrixView<'_, i32, nalgebra::Dyn, nalgebra::Dyn>> =
             array.try_as_matrix();
         assert!(matrix.is_none());
     });
@@ -437,6 +439,7 @@ fn matrix_from_numpy() {
 
         let matrix: Option<
             nalgebra::MatrixView<
+                '_,
                 i32,
                 nalgebra::Const<2>,
                 nalgebra::Const<3>,
@@ -448,6 +451,7 @@ fn matrix_from_numpy() {
 
         let matrix: Option<
             nalgebra::MatrixView<
+                '_,
                 i32,
                 nalgebra::Const<3>,
                 nalgebra::Const<2>,
@@ -459,6 +463,7 @@ fn matrix_from_numpy() {
 
         let matrix: Option<
             nalgebra::MatrixView<
+                '_,
                 i32,
                 nalgebra::Const<3>,
                 nalgebra::Const<3>,
@@ -470,6 +475,7 @@ fn matrix_from_numpy() {
 
         let matrix: Option<
             nalgebra::MatrixView<
+                '_,
                 i32,
                 nalgebra::Const<3>,
                 nalgebra::Const<3>,

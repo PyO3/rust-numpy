@@ -71,8 +71,6 @@ as well as the [`PyReadonlyArray::try_as_matrix`] and [`PyReadwriteArray::try_as
 //! [ndarray]: https://numpy.org/doc/stable/reference/arrays.ndarray.html
 
 #![deny(missing_docs, missing_debug_implementations)]
-// We often want to make the GIL lifetime explicit.
-#![allow(clippy::needless_lifetimes)]
 
 pub mod array;
 pub mod borrow;
