@@ -1,3 +1,5 @@
+#![allow(clippy::useless_vec)]
+
 use std::cmp::Ordering;
 use std::mem::size_of;
 
