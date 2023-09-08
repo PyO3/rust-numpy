@@ -14,26 +14,26 @@ use pyo3::{
 };
 
 #[pymodule]
-fn rust_ext(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+fn rust_ext(_py: Python, m: &PyModule) -> PyResult<()> {
     // example using generic PyObject
-    fn head(x: ArrayViewD<'_, PyObject>) -> PyResult<PyObject> {
+    fn head(x: ArrayViewD<PyObject>) -> PyResult<PyObject> {
         x.get(0)
             .cloned()
             .ok_or_else(|| PyIndexError::new_err("array index out of range"))
     }
 
     // example using immutable borrows producing a new array
-    fn axpy(a: f64, x: ArrayViewD<'_, f64>, y: ArrayViewD<'_, f64>) -> ArrayD<f64> {
+    fn axpy(a: f64, x: ArrayViewD<f64>, y: ArrayViewD<f64>) -> ArrayD<f64> {
         a * &x + &y
     }
 
     // example using a mutable borrow to modify an array in-place
-    fn mult(a: f64, mut x: ArrayViewMutD<'_, f64>) {
+    fn mult(a: f64, mut x: ArrayViewMutD<f64>) {
         x *= a;
     }
 
     // example using complex numbers
-    fn conj(x: ArrayViewD<'_, Complex64>) -> ArrayD<Complex64> {
+    fn conj(x: ArrayViewD<Complex64>) -> ArrayD<Complex64> {
         x.map(|c| c.conj())
     }
 
@@ -45,7 +45,7 @@ fn rust_ext(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     // wrapper of `head`
     #[pyfn(m)]
     #[pyo3(name = "head")]
-    fn head_py(_py: Python<'_>, x: PyReadonlyArrayDyn<'_, PyObject>) -> PyResult<PyObject> {
+    fn head_py(_py: Python, x: PyReadonlyArrayDyn<PyObject>) -> PyResult<PyObject> {
         head(x.as_array())
     }
 
@@ -55,8 +55,8 @@ fn rust_ext(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     fn axpy_py<'py>(
         py: Python<'py>,
         a: f64,
-        x: PyReadonlyArrayDyn<'_, f64>,
-        y: PyReadonlyArrayDyn<'_, f64>,
+        x: PyReadonlyArrayDyn<f64>,
+        y: PyReadonlyArrayDyn<f64>,
     ) -> &'py PyArrayDyn<f64> {
         let x = x.as_array();
         let y = y.as_array();
@@ -77,7 +77,7 @@ fn rust_ext(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     #[pyo3(name = "conj")]
     fn conj_py<'py>(
         py: Python<'py>,
-        x: PyReadonlyArrayDyn<'_, Complex64>,
+        x: PyReadonlyArrayDyn<Complex64>,
     ) -> &'py PyArrayDyn<Complex64> {
         conj(x.as_array()).into_pyarray(py)
     }

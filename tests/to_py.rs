@@ -12,6 +12,7 @@ use pyo3::{
 #[test]
 fn to_pyarray_vec() {
     Python::with_gil(|py| {
+        #[allow(clippy::useless_vec)]
         let arr = vec![1, 2, 3].to_pyarray(py);
 
         assert_eq!(arr.shape(), [3]);
