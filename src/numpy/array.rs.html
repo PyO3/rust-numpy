@@ -1623,7 +1623,7 @@
 </span><span class="kw">pub type </span>PyArrayDyn&lt;T&gt; = PyArray&lt;T, IxDyn&gt;;
 
 <span class="doccomment">/// Returns a handle to NumPy&#39;s multiarray module.
-</span><span class="kw">pub fn </span>get_array_module(py: Python&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; PyResult&lt;<span class="kw-2">&amp;</span>PyModule&gt; {
+</span><span class="kw">pub fn </span>get_array_module&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;) -&gt; PyResult&lt;<span class="kw-2">&amp;</span>PyModule&gt; {
     PyModule::import(py, npyffi::array::MOD_NAME)
 }
 
@@ -1633,7 +1633,7 @@
     <span class="kw">const </span>NAME: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str = <span class="string">&quot;PyArray&lt;T, D&gt;&quot;</span>;
     <span class="kw">const </span>MODULE: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt; = <span class="prelude-val">Some</span>(<span class="string">&quot;numpy&quot;</span>);
 
-    <span class="kw">fn </span>type_object_raw(py: Python) -&gt; <span class="kw-2">*mut </span>ffi::PyTypeObject {
+    <span class="kw">fn </span>type_object_raw&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;) -&gt; <span class="kw-2">*mut </span>ffi::PyTypeObject {
         <span class="kw">unsafe </span>{ npyffi::PY_ARRAY_API.get_type_object(py, npyffi::NpyTypes::PyArray_Type) }
     }
 
@@ -1669,7 +1669,7 @@
 
 <span class="kw">impl</span>&lt;T, D&gt; IntoPy&lt;Py&lt;PyArray&lt;T, D&gt;&gt;&gt; <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">&#39;_ </span>PyArray&lt;T, D&gt; {
     <span class="attr">#[inline]
-    </span><span class="kw">fn </span>into_py(<span class="self">self</span>, py: Python&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; Py&lt;PyArray&lt;T, D&gt;&gt; {
+    </span><span class="kw">fn </span>into_py&lt;<span class="lifetime">&#39;py</span>&gt;(<span class="self">self</span>, py: Python&lt;<span class="lifetime">&#39;py</span>&gt;) -&gt; Py&lt;PyArray&lt;T, D&gt;&gt; {
         <span class="kw">unsafe </span>{ Py::from_borrowed_ptr(py, <span class="self">self</span>.as_ptr()) }
     }
 }
@@ -1688,7 +1688,7 @@
 }
 
 <span class="kw">impl</span>&lt;T, D&gt; IntoPy&lt;PyObject&gt; <span class="kw">for </span>PyArray&lt;T, D&gt; {
-    <span class="kw">fn </span>into_py(<span class="self">self</span>, py: Python&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; PyObject {
+    <span class="kw">fn </span>into_py&lt;<span class="lifetime">&#39;py</span>&gt;(<span class="self">self</span>, py: Python&lt;<span class="lifetime">&#39;py</span>&gt;) -&gt; PyObject {
         <span class="kw">unsafe </span>{ PyObject::from_borrowed_ptr(py, <span class="self">self</span>.as_ptr()) }
     }
 }
@@ -1832,7 +1832,7 @@
     ///     assert_eq!(arr.shape(), &amp;[4, 5, 6]);
     /// });
     /// ```
-    </span><span class="kw">pub unsafe fn </span>new&lt;ID&gt;(py: Python, dims: ID, is_fortran: bool) -&gt; <span class="kw-2">&amp;</span><span class="self">Self
+    </span><span class="kw">pub unsafe fn </span>new&lt;<span class="lifetime">&#39;py</span>, ID&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, dims: ID, is_fortran: bool) -&gt; <span class="kw-2">&amp;</span><span class="self">Self
     </span><span class="kw">where
         </span>ID: IntoDimension&lt;Dim = D&gt;,
     {
@@ -1840,8 +1840,8 @@
         <span class="self">Self</span>::new_uninit(py, dims, ptr::null_mut(), flags)
     }
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">unsafe fn </span>new_uninit&lt;ID&gt;(
-        py: Python,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">unsafe fn </span>new_uninit&lt;<span class="lifetime">&#39;py</span>, ID&gt;(
+        py: Python&lt;<span class="lifetime">&#39;py</span>&gt;,
         dims: ID,
         strides: <span class="kw-2">*const </span>npy_intp,
         flag: c_int,
@@ -1989,7 +1989,7 @@
     ///
     /// [numpy-zeros]: https://numpy.org/doc/stable/reference/generated/numpy.zeros.html
     /// [PyArray_Zeros]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_Zeros
-    </span><span class="kw">pub fn </span>zeros&lt;ID&gt;(py: Python, dims: ID, is_fortran: bool) -&gt; <span class="kw-2">&amp;</span><span class="self">Self
+    </span><span class="kw">pub fn </span>zeros&lt;<span class="lifetime">&#39;py</span>, ID&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, dims: ID, is_fortran: bool) -&gt; <span class="kw-2">&amp;</span><span class="self">Self
     </span><span class="kw">where
         </span>ID: IntoDimension&lt;Dim = D&gt;,
     {
@@ -2494,7 +2494,7 @@
     </span><span class="attr">#[doc(alias = <span class="string">&quot;nalgebra&quot;</span>)]
     </span><span class="kw">pub unsafe fn </span>try_as_matrix&lt;R, C, RStride, CStride&gt;(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-    ) -&gt; <span class="prelude-ty">Option</span>&lt;nalgebra::MatrixView&lt;N, R, C, RStride, CStride&gt;&gt;
+    ) -&gt; <span class="prelude-ty">Option</span>&lt;nalgebra::MatrixView&lt;<span class="lifetime">&#39;_</span>, N, R, C, RStride, CStride&gt;&gt;
     <span class="kw">where
         </span>R: nalgebra::Dim,
         C: nalgebra::Dim,
@@ -2516,7 +2516,7 @@
     </span><span class="attr">#[doc(alias = <span class="string">&quot;nalgebra&quot;</span>)]
     </span><span class="kw">pub unsafe fn </span>try_as_matrix_mut&lt;R, C, RStride, CStride&gt;(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-    ) -&gt; <span class="prelude-ty">Option</span>&lt;nalgebra::MatrixViewMut&lt;N, R, C, RStride, CStride&gt;&gt;
+    ) -&gt; <span class="prelude-ty">Option</span>&lt;nalgebra::MatrixViewMut&lt;<span class="lifetime">&#39;_</span>, N, R, C, RStride, CStride&gt;&gt;
     <span class="kw">where
         </span>R: nalgebra::Dim,
         C: nalgebra::Dim,
@@ -2591,7 +2591,7 @@
 }
 
 <span class="kw">impl</span>&lt;T: Element&gt; PyArray&lt;T, Ix1&gt; {
-    <span class="doccomment">/// Construct a one-dimensional array from a [slice][std::slice].
+    <span class="doccomment">/// Construct a one-dimensional array from a [mod@slice].
     ///
     /// # Example
     ///
@@ -2649,7 +2649,7 @@
     ///     assert_eq!(pyarray.readonly().as_slice().unwrap(), &amp;[97, 98, 99, 100, 101]);
     /// });
     /// ```
-    </span><span class="kw">pub fn </span>from_iter&lt;I&gt;(py: Python&lt;<span class="lifetime">&#39;_</span>&gt;, iter: I) -&gt; <span class="kw-2">&amp;</span><span class="self">Self
+    </span><span class="kw">pub fn </span>from_iter&lt;<span class="lifetime">&#39;py</span>, I&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, iter: I) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span><span class="self">Self
     </span><span class="kw">where
         </span>I: IntoIterator&lt;Item = T&gt;,
     {
@@ -2953,7 +2953,7 @@
     ///
     /// [numpy.arange]: https://numpy.org/doc/stable/reference/generated/numpy.arange.html
     /// [PyArray_Arange]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_Arange
-    </span><span class="kw">pub fn </span>arange(py: Python, start: T, stop: T, step: T) -&gt; <span class="kw-2">&amp;</span><span class="self">Self </span>{
+    </span><span class="kw">pub fn </span>arange&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, start: T, stop: T, step: T) -&gt; <span class="kw-2">&amp;</span><span class="self">Self </span>{
         <span class="kw">unsafe </span>{
             <span class="kw">let </span>ptr = PY_ARRAY_API.PyArray_Arange(
                 py,

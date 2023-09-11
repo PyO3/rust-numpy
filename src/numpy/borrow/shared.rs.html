@@ -1105,7 +1105,7 @@
 // immediately initialize the cache used access it from this extension.
 
 </span><span class="attr">#[cold]
-</span><span class="kw">fn </span>insert_shared(py: Python) -&gt; PyResult&lt;<span class="kw-2">*const </span>Shared&gt; {
+</span><span class="kw">fn </span>insert_shared&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;) -&gt; PyResult&lt;<span class="kw-2">*const </span>Shared&gt; {
     <span class="kw">let </span>module = get_array_module(py)<span class="question-mark">?</span>;
 
     <span class="kw">let </span>capsule: <span class="kw-2">&amp;</span>PyCapsule = <span class="kw">match </span>module.getattr(<span class="string">&quot;_RUST_NUMPY_BORROW_CHECKING_API&quot;</span>) {
@@ -1154,7 +1154,7 @@
 
 <span class="comment">// These entry points will be used to access the shared borrow checking API from this extension:
 
-</span><span class="kw">pub fn </span>acquire(py: Python, array: <span class="kw-2">*mut </span>PyArrayObject) -&gt; <span class="prelude-ty">Result</span>&lt;(), BorrowError&gt; {
+</span><span class="kw">pub fn </span>acquire&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, array: <span class="kw-2">*mut </span>PyArrayObject) -&gt; <span class="prelude-ty">Result</span>&lt;(), BorrowError&gt; {
     <span class="kw">let </span>shared = get_or_insert_shared(py).expect(<span class="string">&quot;Interal borrow checking API error&quot;</span>);
 
     <span class="kw">let </span>rc = <span class="kw">unsafe </span>{ (shared.acquire)(shared.flags, array) };
@@ -1166,7 +1166,7 @@
     }
 }
 
-<span class="kw">pub fn </span>acquire_mut(py: Python, array: <span class="kw-2">*mut </span>PyArrayObject) -&gt; <span class="prelude-ty">Result</span>&lt;(), BorrowError&gt; {
+<span class="kw">pub fn </span>acquire_mut&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, array: <span class="kw-2">*mut </span>PyArrayObject) -&gt; <span class="prelude-ty">Result</span>&lt;(), BorrowError&gt; {
     <span class="kw">let </span>shared = get_or_insert_shared(py).expect(<span class="string">&quot;Interal borrow checking API error&quot;</span>);
 
     <span class="kw">let </span>rc = <span class="kw">unsafe </span>{ (shared.acquire_mut)(shared.flags, array) };
@@ -1179,7 +1179,7 @@
     }
 }
 
-<span class="kw">pub fn </span>release(py: Python, array: <span class="kw-2">*mut </span>PyArrayObject) {
+<span class="kw">pub fn </span>release&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, array: <span class="kw-2">*mut </span>PyArrayObject) {
     <span class="kw">let </span>shared = get_or_insert_shared(py).expect(<span class="string">&quot;Interal borrow checking API error&quot;</span>);
 
     <span class="kw">unsafe </span>{
@@ -1187,7 +1187,7 @@
     }
 }
 
-<span class="kw">pub fn </span>release_mut(py: Python, array: <span class="kw-2">*mut </span>PyArrayObject) {
+<span class="kw">pub fn </span>release_mut&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, array: <span class="kw-2">*mut </span>PyArrayObject) {
     <span class="kw">let </span>shared = get_or_insert_shared(py).expect(<span class="string">&quot;Interal borrow checking API error&quot;</span>);
 
     <span class="kw">unsafe </span>{
@@ -1349,7 +1349,7 @@
     }
 }
 
-<span class="kw">fn </span>base_address(py: Python, <span class="kw-2">mut </span>array: <span class="kw-2">*mut </span>PyArrayObject) -&gt; <span class="kw-2">*mut </span>c_void {
+<span class="kw">fn </span>base_address&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, <span class="kw-2">mut </span>array: <span class="kw-2">*mut </span>PyArrayObject) -&gt; <span class="kw-2">*mut </span>c_void {
     <span class="kw">loop </span>{
         <span class="kw">let </span>base = <span class="kw">unsafe </span>{ (<span class="kw-2">*</span>array).base };
 
@@ -1434,7 +1434,7 @@
     <span class="kw">use </span><span class="kw">crate</span>::array::{PyArray, PyArray1, PyArray2, PyArray3};
     <span class="kw">use </span><span class="kw">crate</span>::convert::IntoPyArray;
 
-    <span class="kw">fn </span>get_borrow_flags&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span>BorrowFlagsInner {
+    <span class="kw">fn </span>get_borrow_flags&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span>BorrowFlagsInner {
         <span class="kw">let </span>shared = get_or_insert_shared(py).unwrap();
         <span class="macro">assert_eq!</span>(shared.version, <span class="number">1</span>);
         <span class="kw">unsafe </span>{ <span class="kw-2">&amp;</span>(<span class="kw-2">*</span>(shared.flags <span class="kw">as </span><span class="kw-2">*mut </span>BorrowFlags)).<span class="number">0 </span>}

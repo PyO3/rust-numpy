@@ -739,7 +739,7 @@
     <span class="kw">const </span>MODULE: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt; = <span class="prelude-val">Some</span>(<span class="string">&quot;numpy&quot;</span>);
 
     <span class="attr">#[inline]
-    </span><span class="kw">fn </span>type_object_raw(py: Python) -&gt; <span class="kw-2">*mut </span>ffi::PyTypeObject {
+    </span><span class="kw">fn </span>type_object_raw&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;) -&gt; <span class="kw-2">*mut </span>ffi::PyTypeObject {
         <span class="kw">unsafe </span>{ PY_ARRAY_API.get_type_object(py, NpyTypes::PyArrayDescr_Type) }
     }
 
@@ -751,7 +751,7 @@
 <span class="macro">pyobject_native_type_extract!</span>(PyArrayDescr);
 
 <span class="doccomment">/// Returns the type descriptor (&quot;dtype&quot;) for a registered type.
-</span><span class="kw">pub fn </span>dtype&lt;T: Element&gt;(py: Python) -&gt; <span class="kw-2">&amp;</span>PyArrayDescr {
+</span><span class="kw">pub fn </span>dtype&lt;<span class="lifetime">&#39;py</span>, T: Element&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span>PyArrayDescr {
     T::get_dtype(py)
 }
 
@@ -788,12 +788,12 @@
     </span>}
 
     <span class="doccomment">/// Shortcut for creating a type descriptor of `object` type.
-    </span><span class="kw">pub fn </span>object(py: Python) -&gt; <span class="kw-2">&amp;</span><span class="self">Self </span>{
+    </span><span class="kw">pub fn </span>object&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span><span class="self">Self </span>{
         <span class="self">Self</span>::from_npy_type(py, NPY_TYPES::NPY_OBJECT)
     }
 
     <span class="doccomment">/// Returns the type descriptor for a registered type.
-    </span><span class="kw">pub fn </span>of&lt;T: Element&gt;(py: Python) -&gt; <span class="kw-2">&amp;</span><span class="self">Self </span>{
+    </span><span class="kw">pub fn </span>of&lt;<span class="lifetime">&#39;py</span>, T: Element&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span><span class="self">Self </span>{
         T::get_dtype(py)
     }
 
@@ -808,14 +808,14 @@
         </span>}
     }
 
-    <span class="kw">fn </span>from_npy_type(py: Python, npy_type: NPY_TYPES) -&gt; <span class="kw-2">&amp;</span><span class="self">Self </span>{
+    <span class="kw">fn </span>from_npy_type&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, npy_type: NPY_TYPES) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span><span class="self">Self </span>{
         <span class="kw">unsafe </span>{
             <span class="kw">let </span>descr = PY_ARRAY_API.PyArray_DescrFromType(py, npy_type <span class="kw">as _</span>);
             py.from_owned_ptr(descr <span class="kw">as _</span>)
         }
     }
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>new_from_npy_type(py: Python, npy_type: NPY_TYPES) -&gt; <span class="kw-2">&amp;</span><span class="self">Self </span>{
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>new_from_npy_type&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, npy_type: NPY_TYPES) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span><span class="self">Self </span>{
         <span class="kw">unsafe </span>{
             <span class="kw">let </span>descr = PY_ARRAY_API.PyArray_DescrNewFromType(py, npy_type <span class="kw">as _</span>);
             py.from_owned_ptr(descr <span class="kw">as _</span>)
@@ -1081,7 +1081,7 @@
     </span><span class="kw">const </span>IS_COPY: bool;
 
     <span class="doccomment">/// Returns the associated type descriptor (&quot;dtype&quot;) for the given element type.
-    </span><span class="kw">fn </span>get_dtype(py: Python) -&gt; <span class="kw-2">&amp;</span>PyArrayDescr;
+    </span><span class="kw">fn </span>get_dtype&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span>PyArrayDescr;
 }
 
 <span class="kw">fn </span>npy_int_type_lookup&lt;T, T0, T1, T2&gt;(npy_types: [NPY_TYPES; <span class="number">3</span>]) -&gt; NPY_TYPES {
@@ -1135,7 +1135,7 @@
         <span class="kw">unsafe impl </span>Element <span class="kw">for </span><span class="macro-nonterminal">$ty </span>{
             <span class="kw">const </span>IS_COPY: bool = <span class="bool-val">true</span>;
 
-            <span class="kw">fn </span>get_dtype(py: Python) -&gt; <span class="kw-2">&amp;</span>PyArrayDescr {
+            <span class="kw">fn </span>get_dtype&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span>PyArrayDescr {
                 PyArrayDescr::from_npy_type(py, <span class="macro-nonterminal">$npy_type</span>)
             }
         }
@@ -1163,7 +1163,7 @@
 </span><span class="kw">unsafe impl </span>Element <span class="kw">for </span>bf16 {
     <span class="kw">const </span>IS_COPY: bool = <span class="bool-val">true</span>;
 
-    <span class="kw">fn </span>get_dtype(py: Python) -&gt; <span class="kw-2">&amp;</span>PyArrayDescr {
+    <span class="kw">fn </span>get_dtype&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;) -&gt; <span class="kw-2">&amp;</span>PyArrayDescr {
         <span class="kw">static </span>DTYPE: GILOnceCell&lt;Py&lt;PyArrayDescr&gt;&gt; = GILOnceCell::new();
 
         DTYPE
@@ -1186,7 +1186,7 @@
 <span class="kw">unsafe impl </span>Element <span class="kw">for </span>PyObject {
     <span class="kw">const </span>IS_COPY: bool = <span class="bool-val">false</span>;
 
-    <span class="kw">fn </span>get_dtype(py: Python) -&gt; <span class="kw-2">&amp;</span>PyArrayDescr {
+    <span class="kw">fn </span>get_dtype&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;) -&gt; <span class="kw-2">&amp;</span>PyArrayDescr {
         PyArrayDescr::object(py)
     }
 }
@@ -1218,7 +1218,7 @@
 
     <span class="attr">#[test]
     </span><span class="kw">fn </span>test_dtype_names() {
-        <span class="kw">fn </span>type_name&lt;T: Element&gt;(py: Python) -&gt; <span class="kw-2">&amp;</span>str {
+        <span class="kw">fn </span>type_name&lt;<span class="lifetime">&#39;py</span>, T: Element&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;) -&gt; <span class="kw-2">&amp;</span>str {
             dtype::&lt;T&gt;(py).typeobj().name().unwrap()
         }
         Python::with_gil(|py| {

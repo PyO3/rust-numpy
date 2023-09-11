@@ -450,7 +450,7 @@
 <span class="kw">unsafe impl </span>Sync <span class="kw">for </span>PyArrayAPI {}
 
 <span class="kw">impl </span>PyArrayAPI {
-    <span class="kw">unsafe fn </span>get(<span class="kw-2">&amp;</span><span class="self">self</span>, py: Python, offset: isize) -&gt; <span class="kw-2">*const *const </span>c_void {
+    <span class="kw">unsafe fn </span>get&lt;<span class="lifetime">&#39;py</span>&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, offset: isize) -&gt; <span class="kw-2">*const *const </span>c_void {
         <span class="kw">let </span>api = <span class="self">self
             </span>.<span class="number">0
             </span>.get_or_try_init(py, || get_numpy_api(py, MOD_NAME, CAPSULE_NAME))
@@ -731,7 +731,7 @@
 
         <span class="kw">impl </span>PyArrayAPI {
             <span class="doccomment">/// Get a pointer of the type object assocaited with `ty`.
-            </span><span class="kw">pub unsafe fn </span>get_type_object(<span class="kw-2">&amp;</span><span class="self">self</span>, py: Python, ty: NpyTypes) -&gt; <span class="kw-2">*mut </span>PyTypeObject {
+            </span><span class="kw">pub unsafe fn </span>get_type_object&lt;<span class="lifetime">&#39;py</span>&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, ty: NpyTypes) -&gt; <span class="kw-2">*mut </span>PyTypeObject {
                 <span class="kw">match </span>ty {
                     $( NpyTypes::<span class="macro-nonterminal">$tname </span>=&gt; <span class="kw-2">*</span>(<span class="self">self</span>.get(py, <span class="macro-nonterminal">$offset</span>)) <span class="kw">as _ </span>),*
                 }
@@ -784,13 +784,13 @@
 
 <span class="doccomment">/// Checks that `op` is an instance of `PyArray` or not.
 </span><span class="attr">#[allow(non_snake_case)]
-</span><span class="kw">pub unsafe fn </span>PyArray_Check(py: Python, op: <span class="kw-2">*mut </span>PyObject) -&gt; c_int {
+</span><span class="kw">pub unsafe fn </span>PyArray_Check&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, op: <span class="kw-2">*mut </span>PyObject) -&gt; c_int {
     ffi::PyObject_TypeCheck(op, PY_ARRAY_API.get_type_object(py, NpyTypes::PyArray_Type))
 }
 
 <span class="doccomment">/// Checks that `op` is an exact instance of `PyArray` or not.
 </span><span class="attr">#[allow(non_snake_case)]
-</span><span class="kw">pub unsafe fn </span>PyArray_CheckExact(py: Python, op: <span class="kw-2">*mut </span>PyObject) -&gt; c_int {
+</span><span class="kw">pub unsafe fn </span>PyArray_CheckExact&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, op: <span class="kw-2">*mut </span>PyObject) -&gt; c_int {
     (ffi::Py_TYPE(op) == PY_ARRAY_API.get_type_object(py, NpyTypes::PyArray_Type)) <span class="kw">as _
 </span>}
 

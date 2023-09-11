@@ -499,7 +499,7 @@
 <span class="kw">unsafe impl</span>&lt;U: Unit&gt; Element <span class="kw">for </span>Datetime&lt;U&gt; {
     <span class="kw">const </span>IS_COPY: bool = <span class="bool-val">true</span>;
 
-    <span class="kw">fn </span>get_dtype(py: Python) -&gt; <span class="kw-2">&amp;</span>PyArrayDescr {
+    <span class="kw">fn </span>get_dtype&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span>PyArrayDescr {
         <span class="kw">static </span>DTYPES: TypeDescriptors = <span class="kw">unsafe </span>{ TypeDescriptors::new(NPY_TYPES::NPY_DATETIME) };
 
         DTYPES.from_unit(py, U::UNIT)
@@ -534,7 +534,7 @@
 <span class="kw">unsafe impl</span>&lt;U: Unit&gt; Element <span class="kw">for </span>Timedelta&lt;U&gt; {
     <span class="kw">const </span>IS_COPY: bool = <span class="bool-val">true</span>;
 
-    <span class="kw">fn </span>get_dtype(py: Python) -&gt; <span class="kw-2">&amp;</span>PyArrayDescr {
+    <span class="kw">fn </span>get_dtype&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span>PyArrayDescr {
         <span class="kw">static </span>DTYPES: TypeDescriptors = <span class="kw">unsafe </span>{ TypeDescriptors::new(NPY_TYPES::NPY_TIMEDELTA) };
 
         DTYPES.from_unit(py, U::UNIT)
@@ -657,7 +657,7 @@
     <span class="attr">#[test]
     </span><span class="kw">fn </span>unit_conversion() {
         <span class="attr">#[track_caller]
-        </span><span class="kw">fn </span>convert&lt;S: Unit, D: Unit&gt;(py: Python&lt;<span class="lifetime">&#39;_</span>&gt;, expected_value: i64) {
+        </span><span class="kw">fn </span>convert&lt;<span class="lifetime">&#39;py</span>, S: Unit, D: Unit&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, expected_value: i64) {
             <span class="kw">let </span>array = PyArray1::&lt;Timedelta&lt;S&gt;&gt;::from_slice(py, <span class="kw-2">&amp;</span>[Timedelta::&lt;S&gt;::from(<span class="number">1</span>)]);
             <span class="kw">let </span>array = array.cast::&lt;Timedelta&lt;D&gt;&gt;(<span class="bool-val">false</span>).unwrap();
 

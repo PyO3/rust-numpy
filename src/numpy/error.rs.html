@@ -198,7 +198,7 @@
         <span class="kw">impl </span>Error <span class="kw">for </span><span class="macro-nonterminal">$err_type </span>{}
 
         <span class="kw">impl </span>PyErrArguments <span class="kw">for </span><span class="macro-nonterminal">$err_type </span>{
-            <span class="kw">fn </span>arguments(<span class="self">self</span>, py: Python) -&gt; PyObject {
+            <span class="kw">fn </span>arguments&lt;<span class="lifetime">&#39;py</span>&gt;(<span class="self">self</span>, py: Python&lt;<span class="lifetime">&#39;py</span>&gt;) -&gt; PyObject {
                 <span class="self">self</span>.to_string().to_object(py)
             }
         }
@@ -225,7 +225,7 @@
 }
 
 <span class="kw">impl </span>fmt::Display <span class="kw">for </span>DimensionalityError {
-    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter) -&gt; fmt::Result {
+    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; fmt::Result {
         <span class="macro">write!</span>(
             f,
             <span class="string">&quot;dimensionality mismatch:\n from={}, to={}&quot;</span>,
@@ -250,7 +250,7 @@
 }
 
 <span class="kw">impl </span>fmt::Display <span class="kw">for </span>TypeError&lt;<span class="lifetime">&#39;_</span>&gt; {
-    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter) -&gt; fmt::Result {
+    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; fmt::Result {
         <span class="macro">write!</span>(f, <span class="string">&quot;type mismatch:\n from={}, to={}&quot;</span>, <span class="self">self</span>.from, <span class="self">self</span>.to)
     }
 }
@@ -263,7 +263,7 @@
 }
 
 <span class="kw">impl </span>PyErrArguments <span class="kw">for </span>TypeErrorArguments {
-    <span class="kw">fn </span>arguments(<span class="self">self</span>, py: Python) -&gt; PyObject {
+    <span class="kw">fn </span>arguments&lt;<span class="lifetime">&#39;py</span>&gt;(<span class="self">self</span>, py: Python&lt;<span class="lifetime">&#39;py</span>&gt;) -&gt; PyObject {
         <span class="kw">let </span>err = TypeError {
             from: <span class="self">self</span>.from.as_ref(py),
             to: <span class="self">self</span>.to.as_ref(py),
@@ -298,7 +298,7 @@
 }
 
 <span class="kw">impl </span>fmt::Display <span class="kw">for </span>FromVecError {
-    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter) -&gt; fmt::Result {
+    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; fmt::Result {
         <span class="macro">write!</span>(
             f,
             <span class="string">&quot;invalid length: {}, but expected {}&quot;</span>,
@@ -314,7 +314,7 @@
 </span><span class="kw">pub struct </span>NotContiguousError;
 
 <span class="kw">impl </span>fmt::Display <span class="kw">for </span>NotContiguousError {
-    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter) -&gt; fmt::Result {
+    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; fmt::Result {
         <span class="macro">write!</span>(f, <span class="string">&quot;The given array is not contiguous&quot;</span>)
     }
 }
@@ -332,7 +332,7 @@
 }
 
 <span class="kw">impl </span>fmt::Display <span class="kw">for </span>BorrowError {
-    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter) -&gt; fmt::Result {
+    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; fmt::Result {
         <span class="kw">match </span><span class="self">self </span>{
             <span class="self">Self</span>::AlreadyBorrowed =&gt; <span class="macro">write!</span>(f, <span class="string">&quot;The given array is already borrowed&quot;</span>),
             <span class="self">Self</span>::NotWriteable =&gt; <span class="macro">write!</span>(f, <span class="string">&quot;The given array is not writeable&quot;</span>),

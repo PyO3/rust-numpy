@@ -109,7 +109,7 @@
 <span class="kw">unsafe impl </span>Sync <span class="kw">for </span>PyUFuncAPI {}
 
 <span class="kw">impl </span>PyUFuncAPI {
-    <span class="kw">unsafe fn </span>get(<span class="kw-2">&amp;</span><span class="self">self</span>, py: Python, offset: isize) -&gt; <span class="kw-2">*const *const </span>c_void {
+    <span class="kw">unsafe fn </span>get&lt;<span class="lifetime">&#39;py</span>&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, offset: isize) -&gt; <span class="kw-2">*const *const </span>c_void {
         <span class="kw">let </span>api = <span class="self">self
             </span>.<span class="number">0
             </span>.get_or_try_init(py, || get_numpy_api(py, MOD_NAME, CAPSULE_NAME))

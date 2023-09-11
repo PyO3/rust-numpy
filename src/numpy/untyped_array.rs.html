@@ -325,7 +325,7 @@
     <span class="kw">const </span>NAME: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str = <span class="string">&quot;PyUntypedArray&quot;</span>;
     <span class="kw">const </span>MODULE: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt; = <span class="prelude-val">Some</span>(<span class="string">&quot;numpy&quot;</span>);
 
-    <span class="kw">fn </span>type_object_raw(py: Python) -&gt; <span class="kw-2">*mut </span>ffi::PyTypeObject {
+    <span class="kw">fn </span>type_object_raw&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;) -&gt; <span class="kw-2">*mut </span>ffi::PyTypeObject {
         <span class="kw">unsafe </span>{ npyffi::PY_ARRAY_API.get_type_object(py, npyffi::NpyTypes::PyArray_Type) }
     }
 
@@ -337,7 +337,7 @@
 <span class="macro">pyobject_native_type_named!</span>(PyUntypedArray);
 
 <span class="kw">impl </span>IntoPy&lt;PyObject&gt; <span class="kw">for </span>PyUntypedArray {
-    <span class="kw">fn </span>into_py(<span class="self">self</span>, py: Python&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; PyObject {
+    <span class="kw">fn </span>into_py&lt;<span class="lifetime">&#39;py</span>&gt;(<span class="self">self</span>, py: Python&lt;<span class="lifetime">&#39;py</span>&gt;) -&gt; PyObject {
         <span class="kw">unsafe </span>{ PyObject::from_borrowed_ptr(py, <span class="self">self</span>.as_ptr()) }
     }
 }

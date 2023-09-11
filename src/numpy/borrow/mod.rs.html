@@ -886,7 +886,7 @@
 
     <span class="doccomment">/// Provides an immutable array view of the interior of the NumPy array.
     </span><span class="attr">#[inline(always)]
-    </span><span class="kw">pub fn </span>as_array(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; ArrayView&lt;T, D&gt; {
+    </span><span class="kw">pub fn </span>as_array(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; ArrayView&lt;<span class="lifetime">&#39;_</span>, T, D&gt; {
         <span class="comment">// SAFETY: Global borrow flags ensure aliasing discipline.
         </span><span class="kw">unsafe </span>{ <span class="self">self</span>.array.as_array() }
     }
@@ -918,7 +918,7 @@
     </span><span class="attr">#[doc(alias = <span class="string">&quot;nalgebra&quot;</span>)]
     </span><span class="kw">pub fn </span>try_as_matrix&lt;R, C, RStride, CStride&gt;(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-    ) -&gt; <span class="prelude-ty">Option</span>&lt;nalgebra::MatrixView&lt;N, R, C, RStride, CStride&gt;&gt;
+    ) -&gt; <span class="prelude-ty">Option</span>&lt;nalgebra::MatrixView&lt;<span class="lifetime">&#39;_</span>, N, R, C, RStride, CStride&gt;&gt;
     <span class="kw">where
         </span>R: nalgebra::Dim,
         C: nalgebra::Dim,
@@ -940,7 +940,7 @@
     ///
     /// Panics if the array has negative strides.
     </span><span class="attr">#[doc(alias = <span class="string">&quot;nalgebra&quot;</span>)]
-    </span><span class="kw">pub fn </span>as_matrix(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; nalgebra::DMatrixView&lt;N, nalgebra::Dyn, nalgebra::Dyn&gt; {
+    </span><span class="kw">pub fn </span>as_matrix(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; nalgebra::DMatrixView&lt;<span class="lifetime">&#39;_</span>, N, nalgebra::Dyn, nalgebra::Dyn&gt; {
         <span class="self">self</span>.try_as_matrix().unwrap()
     }
 }
@@ -956,7 +956,7 @@
     ///
     /// Panics if the array has negative strides.
     </span><span class="attr">#[doc(alias = <span class="string">&quot;nalgebra&quot;</span>)]
-    </span><span class="kw">pub fn </span>as_matrix(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; nalgebra::DMatrixView&lt;N, nalgebra::Dyn, nalgebra::Dyn&gt; {
+    </span><span class="kw">pub fn </span>as_matrix(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; nalgebra::DMatrixView&lt;<span class="lifetime">&#39;_</span>, N, nalgebra::Dyn, nalgebra::Dyn&gt; {
         <span class="self">self</span>.try_as_matrix().unwrap()
     }
 }
@@ -1068,7 +1068,7 @@
 
     <span class="doccomment">/// Provides a mutable array view of the interior of the NumPy array.
     </span><span class="attr">#[inline(always)]
-    </span><span class="kw">pub fn </span>as_array_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; ArrayViewMut&lt;T, D&gt; {
+    </span><span class="kw">pub fn </span>as_array_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; ArrayViewMut&lt;<span class="lifetime">&#39;_</span>, T, D&gt; {
         <span class="comment">// SAFETY: Global borrow flags ensure aliasing discipline.
         </span><span class="kw">unsafe </span>{ <span class="self">self</span>.array.as_array_mut() }
     }
@@ -1100,7 +1100,7 @@
     </span><span class="attr">#[doc(alias = <span class="string">&quot;nalgebra&quot;</span>)]
     </span><span class="kw">pub fn </span>try_as_matrix_mut&lt;R, C, RStride, CStride&gt;(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-    ) -&gt; <span class="prelude-ty">Option</span>&lt;nalgebra::MatrixViewMut&lt;N, R, C, RStride, CStride&gt;&gt;
+    ) -&gt; <span class="prelude-ty">Option</span>&lt;nalgebra::MatrixViewMut&lt;<span class="lifetime">&#39;_</span>, N, R, C, RStride, CStride&gt;&gt;
     <span class="kw">where
         </span>R: nalgebra::Dim,
         C: nalgebra::Dim,
@@ -1122,7 +1122,7 @@
     ///
     /// Panics if the array has negative strides.
     </span><span class="attr">#[doc(alias = <span class="string">&quot;nalgebra&quot;</span>)]
-    </span><span class="kw">pub fn </span>as_matrix_mut(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; nalgebra::DMatrixViewMut&lt;N, nalgebra::Dyn, nalgebra::Dyn&gt; {
+    </span><span class="kw">pub fn </span>as_matrix_mut(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; nalgebra::DMatrixViewMut&lt;<span class="lifetime">&#39;_</span>, N, nalgebra::Dyn, nalgebra::Dyn&gt; {
         <span class="self">self</span>.try_as_matrix_mut().unwrap()
     }
 }
@@ -1138,7 +1138,7 @@
     ///
     /// Panics if the array has negative strides.
     </span><span class="attr">#[doc(alias = <span class="string">&quot;nalgebra&quot;</span>)]
-    </span><span class="kw">pub fn </span>as_matrix_mut(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; nalgebra::DMatrixViewMut&lt;N, nalgebra::Dyn, nalgebra::Dyn&gt; {
+    </span><span class="kw">pub fn </span>as_matrix_mut(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; nalgebra::DMatrixViewMut&lt;<span class="lifetime">&#39;_</span>, N, nalgebra::Dyn, nalgebra::Dyn&gt; {
         <span class="self">self</span>.try_as_matrix_mut().unwrap()
     }
 }

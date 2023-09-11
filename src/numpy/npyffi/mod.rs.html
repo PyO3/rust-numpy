@@ -53,6 +53,10 @@
 <a href="#53" id="53">53</a>
 <a href="#54" id="54">54</a>
 <a href="#55" id="55">55</a>
+<a href="#56" id="56">56</a>
+<a href="#57" id="57">57</a>
+<a href="#58" id="58">58</a>
+<a href="#59" id="59">59</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Low-Level bindings for NumPy C API.
 //!
 //! &lt;https://numpy.org/doc/stable/reference/c-api&gt;
@@ -72,7 +76,11 @@
     Py, PyResult, PyTryInto, Python,
 };
 
-<span class="kw">fn </span>get_numpy_api(py: Python, module: <span class="kw-2">&amp;</span>str, capsule: <span class="kw-2">&amp;</span>str) -&gt; PyResult&lt;<span class="kw-2">*const *const </span>c_void&gt; {
+<span class="kw">fn </span>get_numpy_api&lt;<span class="lifetime">&#39;py</span>&gt;(
+    py: Python&lt;<span class="lifetime">&#39;py</span>&gt;,
+    module: <span class="kw-2">&amp;</span>str,
+    capsule: <span class="kw-2">&amp;</span>str,
+) -&gt; PyResult&lt;<span class="kw-2">*const *const </span>c_void&gt; {
     <span class="kw">let </span>module = PyModule::import(py, module)<span class="question-mark">?</span>;
     <span class="kw">let </span>capsule: <span class="kw-2">&amp;</span>PyCapsule = PyTryInto::try_into(module.getattr(capsule)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
 
@@ -89,7 +97,7 @@
 </span><span class="macro">macro_rules! </span>impl_api {
     [<span class="macro-nonterminal">$offset</span>: expr; <span class="macro-nonterminal">$fname</span>: ident ( $(<span class="macro-nonterminal">$arg</span>: ident : <span class="macro-nonterminal">$t</span>: ty),* $(,)<span class="question-mark">?</span>) $( -&gt; <span class="macro-nonterminal">$ret</span>: ty )* ] =&gt; {
         <span class="attr">#[allow(non_snake_case)]
-        </span><span class="kw">pub unsafe fn </span><span class="macro-nonterminal">$fname</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, py: Python, $(<span class="macro-nonterminal">$arg </span>: <span class="macro-nonterminal">$t</span>), <span class="kw-2">*</span>) $( -&gt; <span class="macro-nonterminal">$ret </span>)* {
+        </span><span class="kw">pub unsafe fn </span><span class="macro-nonterminal">$fname</span>&lt;<span class="lifetime">&#39;py</span>&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, $(<span class="macro-nonterminal">$arg </span>: <span class="macro-nonterminal">$t</span>), <span class="kw-2">*</span>) $( -&gt; <span class="macro-nonterminal">$ret </span>)* {
             <span class="kw">let </span>fptr = <span class="self">self</span>.get(py, <span class="macro-nonterminal">$offset</span>)
                            <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">extern fn </span>($(<span class="macro-nonterminal">$arg </span>: <span class="macro-nonterminal">$t</span>), <span class="kw-2">*</span>) $( -&gt; <span class="macro-nonterminal">$ret </span>)<span class="kw-2">*</span>;
             (<span class="kw-2">*</span>fptr)($(<span class="macro-nonterminal">$arg</span>), <span class="kw-2">*</span>)

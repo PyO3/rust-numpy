@@ -293,7 +293,7 @@
 </span><span class="kw">pub struct </span>PyFixedString&lt;<span class="kw">const </span>N: usize&gt;(<span class="kw">pub </span>[Py_UCS1; N]);
 
 <span class="kw">impl</span>&lt;<span class="kw">const </span>N: usize&gt; fmt::Display <span class="kw">for </span>PyFixedString&lt;N&gt; {
-    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>fmt::Formatter) -&gt; fmt::Result {
+    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; fmt::Result {
         fmt.write_str(str::from_utf8(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>).unwrap().trim_end_matches(<span class="string">&#39;\0&#39;</span>))
     }
 }
@@ -307,7 +307,7 @@
 <span class="kw">unsafe impl</span>&lt;<span class="kw">const </span>N: usize&gt; Element <span class="kw">for </span>PyFixedString&lt;N&gt; {
     <span class="kw">const </span>IS_COPY: bool = <span class="bool-val">true</span>;
 
-    <span class="kw">fn </span>get_dtype(py: Python) -&gt; <span class="kw-2">&amp;</span>PyArrayDescr {
+    <span class="kw">fn </span>get_dtype&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;) -&gt; <span class="kw-2">&amp;</span>PyArrayDescr {
         <span class="kw">static </span>DTYPES: TypeDescriptors = TypeDescriptors::new();
 
         <span class="kw">unsafe </span>{ DTYPES.from_size(py, NPY_TYPES::NPY_STRING, <span class="string">b&#39;|&#39; </span><span class="kw">as _</span>, size_of::&lt;<span class="self">Self</span>&gt;()) }
@@ -356,7 +356,7 @@
 </span><span class="kw">pub struct </span>PyFixedUnicode&lt;<span class="kw">const </span>N: usize&gt;(<span class="kw">pub </span>[Py_UCS4; N]);
 
 <span class="kw">impl</span>&lt;<span class="kw">const </span>N: usize&gt; fmt::Display <span class="kw">for </span>PyFixedUnicode&lt;N&gt; {
-    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>fmt::Formatter) -&gt; fmt::Result {
+    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; fmt::Result {
         <span class="kw">for </span>character <span class="kw">in </span><span class="self">self</span>.<span class="number">0 </span>{
             <span class="kw">if </span>character == <span class="number">0 </span>{
                 <span class="kw">break</span>;
@@ -378,7 +378,7 @@
 <span class="kw">unsafe impl</span>&lt;<span class="kw">const </span>N: usize&gt; Element <span class="kw">for </span>PyFixedUnicode&lt;N&gt; {
     <span class="kw">const </span>IS_COPY: bool = <span class="bool-val">true</span>;
 
-    <span class="kw">fn </span>get_dtype(py: Python) -&gt; <span class="kw-2">&amp;</span>PyArrayDescr {
+    <span class="kw">fn </span>get_dtype&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;) -&gt; <span class="kw-2">&amp;</span>PyArrayDescr {
         <span class="kw">static </span>DTYPES: TypeDescriptors = TypeDescriptors::new();
 
         <span class="kw">unsafe </span>{ DTYPES.from_size(py, NPY_TYPES::NPY_UNICODE, <span class="string">b&#39;=&#39; </span><span class="kw">as _</span>, size_of::&lt;<span class="self">Self</span>&gt;()) }
