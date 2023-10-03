@@ -29,31 +29,40 @@ def gen_examples(manifest):
         yield dir_ / manifest
 
 
+LINT_CONFIG = (
+    "--deny",
+    "warnings",
+    # We usually want to make the GIL lifetime explicit.
+    "--deny",
+    "elided-lifetimes-in-paths",
+    "--allow",
+    "clippy::needless-lifetimes",
+)
+
+
 def default(args):
     format_(args)
 
     if nightly():
-        run("cargo", "clippy", "--all-features", "--tests", "--benches")
+        run(
+            "cargo",
+            "clippy",
+            "--all-features",
+            "--tests",
+            "--benches",
+            "--",
+            *LINT_CONFIG,
+        )
     else:
-        run("cargo", "clippy", "--all-features", "--tests")
+        run("cargo", "clippy", "--all-features", "--tests", "--", *LINT_CONFIG)
 
     for manifest in gen_examples("Cargo.toml"):
-        run("cargo", "clippy", "--manifest-path", manifest)
+        run("cargo", "clippy", "--manifest-path", manifest, "--", *LINT_CONFIG)
 
     run("cargo", "test", "--all-features", "--lib", "--tests")
 
 
 def check(args):
-    LINT_CONFIG = (
-        "--deny",
-        "warnings",
-        # We usually want to make the GIL lifetime explicit.
-        "--deny",
-        "elided-lifetimes-in-paths",
-        "--allow",
-        "clippy::needless-lifetimes",
-    )
-
     run("cargo", "fmt", "--", "--check")
 
     run(

@@ -185,7 +185,7 @@ fn from_vec3_large(bencher: &mut Bencher) {
     from_vec3(bencher, 2_usize.pow(5));
 }
 
-fn iter_with_gil(bencher: &mut Bencher, mut f: impl FnMut(Python)) {
+fn iter_with_gil(bencher: &mut Bencher, mut f: impl FnMut(Python<'_>)) {
     Python::with_gil(|py| {
         bencher.iter(|| {
             let pool = unsafe { py.new_pool() };
