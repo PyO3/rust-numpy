@@ -167,7 +167,7 @@ use std::fmt;
 use std::ops::Deref;
 
 use ndarray::{
-    ArrayView, ArrayViewMut, Dimension, IntoDimension, Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn,
+    ArrayView, ArrayViewMut, Dimension, IntoDimension, Ix0, Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn,
 };
 use pyo3::{FromPyObject, PyAny, PyResult};
 
@@ -192,6 +192,9 @@ where
 {
     array: &'py PyArray<T, D>,
 }
+
+/// Read-only borrow of a zero-dimensional array.
+pub type PyReadonlyArray0<'py, T> = PyReadonlyArray<'py, T, Ix0>;
 
 /// Read-only borrow of a one-dimensional array.
 pub type PyReadonlyArray1<'py, T> = PyReadonlyArray<'py, T, Ix1>;
@@ -373,6 +376,9 @@ where
 {
     array: &'py PyArray<T, D>,
 }
+
+/// Read-write borrow of a zero-dimensional array.
+pub type PyReadwriteArray0<'py, T> = PyReadwriteArray<'py, T, Ix0>;
 
 /// Read-write borrow of a one-dimensional array.
 pub type PyReadwriteArray1<'py, T> = PyReadwriteArray<'py, T, Ix1>;

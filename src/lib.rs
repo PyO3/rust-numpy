@@ -95,10 +95,10 @@ pub use crate::array::{
     PyArray6, PyArrayDyn,
 };
 pub use crate::borrow::{
-    PyReadonlyArray, PyReadonlyArray1, PyReadonlyArray2, PyReadonlyArray3, PyReadonlyArray4,
-    PyReadonlyArray5, PyReadonlyArray6, PyReadonlyArrayDyn, PyReadwriteArray, PyReadwriteArray1,
-    PyReadwriteArray2, PyReadwriteArray3, PyReadwriteArray4, PyReadwriteArray5, PyReadwriteArray6,
-    PyReadwriteArrayDyn,
+    PyReadonlyArray, PyReadonlyArray0, PyReadonlyArray1, PyReadonlyArray2, PyReadonlyArray3,
+    PyReadonlyArray4, PyReadonlyArray5, PyReadonlyArray6, PyReadonlyArrayDyn, PyReadwriteArray,
+    PyReadwriteArray0, PyReadwriteArray1, PyReadwriteArray2, PyReadwriteArray3, PyReadwriteArray4,
+    PyReadwriteArray5, PyReadwriteArray6, PyReadwriteArrayDyn,
 };
 pub use crate::convert::{IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
 pub use crate::dtype::{dtype, Complex32, Complex64, Element, PyArrayDescr};
