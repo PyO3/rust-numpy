@@ -160,6 +160,11 @@
 <a href="#160" id="160">160</a>
 <a href="#161" id="161">161</a>
 <a href="#162" id="162">162</a>
+<a href="#163" id="163">163</a>
+<a href="#164" id="164">164</a>
+<a href="#165" id="165">165</a>
+<a href="#166" id="166">166</a>
+<a href="#167" id="167">167</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! This crate provides Rust interfaces for [NumPy C APIs][c-api],
 //! especially for the [ndarray][ndarray] class.
 //!
@@ -235,6 +240,7 @@ as well as the [`PyReadonlyArray::try_as_matrix`] and [`PyReadwriteArray::try_as
 </span><span class="attr">#![deny(missing_docs, missing_debug_implementations)]
 
 </span><span class="kw">pub mod </span>array;
+<span class="kw">mod </span>array_like;
 <span class="kw">pub mod </span>borrow;
 <span class="kw">pub mod </span>convert;
 <span class="kw">pub mod </span>datetime;
@@ -255,6 +261,10 @@ as well as the [`PyReadonlyArray::try_as_matrix`] and [`PyReadwriteArray::try_as
 <span class="kw">pub use </span><span class="kw">crate</span>::array::{
     get_array_module, PyArray, PyArray0, PyArray1, PyArray2, PyArray3, PyArray4, PyArray5,
     PyArray6, PyArrayDyn,
+};
+<span class="kw">pub use </span><span class="kw">crate</span>::array_like::{
+    AllowTypeChange, PyArrayLike, PyArrayLike0, PyArrayLike1, PyArrayLike2, PyArrayLike3,
+    PyArrayLike4, PyArrayLike5, PyArrayLike6, PyArrayLikeDyn, TypeMustMatch,
 };
 <span class="kw">pub use </span><span class="kw">crate</span>::borrow::{
     PyReadonlyArray, PyReadonlyArray0, PyReadonlyArray1, PyReadonlyArray2, PyReadonlyArray3,
