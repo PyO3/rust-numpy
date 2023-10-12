@@ -91,6 +91,7 @@ fn rust_ext<'py>(_py: Python<'py>, m: &'py PyModule) -> PyResult<()> {
         let x = d
             .get_item("x")
             .unwrap()
+            .unwrap()
             .downcast::<PyArray1<f64>>()
             .unwrap();
 
