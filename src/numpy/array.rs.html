@@ -1660,7 +1660,7 @@
     }
 }
 
-<span class="kw">impl</span>&lt;T, D&gt; AsPyPointer <span class="kw">for </span>PyArray&lt;T, D&gt; {
+<span class="kw">unsafe impl</span>&lt;T, D&gt; AsPyPointer <span class="kw">for </span>PyArray&lt;T, D&gt; {
     <span class="attr">#[inline]
     </span><span class="kw">fn </span>as_ptr(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">*mut </span>ffi::PyObject {
         <span class="self">self</span>.<span class="number">0</span>.as_ptr()

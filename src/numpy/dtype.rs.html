@@ -678,6 +678,8 @@
 <a href="#678" id="678">678</a>
 <a href="#679" id="679">679</a>
 <a href="#680" id="680">680</a>
+<a href="#681" id="681">681</a>
+<a href="#682" id="682">682</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::mem::size_of;
 <span class="kw">use </span>std::os::raw::{
     c_char, c_int, c_long, c_longlong, c_short, c_uint, c_ulong, c_ulonglong, c_ushort,
@@ -692,8 +694,8 @@
     ffi::{<span class="self">self</span>, PyTuple_Size},
     pyobject_native_type_extract, pyobject_native_type_named,
     types::{PyDict, PyTuple, PyType},
-    AsPyPointer, FromPyObject, FromPyPointer, IntoPyPointer, PyAny, PyNativeType, PyObject,
-    PyResult, PyTypeInfo, Python, ToPyObject,
+    AsPyPointer, FromPyObject, FromPyPointer, PyAny, PyNativeType, PyObject, PyResult, PyTypeInfo,
+    Python, ToPyObject,
 };
 <span class="attr">#[cfg(feature = <span class="string">&quot;half&quot;</span>)]
 </span><span class="kw">use </span>pyo3::{sync::GILOnceCell, IntoPy, Py};
@@ -1032,8 +1034,8 @@
         <span class="kw">let </span>dict = <span class="kw">unsafe </span>{ PyDict::from_borrowed_ptr(<span class="self">self</span>.py(), (<span class="kw-2">*</span><span class="self">self</span>.as_dtype_ptr()).fields) };
         <span class="comment">// NumPy guarantees that fields are tuples of proper size and type, so this should never panic.
         </span><span class="kw">let </span>tuple = dict
-            .get_item(name)
-            .ok_or_else(|| PyIndexError::new_err(name.to_owned()))<span class="question-mark">?
+            .get_item(name)<span class="question-mark">?
+            </span>.ok_or_else(|| PyIndexError::new_err(name.to_owned()))<span class="question-mark">?
             </span>.downcast::&lt;PyTuple&gt;()
             .unwrap();
         <span class="comment">// Note that we cannot just extract the entire tuple since the third element can be a title.
@@ -1289,6 +1291,7 @@
             <span class="kw">let </span>dt = locals
                 .get_item(<span class="string">&quot;dtype&quot;</span>)
                 .unwrap()
+                .unwrap()
                 .downcast::&lt;PyArrayDescr&gt;()
                 .unwrap();
 
@@ -1323,6 +1326,7 @@
             </span>);
             <span class="kw">let </span>dt = locals
                 .get_item(<span class="string">&quot;dtype&quot;</span>)
+                .unwrap()
                 .unwrap()
                 .downcast::&lt;PyArrayDescr&gt;()
                 .unwrap();
