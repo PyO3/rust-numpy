@@ -12,8 +12,8 @@ use pyo3::{
     ffi::{self, PyTuple_Size},
     pyobject_native_type_extract, pyobject_native_type_named,
     types::{PyDict, PyTuple, PyType},
-    AsPyPointer, FromPyObject, FromPyPointer, IntoPyPointer, PyAny, PyNativeType, PyObject,
-    PyResult, PyTypeInfo, Python, ToPyObject,
+    AsPyPointer, FromPyObject, FromPyPointer, PyAny, PyNativeType, PyObject, PyResult, PyTypeInfo,
+    Python, ToPyObject,
 };
 #[cfg(feature = "half")]
 use pyo3::{sync::GILOnceCell, IntoPy, Py};
@@ -352,7 +352,7 @@ impl PyArrayDescr {
         let dict = unsafe { PyDict::from_borrowed_ptr(self.py(), (*self.as_dtype_ptr()).fields) };
         // NumPy guarantees that fields are tuples of proper size and type, so this should never panic.
         let tuple = dict
-            .get_item(name)
+            .get_item(name)?
             .ok_or_else(|| PyIndexError::new_err(name.to_owned()))?
             .downcast::<PyTuple>()
             .unwrap();
@@ -609,6 +609,7 @@ mod tests {
             let dt = locals
                 .get_item("dtype")
                 .unwrap()
+                .unwrap()
                 .downcast::<PyArrayDescr>()
                 .unwrap();
 
@@ -643,6 +644,7 @@ mod tests {
             );
             let dt = locals
                 .get_item("dtype")
+                .unwrap()
                 .unwrap()
                 .downcast::<PyArrayDescr>()
                 .unwrap();

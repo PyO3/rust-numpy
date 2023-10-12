@@ -155,7 +155,7 @@ impl<T, D> Deref for PyArray<T, D> {
     }
 }
 
-impl<T, D> AsPyPointer for PyArray<T, D> {
+unsafe impl<T, D> AsPyPointer for PyArray<T, D> {
     #[inline]
     fn as_ptr(&self) -> *mut ffi::PyObject {
         self.0.as_ptr()
