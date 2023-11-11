@@ -368,6 +368,15 @@ impl PyArrayDescr {
 /// Currently, only integer/float/complex/object types are supported. The [NumPy documentation][enumerated-types]
 /// list the other built-in types which we are not yet implemented.
 ///
+/// Note that NumPy's integer types like `numpy.int_` and `numpy.uint` are based on C's integer hierarchy
+/// which implies that their widths change depending on the platform's [data model][data-models].
+/// For example, `numpy.int_` matches C's `long` which is 32 bits wide on Windows (using the LLP64 data model)
+/// but 64 bits wide on Linux (using the LP64 data model).
+///
+/// In contrast, Rust's [`isize`] and [`usize`] types are defined to have the same width as a pointer
+/// and are therefore always 64 bits wide on 64-bit platforms. If you want to match NumPy's behaviour,
+/// consider using the [`c_long`][std::ffi::c_long] and [`c_ulong`][std::ffi::c_ulong] type aliases.
+///
 /// # Safety
 ///
 /// A type `T` that implements this trait should be safe when managed by a NumPy
@@ -390,6 +399,7 @@ impl PyArrayDescr {
 /// safely and efficiently using [`from_owned_object_array`][crate::PyArray::from_owned_object_array].
 ///
 /// [enumerated-types]: https://numpy.org/doc/stable/reference/c-api/dtype.html#enumerated-types
+/// [data-models]: https://en.wikipedia.org/wiki/64-bit_computing#64-bit_data_models
 pub unsafe trait Element: Clone + Send {
     /// Flag that indicates whether this type is trivially copyable.
     ///
