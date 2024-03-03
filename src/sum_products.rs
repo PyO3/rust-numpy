@@ -3,7 +3,8 @@ use std::ffi::{CStr, CString};
 use std::ptr::null_mut;
 
 use ndarray::{Dimension, IxDyn};
-use pyo3::{AsPyPointer, FromPyObject, FromPyPointer, PyAny, PyNativeType, PyResult};
+use pyo3::types::PyAnyMethods;
+use pyo3::{AsPyPointer, Bound, FromPyObject, PyNativeType, PyResult};
 
 use crate::array::PyArray;
 use crate::dtype::Element;
@@ -67,7 +68,7 @@ where
     let py = array1.py();
     let obj = unsafe {
         let result = PY_ARRAY_API.PyArray_InnerProduct(py, array1.as_ptr(), array2.as_ptr());
-        PyAny::from_owned_ptr_or_err(py, result)?
+        Bound::from_owned_ptr_or_err(py, result)?
     };
     obj.extract()
 }
@@ -125,7 +126,7 @@ where
     let py = array1.py();
     let obj = unsafe {
         let result = PY_ARRAY_API.PyArray_MatrixProduct(py, array1.as_ptr(), array2.as_ptr());
-        PyAny::from_owned_ptr_or_err(py, result)?
+        Bound::from_owned_ptr_or_err(py, result)?
     };
     obj.extract()
 }
@@ -155,7 +156,7 @@ where
             NPY_CASTING::NPY_NO_CASTING,
             null_mut(),
         );
-        PyAny::from_owned_ptr_or_err(py, result)?
+        Bound::from_owned_ptr_or_err(py, result)?
     };
     obj.extract()
 }

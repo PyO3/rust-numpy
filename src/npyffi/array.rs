@@ -9,7 +9,7 @@ use std::os::raw::*;
 use libc::FILE;
 use pyo3::{
     ffi::{self, PyObject, PyTypeObject},
-    once_cell::GILOnceCell,
+    sync::GILOnceCell,
 };
 
 use crate::npyffi::*;

@@ -11,9 +11,8 @@ use pyo3::{
     exceptions::{PyIndexError, PyValueError},
     ffi::{self, PyTuple_Size},
     pyobject_native_type_extract, pyobject_native_type_named,
-    types::{PyDict, PyTuple, PyType},
-    AsPyPointer, FromPyObject, FromPyPointer, PyAny, PyNativeType, PyObject, PyResult, PyTypeInfo,
-    Python, ToPyObject,
+    types::{PyAnyMethods, PyDict, PyDictMethods, PyTuple, PyType},
+    AsPyPointer, Borrowed, PyAny, PyNativeType, PyObject, PyResult, PyTypeInfo, Python, ToPyObject,
 };
 #[cfg(feature = "half")]
 use pyo3::{sync::GILOnceCell, IntoPy, Py};
@@ -53,8 +52,6 @@ pub struct PyArrayDescr(PyAny);
 pyobject_native_type_named!(PyArrayDescr);
 
 unsafe impl PyTypeInfo for PyArrayDescr {
-    type AsRefTarget = Self;
-
     const NAME: &'static str = "PyArrayDescr";
     const MODULE: Option<&'static str> = Some("numpy");
 
@@ -249,7 +246,9 @@ impl PyArrayDescr {
         if !self.has_subarray() {
             self
         } else {
+            #[allow(deprecated)]
             unsafe {
+                use pyo3::FromPyPointer;
                 Self::from_borrowed_ptr(self.py(), (*(*self.as_dtype_ptr()).subarray).base as _)
             }
         }
@@ -267,11 +266,9 @@ impl PyArrayDescr {
             Vec::new()
         } else {
             // NumPy guarantees that shape is a tuple of non-negative integers so this should never panic.
-            unsafe {
-                PyTuple::from_borrowed_ptr(self.py(), (*(*self.as_dtype_ptr()).subarray).shape)
-            }
-            .extract()
-            .unwrap()
+            unsafe { Borrowed::from_ptr(self.py(), (*(*self.as_dtype_ptr()).subarray).shape) }
+                .extract()
+                .unwrap()
         }
     }
 
@@ -329,8 +326,8 @@ impl PyArrayDescr {
         if !self.has_fields() {
             return None;
         }
-        let names = unsafe { PyTuple::from_borrowed_ptr(self.py(), (*self.as_dtype_ptr()).names) };
-        FromPyObject::extract(names).ok()
+        let names = unsafe { Borrowed::from_ptr(self.py(), (*self.as_dtype_ptr()).names) };
+        names.extract().ok()
     }
 
     /// Returns the type descriptor and offset of the field with the given name.
@@ -349,17 +346,22 @@ impl PyArrayDescr {
                 "cannot get field information: type descriptor has no fields",
             ));
         }
-        let dict = unsafe { PyDict::from_borrowed_ptr(self.py(), (*self.as_dtype_ptr()).fields) };
+        let dict = unsafe { Borrowed::from_ptr(self.py(), (*self.as_dtype_ptr()).fields) };
+        let dict = unsafe { dict.downcast_unchecked::<PyDict>() };
         // NumPy guarantees that fields are tuples of proper size and type, so this should never panic.
         let tuple = dict
             .get_item(name)?
             .ok_or_else(|| PyIndexError::new_err(name.to_owned()))?
-            .downcast::<PyTuple>()
+            .downcast_into::<PyTuple>()
             .unwrap();
         // Note that we cannot just extract the entire tuple since the third element can be a title.
-        let dtype = FromPyObject::extract(tuple.as_ref().get_item(0).unwrap()).unwrap();
-        let offset = FromPyObject::extract(tuple.as_ref().get_item(1).unwrap()).unwrap();
-        Ok((dtype, offset))
+        let dtype = tuple
+            .get_item(0)
+            .unwrap()
+            .downcast_into::<PyArrayDescr>()
+            .unwrap();
+        let offset = tuple.get_item(1).unwrap().extract().unwrap();
+        Ok((dtype.into_gil_ref(), offset))
     }
 }
 
@@ -548,8 +550,8 @@ mod tests {
 
     #[test]
     fn test_dtype_names() {
-        fn type_name<'py, T: Element>(py: Python<'py>) -> &str {
-            dtype::<T>(py).typeobj().name().unwrap()
+        fn type_name<'py, T: Element>(py: Python<'py>) -> String {
+            dtype::<T>(py).typeobj().qualname().unwrap()
         }
         Python::with_gil(|py| {
             assert_eq!(type_name::<bool>(py), "bool_");
@@ -589,7 +591,7 @@ mod tests {
 
             assert_eq!(dt.num(), NPY_TYPES::NPY_DOUBLE as c_int);
             assert_eq!(dt.flags(), 0);
-            assert_eq!(dt.typeobj().name().unwrap(), "float64");
+            assert_eq!(dt.typeobj().qualname().unwrap(), "float64");
             assert_eq!(dt.char(), b'd');
             assert_eq!(dt.kind(), b'f');
             assert_eq!(dt.byteorder(), b'=');
@@ -625,7 +627,7 @@ mod tests {
 
             assert_eq!(dt.num(), NPY_TYPES::NPY_VOID as c_int);
             assert_eq!(dt.flags(), 0);
-            assert_eq!(dt.typeobj().name().unwrap(), "void");
+            assert_eq!(dt.typeobj().qualname().unwrap(), "void");
             assert_eq!(dt.char(), b'V');
             assert_eq!(dt.kind(), b'V');
             assert_eq!(dt.byteorder(), b'|');
@@ -663,7 +665,7 @@ mod tests {
             assert_ne!(dt.flags() & NPY_ITEM_HASOBJECT, 0);
             assert_ne!(dt.flags() & NPY_NEEDS_PYAPI, 0);
             assert_ne!(dt.flags() & NPY_ALIGNED_STRUCT, 0);
-            assert_eq!(dt.typeobj().name().unwrap(), "void");
+            assert_eq!(dt.typeobj().qualname().unwrap(), "void");
             assert_eq!(dt.char(), b'V');
             assert_eq!(dt.kind(), b'V');
             assert_eq!(dt.byteorder(), b'|');

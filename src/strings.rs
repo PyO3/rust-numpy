@@ -5,7 +5,6 @@
 
 use std::cell::RefCell;
 use std::collections::hash_map::Entry;
-use std::convert::TryInto;
 use std::fmt;
 use std::mem::size_of;
 use std::os::raw::c_char;

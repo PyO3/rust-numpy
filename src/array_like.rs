@@ -2,7 +2,12 @@ use std::marker::PhantomData;
 use std::ops::Deref;
 
 use ndarray::{Array1, Dimension, Ix0, Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};
-use pyo3::{intern, sync::GILOnceCell, types::PyDict, FromPyObject, Py, PyAny, PyResult};
+use pyo3::{
+    intern,
+    sync::GILOnceCell,
+    types::{PyAnyMethods, PyDict},
+    FromPyObject, Py, PyAny, PyResult,
+};
 
 use crate::sealed::Sealed;
 use crate::{get_array_module, Element, IntoPyArray, PyArray, PyReadonlyArray};

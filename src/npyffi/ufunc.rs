@@ -2,7 +2,7 @@
 
 use std::os::raw::*;
 
-use pyo3::{ffi::PyObject, once_cell::GILOnceCell};
+use pyo3::{ffi::PyObject, sync::GILOnceCell};
 
 use crate::npyffi::*;
 
