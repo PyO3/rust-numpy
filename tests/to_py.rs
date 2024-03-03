@@ -234,6 +234,7 @@ fn to_pyarray_object_vec() {
     Python::with_gil(|py| {
         let dict = PyDict::new(py);
         let string = PyString::new(py, "Hello:)");
+        #[allow(clippy::useless_vec)] // otherwise we do not test the right trait impl
         let vec = vec![dict.to_object(py), string.to_object(py)];
 
         let arr = vec.to_pyarray(py);

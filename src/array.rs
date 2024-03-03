@@ -17,9 +17,10 @@ use ndarray::{
 };
 use num_traits::AsPrimitive;
 use pyo3::{
-    ffi, pyobject_native_type_base, types::PyModule, AsPyPointer, FromPyObject, IntoPy, Py, PyAny,
-    PyClassInitializer, PyDowncastError, PyErr, PyNativeType, PyObject, PyResult, PyTypeInfo,
-    Python, ToPyObject,
+    ffi, pyobject_native_type_base,
+    types::{DerefToPyAny, PyAnyMethods, PyModule},
+    AsPyPointer, Bound, DowncastError, FromPyObject, IntoPy, Py, PyAny, PyErr, PyNativeType,
+    PyObject, PyResult, PyTypeInfo, Python, ToPyObject,
 };
 
 use crate::borrow::{PyReadonlyArray, PyReadwriteArray};
@@ -118,13 +119,13 @@ pub type PyArray6<T> = PyArray<T, Ix6>;
 pub type PyArrayDyn<T> = PyArray<T, IxDyn>;
 
 /// Returns a handle to NumPy's multiarray module.
-pub fn get_array_module<'py>(py: Python<'py>) -> PyResult<&PyModule> {
-    PyModule::import(py, npyffi::array::MOD_NAME)
+pub fn get_array_module<'py>(py: Python<'py>) -> PyResult<Bound<'_, PyModule>> {
+    PyModule::import_bound(py, npyffi::array::MOD_NAME)
 }
 
-unsafe impl<T: Element, D: Dimension> PyTypeInfo for PyArray<T, D> {
-    type AsRefTarget = Self;
+impl<T, D> DerefToPyAny for PyArray<T, D> {}
 
+unsafe impl<T: Element, D: Dimension> PyTypeInfo for PyArray<T, D> {
     const NAME: &'static str = "PyArray<T, D>";
     const MODULE: Option<&'static str> = Some("numpy");
 
@@ -132,7 +133,7 @@ unsafe impl<T: Element, D: Dimension> PyTypeInfo for PyArray<T, D> {
         unsafe { npyffi::PY_ARRAY_API.get_type_object(py, npyffi::NpyTypes::PyArray_Type) }
     }
 
-    fn is_type_of(ob: &PyAny) -> bool {
+    fn is_type_of_bound(ob: &Bound<'_, PyAny>) -> bool {
         Self::extract::<IgnoreError>(ob).is_ok()
     }
 }
@@ -189,8 +190,11 @@ impl<T, D> IntoPy<PyObject> for PyArray<T, D> {
 }
 
 impl<'py, T: Element, D: Dimension> FromPyObject<'py> for &'py PyArray<T, D> {
-    fn extract(ob: &'py PyAny) -> PyResult<Self> {
+    fn extract_bound(ob: &Bound<'py, PyAny>) -> PyResult<Self> {
+        #[allow(clippy::map_clone)] // due to MSRV
         PyArray::extract(ob)
+            .map(Clone::clone)
+            .map(Bound::into_gil_ref)
     }
 }
 
@@ -251,20 +255,22 @@ impl<T, D> PyArray<T, D> {
 }
 
 impl<T: Element, D: Dimension> PyArray<T, D> {
-    fn extract<'py, E>(ob: &'py PyAny) -> Result<&'py Self, E>
+    fn extract<'a, 'py, E>(ob: &'a Bound<'py, PyAny>) -> Result<&'a Bound<'py, Self>, E>
     where
-        E: From<PyDowncastError<'py>> + From<DimensionalityError> + From<TypeError<'py>>,
+        E: From<DowncastError<'a, 'py>> + From<DimensionalityError> + From<TypeError<'a>>,
     {
         // Check if the object is an array.
         let array = unsafe {
             if npyffi::PyArray_Check(ob.py(), ob.as_ptr()) == 0 {
-                return Err(PyDowncastError::new(ob, Self::NAME).into());
+                return Err(DowncastError::new(ob, <Self as PyTypeInfo>::NAME).into());
             }
-            &*(ob as *const PyAny as *const Self)
+            ob.downcast_unchecked()
         };
 
+        let arr_gil_ref: &PyArray<T, D> = array.as_gil_ref();
+
         // Check if the dimensionality matches `D`.
-        let src_ndim = array.ndim();
+        let src_ndim = arr_gil_ref.ndim();
         if let Some(dst_ndim) = D::NDIM {
             if src_ndim != dst_ndim {
                 return Err(DimensionalityError::new(src_ndim, dst_ndim).into());
@@ -272,7 +278,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         }
 
         // Check if the element type matches `T`.
-        let src_dtype = array.dtype();
+        let src_dtype = arr_gil_ref.dtype();
         let dst_dtype = T::get_dtype(ob.py());
         if !src_dtype.is_equiv_to(dst_dtype) {
             return Err(TypeError::new(src_dtype, dst_dtype).into());
@@ -399,11 +405,11 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         data_ptr: *const T,
         container: PySliceContainer,
     ) -> &'py Self {
-        let container = PyClassInitializer::from(container)
-            .create_cell(py)
-            .expect("Failed to create slice container");
+        let container = Bound::new(py, container)
+            .expect("Failed to create slice container")
+            .into_ptr();
 
-        Self::new_with_data(py, dims, strides, data_ptr, container as *mut PyAny)
+        Self::new_with_data(py, dims, strides, data_ptr, container.cast())
     }
 
     /// Creates a NumPy array backed by `array` and ties its ownership to the Python object `container`.

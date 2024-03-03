@@ -61,8 +61,6 @@ use crate::npyffi;
 pub struct PyUntypedArray(PyAny);
 
 unsafe impl PyTypeInfo for PyUntypedArray {
-    type AsRefTarget = Self;
-
     const NAME: &'static str = "PyUntypedArray";
     const MODULE: Option<&'static str> = Some("numpy");
 

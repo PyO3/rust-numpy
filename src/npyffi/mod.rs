@@ -13,8 +13,8 @@ use std::mem::forget;
 use std::os::raw::c_void;
 
 use pyo3::{
-    types::{PyCapsule, PyModule},
-    Py, PyResult, PyTryInto, Python,
+    types::{PyAnyMethods, PyCapsule, PyCapsuleMethods, PyModule},
+    PyResult, Python,
 };
 
 fn get_numpy_api<'py>(
@@ -22,14 +22,14 @@ fn get_numpy_api<'py>(
     module: &str,
     capsule: &str,
 ) -> PyResult<*const *const c_void> {
-    let module = PyModule::import(py, module)?;
-    let capsule: &PyCapsule = PyTryInto::try_into(module.getattr(capsule)?)?;
+    let module = PyModule::import_bound(py, module)?;
+    let capsule = module.getattr(capsule)?.downcast_into::<PyCapsule>()?;
 
     let api = capsule.pointer() as *const *const c_void;
 
     // Intentionally leak a reference to the capsule
     // so we can safely cache a pointer into its interior.
-    forget(Py::<PyCapsule>::from(capsule));
+    forget(capsule);
 
     Ok(api)
 }

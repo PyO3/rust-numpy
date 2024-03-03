@@ -5,10 +5,8 @@ use std::os::raw::{c_char, c_int};
 use std::slice::from_raw_parts;
 
 use num_integer::gcd;
-use pyo3::{
-    exceptions::PyTypeError, once_cell::GILOnceCell, types::PyCapsule, Py, PyResult, PyTryInto,
-    Python,
-};
+use pyo3::types::{PyAnyMethods, PyCapsuleMethods};
+use pyo3::{exceptions::PyTypeError, sync::GILOnceCell, types::PyCapsule, PyResult, Python};
 use rustc_hash::FxHashMap;
 
 use crate::array::get_array_module;
@@ -124,8 +122,8 @@ fn get_or_insert_shared<'py>(py: Python<'py>) -> PyResult<&'py Shared> {
 fn insert_shared<'py>(py: Python<'py>) -> PyResult<*const Shared> {
     let module = get_array_module(py)?;
 
-    let capsule: &PyCapsule = match module.getattr("_RUST_NUMPY_BORROW_CHECKING_API") {
-        Ok(capsule) => PyTryInto::try_into(capsule)?,
+    let capsule = match module.getattr("_RUST_NUMPY_BORROW_CHECKING_API") {
+        Ok(capsule) => capsule.downcast_into::<PyCapsule>()?,
         Err(_err) => {
             let flags: *mut BorrowFlags = Box::into_raw(Box::default());
 
@@ -138,7 +136,7 @@ fn insert_shared<'py>(py: Python<'py>) -> PyResult<*const Shared> {
                 release_mut: release_mut_shared,
             };
 
-            let capsule = PyCapsule::new_with_destructor(
+            let capsule = PyCapsule::new_bound_with_destructor(
                 py,
                 shared,
                 Some(CString::new("_RUST_NUMPY_BORROW_CHECKING_API").unwrap()),
@@ -147,13 +145,13 @@ fn insert_shared<'py>(py: Python<'py>) -> PyResult<*const Shared> {
                     let _ = unsafe { Box::from_raw(shared.flags as *mut BorrowFlags) };
                 },
             )?;
-            module.setattr("_RUST_NUMPY_BORROW_CHECKING_API", capsule)?;
+            module.setattr("_RUST_NUMPY_BORROW_CHECKING_API", &capsule)?;
             capsule
         }
     };
 
     // SAFETY: All versions of the shared borrow checking API start with a version field.
-    let version = unsafe { *(capsule.pointer() as *mut u64) };
+    let version = unsafe { *capsule.pointer().cast::<u64>() };
     if version < 1 {
         return Err(PyTypeError::new_err(format!(
             "Version {} of borrow checking API is not supported by this version of rust-numpy",
@@ -161,11 +159,13 @@ fn insert_shared<'py>(py: Python<'py>) -> PyResult<*const Shared> {
         )));
     }
 
+    let ptr = capsule.pointer();
+
     // Intentionally leak a reference to the capsule
     // so we can safely cache a pointer into its interior.
-    forget(Py::<PyCapsule>::from(capsule));
+    forget(capsule);
 
-    Ok(capsule.pointer() as *const Shared)
+    Ok(ptr.cast())
 }
 
 // These entry points will be used to access the shared borrow checking API from this extension:
