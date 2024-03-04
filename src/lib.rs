@@ -93,7 +93,7 @@ pub use nalgebra;
 
 pub use crate::array::{
     get_array_module, PyArray, PyArray0, PyArray1, PyArray2, PyArray3, PyArray4, PyArray5,
-    PyArray6, PyArrayDyn,
+    PyArray6, PyArrayDyn, PyArrayMethods,
 };
 pub use crate::array_like::{
     AllowTypeChange, PyArrayLike, PyArrayLike0, PyArrayLike1, PyArrayLike2, PyArrayLike3,
@@ -111,7 +111,7 @@ pub use crate::error::{BorrowError, FromVecError, NotContiguousError};
 pub use crate::npyffi::{PY_ARRAY_API, PY_UFUNC_API};
 pub use crate::strings::{PyFixedString, PyFixedUnicode};
 pub use crate::sum_products::{dot, einsum, inner};
-pub use crate::untyped_array::PyUntypedArray;
+pub use crate::untyped_array::{PyUntypedArray, PyUntypedArrayMethods};
 
 pub use ndarray::{array, Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};
 
