@@ -33,7 +33,7 @@ use crate::error::{
 };
 use crate::npyffi::{self, npy_intp, NPY_ORDER, PY_ARRAY_API};
 use crate::slice_container::PySliceContainer;
-use crate::untyped_array::PyUntypedArray;
+use crate::untyped_array::{PyUntypedArray, PyUntypedArrayMethods};
 
 /// A safe, statically-typed wrapper for NumPy's [`ndarray`][ndarray] class.
 ///
@@ -1477,6 +1477,20 @@ unsafe fn clone_elements<T: Element>(elems: &[T], data_ptr: &mut *mut T) {
             data_ptr.write(elem.clone());
             *data_ptr = data_ptr.add(1);
         }
+    }
+}
+
+/// Implementation of functionality for [`PyArray<T, D>`].
+#[doc(alias = "PyArray")]
+pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> {
+    /// Access an untyped representation of this array.
+    fn as_untyped(&self) -> &Bound<'py, PyUntypedArray>;
+}
+
+impl<'py, T, D> PyArrayMethods<'py, T, D> for Bound<'py, PyArray<T, D>> {
+    #[inline(always)]
+    fn as_untyped(&self) -> &Bound<'py, PyUntypedArray> {
+        unsafe { self.downcast_unchecked() }
     }
 }
 
