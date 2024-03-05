@@ -63,10 +63,10 @@ use std::fmt;
 use std::hash::Hash;
 use std::marker::PhantomData;
 
-use pyo3::{sync::GILProtected, Py, Python};
+use pyo3::{sync::GILProtected, Bound, Py, Python};
 use rustc_hash::FxHashMap;
 
-use crate::dtype::{Element, PyArrayDescr};
+use crate::dtype::{Element, PyArrayDescr, PyArrayDescrMethods};
 use crate::npyffi::{PyArray_DatetimeDTypeMetaData, NPY_DATETIMEUNIT, NPY_TYPES};
 
 /// Represents the [datetime units][datetime-units] supported by NumPy
@@ -156,7 +156,7 @@ impl<U: Unit> From<Datetime<U>> for i64 {
 unsafe impl<U: Unit> Element for Datetime<U> {
     const IS_COPY: bool = true;
 
-    fn get_dtype<'py>(py: Python<'py>) -> &'py PyArrayDescr {
+    fn get_dtype_bound(py: Python<'_>) -> Bound<'_, PyArrayDescr> {
         static DTYPES: TypeDescriptors = unsafe { TypeDescriptors::new(NPY_TYPES::NPY_DATETIME) };
 
         DTYPES.from_unit(py, U::UNIT)
@@ -191,7 +191,7 @@ impl<U: Unit> From<Timedelta<U>> for i64 {
 unsafe impl<U: Unit> Element for Timedelta<U> {
     const IS_COPY: bool = true;
 
-    fn get_dtype<'py>(py: Python<'py>) -> &'py PyArrayDescr {
+    fn get_dtype_bound(py: Python<'_>) -> Bound<'_, PyArrayDescr> {
         static DTYPES: TypeDescriptors = unsafe { TypeDescriptors::new(NPY_TYPES::NPY_TIMEDELTA) };
 
         DTYPES.from_unit(py, U::UNIT)
@@ -220,7 +220,7 @@ impl TypeDescriptors {
     }
 
     #[allow(clippy::wrong_self_convention)]
-    fn from_unit<'py>(&'py self, py: Python<'py>, unit: NPY_DATETIMEUNIT) -> &'py PyArrayDescr {
+    fn from_unit<'py>(&self, py: Python<'py>, unit: NPY_DATETIMEUNIT) -> Bound<'py, PyArrayDescr> {
         let mut dtypes = self.dtypes.get(py).borrow_mut();
 
         let dtype = match dtypes.get_or_insert_with(Default::default).entry(unit) {
@@ -241,7 +241,7 @@ impl TypeDescriptors {
             }
         };
 
-        dtype.clone().into_ref(py)
+        dtype.clone().into_bound(py)
     }
 }
 

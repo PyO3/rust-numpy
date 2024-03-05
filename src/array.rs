@@ -26,7 +26,7 @@ use pyo3::{
 use crate::borrow::{PyReadonlyArray, PyReadwriteArray};
 use crate::cold;
 use crate::convert::{ArrayExt, IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
-use crate::dtype::Element;
+use crate::dtype::{Element, PyArrayDescrMethods};
 use crate::error::{
     BorrowError, DimensionalityError, FromVecError, IgnoreError, NotContiguousError, TypeError,
     DIMENSIONALITY_MISMATCH_ERR, MAX_DIMENSIONALITY_ERR,
@@ -278,10 +278,10 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         }
 
         // Check if the element type matches `T`.
-        let src_dtype = arr_gil_ref.dtype();
-        let dst_dtype = T::get_dtype(ob.py());
-        if !src_dtype.is_equiv_to(dst_dtype) {
-            return Err(TypeError::new(src_dtype, dst_dtype).into());
+        let src_dtype = array.dtype();
+        let dst_dtype = T::get_dtype_bound(ob.py());
+        if !src_dtype.is_equiv_to(&dst_dtype) {
+            return Err(TypeError::new(src_dtype.into_gil_ref(), dst_dtype.into_gil_ref()).into());
         }
 
         Ok(array)
@@ -354,7 +354,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         let ptr = PY_ARRAY_API.PyArray_NewFromDescr(
             py,
             PY_ARRAY_API.get_type_object(py, npyffi::NpyTypes::PyArray_Type),
-            T::get_dtype(py).into_dtype_ptr(),
+            T::get_dtype_bound(py).into_dtype_ptr(),
             dims.ndim_cint(),
             dims.as_dims_ptr(),
             strides as *mut npy_intp, // strides
@@ -380,7 +380,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         let ptr = PY_ARRAY_API.PyArray_NewFromDescr(
             py,
             PY_ARRAY_API.get_type_object(py, npyffi::NpyTypes::PyArray_Type),
-            T::get_dtype(py).into_dtype_ptr(),
+            T::get_dtype_bound(py).into_dtype_ptr(),
             dims.ndim_cint(),
             dims.as_dims_ptr(),
             strides as *mut npy_intp,    // strides
@@ -500,7 +500,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
                 py,
                 dims.ndim_cint(),
                 dims.as_dims_ptr(),
-                T::get_dtype(py).into_dtype_ptr(),
+                T::get_dtype_bound(py).into_dtype_ptr(),
                 if is_fortran { -1 } else { 0 },
             );
             Self::from_owned_ptr(py, ptr)
@@ -1315,7 +1315,7 @@ impl<T: Element, D> PyArray<T, D> {
             PY_ARRAY_API.PyArray_CastToType(
                 self.py(),
                 self.as_array_ptr(),
-                U::get_dtype(self.py()).into_dtype_ptr(),
+                U::get_dtype_bound(self.py()).into_dtype_ptr(),
                 if is_fortran { -1 } else { 0 },
             )
         };
@@ -1461,7 +1461,7 @@ impl<T: Element + AsPrimitive<f64>> PyArray<T, Ix1> {
                 start.as_(),
                 stop.as_(),
                 step.as_(),
-                T::get_dtype(py).num(),
+                T::get_dtype_bound(py).num(),
             );
             Self::from_owned_ptr(py, ptr)
         }
