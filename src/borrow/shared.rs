@@ -574,11 +574,11 @@ mod tests {
                 array.as_ptr().cast::<c_void>()
             );
 
-            let locals = [("view1", &view1)].into_py_dict(py);
+            let locals = [("view1", &view1)].into_py_dict_bound(py);
             let view2 = py
-                .eval("view1[:,0]", None, Some(locals))
+                .eval_bound("view1[:,0]", None, Some(&locals))
                 .unwrap()
-                .downcast::<PyArray1<f64>>()
+                .downcast_into::<PyArray1<f64>>()
                 .unwrap();
             assert_ne!(
                 view2.as_ptr().cast::<c_void>(),
@@ -819,12 +819,12 @@ mod tests {
             let array = PyArray::<f64, _>::zeros_bound(py, 10, false);
             let base = base_address(py, array.as_array_ptr());
 
-            let locals = [("array", array)].into_py_dict(py);
+            let locals = [("array", array)].into_py_dict_bound(py);
 
             let view1 = py
-                .eval("array[:5]", None, Some(locals))
+                .eval_bound("array[:5]", None, Some(&locals))
                 .unwrap()
-                .downcast::<PyArray1<f64>>()
+                .downcast_into::<PyArray1<f64>>()
                 .unwrap();
 
             let key1 = borrow_key(view1.as_array_ptr());
@@ -842,9 +842,9 @@ mod tests {
             }
 
             let view2 = py
-                .eval("array[5:]", None, Some(locals))
+                .eval_bound("array[5:]", None, Some(&locals))
                 .unwrap()
-                .downcast::<PyArray1<f64>>()
+                .downcast_into::<PyArray1<f64>>()
                 .unwrap();
 
             let key2 = borrow_key(view2.as_array_ptr());
@@ -865,9 +865,9 @@ mod tests {
             }
 
             let view3 = py
-                .eval("array[5:]", None, Some(locals))
+                .eval_bound("array[5:]", None, Some(&locals))
                 .unwrap()
-                .downcast::<PyArray1<f64>>()
+                .downcast_into::<PyArray1<f64>>()
                 .unwrap();
 
             let key3 = borrow_key(view3.as_array_ptr());
@@ -891,9 +891,9 @@ mod tests {
             }
 
             let view4 = py
-                .eval("array[7:]", None, Some(locals))
+                .eval_bound("array[7:]", None, Some(&locals))
                 .unwrap()
-                .downcast::<PyArray1<f64>>()
+                .downcast_into::<PyArray1<f64>>()
                 .unwrap();
 
             let key4 = borrow_key(view4.as_array_ptr());

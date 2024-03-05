@@ -16,18 +16,18 @@ use pyo3::{
     Bound, Py, PyResult, Python,
 };
 
-fn get_np_locals<'py>(py: Python<'py>) -> &'py PyDict {
-    [("np", get_array_module(py).unwrap())].into_py_dict(py)
+fn get_np_locals(py: Python<'_>) -> Bound<'_, PyDict> {
+    [("np", get_array_module(py).unwrap())].into_py_dict_bound(py)
 }
 
-fn not_contiguous_array<'py>(py: Python<'py>) -> &'py PyArray1<i32> {
-    py.eval(
+fn not_contiguous_array(py: Python<'_>) -> Bound<'_, PyArray1<i32>> {
+    py.eval_bound(
         "np.array([1, 2, 3, 4], dtype='int32')[::2]",
         None,
-        Some(get_np_locals(py)),
+        Some(&get_np_locals(py)),
     )
     .unwrap()
-    .downcast()
+    .downcast_into()
     .unwrap()
 }
 
@@ -265,7 +265,7 @@ fn extract_as_fixed() {
     Python::with_gil(|py| {
         let locals = get_np_locals(py);
         let pyarray: &PyArray1<i32> = py
-            .eval("np.array([1, 2, 3], dtype='int32')", Some(locals), None)
+            .eval_bound("np.array([1, 2, 3], dtype='int32')", Some(&locals), None)
             .unwrap()
             .extract()
             .unwrap();
@@ -279,9 +279,9 @@ fn extract_as_dyn() {
     Python::with_gil(|py| {
         let locals = get_np_locals(py);
         let pyarray: &PyArrayDyn<i32> = py
-            .eval(
+            .eval_bound(
                 "np.array([[1, 2], [3, 4]], dtype='int32')",
-                Some(locals),
+                Some(&locals),
                 None,
             )
             .unwrap()
@@ -299,8 +299,10 @@ fn extract_as_dyn() {
 fn extract_fail_by_check() {
     Python::with_gil(|py| {
         let locals = get_np_locals(py);
-        let pyarray: PyResult<&PyArray2<i32>> =
-            py.eval("[1, 2, 3]", Some(locals), None).unwrap().extract();
+        let pyarray: PyResult<&PyArray2<i32>> = py
+            .eval_bound("[1, 2, 3]", Some(&locals), None)
+            .unwrap()
+            .extract();
 
         let err = pyarray.unwrap_err();
         assert_eq!(
@@ -315,7 +317,7 @@ fn extract_fail_by_dim() {
     Python::with_gil(|py| {
         let locals = get_np_locals(py);
         let pyarray: PyResult<&PyArray2<i32>> = py
-            .eval("np.array([1, 2, 3], dtype='int32')", Some(locals), None)
+            .eval_bound("np.array([1, 2, 3], dtype='int32')", Some(&locals), None)
             .unwrap()
             .extract();
 
@@ -332,7 +334,7 @@ fn extract_fail_by_dtype() {
     Python::with_gil(|py| {
         let locals = get_np_locals(py);
         let pyarray: PyResult<&PyArray1<i32>> = py
-            .eval("np.array([1, 2, 3], dtype='float64')", Some(locals), None)
+            .eval_bound("np.array([1, 2, 3], dtype='float64')", Some(&locals), None)
             .unwrap()
             .extract();
 
@@ -467,7 +469,7 @@ fn unbind_works() {
     });
 
     Python::with_gil(|py| {
-        let arr: &PyArray1<_> = arr.as_ref(py);
+        let arr = arr.bind(py);
 
         assert_eq!(arr.readonly().as_slice().unwrap(), &[1, 2, 3]);
     });
@@ -483,7 +485,7 @@ fn to_owned_works() {
     });
 
     Python::with_gil(|py| {
-        let arr: &PyArray1<_> = arr.as_ref(py);
+        let arr = arr.bind(py);
 
         assert_eq!(arr.readonly().as_slice().unwrap(), &[1, 2, 3]);
     });
@@ -541,17 +543,17 @@ fn reshape() {
 #[test]
 fn half_f16_works() {
     Python::with_gil(|py| {
-        let np = py.eval("__import__('numpy')", None, None).unwrap();
-        let locals = [("np", np)].into_py_dict(py);
+        let np = py.eval_bound("__import__('numpy')", None, None).unwrap();
+        let locals = [("np", &np)].into_py_dict_bound(py);
 
         let array = py
-            .eval(
+            .eval_bound(
                 "np.array([[1, 2], [3, 4]], dtype='float16')",
                 None,
-                Some(locals),
+                Some(&locals),
             )
             .unwrap()
-            .downcast::<PyArray2<f16>>()
+            .downcast_into::<PyArray2<f16>>()
             .unwrap();
 
         assert_eq!(
@@ -579,20 +581,22 @@ fn half_f16_works() {
 #[test]
 fn half_bf16_works() {
     Python::with_gil(|py| {
-        let np = py.eval("__import__('numpy')", None, None).unwrap();
+        let np = py.eval_bound("__import__('numpy')", None, None).unwrap();
         // NumPy itself does not provide a `bfloat16` dtype itself,
         // so we import ml_dtypes which does register such a dtype.
-        let mldt = py.eval("__import__('ml_dtypes')", None, None).unwrap();
-        let locals = [("np", np), ("mldt", mldt)].into_py_dict(py);
+        let mldt = py
+            .eval_bound("__import__('ml_dtypes')", None, None)
+            .unwrap();
+        let locals = [("np", &np), ("mldt", &mldt)].into_py_dict_bound(py);
 
         let array = py
-            .eval(
+            .eval_bound(
                 "np.array([[1, 2], [3, 4]], dtype='bfloat16')",
                 None,
-                Some(locals),
+                Some(&locals),
             )
             .unwrap()
-            .downcast::<PyArray2<bf16>>()
+            .downcast_into::<PyArray2<bf16>>()
             .unwrap();
 
         assert_eq!(
@@ -619,17 +623,17 @@ fn half_bf16_works() {
 #[test]
 fn ascii_strings_with_explicit_dtype_works() {
     Python::with_gil(|py| {
-        let np = py.eval("__import__('numpy')", None, None).unwrap();
-        let locals = [("np", np)].into_py_dict(py);
+        let np = py.eval_bound("__import__('numpy')", None, None).unwrap();
+        let locals = [("np", &np)].into_py_dict_bound(py);
 
         let array = py
-            .eval(
+            .eval_bound(
                 "np.array([b'foo', b'bar', b'foobar'], dtype='S6')",
                 None,
-                Some(locals),
+                Some(&locals),
             )
             .unwrap()
-            .downcast::<PyArray1<PyFixedString<6>>>()
+            .downcast_into::<PyArray1<PyFixedString<6>>>()
             .unwrap();
 
         {
@@ -655,17 +659,17 @@ fn ascii_strings_with_explicit_dtype_works() {
 #[test]
 fn unicode_strings_with_explicit_dtype_works() {
     Python::with_gil(|py| {
-        let np = py.eval("__import__('numpy')", None, None).unwrap();
-        let locals = [("np", np)].into_py_dict(py);
+        let np = py.eval_bound("__import__('numpy')", None, None).unwrap();
+        let locals = [("np", &np)].into_py_dict_bound(py);
 
         let array = py
-            .eval(
+            .eval_bound(
                 "np.array(['foo', 'bar', 'foobar'], dtype='U6')",
                 None,
-                Some(locals),
+                Some(&locals),
             )
             .unwrap()
-            .downcast::<PyArray1<PyFixedUnicode<6>>>()
+            .downcast_into::<PyArray1<PyFixedUnicode<6>>>()
             .unwrap();
 
         {
@@ -694,34 +698,34 @@ fn unicode_strings_with_explicit_dtype_works() {
 #[test]
 fn ascii_strings_ignore_byteorder() {
     Python::with_gil(|py| {
-        let np = py.eval("__import__('numpy')", None, None).unwrap();
-        let locals = [("np", np)].into_py_dict(py);
+        let np = py.eval_bound("__import__('numpy')", None, None).unwrap();
+        let locals = [("np", &np)].into_py_dict_bound(py);
 
         let native_endian_works = py
-            .eval(
+            .eval_bound(
                 "np.array([b'foo', b'bar'], dtype='=S3')",
                 None,
-                Some(locals),
+                Some(&locals),
             )
             .unwrap()
             .downcast::<PyArray1<PyFixedString<3>>>()
             .is_ok();
 
         let little_endian_works = py
-            .eval(
+            .eval_bound(
                 "np.array(['bfoo', b'bar'], dtype='<S3')",
                 None,
-                Some(locals),
+                Some(&locals),
             )
             .unwrap()
             .downcast::<PyArray1<PyFixedString<3>>>()
             .is_ok();
 
         let big_endian_works = py
-            .eval(
+            .eval_bound(
                 "np.array([b'foo', b'bar'], dtype='>S3')",
                 None,
-                Some(locals),
+                Some(&locals),
             )
             .unwrap()
             .downcast::<PyArray1<PyFixedString<3>>>()
@@ -737,23 +741,23 @@ fn ascii_strings_ignore_byteorder() {
 #[test]
 fn unicode_strings_respect_byteorder() {
     Python::with_gil(|py| {
-        let np = py.eval("__import__('numpy')", None, None).unwrap();
-        let locals = [("np", np)].into_py_dict(py);
+        let np = py.eval_bound("__import__('numpy')", None, None).unwrap();
+        let locals = [("np", &np)].into_py_dict_bound(py);
 
         let native_endian_works = py
-            .eval("np.array(['foo', 'bar'], dtype='=U3')", None, Some(locals))
+            .eval_bound("np.array(['foo', 'bar'], dtype='=U3')", None, Some(&locals))
             .unwrap()
             .downcast::<PyArray1<PyFixedUnicode<3>>>()
             .is_ok();
 
         let little_endian_works = py
-            .eval("np.array(['foo', 'bar'], dtype='<U3')", None, Some(locals))
+            .eval_bound("np.array(['foo', 'bar'], dtype='<U3')", None, Some(&locals))
             .unwrap()
             .downcast::<PyArray1<PyFixedUnicode<3>>>()
             .is_ok();
 
         let big_endian_works = py
-            .eval("np.array(['foo', 'bar'], dtype='>U3')", None, Some(locals))
+            .eval_bound("np.array(['foo', 'bar'], dtype='>U3')", None, Some(&locals))
             .unwrap()
             .downcast::<PyArray1<PyFixedUnicode<3>>>()
             .is_ok();

@@ -426,10 +426,14 @@ fn matrix_from_numpy() {
 
     Python::with_gil(|py| {
         let array = numpy::pyarray![py, [0, 1, 2], [3, 4, 5], [6, 7, 8]];
-        let array: &PyArray2<i32> = py
-            .eval("a[::-1]", Some([("a", array)].into_py_dict(py)), None)
+        let array = py
+            .eval_bound(
+                "a[::-1]",
+                Some(&[("a", array)].into_py_dict_bound(py)),
+                None,
+            )
             .unwrap()
-            .downcast()
+            .downcast_into::<PyArray2<i32>>()
             .unwrap();
         let array = array.readonly();
 
@@ -440,10 +444,14 @@ fn matrix_from_numpy() {
 
     Python::with_gil(|py| {
         let array = numpy::pyarray![py, [[0, 1], [2, 3]], [[4, 5], [6, 7]]];
-        let array: &PyArray2<i32> = py
-            .eval("a[:,:,0]", Some([("a", array)].into_py_dict(py)), None)
+        let array = py
+            .eval_bound(
+                "a[:,:,0]",
+                Some(&[("a", &array)].into_py_dict_bound(py)),
+                None,
+            )
             .unwrap()
-            .downcast()
+            .downcast_into::<PyArray2<i32>>()
             .unwrap();
         let array = array.readonly();
 

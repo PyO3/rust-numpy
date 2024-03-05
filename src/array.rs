@@ -235,7 +235,9 @@ impl<T, D> PyArray<T, D> {
     /// # Safety
     ///
     /// This is a wrapper around [`pyo3::FromPyPointer::from_owned_ptr_or_opt`] and inherits its safety contract.
+    #[deprecated(since = "0.21.0", note = "use Bound::from_owned_ptr() instead")]
     pub unsafe fn from_owned_ptr<'py>(py: Python<'py>, ptr: *mut ffi::PyObject) -> &'py Self {
+        #[allow(deprecated)]
         py.from_owned_ptr(ptr)
     }
 
@@ -244,7 +246,9 @@ impl<T, D> PyArray<T, D> {
     /// # Safety
     ///
     /// This is a wrapper around [`pyo3::FromPyPointer::from_borrowed_ptr_or_opt`] and inherits its safety contract.
+    #[deprecated(since = "0.21.0", note = "use Bound::from_borrowed_ptr() instead")]
     pub unsafe fn from_borrowed_ptr<'py>(py: Python<'py>, ptr: *mut ffi::PyObject) -> &'py Self {
+        #[allow(deprecated)]
         py.from_borrowed_ptr(ptr)
     }
 
@@ -258,7 +262,7 @@ impl<T, D> PyArray<T, D> {
 impl<T: Element, D: Dimension> PyArray<T, D> {
     fn extract<'a, 'py, E>(ob: &'a Bound<'py, PyAny>) -> Result<&'a Bound<'py, Self>, E>
     where
-        E: From<DowncastError<'a, 'py>> + From<DimensionalityError> + From<TypeError<'a>>,
+        E: From<DowncastError<'a, 'py>> + From<DimensionalityError> + From<TypeError<'py>>,
     {
         // Check if the object is an array.
         let array = unsafe {
@@ -786,14 +790,14 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray2;
-    /// use pyo3::Python;
+    /// use numpy::{PyArray2, PyArrayMethods};
+    /// use pyo3::{Python, types::PyAnyMethods};
     ///
     /// Python::with_gil(|py| {
     ///     let pyarray= py
-    ///         .eval("__import__('numpy').array([[0, 1], [2, 3]], dtype='int64')", None, None)
+    ///         .eval_bound("__import__('numpy').array([[0, 1], [2, 3]], dtype='int64')", None, None)
     ///         .unwrap()
-    ///         .downcast::<PyArray2<i64>>()
+    ///         .downcast_into::<PyArray2<i64>>()
     ///         .unwrap();
     ///
     ///     assert_eq!(pyarray.to_vec().unwrap(), vec![0, 1, 2, 3]);
@@ -842,10 +846,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
 
     /// Get an immutable borrow of the NumPy array
     pub fn try_readonly(&self) -> Result<PyReadonlyArray<'_, T, D>, BorrowError> {
-        // TODO: replace with `Borrowed::to_owned` once
-        // pyo3#3963 makes it into a release
-        let bound = &*self.as_borrowed();
-        PyReadonlyArray::try_new(bound.clone())
+        PyReadonlyArray::try_new(self.as_borrowed().to_owned())
     }
 
     /// Get an immutable borrow of the NumPy array
@@ -861,10 +862,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
 
     /// Get a mutable borrow of the NumPy array
     pub fn try_readwrite(&self) -> Result<PyReadwriteArray<'_, T, D>, BorrowError> {
-        // TODO: replace with `Borrowed::to_owned` once
-        // pyo3#3963 makes it into a release
-        let bound = &*self.as_borrowed();
-        PyReadwriteArray::try_new(bound.clone())
+        PyReadwriteArray::try_new(self.as_borrowed().to_owned())
     }
 
     /// Get a mutable borrow of the NumPy array
@@ -1013,10 +1011,11 @@ impl<D: Dimension> PyArray<PyObject, D> {
     ///
     /// ```
     /// use ndarray::array;
-    /// use pyo3::{pyclass, Py, Python};
+    /// use pyo3::{pyclass, Py, Python, types::PyAnyMethods};
     /// use numpy::{PyArray, PyArrayMethods};
     ///
     /// #[pyclass]
+    /// # #[allow(dead_code)]
     /// struct CustomElement {
     ///     foo: i32,
     ///     bar: f64,
@@ -1036,7 +1035,7 @@ impl<D: Dimension> PyArray<PyObject, D> {
     ///
     ///     let pyarray = PyArray::from_owned_object_array_bound(py, array);
     ///
-    ///     assert!(pyarray.readonly().as_array().get(0).unwrap().as_ref(py).is_instance_of::<CustomElement>());
+    ///     assert!(pyarray.readonly().as_array().get(0).unwrap().bind(py).is_instance_of::<CustomElement>());
     /// });
     /// ```
     pub fn from_owned_object_array_bound<T>(
@@ -1703,14 +1702,14 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> {
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray2;
-    /// use pyo3::Python;
+    /// use numpy::{PyArray2, PyArrayMethods};
+    /// use pyo3::{Python, types::PyAnyMethods};
     ///
     /// Python::with_gil(|py| {
     ///     let pyarray= py
-    ///         .eval("__import__('numpy').array([[0, 1], [2, 3]], dtype='int64')", None, None)
+    ///         .eval_bound("__import__('numpy').array([[0, 1], [2, 3]], dtype='int64')", None, None)
     ///         .unwrap()
-    ///         .downcast::<PyArray2<i64>>()
+    ///         .downcast_into::<PyArray2<i64>>()
     ///         .unwrap();
     ///
     ///     assert_eq!(pyarray.to_vec().unwrap(), vec![0, 1, 2, 3]);
