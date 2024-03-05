@@ -5,7 +5,7 @@ use ndarray::{array, s, Array2, Array3};
 use numpy::{prelude::*, PyArray};
 use pyo3::{
     py_run,
-    types::{PyDict, PyString},
+    types::{PyAnyMethods, PyDict, PyString},
     Python, ToPyObject,
 };
 
@@ -232,8 +232,8 @@ fn forder_into_pyarray() {
 #[test]
 fn to_pyarray_object_vec() {
     Python::with_gil(|py| {
-        let dict = PyDict::new(py);
-        let string = PyString::new(py, "Hello:)");
+        let dict = PyDict::new_bound(py);
+        let string = PyString::new_bound(py, "Hello:)");
         #[allow(clippy::useless_vec)] // otherwise we do not test the right trait impl
         let vec = vec![dict.to_object(py), string.to_object(py)];
 
@@ -241,7 +241,7 @@ fn to_pyarray_object_vec() {
 
         for (a, b) in vec.iter().zip(arr.readonly().as_slice().unwrap().iter()) {
             assert_eq!(
-                a.as_ref(py).compare(b).map_err(|e| e.print(py)).unwrap(),
+                a.bind(py).compare(b).map_err(|e| e.print(py)).unwrap(),
                 Ordering::Equal
             );
         }
@@ -252,8 +252,8 @@ fn to_pyarray_object_vec() {
 fn to_pyarray_object_array() {
     Python::with_gil(|py| {
         let mut nd_arr = Array2::from_shape_fn((2, 3), |(_, _)| py.None());
-        nd_arr[(0, 2)] = PyDict::new(py).to_object(py);
-        nd_arr[(1, 0)] = PyString::new(py, "Hello:)").to_object(py);
+        nd_arr[(0, 2)] = PyDict::new_bound(py).to_object(py);
+        nd_arr[(1, 0)] = PyString::new_bound(py, "Hello:)").to_object(py);
 
         let py_arr = nd_arr.to_pyarray_bound(py);
 
@@ -264,7 +264,7 @@ fn to_pyarray_object_array() {
             .zip(py_arr.readonly().as_slice().unwrap().iter())
         {
             assert_eq!(
-                a.as_ref(py).compare(b).map_err(|e| e.print(py)).unwrap(),
+                a.bind(py).compare(b).map_err(|e| e.print(py)).unwrap(),
                 Ordering::Equal
             );
         }
@@ -275,8 +275,8 @@ fn to_pyarray_object_array() {
 fn slice_container_type_confusion() {
     Python::with_gil(|py| {
         let mut nd_arr = Array2::from_shape_fn((2, 3), |(_, _)| py.None());
-        nd_arr[(0, 2)] = PyDict::new(py).to_object(py);
-        nd_arr[(1, 0)] = PyString::new(py, "Hello:)").to_object(py);
+        nd_arr[(0, 2)] = PyDict::new_bound(py).to_object(py);
+        nd_arr[(1, 0)] = PyString::new_bound(py, "Hello:)").to_object(py);
 
         let _py_arr = nd_arr.into_pyarray_bound(py);
 

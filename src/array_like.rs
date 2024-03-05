@@ -166,17 +166,17 @@ where
             .get_or_try_init(py, || {
                 get_array_module(py)?.getattr("asarray").map(Into::into)
             })?
-            .as_ref(py);
+            .bind(py);
 
         let kwargs = if C::VAL {
-            let kwargs = PyDict::new(py);
+            let kwargs = PyDict::new_bound(py);
             kwargs.set_item(intern!(py, "dtype"), T::get_dtype_bound(py))?;
             Some(kwargs)
         } else {
             None
         };
 
-        let array = as_array.call((ob,), kwargs)?.extract()?;
+        let array = as_array.call((ob,), kwargs.as_ref())?.extract()?;
         Ok(Self(array, PhantomData))
     }
 }

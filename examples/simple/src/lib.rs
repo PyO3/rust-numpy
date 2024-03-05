@@ -3,13 +3,13 @@ use std::ops::Add;
 use numpy::ndarray::{Array1, ArrayD, ArrayView1, ArrayViewD, ArrayViewMutD, Zip};
 use numpy::{
     datetime::{units, Timedelta},
-    Complex64, IntoPyArray, PyArray1, PyArrayDyn, PyReadonlyArray1, PyReadonlyArrayDyn,
-    PyReadwriteArray1, PyReadwriteArrayDyn,
+    Complex64, IntoPyArray, PyArray1, PyArrayDyn, PyArrayMethods, PyReadonlyArray1,
+    PyReadonlyArrayDyn, PyReadwriteArray1, PyReadwriteArrayDyn,
 };
 use pyo3::{
     exceptions::PyIndexError,
     pymodule,
-    types::{PyDict, PyModule},
+    types::{PyAnyMethods, PyDict, PyDictMethods, PyModule},
     Bound, FromPyObject, PyAny, PyObject, PyResult, Python,
 };
 
@@ -87,12 +87,12 @@ fn rust_ext<'py>(m: &Bound<'py, PyModule>) -> PyResult<()> {
 
     // example of how to extract an array from a dictionary
     #[pyfn(m)]
-    fn extract(d: &PyDict) -> f64 {
+    fn extract(d: &Bound<'_, PyDict>) -> f64 {
         let x = d
             .get_item("x")
             .unwrap()
             .unwrap()
-            .downcast::<PyArray1<f64>>()
+            .downcast_into::<PyArray1<f64>>()
             .unwrap();
 
         x.readonly().as_array().sum()
@@ -117,8 +117,8 @@ fn rust_ext<'py>(m: &Bound<'py, PyModule>) -> PyResult<()> {
     // covering the supported element types and dispatching into a generic implementation.
     #[derive(FromPyObject)]
     enum SupportedArray<'py> {
-        F64(&'py PyArray1<f64>),
-        I64(&'py PyArray1<i64>),
+        F64(Bound<'py, PyArray1<f64>>),
+        I64(Bound<'py, PyArray1<i64>>),
     }
 
     #[pyfn(m)]

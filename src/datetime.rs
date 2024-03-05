@@ -10,25 +10,25 @@
 //! # Example
 //!
 //! ```
-//! use numpy::{datetime::{units, Datetime, Timedelta}, PyArray1};
-//! use pyo3::Python;
+//! use numpy::{datetime::{units, Datetime, Timedelta}, PyArray1, PyArrayMethods};
+//! use pyo3::{Python, types::PyAnyMethods};
 //! # use pyo3::types::PyDict;
 //!
 //! Python::with_gil(|py| {
 //! #    let locals = py
-//! #        .eval("{ 'np': __import__('numpy') }", None, None)
+//! #        .eval_bound("{ 'np': __import__('numpy') }", None, None)
 //! #        .unwrap()
-//! #        .downcast::<PyDict>()
+//! #        .downcast_into::<PyDict>()
 //! #        .unwrap();
 //! #
 //!     let array = py
-//!         .eval(
+//!         .eval_bound(
 //!             "np.array([np.datetime64('2017-04-21')])",
 //!             None,
-//!             Some(locals),
+//!             Some(&locals),
 //!         )
 //!         .unwrap()
-//!         .downcast::<PyArray1<Datetime<units::Days>>>()
+//!         .downcast_into::<PyArray1<Datetime<units::Days>>>()
 //!         .unwrap();
 //!
 //!     assert_eq!(
@@ -37,13 +37,13 @@
 //!     );
 //!
 //!     let array = py
-//!         .eval(
+//!         .eval_bound(
 //!             "np.array([np.datetime64('2022-03-29')]) - np.array([np.datetime64('2017-04-21')])",
 //!             None,
-//!             Some(locals),
+//!             Some(&locals),
 //!         )
 //!         .unwrap()
-//!         .downcast::<PyArray1<Timedelta<units::Days>>>()
+//!         .downcast_into::<PyArray1<Timedelta<units::Days>>>()
 //!         .unwrap();
 //!
 //!     assert_eq!(
@@ -251,7 +251,7 @@ mod tests {
 
     use pyo3::{
         py_run,
-        types::{PyDict, PyModule},
+        types::{PyAnyMethods, PyDict, PyModule},
     };
 
     use crate::array::{PyArray1, PyArrayMethods};
@@ -260,19 +260,19 @@ mod tests {
     fn from_python_to_rust() {
         Python::with_gil(|py| {
             let locals = py
-                .eval("{ 'np': __import__('numpy') }", None, None)
+                .eval_bound("{ 'np': __import__('numpy') }", None, None)
                 .unwrap()
-                .downcast::<PyDict>()
+                .downcast_into::<PyDict>()
                 .unwrap();
 
             let array = py
-                .eval(
+                .eval_bound(
                     "np.array([np.datetime64('1970-01-01')])",
                     None,
-                    Some(locals),
+                    Some(&locals),
                 )
                 .unwrap()
-                .downcast::<PyArray1<Datetime<units::Days>>>()
+                .downcast_into::<PyArray1<Datetime<units::Days>>>()
                 .unwrap();
 
             let value: i64 = array.get_owned(0).unwrap().into();
@@ -288,9 +288,9 @@ mod tests {
             *array.readwrite().get_mut(0).unwrap() = Timedelta::<units::Minutes>::from(5);
 
             let np = py
-                .eval("__import__('numpy')", None, None)
+                .eval_bound("__import__('numpy')", None, None)
                 .unwrap()
-                .downcast::<PyModule>()
+                .downcast_into::<PyModule>()
                 .unwrap();
 
             py_run!(py, array np, "assert array.dtype == np.dtype('timedelta64[m]')");

@@ -98,17 +98,17 @@ numpy = "0.20"
 ```
 
 ```rust
-use numpy::PyArray1;
-use pyo3::{types::IntoPyDict, PyResult, Python};
+use numpy::{PyArray1, PyArrayMethods};
+use pyo3::{types::{IntoPyDict, PyAnyMethods}, PyResult, Python};
 
 fn main() -> PyResult<()> {
     Python::with_gil(|py| {
-        let np = py.import("numpy")?;
-        let locals = [("np", np)].into_py_dict(py);
+        let np = py.import_bound("numpy")?;
+        let locals = [("np", np)].into_py_dict_bound(py);
 
-        let pyarray: &PyArray1<i32> = py
-            .eval("np.absolute(np.array([-1, -2, -3], dtype='int32'))", Some(locals), None)?
-            .extract()?;
+        let pyarray = py
+            .eval_bound("np.absolute(np.array([-1, -2, -3], dtype='int32'))", Some(&locals), None)?
+            .downcast_into::<PyArray1<i32>>()?;
 
         let readonly = pyarray.readonly();
         let slice = readonly.as_slice()?;
