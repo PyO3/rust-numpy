@@ -6,9 +6,10 @@ use pyo3::{
     intern,
     sync::GILOnceCell,
     types::{PyAnyMethods, PyDict},
-    FromPyObject, Py, PyAny, PyResult,
+    Bound, FromPyObject, Py, PyAny, PyResult,
 };
 
+use crate::array::PyArrayMethods;
 use crate::sealed::Sealed;
 use crate::{get_array_module, Element, IntoPyArray, PyArray, PyReadonlyArray};
 
@@ -131,12 +132,12 @@ where
 
 impl<'py, T, D, C> FromPyObject<'py> for PyArrayLike<'py, T, D, C>
 where
-    T: Element,
-    D: Dimension,
+    T: Element + 'py,
+    D: Dimension + 'py,
     C: Coerce,
     Vec<T>: FromPyObject<'py>,
 {
-    fn extract(ob: &'py PyAny) -> PyResult<Self> {
+    fn extract_bound(ob: &Bound<'py, PyAny>) -> PyResult<Self> {
         if let Ok(array) = ob.downcast::<PyArray<T, D>>() {
             return Ok(Self(array.readonly(), PhantomData));
         }

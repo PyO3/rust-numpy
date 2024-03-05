@@ -5,7 +5,8 @@ use half::{bf16, f16};
 use ndarray::{array, s, Array1, Dim};
 use numpy::{
     dtype_bound, get_array_module, npyffi::NPY_ORDER, pyarray, PyArray, PyArray1, PyArray2,
-    PyArrayDescr, PyArrayDescrMethods, PyArrayDyn, PyFixedString, PyFixedUnicode, ToPyArray,
+    PyArrayDescr, PyArrayDescrMethods, PyArrayDyn, PyFixedString, PyFixedUnicode,
+    PyUntypedArrayMethods, ToPyArray,
 };
 use pyo3::{
     py_run, pyclass, pymethods,
@@ -471,6 +472,7 @@ fn to_owned_works() {
     let arr: Py<PyArray1<_>> = Python::with_gil(|py| {
         let arr = PyArray::from_slice(py, &[1_i32, 2, 3]);
 
+        #[allow(deprecated)]
         arr.to_owned()
     });
 

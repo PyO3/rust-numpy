@@ -1,9 +1,10 @@
 use std::thread::spawn;
 
 use numpy::{
-    npyffi::NPY_ARRAY_WRITEABLE, PyArray, PyArray1, PyArray2, PyReadonlyArray3, PyReadwriteArray3,
+    array::PyArrayMethods, npyffi::NPY_ARRAY_WRITEABLE, PyArray, PyArray1, PyArray2,
+    PyReadonlyArray3, PyReadwriteArray3, PyUntypedArrayMethods,
 };
-use pyo3::{py_run, pyclass, pymethods, types::IntoPyDict, Py, PyAny, Python};
+use pyo3::{py_run, pyclass, pymethods, types::IntoPyDict, Py, PyAny, PyNativeType, Python};
 
 #[test]
 fn distinct_borrows() {
@@ -107,16 +108,16 @@ fn borrows_span_frames() {
 #[test]
 fn borrows_span_threads() {
     Python::with_gil(|py| {
-        let array = PyArray::<f64, _>::zeros(py, (1, 2, 3), false);
+        let array = (*PyArray::<f64, _>::zeros(py, (1, 2, 3), false).as_borrowed()).clone();
 
         let _exclusive = array.readwrite();
 
-        let array = array.to_owned();
+        let array = array.unbind();
 
         py.allow_threads(move || {
             let thread = spawn(move || {
                 Python::with_gil(|py| {
-                    let array = array.as_ref(py);
+                    let array = array.bind(py);
 
                     let _exclusive = array.readwrite();
                 });
