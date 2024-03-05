@@ -169,12 +169,13 @@ use std::ops::Deref;
 use ndarray::{
     ArrayView, ArrayViewMut, Dimension, IntoDimension, Ix0, Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn,
 };
-use pyo3::{FromPyObject, PyAny, PyResult};
+use pyo3::{types::PyAnyMethods, Bound, FromPyObject, PyAny, PyResult};
 
-use crate::array::PyArray;
+use crate::array::{PyArray, PyArrayMethods};
 use crate::convert::NpyIndex;
 use crate::dtype::Element;
 use crate::error::{BorrowError, NotContiguousError};
+use crate::untyped_array::PyUntypedArrayMethods;
 
 use shared::{acquire, acquire_mut, release, release_mut};
 
@@ -190,7 +191,7 @@ where
     T: Element,
     D: Dimension,
 {
-    array: &'py PyArray<T, D>,
+    array: Bound<'py, PyArray<T, D>>,
 }
 
 /// Read-only borrow of a zero-dimensional array.
@@ -222,16 +223,16 @@ where
     T: Element,
     D: Dimension,
 {
-    type Target = PyArray<T, D>;
+    type Target = Bound<'py, PyArray<T, D>>;
 
     fn deref(&self) -> &Self::Target {
-        self.array
+        &self.array
     }
 }
 
 impl<'py, T: Element, D: Dimension> FromPyObject<'py> for PyReadonlyArray<'py, T, D> {
-    fn extract(obj: &'py PyAny) -> PyResult<Self> {
-        let array: &'py PyArray<T, D> = obj.extract()?;
+    fn extract_bound(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
+        let array = obj.downcast::<PyArray<T, D>>()?;
         Ok(array.readonly())
     }
 }
@@ -241,7 +242,7 @@ where
     T: Element,
     D: Dimension,
 {
-    pub(crate) fn try_new(array: &'py PyArray<T, D>) -> Result<Self, BorrowError> {
+    pub(crate) fn try_new(array: Bound<'py, PyArray<T, D>>) -> Result<Self, BorrowError> {
         acquire(array.py(), array.as_array_ptr())?;
 
         Ok(Self { array })
@@ -324,7 +325,7 @@ where
     }
 }
 
-impl<'a, T, D> Clone for PyReadonlyArray<'a, T, D>
+impl<'py, T, D> Clone for PyReadonlyArray<'py, T, D>
 where
     T: Element,
     D: Dimension,
@@ -332,11 +333,13 @@ where
     fn clone(&self) -> Self {
         acquire(self.array.py(), self.array.as_array_ptr()).unwrap();
 
-        Self { array: self.array }
+        Self {
+            array: self.array.clone(),
+        }
     }
 }
 
-impl<'a, T, D> Drop for PyReadonlyArray<'a, T, D>
+impl<'py, T, D> Drop for PyReadonlyArray<'py, T, D>
 where
     T: Element,
     D: Dimension,
@@ -374,7 +377,7 @@ where
     T: Element,
     D: Dimension,
 {
-    array: &'py PyArray<T, D>,
+    array: Bound<'py, PyArray<T, D>>,
 }
 
 /// Read-write borrow of a zero-dimensional array.
@@ -415,8 +418,8 @@ where
 }
 
 impl<'py, T: Element, D: Dimension> FromPyObject<'py> for PyReadwriteArray<'py, T, D> {
-    fn extract(obj: &'py PyAny) -> PyResult<Self> {
-        let array: &'py PyArray<T, D> = obj.extract()?;
+    fn extract_bound(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
+        let array = obj.downcast::<PyArray<T, D>>()?;
         Ok(array.readwrite())
     }
 }
@@ -426,7 +429,7 @@ where
     T: Element,
     D: Dimension,
 {
-    pub(crate) fn try_new(array: &'py PyArray<T, D>) -> Result<Self, BorrowError> {
+    pub(crate) fn try_new(array: Bound<'py, PyArray<T, D>>) -> Result<Self, BorrowError> {
         acquire_mut(array.py(), array.as_array_ptr())?;
 
         Ok(Self { array })
@@ -520,7 +523,7 @@ where
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyUntypedArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
@@ -533,20 +536,23 @@ where
     /// });
     /// ```
     pub fn resize<ID: IntoDimension>(self, dims: ID) -> PyResult<Self> {
-        let array = self.array;
-
         // SAFETY: Ownership of `self` proves exclusive access to the interior of the array.
         unsafe {
-            array.resize(dims)?;
+            self.array.resize(dims)?;
         }
 
-        drop(self);
+        let py = self.array.py();
+        let ptr = self.array.as_array_ptr();
 
-        Ok(Self::try_new(array).unwrap())
+        // Update the borrow metadata to match the shape change.
+        release_mut(py, ptr);
+        acquire_mut(py, ptr).unwrap();
+
+        Ok(self)
     }
 }
 
-impl<'a, T, D> Drop for PyReadwriteArray<'a, T, D>
+impl<'py, T, D> Drop for PyReadwriteArray<'py, T, D>
 where
     T: Element,
     D: Dimension,

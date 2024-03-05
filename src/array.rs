@@ -225,6 +225,7 @@ impl<T, D> PyArray<T, D> {
     ///     assert_eq!(array.as_ref(py).readonly().as_slice().unwrap(), [0.0; 5]);
     /// });
     /// ```
+    #[deprecated(since = "0.21.0", note = "use Bound::unbind() instead")]
     pub fn to_owned(&self) -> Py<Self> {
         unsafe { Py::from_borrowed_ptr(self.py(), self.as_ptr()) }
     }
@@ -264,13 +265,11 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
             if npyffi::PyArray_Check(ob.py(), ob.as_ptr()) == 0 {
                 return Err(DowncastError::new(ob, <Self as PyTypeInfo>::NAME).into());
             }
-            ob.downcast_unchecked()
+            ob.downcast_unchecked::<Self>()
         };
 
-        let arr_gil_ref: &PyArray<T, D> = array.as_gil_ref();
-
         // Check if the dimensionality matches `D`.
-        let src_ndim = arr_gil_ref.ndim();
+        let src_ndim = array.ndim();
         if let Some(dst_ndim) = D::NDIM {
             if src_ndim != dst_ndim {
                 return Err(DimensionalityError::new(src_ndim, dst_ndim).into());
@@ -596,7 +595,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     /// ```
     #[inline(always)]
     pub unsafe fn get(&self, index: impl NpyIndex<Dim = D>) -> Option<&T> {
-        let ptr = self.get_raw(index)?;
+        let ptr = get_raw(&self.as_borrowed(), index)?;
         Some(&*ptr)
     }
 
@@ -628,17 +627,8 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     /// ```
     #[inline(always)]
     pub unsafe fn get_mut(&self, index: impl NpyIndex<Dim = D>) -> Option<&mut T> {
-        let ptr = self.get_raw(index)?;
+        let ptr = get_raw(&self.as_borrowed(), index)?;
         Some(&mut *ptr)
-    }
-
-    #[inline(always)]
-    fn get_raw<Idx>(&self, index: Idx) -> Option<*mut T>
-    where
-        Idx: NpyIndex<Dim = D>,
-    {
-        let offset = index.get_checked::<T>(self.shape(), self.strides())?;
-        Some(unsafe { self.data().offset(offset) })
     }
 
     /// Get an immutable reference of the specified element,
@@ -702,8 +692,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     where
         Idx: NpyIndex<Dim = D>,
     {
-        let offset = index.get_unchecked::<T>(self.strides());
-        self.data().offset(offset) as *mut _
+        self.as_borrowed().uget_raw(index)
     }
 
     /// Get a copy of the specified element in the array.
@@ -725,12 +714,12 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     where
         Idx: NpyIndex<Dim = D>,
     {
-        unsafe { self.get(index) }.cloned()
+        self.as_borrowed().get_owned(index)
     }
 
     /// Turn an array with fixed dimensionality into one with dynamic dimensionality.
     pub fn to_dyn(&self) -> &PyArray<T, IxDyn> {
-        unsafe { PyArray::from_borrowed_ptr(self.py(), self.as_ptr()) }
+        self.as_borrowed().to_dyn().clone().into_gil_ref()
     }
 
     /// Returns a copy of the internal data of the array as a [`Vec`].
@@ -754,7 +743,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     /// });
     /// ```
     pub fn to_vec(&self) -> Result<Vec<T>, NotContiguousError> {
-        unsafe { self.as_slice() }.map(ToOwned::to_owned)
+        self.as_borrowed().to_vec()
     }
 
     /// Construct a NumPy array from a [`ndarray::ArrayBase`].
@@ -784,7 +773,10 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
 
     /// Get an immutable borrow of the NumPy array
     pub fn try_readonly(&self) -> Result<PyReadonlyArray<'_, T, D>, BorrowError> {
-        PyReadonlyArray::try_new(self)
+        // TODO: replace with `Borrowed::to_owned` once
+        // pyo3#3963 makes it into a release
+        let bound = &*self.as_borrowed();
+        PyReadonlyArray::try_new(bound.clone())
     }
 
     /// Get an immutable borrow of the NumPy array
@@ -800,7 +792,10 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
 
     /// Get a mutable borrow of the NumPy array
     pub fn try_readwrite(&self) -> Result<PyReadwriteArray<'_, T, D>, BorrowError> {
-        PyReadwriteArray::try_new(self)
+        // TODO: replace with `Borrowed::to_owned` once
+        // pyo3#3963 makes it into a release
+        let bound = &*self.as_borrowed();
+        PyReadwriteArray::try_new(bound.clone())
     }
 
     /// Get a mutable borrow of the NumPy array
@@ -817,60 +812,6 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         self.try_readwrite().unwrap()
     }
 
-    fn as_view<S: RawData, F>(&self, from_shape_ptr: F) -> ArrayBase<S, D>
-    where
-        F: FnOnce(StrideShape<D>, *mut T) -> ArrayBase<S, D>,
-    {
-        fn inner<D: Dimension>(
-            shape: &[usize],
-            strides: &[isize],
-            itemsize: usize,
-            mut data_ptr: *mut u8,
-        ) -> (StrideShape<D>, u32, *mut u8) {
-            let shape = D::from_dimension(&Dim(shape)).expect(DIMENSIONALITY_MISMATCH_ERR);
-
-            assert!(strides.len() <= 32, "{}", MAX_DIMENSIONALITY_ERR);
-
-            let mut new_strides = D::zeros(strides.len());
-            let mut inverted_axes = 0_u32;
-
-            for i in 0..strides.len() {
-                // FIXME(kngwyu): Replace this hacky negative strides support with
-                // a proper constructor, when it's implemented.
-                // See https://github.com/rust-ndarray/ndarray/issues/842 for more.
-                if strides[i] >= 0 {
-                    new_strides[i] = strides[i] as usize / itemsize;
-                } else {
-                    // Move the pointer to the start position.
-                    data_ptr = unsafe { data_ptr.offset(strides[i] * (shape[i] as isize - 1)) };
-
-                    new_strides[i] = (-strides[i]) as usize / itemsize;
-                    inverted_axes |= 1 << i;
-                }
-            }
-
-            (shape.strides(new_strides), inverted_axes, data_ptr)
-        }
-
-        let (shape, mut inverted_axes, data_ptr) = inner(
-            self.shape(),
-            self.strides(),
-            mem::size_of::<T>(),
-            self.data() as _,
-        );
-
-        let mut array = from_shape_ptr(shape, data_ptr as _);
-
-        while inverted_axes != 0 {
-            let axis = inverted_axes.trailing_zeros() as usize;
-            inverted_axes &= !(1 << axis);
-
-            array.invert_axis(Axis(axis));
-        }
-
-        array
-    }
-
     /// Returns an [`ArrayView`] of the internal array.
     ///
     /// See also [`PyReadonlyArray::as_array`].
@@ -879,7 +820,9 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     ///
     /// Calling this method invalidates all exclusive references to the internal data, e.g. `&mut [T]` or `ArrayViewMut`.
     pub unsafe fn as_array(&self) -> ArrayView<'_, T, D> {
-        self.as_view(|shape, ptr| ArrayView::from_shape_ptr(shape, ptr))
+        as_view(&self.as_borrowed(), |shape, ptr| {
+            ArrayView::from_shape_ptr(shape, ptr)
+        })
     }
 
     /// Returns an [`ArrayViewMut`] of the internal array.
@@ -890,17 +833,19 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     ///
     /// Calling this method invalidates all other references to the internal data, e.g. `ArrayView` or `ArrayViewMut`.
     pub unsafe fn as_array_mut(&self) -> ArrayViewMut<'_, T, D> {
-        self.as_view(|shape, ptr| ArrayViewMut::from_shape_ptr(shape, ptr))
+        as_view(&self.as_borrowed(), |shape, ptr| {
+            ArrayViewMut::from_shape_ptr(shape, ptr)
+        })
     }
 
     /// Returns the internal array as [`RawArrayView`] enabling element access via raw pointers
     pub fn as_raw_array(&self) -> RawArrayView<T, D> {
-        self.as_view(|shape, ptr| unsafe { RawArrayView::from_shape_ptr(shape, ptr) })
+        self.as_borrowed().as_raw_array()
     }
 
     /// Returns the internal array as [`RawArrayViewMut`] enabling element access via raw pointers
     pub fn as_raw_array_mut(&self) -> RawArrayViewMut<T, D> {
-        self.as_view(|shape, ptr| unsafe { RawArrayViewMut::from_shape_ptr(shape, ptr) })
+        self.as_borrowed().as_raw_array_mut()
     }
 
     /// Get a copy of the array as an [`ndarray::Array`].
@@ -922,7 +867,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     /// });
     /// ```
     pub fn to_owned_array(&self) -> Array<T, D> {
-        unsafe { self.as_array() }.to_owned()
+        self.as_borrowed().to_owned_array()
     }
 }
 
@@ -932,61 +877,6 @@ where
     N: nalgebra::Scalar + Element,
     D: Dimension,
 {
-    fn try_as_matrix_shape_strides<R, C, RStride, CStride>(
-        &self,
-    ) -> Option<((R, C), (RStride, CStride))>
-    where
-        R: nalgebra::Dim,
-        C: nalgebra::Dim,
-        RStride: nalgebra::Dim,
-        CStride: nalgebra::Dim,
-    {
-        let ndim = self.ndim();
-        let shape = self.shape();
-        let strides = self.strides();
-
-        if ndim != 1 && ndim != 2 {
-            return None;
-        }
-
-        if strides.iter().any(|strides| *strides < 0) {
-            return None;
-        }
-
-        let rows = shape[0];
-        let cols = *shape.get(1).unwrap_or(&1);
-
-        if R::try_to_usize().map(|expected| rows == expected) == Some(false) {
-            return None;
-        }
-
-        if C::try_to_usize().map(|expected| cols == expected) == Some(false) {
-            return None;
-        }
-
-        let row_stride = strides[0] as usize / mem::size_of::<N>();
-        let col_stride = strides
-            .get(1)
-            .map_or(rows, |stride| *stride as usize / mem::size_of::<N>());
-
-        if RStride::try_to_usize().map(|expected| row_stride == expected) == Some(false) {
-            return None;
-        }
-
-        if CStride::try_to_usize().map(|expected| col_stride == expected) == Some(false) {
-            return None;
-        }
-
-        let shape = (R::from_usize(rows), C::from_usize(cols));
-
-        let strides = (
-            RStride::from_usize(row_stride),
-            CStride::from_usize(col_stride),
-        );
-
-        Some((shape, strides))
-    }
-
     /// Try to convert this array into a [`nalgebra::MatrixView`] using the given shape and strides.
     ///
     /// # Safety
@@ -1002,7 +892,7 @@ where
         RStride: nalgebra::Dim,
         CStride: nalgebra::Dim,
     {
-        let (shape, strides) = self.try_as_matrix_shape_strides()?;
+        let (shape, strides) = try_as_matrix_shape_strides(&self.as_borrowed())?;
 
         let storage = nalgebra::ViewStorage::from_raw_parts(self.data(), shape, strides);
 
@@ -1024,7 +914,7 @@ where
         RStride: nalgebra::Dim,
         CStride: nalgebra::Dim,
     {
-        let (shape, strides) = self.try_as_matrix_shape_strides()?;
+        let (shape, strides) = try_as_matrix_shape_strides(&self.as_borrowed())?;
 
         let storage = nalgebra::ViewStorageMut::from_raw_parts(self.data(), shape, strides);
 
@@ -1087,7 +977,7 @@ impl<T: Copy + Element> PyArray<T, Ix0> {
     ///
     /// See [`inner`][crate::inner] for an example.
     pub fn item(&self) -> T {
-        unsafe { *self.data() }
+        self.as_borrowed().item()
     }
 }
 
@@ -1280,14 +1170,7 @@ impl<T: Element, D> PyArray<T, D> {
     ///
     /// [PyArray_CopyInto]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_CopyInto
     pub fn copy_to<U: Element>(&self, other: &PyArray<U, D>) -> PyResult<()> {
-        let self_ptr = self.as_array_ptr();
-        let other_ptr = other.as_array_ptr();
-        let result = unsafe { PY_ARRAY_API.PyArray_CopyInto(self.py(), other_ptr, self_ptr) };
-        if result != -1 {
-            Ok(())
-        } else {
-            Err(PyErr::fetch(self.py()))
-        }
+        self.as_borrowed().copy_to(&other.as_borrowed())
     }
 
     /// Cast the `PyArray<T>` to `PyArray<U>`, by allocating a new array.
@@ -1311,19 +1194,7 @@ impl<T: Element, D> PyArray<T, D> {
     ///
     /// [PyArray_CastToType]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_CastToType
     pub fn cast<'py, U: Element>(&'py self, is_fortran: bool) -> PyResult<&'py PyArray<U, D>> {
-        let ptr = unsafe {
-            PY_ARRAY_API.PyArray_CastToType(
-                self.py(),
-                self.as_array_ptr(),
-                U::get_dtype_bound(self.py()).into_dtype_ptr(),
-                if is_fortran { -1 } else { 0 },
-            )
-        };
-        if !ptr.is_null() {
-            Ok(unsafe { PyArray::<U, D>::from_owned_ptr(self.py(), ptr) })
-        } else {
-            Err(PyErr::fetch(self.py()))
-        }
+        self.as_borrowed().cast(is_fortran).map(Bound::into_gil_ref)
     }
 
     /// Construct a new array which has same values as self,
@@ -1357,21 +1228,9 @@ impl<T: Element, D> PyArray<T, D> {
         dims: ID,
         order: NPY_ORDER,
     ) -> PyResult<&'py PyArray<T, ID::Dim>> {
-        let mut dims = dims.into_dimension();
-        let mut dims = dims.to_npy_dims();
-        let ptr = unsafe {
-            PY_ARRAY_API.PyArray_Newshape(
-                self.py(),
-                self.as_array_ptr(),
-                &mut dims as *mut npyffi::PyArray_Dims,
-                order,
-            )
-        };
-        if !ptr.is_null() {
-            Ok(unsafe { PyArray::<T, ID::Dim>::from_owned_ptr(self.py(), ptr) })
-        } else {
-            Err(PyErr::fetch(self.py()))
-        }
+        self.as_borrowed()
+            .reshape_with_order(dims, order)
+            .map(Bound::into_gil_ref)
     }
 
     /// Special case of [`reshape_with_order`][Self::reshape_with_order] which keeps the memory order the same.
@@ -1380,7 +1239,7 @@ impl<T: Element, D> PyArray<T, D> {
         &'py self,
         dims: ID,
     ) -> PyResult<&'py PyArray<T, ID::Dim>> {
-        self.reshape_with_order(dims, NPY_ORDER::NPY_ANYORDER)
+        self.as_borrowed().reshape(dims).map(Bound::into_gil_ref)
     }
 
     /// Extends or truncates the dimensions of an array.
@@ -1415,20 +1274,7 @@ impl<T: Element, D> PyArray<T, D> {
     /// [ndarray-resize]: https://numpy.org/doc/stable/reference/generated/numpy.ndarray.resize.html
     /// [PyArray_Resize]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_Resize
     pub unsafe fn resize<ID: IntoDimension>(&self, dims: ID) -> PyResult<()> {
-        let mut dims = dims.into_dimension();
-        let mut dims = dims.to_npy_dims();
-        let res = PY_ARRAY_API.PyArray_Resize(
-            self.py(),
-            self.as_array_ptr(),
-            &mut dims as *mut npyffi::PyArray_Dims,
-            1,
-            NPY_ORDER::NPY_ANYORDER,
-        );
-        if !res.is_null() {
-            Ok(())
-        } else {
-            Err(PyErr::fetch(self.py()))
-        }
+        self.as_borrowed().resize(dims)
     }
 }
 
@@ -1485,6 +1331,657 @@ unsafe fn clone_elements<T: Element>(elems: &[T], data_ptr: &mut *mut T) {
 pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> {
     /// Access an untyped representation of this array.
     fn as_untyped(&self) -> &Bound<'py, PyUntypedArray>;
+
+    /// Returns a pointer to the first element of the array.
+    fn data(&self) -> *mut T;
+
+    /// Same as [`shape`][PyUntypedArray::shape], but returns `D` instead of `&[usize]`.
+    #[inline(always)]
+    fn dims(&self) -> D
+    where
+        D: Dimension,
+    {
+        D::from_dimension(&Dim(self.shape())).expect(DIMENSIONALITY_MISMATCH_ERR)
+    }
+
+    /// Returns an immutable view of the internal data as a slice.
+    ///
+    /// # Safety
+    ///
+    /// Calling this method is undefined behaviour if the underlying array
+    /// is aliased mutably by other instances of `PyArray`
+    /// or concurrently modified by Python or other native code.
+    ///
+    /// Please consider the safe alternative [`PyReadonlyArray::as_slice`].
+    unsafe fn as_slice(&self) -> Result<&[T], NotContiguousError>
+    where
+        T: Element,
+        D: Dimension,
+    {
+        if self.is_contiguous() {
+            Ok(slice::from_raw_parts(self.data(), self.len()))
+        } else {
+            Err(NotContiguousError)
+        }
+    }
+
+    /// Returns a mutable view of the internal data as a slice.
+    ///
+    /// # Safety
+    ///
+    /// Calling this method is undefined behaviour if the underlying array
+    /// is aliased immutably or mutably by other instances of [`PyArray`]
+    /// or concurrently modified by Python or other native code.
+    ///
+    /// Please consider the safe alternative [`PyReadwriteArray::as_slice_mut`].
+    unsafe fn as_slice_mut(&self) -> Result<&mut [T], NotContiguousError>
+    where
+        T: Element,
+        D: Dimension,
+    {
+        if self.is_contiguous() {
+            Ok(slice::from_raw_parts_mut(self.data(), self.len()))
+        } else {
+            Err(NotContiguousError)
+        }
+    }
+
+    /// Get a reference of the specified element if the given index is valid.
+    ///
+    /// # Safety
+    ///
+    /// Calling this method is undefined behaviour if the underlying array
+    /// is aliased mutably by other instances of `PyArray`
+    /// or concurrently modified by Python or other native code.
+    ///
+    /// Consider using safe alternatives like [`PyReadonlyArray::get`].
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use numpy::PyArray;
+    /// use pyo3::Python;
+    ///
+    /// Python::with_gil(|py| {
+    ///     let pyarray = PyArray::arange(py, 0, 16, 1).reshape([2, 2, 4]).unwrap();
+    ///
+    ///     assert_eq!(unsafe { *pyarray.get([1, 0, 3]).unwrap() }, 11);
+    /// });
+    /// ```
+    unsafe fn get(&self, index: impl NpyIndex<Dim = D>) -> Option<&T>
+    where
+        T: Element,
+        D: Dimension;
+
+    /// Same as [`get`][Self::get], but returns `Option<&mut T>`.
+    ///
+    /// # Safety
+    ///
+    /// Calling this method is undefined behaviour if the underlying array
+    /// is aliased immutably or mutably by other instances of [`PyArray`]
+    /// or concurrently modified by Python or other native code.
+    ///
+    /// Consider using safe alternatives like [`PyReadwriteArray::get_mut`].
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use numpy::PyArray;
+    /// use pyo3::Python;
+    ///
+    /// Python::with_gil(|py| {
+    ///     let pyarray = PyArray::arange(py, 0, 16, 1).reshape([2, 2, 4]).unwrap();
+    ///
+    ///     unsafe {
+    ///         *pyarray.get_mut([1, 0, 3]).unwrap() = 42;
+    ///     }
+    ///
+    ///     assert_eq!(unsafe { *pyarray.get([1, 0, 3]).unwrap() }, 42);
+    /// });
+    /// ```
+    unsafe fn get_mut(&self, index: impl NpyIndex<Dim = D>) -> Option<&mut T>
+    where
+        T: Element,
+        D: Dimension;
+
+    /// Get an immutable reference of the specified element,
+    /// without checking the given index.
+    ///
+    /// See [`NpyIndex`] for what types can be used as the index.
+    ///
+    /// # Safety
+    ///
+    /// Passing an invalid index is undefined behavior.
+    /// The element must also have been initialized and
+    /// all other references to it is must also be shared.
+    ///
+    /// See [`PyReadonlyArray::get`] for a safe alternative.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use numpy::PyArray;
+    /// use pyo3::Python;
+    ///
+    /// Python::with_gil(|py| {
+    ///     let pyarray = PyArray::arange(py, 0, 16, 1).reshape([2, 2, 4]).unwrap();
+    ///
+    ///     assert_eq!(unsafe { *pyarray.uget([1, 0, 3]) }, 11);
+    /// });
+    /// ```
+    #[inline(always)]
+    unsafe fn uget<Idx>(&self, index: Idx) -> &T
+    where
+        T: Element,
+        D: Dimension,
+        Idx: NpyIndex<Dim = D>,
+    {
+        &*self.uget_raw(index)
+    }
+
+    /// Same as [`uget`](Self::uget), but returns `&mut T`.
+    ///
+    /// # Safety
+    ///
+    /// Passing an invalid index is undefined behavior.
+    /// The element must also have been initialized and
+    /// other references to it must not exist.
+    ///
+    /// See [`PyReadwriteArray::get_mut`] for a safe alternative.
+    #[inline(always)]
+    #[allow(clippy::mut_from_ref)]
+    unsafe fn uget_mut<Idx>(&self, index: Idx) -> &mut T
+    where
+        T: Element,
+        D: Dimension,
+        Idx: NpyIndex<Dim = D>,
+    {
+        &mut *self.uget_raw(index)
+    }
+
+    /// Same as [`uget`][Self::uget], but returns `*mut T`.
+    ///
+    /// # Safety
+    ///
+    /// Passing an invalid index is undefined behavior.
+    #[inline(always)]
+    unsafe fn uget_raw<Idx>(&self, index: Idx) -> *mut T
+    where
+        T: Element,
+        D: Dimension,
+        Idx: NpyIndex<Dim = D>,
+    {
+        let offset = index.get_unchecked::<T>(self.strides());
+        self.data().offset(offset) as *mut _
+    }
+
+    /// Get a copy of the specified element in the array.
+    ///
+    /// See [`NpyIndex`] for what types can be used as the index.
+    ///
+    /// # Example
+    /// ```
+    /// use numpy::PyArray;
+    /// use pyo3::Python;
+    ///
+    /// Python::with_gil(|py| {
+    ///     let pyarray = PyArray::arange(py, 0, 16, 1).reshape([2, 2, 4]).unwrap();
+    ///
+    ///     assert_eq!(pyarray.get_owned([1, 0, 3]), Some(11));
+    /// });
+    /// ```
+    fn get_owned<Idx>(&self, index: Idx) -> Option<T>
+    where
+        T: Element,
+        D: Dimension,
+        Idx: NpyIndex<Dim = D>,
+    {
+        unsafe { self.get(index) }.cloned()
+    }
+
+    /// Turn an array with fixed dimensionality into one with dynamic dimensionality.
+    fn to_dyn(&self) -> &Bound<'py, PyArray<T, IxDyn>>
+    where
+        T: Element,
+        D: Dimension;
+
+    /// Returns a copy of the internal data of the array as a [`Vec`].
+    ///
+    /// Fails if the internal array is not contiguous. See also [`as_slice`][Self::as_slice].
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use numpy::PyArray2;
+    /// use pyo3::Python;
+    ///
+    /// Python::with_gil(|py| {
+    ///     let pyarray= py
+    ///         .eval("__import__('numpy').array([[0, 1], [2, 3]], dtype='int64')", None, None)
+    ///         .unwrap()
+    ///         .downcast::<PyArray2<i64>>()
+    ///         .unwrap();
+    ///
+    ///     assert_eq!(pyarray.to_vec().unwrap(), vec![0, 1, 2, 3]);
+    /// });
+    /// ```
+    fn to_vec(&self) -> Result<Vec<T>, NotContiguousError>
+    where
+        T: Element,
+        D: Dimension,
+    {
+        unsafe { self.as_slice() }.map(ToOwned::to_owned)
+    }
+
+    /// Get an immutable borrow of the NumPy array
+    fn try_readonly(&self) -> Result<PyReadonlyArray<'py, T, D>, BorrowError>
+    where
+        T: Element,
+        D: Dimension;
+
+    /// Get an immutable borrow of the NumPy array
+    ///
+    /// # Panics
+    ///
+    /// Panics if the allocation backing the array is currently mutably borrowed.
+    ///
+    /// For a non-panicking variant, use [`try_readonly`][Self::try_readonly].
+    fn readonly(&self) -> PyReadonlyArray<'py, T, D>
+    where
+        T: Element,
+        D: Dimension,
+    {
+        self.try_readonly().unwrap()
+    }
+
+    /// Get a mutable borrow of the NumPy array
+    fn try_readwrite(&self) -> Result<PyReadwriteArray<'py, T, D>, BorrowError>
+    where
+        T: Element,
+        D: Dimension;
+
+    /// Get a mutable borrow of the NumPy array
+    ///
+    /// # Panics
+    ///
+    /// Panics if the allocation backing the array is currently borrowed or
+    /// if the array is [flagged as][flags] not writeable.
+    ///
+    /// For a non-panicking variant, use [`try_readwrite`][Self::try_readwrite].
+    ///
+    /// [flags]: https://numpy.org/doc/stable/reference/generated/numpy.ndarray.flags.html
+    fn readwrite(&self) -> PyReadwriteArray<'py, T, D>
+    where
+        T: Element,
+        D: Dimension,
+    {
+        self.try_readwrite().unwrap()
+    }
+
+    /// Returns an [`ArrayView`] of the internal array.
+    ///
+    /// See also [`PyReadonlyArray::as_array`].
+    ///
+    /// # Safety
+    ///
+    /// Calling this method invalidates all exclusive references to the internal data, e.g. `&mut [T]` or `ArrayViewMut`.
+    unsafe fn as_array(&self) -> ArrayView<'_, T, D>
+    where
+        T: Element,
+        D: Dimension;
+
+    /// Returns an [`ArrayViewMut`] of the internal array.
+    ///
+    /// See also [`PyReadwriteArray::as_array_mut`].
+    ///
+    /// # Safety
+    ///
+    /// Calling this method invalidates all other references to the internal data, e.g. `ArrayView` or `ArrayViewMut`.
+    unsafe fn as_array_mut(&self) -> ArrayViewMut<'_, T, D>
+    where
+        T: Element,
+        D: Dimension;
+
+    /// Returns the internal array as [`RawArrayView`] enabling element access via raw pointers
+    fn as_raw_array(&self) -> RawArrayView<T, D>
+    where
+        T: Element,
+        D: Dimension;
+
+    /// Returns the internal array as [`RawArrayViewMut`] enabling element access via raw pointers
+    fn as_raw_array_mut(&self) -> RawArrayViewMut<T, D>
+    where
+        T: Element,
+        D: Dimension;
+
+    /// Get a copy of the array as an [`ndarray::Array`].
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use numpy::PyArray;
+    /// use ndarray::array;
+    /// use pyo3::Python;
+    ///
+    /// Python::with_gil(|py| {
+    ///     let pyarray = PyArray::arange(py, 0, 4, 1).reshape([2, 2]).unwrap();
+    ///
+    ///     assert_eq!(
+    ///         pyarray.to_owned_array(),
+    ///         array![[0, 1], [2, 3]]
+    ///     )
+    /// });
+    /// ```
+    fn to_owned_array(&self) -> Array<T, D>
+    where
+        T: Element,
+        D: Dimension,
+    {
+        unsafe { self.as_array() }.to_owned()
+    }
+
+    /// Copies `self` into `other`, performing a data type conversion if necessary.
+    ///
+    /// See also [`PyArray_CopyInto`][PyArray_CopyInto].
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use numpy::PyArray;
+    /// use pyo3::Python;
+    ///
+    /// Python::with_gil(|py| {
+    ///     let pyarray_f = PyArray::arange(py, 2.0, 5.0, 1.0);
+    ///     let pyarray_i = unsafe { PyArray::<i64, _>::new(py, [3], false) };
+    ///
+    ///     assert!(pyarray_f.copy_to(pyarray_i).is_ok());
+    ///
+    ///     assert_eq!(pyarray_i.readonly().as_slice().unwrap(), &[2, 3, 4]);
+    /// });
+    /// ```
+    ///
+    /// [PyArray_CopyInto]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_CopyInto
+    fn copy_to<U: Element>(&self, other: &Bound<'py, PyArray<U, D>>) -> PyResult<()>
+    where
+        T: Element;
+
+    /// Cast the `PyArray<T>` to `PyArray<U>`, by allocating a new array.
+    ///
+    /// See also [`PyArray_CastToType`][PyArray_CastToType].
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use numpy::PyArray;
+    /// use pyo3::Python;
+    ///
+    /// Python::with_gil(|py| {
+    ///     let pyarray_f = PyArray::arange(py, 2.0, 5.0, 1.0);
+    ///
+    ///     let pyarray_i = pyarray_f.cast::<i32>(false).unwrap();
+    ///
+    ///     assert_eq!(pyarray_i.readonly().as_slice().unwrap(), &[2, 3, 4]);
+    /// });
+    /// ```
+    ///
+    /// [PyArray_CastToType]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_CastToType
+    fn cast<U: Element>(&self, is_fortran: bool) -> PyResult<Bound<'py, PyArray<U, D>>>
+    where
+        T: Element;
+
+    /// Construct a new array which has same values as self,
+    /// but has different dimensions specified by `dims`
+    /// and a possibly different memory order specified by `order`.
+    ///
+    /// See also [`numpy.reshape`][numpy-reshape] and [`PyArray_Newshape`][PyArray_Newshape].
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use numpy::{npyffi::NPY_ORDER, PyArray};
+    /// use pyo3::Python;
+    /// use ndarray::array;
+    ///
+    /// Python::with_gil(|py| {
+    ///     let array =
+    ///         PyArray::from_iter(py, 0..9).reshape_with_order([3, 3], NPY_ORDER::NPY_FORTRANORDER).unwrap();
+    ///
+    ///     assert_eq!(array.readonly().as_array(), array![[0, 3, 6], [1, 4, 7], [2, 5, 8]]);
+    ///     assert!(array.is_fortran_contiguous());
+    ///
+    ///     assert!(array.reshape([5]).is_err());
+    /// });
+    /// ```
+    ///
+    /// [numpy-reshape]: https://numpy.org/doc/stable/reference/generated/numpy.reshape.html
+    /// [PyArray_Newshape]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_Newshape
+    fn reshape_with_order<ID: IntoDimension>(
+        &self,
+        dims: ID,
+        order: NPY_ORDER,
+    ) -> PyResult<Bound<'py, PyArray<T, ID::Dim>>>
+    where
+        T: Element;
+
+    /// Special case of [`reshape_with_order`][Self::reshape_with_order] which keeps the memory order the same.
+    #[inline(always)]
+    fn reshape<ID: IntoDimension>(&self, dims: ID) -> PyResult<Bound<'py, PyArray<T, ID::Dim>>>
+    where
+        T: Element,
+    {
+        self.reshape_with_order(dims, NPY_ORDER::NPY_ANYORDER)
+    }
+
+    /// Extends or truncates the dimensions of an array.
+    ///
+    /// This method works only on [contiguous][PyUntypedArray::is_contiguous] arrays.
+    /// Missing elements will be initialized as if calling [`zeros`][Self::zeros].
+    ///
+    /// See also [`ndarray.resize`][ndarray-resize] and [`PyArray_Resize`][PyArray_Resize].
+    ///
+    /// # Safety
+    ///
+    /// There should be no outstanding references (shared or exclusive) into the array
+    /// as this method might re-allocate it and thereby invalidate all pointers into it.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use numpy::PyArray;
+    /// use pyo3::Python;
+    ///
+    /// Python::with_gil(|py| {
+    ///     let pyarray = PyArray::<f64, _>::zeros(py, (10, 10), false);
+    ///     assert_eq!(pyarray.shape(), [10, 10]);
+    ///
+    ///     unsafe {
+    ///         pyarray.resize((100, 100)).unwrap();
+    ///     }
+    ///     assert_eq!(pyarray.shape(), [100, 100]);
+    /// });
+    /// ```
+    ///
+    /// [ndarray-resize]: https://numpy.org/doc/stable/reference/generated/numpy.ndarray.resize.html
+    /// [PyArray_Resize]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_Resize
+    unsafe fn resize<ID: IntoDimension>(&self, dims: ID) -> PyResult<()>
+    where
+        T: Element;
+
+    /// Try to convert this array into a [`nalgebra::MatrixView`] using the given shape and strides.
+    ///
+    /// # Safety
+    ///
+    /// Calling this method invalidates all exclusive references to the internal data, e.g. `ArrayViewMut` or `MatrixSliceMut`.
+    #[doc(alias = "nalgebra")]
+    #[cfg(feature = "nalgebra")]
+    unsafe fn try_as_matrix<R, C, RStride, CStride>(
+        &self,
+    ) -> Option<nalgebra::MatrixView<'_, T, R, C, RStride, CStride>>
+    where
+        T: nalgebra::Scalar + Element,
+        D: Dimension,
+        R: nalgebra::Dim,
+        C: nalgebra::Dim,
+        RStride: nalgebra::Dim,
+        CStride: nalgebra::Dim;
+
+    /// Try to convert this array into a [`nalgebra::MatrixViewMut`] using the given shape and strides.
+    ///
+    /// # Safety
+    ///
+    /// Calling this method invalidates all other references to the internal data, e.g. `ArrayView`, `MatrixSlice`, `ArrayViewMut` or `MatrixSliceMut`.
+    #[doc(alias = "nalgebra")]
+    #[cfg(feature = "nalgebra")]
+    unsafe fn try_as_matrix_mut<R, C, RStride, CStride>(
+        &self,
+    ) -> Option<nalgebra::MatrixViewMut<'_, T, R, C, RStride, CStride>>
+    where
+        T: nalgebra::Scalar + Element,
+        D: Dimension,
+        R: nalgebra::Dim,
+        C: nalgebra::Dim,
+        RStride: nalgebra::Dim,
+        CStride: nalgebra::Dim;
+}
+
+/// Implementation of functionality for [`PyArray0<T>`].
+#[doc(alias = "PyArray", alias = "PyArray0")]
+pub trait PyArray0Methods<'py, T>: PyArrayMethods<'py, T, Ix0> {
+    /// Get the single element of a zero-dimensional array.
+    ///
+    /// See [`inner`][crate::inner] for an example.
+    fn item(&self) -> T
+    where
+        T: Element + Copy,
+    {
+        unsafe { *self.data() }
+    }
+}
+
+#[inline(always)]
+fn get_raw<T, D, Idx>(slf: &Bound<'_, PyArray<T, D>>, index: Idx) -> Option<*mut T>
+where
+    T: Element,
+    D: Dimension,
+    Idx: NpyIndex<Dim = D>,
+{
+    let offset = index.get_checked::<T>(slf.shape(), slf.strides())?;
+    Some(unsafe { slf.data().offset(offset) })
+}
+
+fn as_view<T, D, S, F>(slf: &Bound<'_, PyArray<T, D>>, from_shape_ptr: F) -> ArrayBase<S, D>
+where
+    T: Element,
+    D: Dimension,
+    S: RawData,
+    F: FnOnce(StrideShape<D>, *mut T) -> ArrayBase<S, D>,
+{
+    fn inner<D: Dimension>(
+        shape: &[usize],
+        strides: &[isize],
+        itemsize: usize,
+        mut data_ptr: *mut u8,
+    ) -> (StrideShape<D>, u32, *mut u8) {
+        let shape = D::from_dimension(&Dim(shape)).expect(DIMENSIONALITY_MISMATCH_ERR);
+
+        assert!(strides.len() <= 32, "{}", MAX_DIMENSIONALITY_ERR);
+
+        let mut new_strides = D::zeros(strides.len());
+        let mut inverted_axes = 0_u32;
+
+        for i in 0..strides.len() {
+            // FIXME(kngwyu): Replace this hacky negative strides support with
+            // a proper constructor, when it's implemented.
+            // See https://github.com/rust-ndarray/ndarray/issues/842 for more.
+            if strides[i] >= 0 {
+                new_strides[i] = strides[i] as usize / itemsize;
+            } else {
+                // Move the pointer to the start position.
+                data_ptr = unsafe { data_ptr.offset(strides[i] * (shape[i] as isize - 1)) };
+
+                new_strides[i] = (-strides[i]) as usize / itemsize;
+                inverted_axes |= 1 << i;
+            }
+        }
+
+        (shape.strides(new_strides), inverted_axes, data_ptr)
+    }
+
+    let (shape, mut inverted_axes, data_ptr) = inner(
+        slf.shape(),
+        slf.strides(),
+        mem::size_of::<T>(),
+        slf.data() as _,
+    );
+
+    let mut array = from_shape_ptr(shape, data_ptr as _);
+
+    while inverted_axes != 0 {
+        let axis = inverted_axes.trailing_zeros() as usize;
+        inverted_axes &= !(1 << axis);
+
+        array.invert_axis(Axis(axis));
+    }
+
+    array
+}
+
+#[cfg(feature = "nalgebra")]
+fn try_as_matrix_shape_strides<N, D, R, C, RStride, CStride>(
+    slf: &Bound<'_, PyArray<N, D>>,
+) -> Option<((R, C), (RStride, CStride))>
+where
+    N: nalgebra::Scalar + Element,
+    D: Dimension,
+    R: nalgebra::Dim,
+    C: nalgebra::Dim,
+    RStride: nalgebra::Dim,
+    CStride: nalgebra::Dim,
+{
+    let ndim = slf.ndim();
+    let shape = slf.shape();
+    let strides = slf.strides();
+
+    if ndim != 1 && ndim != 2 {
+        return None;
+    }
+
+    if strides.iter().any(|strides| *strides < 0) {
+        return None;
+    }
+
+    let rows = shape[0];
+    let cols = *shape.get(1).unwrap_or(&1);
+
+    if R::try_to_usize().map(|expected| rows == expected) == Some(false) {
+        return None;
+    }
+
+    if C::try_to_usize().map(|expected| cols == expected) == Some(false) {
+        return None;
+    }
+
+    let row_stride = strides[0] as usize / mem::size_of::<N>();
+    let col_stride = strides
+        .get(1)
+        .map_or(rows, |stride| *stride as usize / mem::size_of::<N>());
+
+    if RStride::try_to_usize().map(|expected| row_stride == expected) == Some(false) {
+        return None;
+    }
+
+    if CStride::try_to_usize().map(|expected| col_stride == expected) == Some(false) {
+        return None;
+    }
+
+    let shape = (R::from_usize(rows), C::from_usize(cols));
+
+    let strides = (
+        RStride::from_usize(row_stride),
+        CStride::from_usize(col_stride),
+    );
+
+    Some((shape, strides))
 }
 
 impl<'py, T, D> PyArrayMethods<'py, T, D> for Bound<'py, PyArray<T, D>> {
@@ -1492,7 +1989,206 @@ impl<'py, T, D> PyArrayMethods<'py, T, D> for Bound<'py, PyArray<T, D>> {
     fn as_untyped(&self) -> &Bound<'py, PyUntypedArray> {
         unsafe { self.downcast_unchecked() }
     }
+
+    #[inline(always)]
+    fn data(&self) -> *mut T {
+        unsafe { (*self.as_array_ptr()).data.cast() }
+    }
+
+    #[inline(always)]
+    unsafe fn get(&self, index: impl NpyIndex<Dim = D>) -> Option<&T>
+    where
+        T: Element,
+        D: Dimension,
+    {
+        let ptr = get_raw(self, index)?;
+        Some(&*ptr)
+    }
+
+    #[inline(always)]
+    unsafe fn get_mut(&self, index: impl NpyIndex<Dim = D>) -> Option<&mut T>
+    where
+        T: Element,
+        D: Dimension,
+    {
+        let ptr = get_raw(self, index)?;
+        Some(&mut *ptr)
+    }
+
+    fn to_dyn(&self) -> &Bound<'py, PyArray<T, IxDyn>> {
+        unsafe { self.downcast_unchecked() }
+    }
+
+    fn try_readonly(&self) -> Result<PyReadonlyArray<'py, T, D>, BorrowError>
+    where
+        T: Element,
+        D: Dimension,
+    {
+        PyReadonlyArray::try_new(self.clone())
+    }
+
+    fn try_readwrite(&self) -> Result<PyReadwriteArray<'py, T, D>, BorrowError>
+    where
+        T: Element,
+        D: Dimension,
+    {
+        PyReadwriteArray::try_new(self.clone())
+    }
+
+    unsafe fn as_array(&self) -> ArrayView<'_, T, D>
+    where
+        T: Element,
+        D: Dimension,
+    {
+        as_view(self, |shape, ptr| ArrayView::from_shape_ptr(shape, ptr))
+    }
+
+    unsafe fn as_array_mut(&self) -> ArrayViewMut<'_, T, D>
+    where
+        T: Element,
+        D: Dimension,
+    {
+        as_view(self, |shape, ptr| ArrayViewMut::from_shape_ptr(shape, ptr))
+    }
+
+    fn as_raw_array(&self) -> RawArrayView<T, D>
+    where
+        T: Element,
+        D: Dimension,
+    {
+        as_view(self, |shape, ptr| unsafe {
+            RawArrayView::from_shape_ptr(shape, ptr)
+        })
+    }
+
+    fn as_raw_array_mut(&self) -> RawArrayViewMut<T, D>
+    where
+        T: Element,
+        D: Dimension,
+    {
+        as_view(self, |shape, ptr| unsafe {
+            RawArrayViewMut::from_shape_ptr(shape, ptr)
+        })
+    }
+
+    fn copy_to<U: Element>(&self, other: &Bound<'py, PyArray<U, D>>) -> PyResult<()>
+    where
+        T: Element,
+    {
+        let self_ptr = self.as_array_ptr();
+        let other_ptr = other.as_array_ptr();
+        let result = unsafe { PY_ARRAY_API.PyArray_CopyInto(self.py(), other_ptr, self_ptr) };
+        if result != -1 {
+            Ok(())
+        } else {
+            Err(PyErr::fetch(self.py()))
+        }
+    }
+
+    fn cast<U: Element>(&self, is_fortran: bool) -> PyResult<Bound<'py, PyArray<U, D>>>
+    where
+        T: Element,
+    {
+        let ptr = unsafe {
+            PY_ARRAY_API.PyArray_CastToType(
+                self.py(),
+                self.as_array_ptr(),
+                U::get_dtype_bound(self.py()).into_dtype_ptr(),
+                if is_fortran { -1 } else { 0 },
+            )
+        };
+        if !ptr.is_null() {
+            Ok(unsafe { Bound::from_owned_ptr(self.py(), ptr).downcast_into_unchecked() })
+        } else {
+            Err(PyErr::fetch(self.py()))
+        }
+    }
+
+    fn reshape_with_order<ID: IntoDimension>(
+        &self,
+        dims: ID,
+        order: NPY_ORDER,
+    ) -> PyResult<Bound<'py, PyArray<T, ID::Dim>>>
+    where
+        T: Element,
+    {
+        let mut dims = dims.into_dimension();
+        let mut dims = dims.to_npy_dims();
+        let ptr = unsafe {
+            PY_ARRAY_API.PyArray_Newshape(
+                self.py(),
+                self.as_array_ptr(),
+                &mut dims as *mut npyffi::PyArray_Dims,
+                order,
+            )
+        };
+        if !ptr.is_null() {
+            Ok(unsafe { Bound::from_owned_ptr(self.py(), ptr).downcast_into_unchecked() })
+        } else {
+            Err(PyErr::fetch(self.py()))
+        }
+    }
+
+    unsafe fn resize<ID: IntoDimension>(&self, dims: ID) -> PyResult<()>
+    where
+        T: Element,
+    {
+        let mut dims = dims.into_dimension();
+        let mut dims = dims.to_npy_dims();
+        let res = PY_ARRAY_API.PyArray_Resize(
+            self.py(),
+            self.as_array_ptr(),
+            &mut dims as *mut npyffi::PyArray_Dims,
+            1,
+            NPY_ORDER::NPY_ANYORDER,
+        );
+        if !res.is_null() {
+            Ok(())
+        } else {
+            Err(PyErr::fetch(self.py()))
+        }
+    }
+
+    #[cfg(feature = "nalgebra")]
+    unsafe fn try_as_matrix<R, C, RStride, CStride>(
+        &self,
+    ) -> Option<nalgebra::MatrixView<'_, T, R, C, RStride, CStride>>
+    where
+        T: nalgebra::Scalar + Element,
+        D: Dimension,
+        R: nalgebra::Dim,
+        C: nalgebra::Dim,
+        RStride: nalgebra::Dim,
+        CStride: nalgebra::Dim,
+    {
+        let (shape, strides) = try_as_matrix_shape_strides(self)?;
+
+        let storage = nalgebra::ViewStorage::from_raw_parts(self.data(), shape, strides);
+
+        Some(nalgebra::Matrix::from_data(storage))
+    }
+
+    #[cfg(feature = "nalgebra")]
+    unsafe fn try_as_matrix_mut<R, C, RStride, CStride>(
+        &self,
+    ) -> Option<nalgebra::MatrixViewMut<'_, T, R, C, RStride, CStride>>
+    where
+        T: nalgebra::Scalar + Element,
+        D: Dimension,
+        R: nalgebra::Dim,
+        C: nalgebra::Dim,
+        RStride: nalgebra::Dim,
+        CStride: nalgebra::Dim,
+    {
+        let (shape, strides) = try_as_matrix_shape_strides(self)?;
+
+        let storage = nalgebra::ViewStorageMut::from_raw_parts(self.data(), shape, strides);
+
+        Some(nalgebra::Matrix::from_data(storage))
+    }
 }
+
+impl<'py, T> PyArray0Methods<'py, T> for Bound<'py, PyArray0<T>> {}
 
 #[cfg(test)]
 mod tests {
