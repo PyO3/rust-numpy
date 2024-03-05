@@ -13,11 +13,11 @@ use std::str;
 use pyo3::{
     ffi::{Py_UCS1, Py_UCS4},
     sync::GILProtected,
-    Py, Python,
+    Bound, Py, Python,
 };
 use rustc_hash::FxHashMap;
 
-use crate::dtype::{Element, PyArrayDescr};
+use crate::dtype::{Element, PyArrayDescr, PyArrayDescrMethods};
 use crate::npyffi::NPY_TYPES;
 
 /// A newtype wrapper around [`[u8; N]`][Py_UCS1] to handle [`byte` scalars][numpy-bytes] while satisfying coherence.
@@ -76,7 +76,7 @@ impl<const N: usize> From<[Py_UCS1; N]> for PyFixedString<N> {
 unsafe impl<const N: usize> Element for PyFixedString<N> {
     const IS_COPY: bool = true;
 
-    fn get_dtype<'py>(py: Python<'py>) -> &PyArrayDescr {
+    fn get_dtype_bound(py: Python<'_>) -> Bound<'_, PyArrayDescr> {
         static DTYPES: TypeDescriptors = TypeDescriptors::new();
 
         unsafe { DTYPES.from_size(py, NPY_TYPES::NPY_STRING, b'|' as _, size_of::<Self>()) }
@@ -147,7 +147,7 @@ impl<const N: usize> From<[Py_UCS4; N]> for PyFixedUnicode<N> {
 unsafe impl<const N: usize> Element for PyFixedUnicode<N> {
     const IS_COPY: bool = true;
 
-    fn get_dtype<'py>(py: Python<'py>) -> &PyArrayDescr {
+    fn get_dtype_bound(py: Python<'_>) -> Bound<'_, PyArrayDescr> {
         static DTYPES: TypeDescriptors = TypeDescriptors::new();
 
         unsafe { DTYPES.from_size(py, NPY_TYPES::NPY_UNICODE, b'=' as _, size_of::<Self>()) }
@@ -169,12 +169,12 @@ impl TypeDescriptors {
     /// `npy_type` must be either `NPY_STRING` or `NPY_UNICODE` with matching `byteorder` and `size`
     #[allow(clippy::wrong_self_convention)]
     unsafe fn from_size<'py>(
-        &'py self,
+        &self,
         py: Python<'py>,
         npy_type: NPY_TYPES,
         byteorder: c_char,
         size: usize,
-    ) -> &'py PyArrayDescr {
+    ) -> Bound<'py, PyArrayDescr> {
         let mut dtypes = self.dtypes.get(py).borrow_mut();
 
         let dtype = match dtypes.get_or_insert_with(Default::default).entry(size) {
@@ -190,7 +190,7 @@ impl TypeDescriptors {
             }
         };
 
-        dtype.clone().into_ref(py)
+        dtype.clone().into_bound(py)
     }
 }
 

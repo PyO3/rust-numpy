@@ -164,7 +164,7 @@ where
 
         let kwargs = if C::VAL {
             let kwargs = PyDict::new(py);
-            kwargs.set_item(intern!(py, "dtype"), T::get_dtype(py))?;
+            kwargs.set_item(intern!(py, "dtype"), T::get_dtype_bound(py))?;
             Some(kwargs)
         } else {
             None

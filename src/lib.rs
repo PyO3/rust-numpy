@@ -106,7 +106,11 @@ pub use crate::borrow::{
     PyReadwriteArray5, PyReadwriteArray6, PyReadwriteArrayDyn,
 };
 pub use crate::convert::{IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
-pub use crate::dtype::{dtype, Complex32, Complex64, Element, PyArrayDescr};
+#[allow(deprecated)]
+pub use crate::dtype::dtype;
+pub use crate::dtype::{
+    dtype_bound, Complex32, Complex64, Element, PyArrayDescr, PyArrayDescrMethods,
+};
 pub use crate::error::{BorrowError, FromVecError, NotContiguousError};
 pub use crate::npyffi::{PY_ARRAY_API, PY_UFUNC_API};
 pub use crate::strings::{PyFixedString, PyFixedUnicode};

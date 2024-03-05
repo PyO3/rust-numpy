@@ -4,12 +4,12 @@ use std::mem::size_of;
 use half::{bf16, f16};
 use ndarray::{array, s, Array1, Dim};
 use numpy::{
-    dtype, get_array_module, npyffi::NPY_ORDER, pyarray, PyArray, PyArray1, PyArray2, PyArrayDescr,
-    PyArrayDyn, PyFixedString, PyFixedUnicode, ToPyArray,
+    dtype_bound, get_array_module, npyffi::NPY_ORDER, pyarray, PyArray, PyArray1, PyArray2,
+    PyArrayDescr, PyArrayDescrMethods, PyArrayDyn, PyFixedString, PyFixedUnicode, ToPyArray,
 };
 use pyo3::{
     py_run, pyclass, pymethods,
-    types::{IntoPyDict, PyDict, PyList},
+    types::{IntoPyDict, PyAnyMethods, PyDict, PyList},
     IntoPy, Py, PyAny, PyCell, PyResult, Python,
 };
 
@@ -376,13 +376,17 @@ fn dtype_via_python_attribute() {
         let arr = array![[2, 3], [4, 5u32]];
         let pyarr = arr.to_pyarray(py);
 
-        let dt: &PyArrayDescr = py
-            .eval("a.dtype", Some([("a", pyarr)].into_py_dict(py)), None)
+        let dt = py
+            .eval_bound(
+                "a.dtype",
+                Some(&[("a", pyarr)].into_py_dict_bound(py)),
+                None,
+            )
             .unwrap()
-            .downcast()
+            .downcast_into::<PyArrayDescr>()
             .unwrap();
 
-        assert!(dt.is_equiv_to(dtype::<u32>(py)));
+        assert!(dt.is_equiv_to(&dtype_bound::<u32>(py)));
     });
 }
 
