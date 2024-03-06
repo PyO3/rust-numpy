@@ -82,7 +82,7 @@ use crate::untyped_array::{PyUntypedArray, PyUntypedArrayMethods};
 ///
 /// ```
 /// use numpy::PyArray;
-/// use ndarray::{array, Array};
+/// use ndarray::array;
 /// use pyo3::Python;
 ///
 /// Python::with_gil(|py| {
@@ -575,6 +575,15 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         }
     }
 
+    /// Deprecated form of [`PyArray<T, D>::from_owned_array_bound`]
+    #[deprecated(
+        since = "0.21.0",
+        note = "will be replaced by PyArray::from_owned_array_bound in the future"
+    )]
+    pub fn from_owned_array<'py>(py: Python<'py>, arr: Array<T, D>) -> &'py Self {
+        Self::from_owned_array_bound(py, arr).into_gil_ref()
+    }
+
     /// Constructs a NumPy from an [`ndarray::Array`]
     ///
     /// This method uses the internal [`Vec`] of the [`ndarray::Array`] as the base object of the NumPy array.
@@ -582,17 +591,17 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyArrayMethods};
     /// use ndarray::array;
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let pyarray = PyArray::from_owned_array(py, array![[1, 2], [3, 4]]);
+    ///     let pyarray = PyArray::from_owned_array_bound(py, array![[1, 2], [3, 4]]);
     ///
     ///     assert_eq!(pyarray.readonly().as_array(), array![[1, 2], [3, 4]]);
     /// });
     /// ```
-    pub fn from_owned_array<'py>(py: Python<'py>, mut arr: Array<T, D>) -> &'py Self {
+    pub fn from_owned_array_bound(py: Python<'_>, mut arr: Array<T, D>) -> Bound<'_, Self> {
         let (strides, dims) = (arr.npy_strides(), arr.raw_dim());
         let data_ptr = arr.as_mut_ptr();
         unsafe {
@@ -603,7 +612,6 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
                 data_ptr,
                 PySliceContainer::from(arr),
             )
-            .into_gil_ref()
         }
     }
 
@@ -959,6 +967,15 @@ where
 }
 
 impl<D: Dimension> PyArray<PyObject, D> {
+    /// Deprecated form of [`PyArray<T, D>::from_owned_object_array_bound`]
+    #[deprecated(
+        since = "0.21.0",
+        note = "will be replaced by PyArray::from_owned_object_array_bound in the future"
+    )]
+    pub fn from_owned_object_array<'py, T>(py: Python<'py>, arr: Array<Py<T>, D>) -> &'py Self {
+        Self::from_owned_object_array_bound(py, arr).into_gil_ref()
+    }
+
     /// Construct a NumPy array containing objects stored in a [`ndarray::Array`]
     ///
     /// This method uses the internal [`Vec`] of the [`ndarray::Array`] as the base object of the NumPy array.
@@ -968,7 +985,7 @@ impl<D: Dimension> PyArray<PyObject, D> {
     /// ```
     /// use ndarray::array;
     /// use pyo3::{pyclass, Py, Python};
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyArrayMethods};
     ///
     /// #[pyclass]
     /// struct CustomElement {
@@ -988,12 +1005,15 @@ impl<D: Dimension> PyArray<PyObject, D> {
     ///         }).unwrap(),
     ///     ];
     ///
-    ///     let pyarray = PyArray::from_owned_object_array(py, array);
+    ///     let pyarray = PyArray::from_owned_object_array_bound(py, array);
     ///
     ///     assert!(pyarray.readonly().as_array().get(0).unwrap().as_ref(py).is_instance_of::<CustomElement>());
     /// });
     /// ```
-    pub fn from_owned_object_array<'py, T>(py: Python<'py>, mut arr: Array<Py<T>, D>) -> &'py Self {
+    pub fn from_owned_object_array_bound<T>(
+        py: Python<'_>,
+        mut arr: Array<Py<T>, D>,
+    ) -> Bound<'_, Self> {
         let (strides, dims) = (arr.npy_strides(), arr.raw_dim());
         let data_ptr = arr.as_mut_ptr() as *const PyObject;
         unsafe {
@@ -1004,7 +1024,6 @@ impl<D: Dimension> PyArray<PyObject, D> {
                 data_ptr,
                 PySliceContainer::from(arr),
             )
-            .into_gil_ref()
         }
     }
 }
