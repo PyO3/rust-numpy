@@ -99,13 +99,14 @@ impl PyUntypedArray {
     /// # Example
     ///
     /// ```
+    /// use numpy::prelude::*;
     /// use numpy::{dtype_bound, PyArray};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///    let array = PyArray::from_vec(py, vec![1_i32, 2, 3]);
+    ///    let array = PyArray::from_vec_bound(py, vec![1_i32, 2, 3]);
     ///
-    ///    assert!(array.dtype().is_equiv_to(dtype_bound::<i32>(py).as_gil_ref()));
+    ///    assert!(array.dtype().is_equiv_to(&dtype_bound::<i32>(py)));
     /// });
     /// ```
     ///
@@ -269,13 +270,14 @@ pub trait PyUntypedArrayMethods<'py>: Sealed {
     /// # Example
     ///
     /// ```
+    /// use numpy::prelude::*;
     /// use numpy::{dtype_bound, PyArray};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///    let array = PyArray::from_vec(py, vec![1_i32, 2, 3]);
+    ///    let array = PyArray::from_vec_bound(py, vec![1_i32, 2, 3]);
     ///
-    ///    assert!(array.dtype().is_equiv_to(dtype_bound::<i32>(py).as_gil_ref()));
+    ///    assert!(array.dtype().is_equiv_to(&dtype_bound::<i32>(py)));
     /// });
     /// ```
     ///

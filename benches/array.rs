@@ -141,7 +141,7 @@ fn from_vec2(bencher: &mut Bencher, size: usize) {
     iter_with_gil(bencher, |py| {
         let vec2 = black_box(&vec2);
 
-        PyArray2::from_vec2(py, vec2).unwrap();
+        PyArray2::from_vec2_bound(py, vec2).unwrap();
     });
 }
 
@@ -166,7 +166,7 @@ fn from_vec3(bencher: &mut Bencher, size: usize) {
     iter_with_gil(bencher, |py| {
         let vec3 = black_box(&vec3);
 
-        PyArray3::from_vec3(py, vec3).unwrap();
+        PyArray3::from_vec3_bound(py, vec3).unwrap();
     });
 }
 
