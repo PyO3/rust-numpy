@@ -825,7 +825,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     where
         S: Data<Elem = T>,
     {
-        ToPyArray::to_pyarray(arr, py)
+        ToPyArray::to_pyarray_bound(arr, py).into_gil_ref()
     }
 
     /// Get an immutable borrow of the NumPy array
@@ -1103,7 +1103,7 @@ impl<T: Element> PyArray<T, Ix1> {
     /// ```
     #[inline(always)]
     pub fn from_vec<'py>(py: Python<'py>, vec: Vec<T>) -> &'py Self {
-        vec.into_pyarray(py)
+        vec.into_pyarray_bound(py).into_gil_ref()
     }
 
     /// Construct a one-dimensional array from an [`Iterator`].
@@ -1127,7 +1127,7 @@ impl<T: Element> PyArray<T, Ix1> {
         I: IntoIterator<Item = T>,
     {
         let data = iter.into_iter().collect::<Vec<_>>();
-        data.into_pyarray(py)
+        data.into_pyarray_bound(py).into_gil_ref()
     }
 }
 

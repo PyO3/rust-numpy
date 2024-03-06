@@ -10,11 +10,11 @@ use pyo3::{
     exceptions::PyIndexError,
     pymodule,
     types::{PyDict, PyModule},
-    FromPyObject, PyAny, PyObject, PyResult, Python,
+    Bound, FromPyObject, PyAny, PyObject, PyResult, Python,
 };
 
 #[pymodule]
-fn rust_ext<'py>(_py: Python<'py>, m: &'py PyModule) -> PyResult<()> {
+fn rust_ext<'py>(m: &Bound<'py, PyModule>) -> PyResult<()> {
     // example using generic PyObject
     fn head(x: ArrayViewD<'_, PyObject>) -> PyResult<PyObject> {
         x.get(0)
@@ -60,11 +60,11 @@ fn rust_ext<'py>(_py: Python<'py>, m: &'py PyModule) -> PyResult<()> {
         a: f64,
         x: PyReadonlyArrayDyn<'py, f64>,
         y: PyReadonlyArrayDyn<'py, f64>,
-    ) -> &'py PyArrayDyn<f64> {
+    ) -> Bound<'py, PyArrayDyn<f64>> {
         let x = x.as_array();
         let y = y.as_array();
         let z = axpy(a, x, y);
-        z.into_pyarray(py)
+        z.into_pyarray_bound(py)
     }
 
     // wrapper of `mult`
@@ -81,8 +81,8 @@ fn rust_ext<'py>(_py: Python<'py>, m: &'py PyModule) -> PyResult<()> {
     fn conj_py<'py>(
         py: Python<'py>,
         x: PyReadonlyArrayDyn<'py, Complex64>,
-    ) -> &'py PyArrayDyn<Complex64> {
-        conj(x.as_array()).into_pyarray(py)
+    ) -> Bound<'py, PyArrayDyn<Complex64>> {
+        conj(x.as_array()).into_pyarray_bound(py)
     }
 
     // example of how to extract an array from a dictionary
@@ -125,28 +125,28 @@ fn rust_ext<'py>(_py: Python<'py>, m: &'py PyModule) -> PyResult<()> {
     fn polymorphic_add<'py>(
         x: SupportedArray<'py>,
         y: SupportedArray<'py>,
-    ) -> PyResult<&'py PyAny> {
+    ) -> PyResult<Bound<'py, PyAny>> {
         match (x, y) {
             (SupportedArray::F64(x), SupportedArray::F64(y)) => Ok(generic_add(
                 x.readonly().as_array(),
                 y.readonly().as_array(),
             )
-            .into_pyarray(x.py())
-            .into()),
+            .into_pyarray_bound(x.py())
+            .into_any()),
             (SupportedArray::I64(x), SupportedArray::I64(y)) => Ok(generic_add(
                 x.readonly().as_array(),
                 y.readonly().as_array(),
             )
-            .into_pyarray(x.py())
-            .into()),
+            .into_pyarray_bound(x.py())
+            .into_any()),
             (SupportedArray::F64(x), SupportedArray::I64(y))
             | (SupportedArray::I64(y), SupportedArray::F64(x)) => {
                 let y = y.cast::<f64>(false)?;
 
                 Ok(
                     generic_add(x.readonly().as_array(), y.readonly().as_array())
-                        .into_pyarray(x.py())
-                        .into(),
+                        .into_pyarray_bound(x.py())
+                        .into_any(),
                 )
             }
         }

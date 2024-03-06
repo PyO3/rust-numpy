@@ -23,10 +23,10 @@ as well as the [`PyReadonlyArray::try_as_matrix`] and [`PyReadwriteArray::try_as
 //! ```
 //! use numpy::pyo3::Python;
 //! use numpy::ndarray::array;
-//! use numpy::{ToPyArray, PyArray};
+//! use numpy::{ToPyArray, PyArray, PyArrayMethods};
 //!
 //! Python::with_gil(|py| {
-//!     let py_array = array![[1i64, 2], [3, 4]].to_pyarray(py);
+//!     let py_array = array![[1i64, 2], [3, 4]].to_pyarray_bound(py);
 //!
 //!     assert_eq!(
 //!         py_array.readonly().as_array(),
@@ -130,6 +130,7 @@ pub use ndarray::{array, Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};
 /// ```
 pub mod prelude {
     pub use crate::array::{PyArray0Methods, PyArrayMethods};
+    pub use crate::convert::{IntoPyArray, ToPyArray};
     pub use crate::dtype::PyArrayDescrMethods;
     pub use crate::untyped_array::PyUntypedArrayMethods;
 }
@@ -171,12 +172,15 @@ fn cold() {}
 #[macro_export]
 macro_rules! pyarray {
     ($py: ident, $([$([$($x:expr),* $(,)*]),+ $(,)*]),+ $(,)*) => {{
+        #[allow(deprecated)]
         $crate::IntoPyArray::into_pyarray($crate::array![$([$([$($x,)*],)*],)*], $py)
     }};
     ($py: ident, $([$($x:expr),* $(,)*]),+ $(,)*) => {{
+        #[allow(deprecated)]
         $crate::IntoPyArray::into_pyarray($crate::array![$([$($x,)*],)*], $py)
     }};
     ($py: ident, $($x:expr),* $(,)*) => {{
+        #[allow(deprecated)]
         $crate::IntoPyArray::into_pyarray($crate::array![$($x,)*], $py)
     }};
 }

@@ -477,18 +477,20 @@ mod tests {
     #[test]
     fn with_base_object() {
         Python::with_gil(|py| {
-            let array = Array::<f64, _>::zeros((1, 2, 3)).into_pyarray(py);
+            let array = Array::<f64, _>::zeros((1, 2, 3)).into_pyarray_bound(py);
 
             let base = unsafe { (*array.as_array_ptr()).base };
             assert!(!base.is_null());
 
             let base_address = base_address(py, array.as_array_ptr());
-            assert_ne!(base_address, array as *const _ as *mut c_void);
-            assert_eq!(base_address, base as *mut c_void);
+            assert_ne!(base_address, array.as_ptr().cast());
+            assert_eq!(base_address, base.cast::<c_void>());
 
             let data_range = data_range(array.as_array_ptr());
-            assert_eq!(data_range.0, array.data() as *mut c_char);
-            assert_eq!(data_range.1, unsafe { array.data().add(6) } as *mut c_char);
+            assert_eq!(data_range.0, array.data().cast::<c_char>());
+            assert_eq!(data_range.1, unsafe {
+                array.data().add(6).cast::<c_char>()
+            });
         });
     }
 
@@ -524,33 +526,35 @@ mod tests {
     #[test]
     fn view_with_base_object() {
         Python::with_gil(|py| {
-            let array = Array::<f64, _>::zeros((1, 2, 3)).into_pyarray(py);
+            let array = Array::<f64, _>::zeros((1, 2, 3)).into_pyarray_bound(py);
 
-            let locals = [("array", array)].into_py_dict(py);
+            let locals = [("array", &array)].into_py_dict_bound(py);
             let view = py
-                .eval("array[:,:,0]", None, Some(locals))
+                .eval_bound("array[:,:,0]", None, Some(&locals))
                 .unwrap()
-                .downcast::<PyArray2<f64>>()
+                .downcast_into::<PyArray2<f64>>()
                 .unwrap();
             assert_ne!(
-                view as *const _ as *mut c_void,
-                array as *const _ as *mut c_void
+                view.as_ptr().cast::<c_void>(),
+                array.as_ptr().cast::<c_void>(),
             );
 
             let base = unsafe { (*view.as_array_ptr()).base };
-            assert_eq!(base as *mut c_void, array as *const _ as *mut c_void);
+            assert_eq!(base.cast::<c_void>(), array.as_ptr().cast::<c_void>());
 
             let base = unsafe { (*array.as_array_ptr()).base };
             assert!(!base.is_null());
 
             let base_address = base_address(py, view.as_array_ptr());
-            assert_ne!(base_address, view as *const _ as *mut c_void);
-            assert_ne!(base_address, array as *const _ as *mut c_void);
-            assert_eq!(base_address, base as *mut c_void);
+            assert_ne!(base_address, view.as_ptr().cast::<c_void>());
+            assert_ne!(base_address, array.as_ptr().cast::<c_void>());
+            assert_eq!(base_address, base.cast::<c_void>());
 
             let data_range = data_range(view.as_array_ptr());
-            assert_eq!(data_range.0, array.data() as *mut c_char);
-            assert_eq!(data_range.1, unsafe { array.data().add(4) } as *mut c_char);
+            assert_eq!(data_range.0, array.data().cast::<c_char>());
+            assert_eq!(data_range.1, unsafe {
+                array.data().add(4).cast::<c_char>()
+            });
         });
     }
 
@@ -605,52 +609,54 @@ mod tests {
     #[test]
     fn view_of_view_with_base_object() {
         Python::with_gil(|py| {
-            let array = Array::<f64, _>::zeros((1, 2, 3)).into_pyarray(py);
+            let array = Array::<f64, _>::zeros((1, 2, 3)).into_pyarray_bound(py);
 
-            let locals = [("array", array)].into_py_dict(py);
+            let locals = [("array", &array)].into_py_dict_bound(py);
             let view1 = py
-                .eval("array[:,:,0]", None, Some(locals))
+                .eval_bound("array[:,:,0]", None, Some(&locals))
                 .unwrap()
-                .downcast::<PyArray2<f64>>()
+                .downcast_into::<PyArray2<f64>>()
                 .unwrap();
             assert_ne!(
-                view1 as *const _ as *mut c_void,
-                array as *const _ as *mut c_void
+                view1.as_ptr().cast::<c_void>(),
+                array.as_ptr().cast::<c_void>(),
             );
 
-            let locals = [("view1", view1)].into_py_dict(py);
+            let locals = [("view1", &view1)].into_py_dict_bound(py);
             let view2 = py
-                .eval("view1[:,0]", None, Some(locals))
+                .eval_bound("view1[:,0]", None, Some(&locals))
                 .unwrap()
-                .downcast::<PyArray1<f64>>()
+                .downcast_into::<PyArray1<f64>>()
                 .unwrap();
             assert_ne!(
-                view2 as *const _ as *mut c_void,
-                array as *const _ as *mut c_void
+                view2.as_ptr().cast::<c_void>(),
+                array.as_ptr().cast::<c_void>(),
             );
             assert_ne!(
-                view2 as *const _ as *mut c_void,
-                view1 as *const _ as *mut c_void
+                view2.as_ptr().cast::<c_void>(),
+                view1.as_ptr().cast::<c_void>(),
             );
 
             let base = unsafe { (*view2.as_array_ptr()).base };
-            assert_eq!(base as *mut c_void, array as *const _ as *mut c_void);
+            assert_eq!(base.cast::<c_void>(), array.as_ptr().cast::<c_void>());
 
             let base = unsafe { (*view1.as_array_ptr()).base };
-            assert_eq!(base as *mut c_void, array as *const _ as *mut c_void);
+            assert_eq!(base.cast::<c_void>(), array.as_ptr().cast::<c_void>());
 
             let base = unsafe { (*array.as_array_ptr()).base };
             assert!(!base.is_null());
 
             let base_address = base_address(py, view2.as_array_ptr());
-            assert_ne!(base_address, view2 as *const _ as *mut c_void);
-            assert_ne!(base_address, view1 as *const _ as *mut c_void);
-            assert_ne!(base_address, array as *const _ as *mut c_void);
-            assert_eq!(base_address, base as *mut c_void);
+            assert_ne!(base_address, view2.as_ptr().cast::<c_void>());
+            assert_ne!(base_address, view1.as_ptr().cast::<c_void>());
+            assert_ne!(base_address, array.as_ptr().cast::<c_void>());
+            assert_eq!(base_address, base.cast::<c_void>());
 
             let data_range = data_range(view2.as_array_ptr());
-            assert_eq!(data_range.0, array.data() as *mut c_char);
-            assert_eq!(data_range.1, unsafe { array.data().add(1) } as *mut c_char);
+            assert_eq!(data_range.0, array.data().cast::<c_char>());
+            assert_eq!(data_range.1, unsafe {
+                array.data().add(1).cast::<c_char>()
+            });
         });
     }
 
