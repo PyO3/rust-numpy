@@ -195,7 +195,7 @@ fn is_instance() {
 #[test]
 fn from_vec2() {
     Python::with_gil(|py| {
-        let pyarray = PyArray::from_vec2(py, &[vec![1, 2, 3], vec![4, 5, 6]]).unwrap();
+        let pyarray = PyArray::from_vec2_bound(py, &[vec![1, 2, 3], vec![4, 5, 6]]).unwrap();
 
         assert_eq!(pyarray.readonly().as_array(), array![[1, 2, 3], [4, 5, 6]]);
     });
@@ -204,7 +204,7 @@ fn from_vec2() {
 #[test]
 fn from_vec2_ragged() {
     Python::with_gil(|py| {
-        let pyarray = PyArray::from_vec2(py, &[vec![1, 2, 3], vec![4, 5]]);
+        let pyarray = PyArray::from_vec2_bound(py, &[vec![1, 2, 3], vec![4, 5]]);
 
         let err = pyarray.unwrap_err();
         assert_eq!(err.to_string(), "invalid length: 2, but expected 3");
@@ -214,7 +214,7 @@ fn from_vec2_ragged() {
 #[test]
 fn from_vec3() {
     Python::with_gil(|py| {
-        let pyarray = PyArray::from_vec3(
+        let pyarray = PyArray::from_vec3_bound(
             py,
             &[
                 vec![vec![1, 2], vec![3, 4]],
@@ -234,7 +234,7 @@ fn from_vec3() {
 #[test]
 fn from_vec3_ragged() {
     Python::with_gil(|py| {
-        let pyarray = PyArray::from_vec3(
+        let pyarray = PyArray::from_vec3_bound(
             py,
             &[
                 vec![vec![1, 2], vec![3, 4]],
@@ -246,7 +246,7 @@ fn from_vec3_ragged() {
         let err = pyarray.unwrap_err();
         assert_eq!(err.to_string(), "invalid length: 1, but expected 2");
 
-        let pyarray = PyArray::from_vec3(
+        let pyarray = PyArray::from_vec3_bound(
             py,
             &[
                 vec![vec![1, 2], vec![3, 4]],
