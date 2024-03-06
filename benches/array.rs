@@ -66,7 +66,7 @@ fn from_iter(bencher: &mut Bencher, size: usize) {
     iter_with_gil(bencher, |py| {
         let iter = black_box(Iter(0..size));
 
-        PyArray1::from_iter(py, iter);
+        PyArray1::from_iter_bound(py, iter);
     });
 }
 

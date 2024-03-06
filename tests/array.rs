@@ -523,7 +523,7 @@ fn get_works() {
 #[test]
 fn reshape() {
     Python::with_gil(|py| {
-        let array = PyArray::from_iter(py, 0..9)
+        let array = PyArray::from_iter_bound(py, 0..9)
             .reshape_with_order([3, 3], NPY_ORDER::NPY_FORTRANORDER)
             .unwrap();
 
