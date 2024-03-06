@@ -358,12 +358,16 @@ fn array_cast() {
 fn handle_negative_strides() {
     Python::with_gil(|py| {
         let arr = array![[2, 3], [4, 5u32]];
-        let pyarr = arr.to_pyarray(py);
+        let pyarr = arr.to_pyarray_bound(py);
 
-        let neg_str_pyarr: &PyArray2<u32> = py
-            .eval("a[::-1]", Some([("a", pyarr)].into_py_dict(py)), None)
+        let neg_str_pyarr = py
+            .eval_bound(
+                "a[::-1]",
+                Some(&[("a", pyarr)].into_py_dict_bound(py)),
+                None,
+            )
             .unwrap()
-            .downcast()
+            .downcast_into::<PyArray2<u32>>()
             .unwrap();
 
         assert_eq!(
@@ -377,7 +381,7 @@ fn handle_negative_strides() {
 fn dtype_via_python_attribute() {
     Python::with_gil(|py| {
         let arr = array![[2, 3], [4, 5u32]];
-        let pyarr = arr.to_pyarray(py);
+        let pyarr = arr.to_pyarray_bound(py);
 
         let dt = py
             .eval_bound(
