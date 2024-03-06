@@ -292,6 +292,21 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         D::from_dimension(&Dim(self.shape())).expect(DIMENSIONALITY_MISMATCH_ERR)
     }
 
+    /// Deprecated form of [`PyArray<T, D>::new_bound`]
+    ///
+    /// # Safety
+    /// Same as [`PyArray<T, D>::new_bound`]
+    #[deprecated(
+        since = "0.21.0",
+        note = "will be replaced by `PyArray::new_bound` in the future"
+    )]
+    pub unsafe fn new<'py, ID>(py: Python<'py>, dims: ID, is_fortran: bool) -> &Self
+    where
+        ID: IntoDimension<Dim = D>,
+    {
+        Self::new_bound(py, dims, is_fortran).into_gil_ref()
+    }
+
     /// Creates a new uninitialized NumPy array.
     ///
     /// If `is_fortran` is true, then it has Fortran/column-major order,
@@ -311,12 +326,12 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray3;
+    /// use numpy::{PyArray3, PyArrayMethods, PyUntypedArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
     ///     let arr = unsafe {
-    ///         let arr = PyArray3::<i32>::new(py, [4, 5, 6], false);
+    ///         let arr = PyArray3::<i32>::new_bound(py, [4, 5, 6], false);
     ///
     ///         for i in 0..4 {
     ///             for j in 0..5 {
@@ -332,7 +347,11 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     ///     assert_eq!(arr.shape(), &[4, 5, 6]);
     /// });
     /// ```
-    pub unsafe fn new<'py, ID>(py: Python<'py>, dims: ID, is_fortran: bool) -> &Self
+    pub unsafe fn new_bound<'py, ID>(
+        py: Python<'py>,
+        dims: ID,
+        is_fortran: bool,
+    ) -> Bound<'py, Self>
     where
         ID: IntoDimension<Dim = D>,
     {
@@ -345,7 +364,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         dims: ID,
         strides: *const npy_intp,
         flag: c_int,
-    ) -> &Self
+    ) -> Bound<'py, Self>
     where
         ID: IntoDimension<Dim = D>,
     {
@@ -362,7 +381,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
             ptr::null_mut(),          // obj
         );
 
-        Self::from_owned_ptr(py, ptr)
+        Bound::from_owned_ptr(py, ptr).downcast_into_unchecked()
     }
 
     unsafe fn new_with_data<'py, ID>(
@@ -371,7 +390,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         strides: *const npy_intp,
         data_ptr: *const T,
         container: *mut PyAny,
-    ) -> &'py Self
+    ) -> Bound<'py, Self>
     where
         ID: IntoDimension<Dim = D>,
     {
@@ -394,7 +413,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
             container as *mut ffi::PyObject,
         );
 
-        Self::from_owned_ptr(py, ptr)
+        Bound::from_owned_ptr(py, ptr).downcast_into_unchecked()
     }
 
     pub(crate) unsafe fn from_raw_parts<'py>(
@@ -403,7 +422,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         strides: *const npy_intp,
         data_ptr: *const T,
         container: PySliceContainer,
-    ) -> &'py Self {
+    ) -> Bound<'py, Self> {
         let container = Bound::new(py, container)
             .expect("Failed to create slice container")
             .into_ptr();
@@ -462,6 +481,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
             data_ptr,
             container as *const PyAny as *mut PyAny,
         )
+        .into_gil_ref()
     }
 
     /// Construct a new NumPy array filled with zeros.
@@ -568,6 +588,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
                 data_ptr,
                 PySliceContainer::from(arr),
             )
+            .into_gil_ref()
         }
     }
 
@@ -968,6 +989,7 @@ impl<D: Dimension> PyArray<PyObject, D> {
                 data_ptr,
                 PySliceContainer::from(arr),
             )
+            .into_gil_ref()
         }
     }
 }
@@ -998,10 +1020,10 @@ impl<T: Element> PyArray<T, Ix1> {
     /// ```
     pub fn from_slice<'py>(py: Python<'py>, slice: &[T]) -> &'py Self {
         unsafe {
-            let array = PyArray::new(py, [slice.len()], false);
+            let array = PyArray::new_bound(py, [slice.len()], false);
             let mut data_ptr = array.data();
             clone_elements(slice, &mut data_ptr);
-            array
+            array.into_gil_ref()
         }
     }
 
@@ -1076,7 +1098,7 @@ impl<T: Element> PyArray<T, Ix2> {
         let dims = [v.len(), len2];
         // SAFETY: The result of `Self::new` is always safe to drop.
         unsafe {
-            let array = Self::new(py, dims, false);
+            let array = Self::new_bound(py, dims, false);
             let mut data_ptr = array.data();
             for v in v {
                 if v.len() != len2 {
@@ -1085,7 +1107,7 @@ impl<T: Element> PyArray<T, Ix2> {
                 }
                 clone_elements(v, &mut data_ptr);
             }
-            Ok(array)
+            Ok(array.into_gil_ref())
         }
     }
 }
@@ -1127,7 +1149,7 @@ impl<T: Element> PyArray<T, Ix3> {
         let dims = [v.len(), len2, len3];
         // SAFETY: The result of `Self::new` is always safe to drop.
         unsafe {
-            let array = Self::new(py, dims, false);
+            let array = Self::new_bound(py, dims, false);
             let mut data_ptr = array.data();
             for v in v {
                 if v.len() != len2 {
@@ -1142,7 +1164,7 @@ impl<T: Element> PyArray<T, Ix3> {
                     clone_elements(v, &mut data_ptr);
                 }
             }
-            Ok(array)
+            Ok(array.into_gil_ref())
         }
     }
 }
@@ -1155,14 +1177,14 @@ impl<T: Element, D> PyArray<T, D> {
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
     ///     let pyarray_f = PyArray::arange(py, 2.0, 5.0, 1.0);
-    ///     let pyarray_i = unsafe { PyArray::<i64, _>::new(py, [3], false) };
+    ///     let pyarray_i = unsafe { PyArray::<i64, _>::new_bound(py, [3], false) };
     ///
-    ///     assert!(pyarray_f.copy_to(pyarray_i).is_ok());
+    ///     assert!(pyarray_f.copy_to(pyarray_i.as_gil_ref()).is_ok());
     ///
     ///     assert_eq!(pyarray_i.readonly().as_slice().unwrap(), &[2, 3, 4]);
     /// });
@@ -1687,14 +1709,14 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> {
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
     ///     let pyarray_f = PyArray::arange(py, 2.0, 5.0, 1.0);
-    ///     let pyarray_i = unsafe { PyArray::<i64, _>::new(py, [3], false) };
+    ///     let pyarray_i = unsafe { PyArray::<i64, _>::new_bound(py, [3], false) };
     ///
-    ///     assert!(pyarray_f.copy_to(pyarray_i).is_ok());
+    ///     assert!(pyarray_f.copy_to(pyarray_i.as_gil_ref()).is_ok());
     ///
     ///     assert_eq!(pyarray_i.readonly().as_slice().unwrap(), &[2, 3, 4]);
     /// });
