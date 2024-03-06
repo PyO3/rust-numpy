@@ -20,7 +20,7 @@ use pyo3::{
     ffi, pyobject_native_type_base,
     types::{DerefToPyAny, PyAnyMethods, PyModule},
     AsPyPointer, Bound, DowncastError, FromPyObject, IntoPy, Py, PyAny, PyErr, PyNativeType,
-    PyObject, PyResult, PyTypeInfo, Python, ToPyObject,
+    PyObject, PyResult, PyTypeInfo, Python,
 };
 
 use crate::borrow::{PyReadonlyArray, PyReadwriteArray};
@@ -430,6 +430,24 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         Self::new_with_data(py, dims, strides, data_ptr, container.cast())
     }
 
+    /// Deprecated form of [`PyArray<T, D>::borrow_from_array_bound`]
+    ///
+    /// # Safety
+    /// Same as [`PyArray<T, D>::borrow_from_array_bound`]
+    #[deprecated(
+        since = "0.21.0",
+        note = "will be replaced by `PyArray::borrow_from_array_bound` in the future"
+    )]
+    pub unsafe fn borrow_from_array<'py, S>(
+        array: &ArrayBase<S, D>,
+        container: &'py PyAny,
+    ) -> &'py Self
+    where
+        S: Data<Elem = T>,
+    {
+        Self::borrow_from_array_bound(array, (*container.as_borrowed()).clone()).into_gil_ref()
+    }
+
     /// Creates a NumPy array backed by `array` and ties its ownership to the Python object `container`.
     ///
     /// # Safety
@@ -451,19 +469,19 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     /// #[pymethods]
     /// impl Owner {
     ///     #[getter]
-    ///     fn array<'py>(this: &'py PyCell<Self>) -> &'py PyArray1<f64> {
+    ///     fn array<'py>(this: Bound<'py, Self>) -> Bound<'py, PyArray1<f64>> {
     ///         let array = &this.borrow().array;
     ///
     ///         // SAFETY: The memory backing `array` will stay valid as long as this object is alive
     ///         // as we do not modify `array` in any way which would cause it to be reallocated.
-    ///         unsafe { PyArray1::borrow_from_array(array, this) }
+    ///         unsafe { PyArray1::borrow_from_array_bound(array, this.into_any()) }
     ///     }
     /// }
     /// ```
-    pub unsafe fn borrow_from_array<'py, S>(
+    pub unsafe fn borrow_from_array_bound<'py, S>(
         array: &ArrayBase<S, D>,
-        container: &'py PyAny,
-    ) -> &'py Self
+        container: Bound<'py, PyAny>,
+    ) -> Bound<'py, Self>
     where
         S: Data<Elem = T>,
     {
@@ -472,16 +490,13 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
 
         let py = container.py();
 
-        mem::forget(container.to_object(py));
-
         Self::new_with_data(
             py,
             dims,
             strides.as_ptr(),
             data_ptr,
-            container as *const PyAny as *mut PyAny,
+            container.into_ptr().cast(),
         )
-        .into_gil_ref()
     }
 
     /// Construct a new NumPy array filled with zeros.

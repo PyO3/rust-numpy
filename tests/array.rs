@@ -11,7 +11,7 @@ use numpy::{
 use pyo3::{
     py_run, pyclass, pymethods,
     types::{IntoPyDict, PyAnyMethods, PyDict, PyList},
-    IntoPy, Py, PyAny, PyCell, PyResult, Python,
+    Bound, IntoPy, Py, PyAny, PyResult, Python,
 };
 
 fn get_np_locals<'py>(py: Python<'py>) -> &'py PyDict {
@@ -401,10 +401,10 @@ fn borrow_from_array_works() {
     #[pymethods]
     impl Owner {
         #[getter]
-        fn array(this: &PyCell<Self>) -> &PyArray1<f64> {
+        fn array(this: Bound<'_, Self>) -> Bound<'_, PyArray1<f64>> {
             let array = &this.borrow().array;
 
-            unsafe { PyArray1::borrow_from_array(array, this) }
+            unsafe { PyArray1::borrow_from_array_bound(array, this.into_any()) }
         }
     }
 
