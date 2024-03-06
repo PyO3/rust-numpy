@@ -171,10 +171,10 @@ where
 /// ```
 /// use pyo3::Python;
 /// use ndarray::array;
-/// use numpy::{einsum, pyarray, PyArray, PyArray2};
+/// use numpy::{einsum, pyarray, PyArray, PyArray2, PyArrayMethods};
 ///
 /// Python::with_gil(|py| {
-///     let tensor = PyArray::arange(py, 0, 2 * 3 * 4, 1).reshape([2, 3, 4]).unwrap();
+///     let tensor = PyArray::arange_bound(py, 0, 2 * 3 * 4, 1).reshape([2, 3, 4]).unwrap().into_gil_ref();
 ///     let another_tensor = pyarray![py, [20, 30], [40, 50], [60, 70]];
 ///
 ///     let result: &PyArray2<_> = einsum!("ijk,ji->ik", tensor, another_tensor).unwrap();
