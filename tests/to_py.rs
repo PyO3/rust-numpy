@@ -52,7 +52,7 @@ fn to_pyarray_array() {
 #[test]
 fn iter_to_pyarray() {
     Python::with_gil(|py| {
-        let arr = PyArray::from_iter(py, (0..10).map(|x| x * x));
+        let arr = PyArray::from_iter_bound(py, (0..10).map(|x| x * x));
 
         assert_eq!(
             arr.readonly().as_slice().unwrap(),
@@ -64,7 +64,7 @@ fn iter_to_pyarray() {
 #[test]
 fn long_iter_to_pyarray() {
     Python::with_gil(|py| {
-        let arr = PyArray::from_iter(py, 0_u32..512);
+        let arr = PyArray::from_iter_bound(py, 0_u32..512);
 
         assert_eq!(
             arr.readonly().as_slice().unwrap(),

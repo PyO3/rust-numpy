@@ -1106,6 +1106,18 @@ impl<T: Element> PyArray<T, Ix1> {
         vec.into_pyarray_bound(py).into_gil_ref()
     }
 
+    /// Deprecated form of [`PyArray<T, Ix1>::from_iter_bound`]
+    #[deprecated(
+        since = "0.21.0",
+        note = "will be replaced by PyArray::from_iter_bound in the future"
+    )]
+    pub fn from_iter<'py, I>(py: Python<'py>, iter: I) -> &'py Self
+    where
+        I: IntoIterator<Item = T>,
+    {
+        Self::from_iter_bound(py, iter).into_gil_ref()
+    }
+
     /// Construct a one-dimensional array from an [`Iterator`].
     ///
     /// If no reliable [`size_hint`][Iterator::size_hint] is available,
@@ -1114,20 +1126,20 @@ impl<T: Element> PyArray<T, Ix1> {
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let pyarray = PyArray::from_iter(py, "abcde".chars().map(u32::from));
+    ///     let pyarray = PyArray::from_iter_bound(py, "abcde".chars().map(u32::from));
     ///     assert_eq!(pyarray.readonly().as_slice().unwrap(), &[97, 98, 99, 100, 101]);
     /// });
     /// ```
-    pub fn from_iter<'py, I>(py: Python<'py>, iter: I) -> &'py Self
+    pub fn from_iter_bound<I>(py: Python<'_>, iter: I) -> Bound<'_, Self>
     where
         I: IntoIterator<Item = T>,
     {
         let data = iter.into_iter().collect::<Vec<_>>();
-        data.into_pyarray_bound(py).into_gil_ref()
+        data.into_pyarray_bound(py)
     }
 }
 
@@ -1288,13 +1300,14 @@ impl<T: Element, D> PyArray<T, D> {
     /// # Example
     ///
     /// ```
+    /// use numpy::prelude::*;
     /// use numpy::{npyffi::NPY_ORDER, PyArray};
     /// use pyo3::Python;
     /// use ndarray::array;
     ///
     /// Python::with_gil(|py| {
     ///     let array =
-    ///         PyArray::from_iter(py, 0..9).reshape_with_order([3, 3], NPY_ORDER::NPY_FORTRANORDER).unwrap();
+    ///         PyArray::from_iter_bound(py, 0..9).reshape_with_order([3, 3], NPY_ORDER::NPY_FORTRANORDER).unwrap();
     ///
     ///     assert_eq!(array.readonly().as_array(), array![[0, 3, 6], [1, 4, 7], [2, 5, 8]]);
     ///     assert!(array.is_fortran_contiguous());
@@ -1830,13 +1843,14 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> {
     /// # Example
     ///
     /// ```
+    /// use numpy::prelude::*;
     /// use numpy::{npyffi::NPY_ORDER, PyArray};
     /// use pyo3::Python;
     /// use ndarray::array;
     ///
     /// Python::with_gil(|py| {
     ///     let array =
-    ///         PyArray::from_iter(py, 0..9).reshape_with_order([3, 3], NPY_ORDER::NPY_FORTRANORDER).unwrap();
+    ///         PyArray::from_iter_bound(py, 0..9).reshape_with_order([3, 3], NPY_ORDER::NPY_FORTRANORDER).unwrap();
     ///
     ///     assert_eq!(array.readonly().as_array(), array![[0, 3, 6], [1, 4, 7], [2, 5, 8]]);
     ///     assert!(array.is_fortran_contiguous());
