@@ -5,7 +5,7 @@ use std::{mem, os::raw::c_int, ptr};
 use ndarray::{ArrayBase, Data, Dim, Dimension, IntoDimension, Ix1, OwnedRepr};
 use pyo3::Python;
 
-use crate::array::PyArray;
+use crate::array::{PyArray, PyArrayMethods};
 use crate::dtype::Element;
 use crate::error::MAX_DIMENSIONALITY_ERR;
 use crate::npyffi::{self, npy_intp};
@@ -57,7 +57,9 @@ impl<T: Element> IntoPyArray for Box<[T]> {
         // to avoid unsound aliasing of Box<[T]> which is currently noalias,
         // c.f. https://github.com/rust-lang/unsafe-code-guidelines/issues/326
         let data_ptr = container.ptr as *mut T;
-        unsafe { PyArray::from_raw_parts(py, dims, strides.as_ptr(), data_ptr, container) }
+        unsafe {
+            PyArray::from_raw_parts(py, dims, strides.as_ptr(), data_ptr, container).into_gil_ref()
+        }
     }
 }
 
@@ -77,6 +79,7 @@ impl<T: Element> IntoPyArray for Vec<T> {
                 data_ptr,
                 PySliceContainer::from(self),
             )
+            .into_gil_ref()
         }
     }
 }
@@ -163,20 +166,20 @@ where
                 unsafe {
                     let array = PyArray::new_uninit(py, self.raw_dim(), strides.as_ptr(), flag);
                     ptr::copy_nonoverlapping(self.as_ptr(), array.data(), len);
-                    array
+                    array.into_gil_ref()
                 }
             }
             _ => {
                 // if the array is not contiguous, copy all elements by `ArrayBase::iter`.
                 let dim = self.raw_dim();
                 unsafe {
-                    let array = PyArray::<A, _>::new(py, dim, false);
+                    let array = PyArray::<A, _>::new_bound(py, dim, false);
                     let mut data_ptr = array.data();
                     for item in self.iter() {
                         data_ptr.write(item.clone());
                         data_ptr = data_ptr.add(1);
                     }
-                    array
+                    array.into_gil_ref()
                 }
             }
         }
@@ -200,7 +203,7 @@ where
     /// [memory-layout]: https://nalgebra.org/docs/faq/#what-is-the-memory-layout-of-matrices
     fn to_pyarray<'py>(&self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
         unsafe {
-            let array = PyArray::<N, _>::new(py, (self.nrows(), self.ncols()), true);
+            let array = PyArray::<N, _>::new_bound(py, (self.nrows(), self.ncols()), true);
             let mut data_ptr = array.data();
             if self.data.is_contiguous() {
                 ptr::copy_nonoverlapping(self.data.ptr(), data_ptr, self.len());
@@ -210,7 +213,7 @@ where
                     data_ptr = data_ptr.add(1);
                 }
             }
-            array
+            array.into_gil_ref()
         }
     }
 }

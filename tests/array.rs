@@ -5,7 +5,7 @@ use half::{bf16, f16};
 use ndarray::{array, s, Array1, Dim};
 use numpy::{
     dtype_bound, get_array_module, npyffi::NPY_ORDER, pyarray, PyArray, PyArray1, PyArray2,
-    PyArrayDescr, PyArrayDescrMethods, PyArrayDyn, PyFixedString, PyFixedUnicode,
+    PyArrayDescr, PyArrayDescrMethods, PyArrayDyn, PyArrayMethods, PyFixedString, PyFixedUnicode,
     PyUntypedArrayMethods, ToPyArray,
 };
 use pyo3::{
@@ -487,9 +487,9 @@ fn to_owned_works() {
 fn copy_to_works() {
     Python::with_gil(|py| {
         let arr1 = PyArray::arange(py, 2.0, 5.0, 1.0);
-        let arr2 = unsafe { PyArray::<i64, _>::new(py, [3], false) };
+        let arr2 = unsafe { PyArray::<i64, _>::new_bound(py, [3], false) };
 
-        arr1.copy_to(arr2).unwrap();
+        arr1.copy_to(arr2.as_gil_ref()).unwrap();
 
         assert_eq!(arr2.readonly().as_slice().unwrap(), &[2, 3, 4]);
     });
