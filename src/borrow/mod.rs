@@ -15,11 +15,11 @@
 //! ```rust
 //! # use std::panic::{catch_unwind, AssertUnwindSafe};
 //! #
-//! use numpy::PyArray1;
+//! use numpy::{PyArray1, PyArrayMethods};
 //! use ndarray::Zip;
-//! use pyo3::Python;
+//! use pyo3::{Python, Bound};
 //!
-//! fn add(x: &PyArray1<f64>, y: &PyArray1<f64>, z: &PyArray1<f64>) {
+//! fn add(x: &Bound<'_, PyArray1<f64>>, y: &Bound<'_, PyArray1<f64>>, z: &Bound<'_, PyArray1<f64>>) {
 //!     let x1 = x.readonly();
 //!     let y1 = y.readonly();
 //!     let mut z1 = z.readwrite();
@@ -41,19 +41,19 @@
 //! }
 //!
 //! Python::with_gil(|py| {
-//!     let x = PyArray1::<f64>::zeros(py, 42, false);
-//!     let y = PyArray1::<f64>::zeros(py, 42, false);
-//!     let z = PyArray1::<f64>::zeros(py, 42, false);
+//!     let x = PyArray1::<f64>::zeros_bound(py, 42, false);
+//!     let y = PyArray1::<f64>::zeros_bound(py, 42, false);
+//!     let z = PyArray1::<f64>::zeros_bound(py, 42, false);
 //!
 //!     // Will work as the three arrays are distinct.
-//!     add(x, y, z);
+//!     add(&x, &y, &z);
 //!
 //!     // Will work as `x1` and `y1` are compatible borrows.
-//!     add(x, x, z);
+//!     add(&x, &x, &z);
 //!
 //!     // Will fail at runtime due to conflict between `y1` and `z1`.
 //!     let res = catch_unwind(AssertUnwindSafe(|| {
-//!         add(x, y, y);
+//!         add(&x, &y, &y);
 //!     }));
 //!     assert!(res.is_err());
 //! });
@@ -91,15 +91,15 @@
 //! ```rust
 //! # use std::panic::{catch_unwind, AssertUnwindSafe};
 //! #
-//! use numpy::PyArray2;
-//! use pyo3::{types::IntoPyDict, Python};
+//! use numpy::{PyArray2, PyArrayMethods};
+//! use pyo3::{types::{IntoPyDict, PyAnyMethods}, Python};
 //!
 //! Python::with_gil(|py| {
-//!     let array = PyArray2::<f64>::zeros(py, (10, 10), false);
-//!     let locals = [("array", array)].into_py_dict(py);
+//!     let array = PyArray2::<f64>::zeros_bound(py, (10, 10), false);
+//!     let locals = [("array", array)].into_py_dict_bound(py);
 //!
-//!     let view1 = py.eval("array[:, ::3]", None, Some(locals)).unwrap().downcast::<PyArray2<f64>>().unwrap();
-//!     let view2 = py.eval("array[:, 1::3]", None, Some(locals)).unwrap().downcast::<PyArray2<f64>>().unwrap();
+//!     let view1 = py.eval_bound("array[:, ::3]", None, Some(&locals)).unwrap().downcast_into::<PyArray2<f64>>().unwrap();
+//!     let view2 = py.eval_bound("array[:, 1::3]", None, Some(&locals)).unwrap().downcast_into::<PyArray2<f64>>().unwrap();
 //!
 //!     // A false conflict as the views do not actually share any elements.
 //!     let res = catch_unwind(AssertUnwindSafe(|| {
@@ -589,7 +589,7 @@ mod tests {
     #[test]
     fn test_debug_formatting() {
         Python::with_gil(|py| {
-            let array = PyArray::<f64, _>::zeros(py, (1, 2, 3), false);
+            let array = PyArray::<f64, _>::zeros_bound(py, (1, 2, 3), false);
 
             {
                 let shared = array.readonly();
@@ -615,7 +615,7 @@ mod tests {
     #[should_panic(expected = "AlreadyBorrowed")]
     fn cannot_clone_exclusive_borrow_via_deref() {
         Python::with_gil(|py| {
-            let array = PyArray::<f64, _>::zeros(py, (3, 2, 1), false);
+            let array = PyArray::<f64, _>::zeros_bound(py, (3, 2, 1), false);
 
             let exclusive = array.readwrite();
             let _shared = exclusive.clone();
@@ -625,14 +625,14 @@ mod tests {
     #[test]
     fn failed_resize_does_not_double_release() {
         Python::with_gil(|py| {
-            let array = PyArray::<f64, _>::zeros(py, 10, false);
+            let array = PyArray::<f64, _>::zeros_bound(py, 10, false);
 
             // The view will make the internal reference check of `PyArray_Resize` fail.
-            let locals = [("array", array)].into_py_dict(py);
+            let locals = [("array", &array)].into_py_dict_bound(py);
             let _view = py
-                .eval("array[:]", None, Some(locals))
+                .eval_bound("array[:]", None, Some(&locals))
                 .unwrap()
-                .downcast::<PyArray1<f64>>()
+                .downcast_into::<PyArray1<f64>>()
                 .unwrap();
 
             let exclusive = array.readwrite();
@@ -643,7 +643,7 @@ mod tests {
     #[test]
     fn ineffective_resize_does_not_conflict() {
         Python::with_gil(|py| {
-            let array = PyArray::<f64, _>::zeros(py, 10, false);
+            let array = PyArray::<f64, _>::zeros_bound(py, 10, false);
 
             let exclusive = array.readwrite();
             assert!(exclusive.resize(10).is_ok());

@@ -4,9 +4,11 @@ use std::mem::size_of;
 use half::{bf16, f16};
 use ndarray::{array, s, Array1, Dim};
 use numpy::{
-    dtype_bound, get_array_module, npyffi::NPY_ORDER, pyarray, PyArray, PyArray1, PyArray2,
-    PyArrayDescr, PyArrayDescrMethods, PyArrayDyn, PyArrayMethods, PyFixedString, PyFixedUnicode,
-    PyUntypedArrayMethods, ToPyArray,
+    array::{PyArray0Methods, PyArrayMethods},
+    dtype_bound, get_array_module,
+    npyffi::NPY_ORDER,
+    pyarray, PyArray, PyArray1, PyArray2, PyArrayDescr, PyArrayDescrMethods, PyArrayDyn,
+    PyFixedString, PyFixedUnicode, PyUntypedArrayMethods, ToPyArray,
 };
 use pyo3::{
     py_run, pyclass, pymethods,
@@ -34,7 +36,7 @@ fn new_c_order() {
     Python::with_gil(|py| {
         let dims = [3, 5];
 
-        let arr = PyArray::<f64, _>::zeros(py, dims, false);
+        let arr = PyArray::<f64, _>::zeros_bound(py, dims, false);
 
         assert!(arr.ndim() == 2);
         assert!(arr.dims() == dims);
@@ -56,7 +58,7 @@ fn new_fortran_order() {
     Python::with_gil(|py| {
         let dims = [3, 5];
 
-        let arr = PyArray::<f64, _>::zeros(py, dims, true);
+        let arr = PyArray::<f64, _>::zeros_bound(py, dims, true);
 
         assert!(arr.ndim() == 2);
         assert!(arr.dims() == dims);
@@ -78,7 +80,7 @@ fn tuple_as_dim() {
     Python::with_gil(|py| {
         let dims = (3, 5);
 
-        let arr = PyArray::<f64, _>::zeros(py, dims, false);
+        let arr = PyArray::<f64, _>::zeros_bound(py, dims, false);
 
         assert!(arr.ndim() == 2);
         assert!(arr.dims() == [3, 5]);
@@ -88,7 +90,7 @@ fn tuple_as_dim() {
 #[test]
 fn rank_zero_array_has_invalid_strides_dimensions() {
     Python::with_gil(|py| {
-        let arr = PyArray::<f64, _>::zeros(py, (), false);
+        let arr = PyArray::<f64, _>::zeros_bound(py, (), false);
 
         assert_eq!(arr.ndim(), 0);
         assert_eq!(arr.strides(), &[]);
@@ -106,7 +108,7 @@ fn zeros() {
     Python::with_gil(|py| {
         let dims = [3, 4];
 
-        let arr = PyArray::<f64, _>::zeros(py, dims, false);
+        let arr = PyArray::<f64, _>::zeros_bound(py, dims, false);
 
         assert!(arr.ndim() == 2);
         assert!(arr.dims() == dims);
@@ -114,7 +116,7 @@ fn zeros() {
         let size = size_of::<f64>() as isize;
         assert!(arr.strides() == [dims[1] as isize * size, size]);
 
-        let arr = PyArray::<f64, _>::zeros(py, dims, true);
+        let arr = PyArray::<f64, _>::zeros_bound(py, dims, true);
 
         assert!(arr.ndim() == 2);
         assert!(arr.dims() == dims);
@@ -137,7 +139,7 @@ fn arange() {
 #[test]
 fn as_array() {
     Python::with_gil(|py| {
-        let pyarr = PyArray::<f64, _>::zeros(py, [3, 2, 4], false).readonly();
+        let pyarr = PyArray::<f64, _>::zeros_bound(py, [3, 2, 4], false).readonly();
         let arr = pyarr.as_array();
 
         assert_eq!(pyarr.shape(), arr.shape());
@@ -171,7 +173,7 @@ fn as_raw_array() {
 #[test]
 fn as_slice() {
     Python::with_gil(|py| {
-        let arr = PyArray::<i32, _>::zeros(py, [3, 2, 4], false);
+        let arr = PyArray::<i32, _>::zeros_bound(py, [3, 2, 4], false);
         assert_eq!(arr.readonly().as_slice().unwrap().len(), 3 * 2 * 4);
 
         let not_contiguous = not_contiguous_array(py);
@@ -183,7 +185,7 @@ fn as_slice() {
 #[test]
 fn is_instance() {
     Python::with_gil(|py| {
-        let arr = PyArray2::<f64>::zeros(py, [3, 5], false);
+        let arr = PyArray2::<f64>::zeros_bound(py, [3, 5], false);
 
         assert!(arr.is_instance_of::<PyArray2<f64>>());
         assert!(!arr.is_instance_of::<PyList>());

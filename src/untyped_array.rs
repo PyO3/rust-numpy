@@ -28,11 +28,12 @@ use crate::npyffi;
 /// ```
 /// # use pyo3::prelude::*;
 /// use pyo3::exceptions::PyTypeError;
-/// use numpy::{Element, PyUntypedArray, PyArray1, dtype};
+/// use numpy::{Element, PyUntypedArray, PyArray1, dtype_bound};
+/// use numpy::{PyUntypedArrayMethods, PyArrayMethods, PyArrayDescrMethods};
 ///
 /// #[pyfunction]
-/// fn entry_point(py: Python, array: &PyUntypedArray) -> PyResult<()> {
-///     fn implementation<T: Element>(array: &PyArray1<T>) -> PyResult<()> {
+/// fn entry_point(py: Python<'_>, array: &Bound<'_, PyUntypedArray>) -> PyResult<()> {
+///     fn implementation<T: Element>(array: &Bound<'_, PyArray1<T>>) -> PyResult<()> {
 ///         /* .. */
 ///
 ///         Ok(())
@@ -40,12 +41,12 @@ use crate::npyffi;
 ///
 ///     let element_type = array.dtype();
 ///
-///     if element_type.is_equiv_to(dtype::<f32>(py)) {
-///         let array: &PyArray1<f32> = array.downcast()?;
+///     if element_type.is_equiv_to(&dtype_bound::<f32>(py)) {
+///         let array = array.downcast::<PyArray1<f32>>()?;
 ///
 ///         implementation(array)
-///     } else if element_type.is_equiv_to(dtype::<f64>(py)) {
-///         let array: &PyArray1<f64> = array.downcast()?;
+///     } else if element_type.is_equiv_to(&dtype_bound::<f64>(py)) {
+///         let array = array.downcast::<PyArray1<f64>>()?;
 ///
 ///         implementation(array)
 ///     } else {
@@ -54,8 +55,8 @@ use crate::npyffi;
 /// }
 /// #
 /// # Python::with_gil(|py| {
-/// #   let array = PyArray1::<f64>::zeros(py, 42, false);
-/// #   entry_point(py, array)
+/// #   let array = PyArray1::<f64>::zeros_bound(py, 42, false);
+/// #   entry_point(py, array.as_untyped())
 /// # }).unwrap();
 /// ```
 #[repr(transparent)]
@@ -160,11 +161,11 @@ impl PyUntypedArray {
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray3;
+    /// use numpy::{PyArray3, PyUntypedArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let arr = PyArray3::<f64>::zeros(py, [4, 5, 6], false);
+    ///     let arr = PyArray3::<f64>::zeros_bound(py, [4, 5, 6], false);
     ///
     ///     assert_eq!(arr.ndim(), 3);
     /// });
@@ -184,11 +185,11 @@ impl PyUntypedArray {
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray3;
+    /// use numpy::{PyArray3, PyUntypedArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let arr = PyArray3::<f64>::zeros(py, [4, 5, 6], false);
+    ///     let arr = PyArray3::<f64>::zeros_bound(py, [4, 5, 6], false);
     ///
     ///     assert_eq!(arr.strides(), &[240, 48, 8]);
     /// });
@@ -216,11 +217,11 @@ impl PyUntypedArray {
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray3;
+    /// use numpy::{PyArray3, PyUntypedArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let arr = PyArray3::<f64>::zeros(py, [4, 5, 6], false);
+    ///     let arr = PyArray3::<f64>::zeros_bound(py, [4, 5, 6], false);
     ///
     ///     assert_eq!(arr.shape(), &[4, 5, 6]);
     /// });
@@ -329,11 +330,11 @@ pub trait PyUntypedArrayMethods<'py>: sealed::Sealed {
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray3;
+    /// use numpy::{PyArray3, PyUntypedArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let arr = PyArray3::<f64>::zeros(py, [4, 5, 6], false);
+    ///     let arr = PyArray3::<f64>::zeros_bound(py, [4, 5, 6], false);
     ///
     ///     assert_eq!(arr.ndim(), 3);
     /// });
@@ -353,11 +354,11 @@ pub trait PyUntypedArrayMethods<'py>: sealed::Sealed {
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray3;
+    /// use numpy::{PyArray3, PyUntypedArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let arr = PyArray3::<f64>::zeros(py, [4, 5, 6], false);
+    ///     let arr = PyArray3::<f64>::zeros_bound(py, [4, 5, 6], false);
     ///
     ///     assert_eq!(arr.strides(), &[240, 48, 8]);
     /// });
@@ -385,11 +386,11 @@ pub trait PyUntypedArrayMethods<'py>: sealed::Sealed {
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray3;
+    /// use numpy::{PyArray3, PyUntypedArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let arr = PyArray3::<f64>::zeros(py, [4, 5, 6], false);
+    ///     let arr = PyArray3::<f64>::zeros_bound(py, [4, 5, 6], false);
     ///
     ///     assert_eq!(arr.shape(), &[4, 5, 6]);
     /// });

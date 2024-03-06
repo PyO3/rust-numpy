@@ -214,15 +214,15 @@ impl<T, D> PyArray<T, D> {
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray1;
+    /// use numpy::{PyArray1, PyArrayMethods};
     /// use pyo3::{Py, Python};
     ///
     /// let array: Py<PyArray1<f64>> = Python::with_gil(|py| {
-    ///     PyArray1::zeros(py, 5, false).to_owned()
+    ///     PyArray1::zeros_bound(py, 5, false).unbind()
     /// });
     ///
     /// Python::with_gil(|py| {
-    ///     assert_eq!(array.as_ref(py).readonly().as_slice().unwrap(), [0.0; 5]);
+    ///     assert_eq!(array.bind(py).readonly().as_slice().unwrap(), [0.0; 5]);
     /// });
     /// ```
     #[deprecated(since = "0.21.0", note = "use Bound::unbind() instead")]
@@ -499,6 +499,18 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         )
     }
 
+    /// Deprecated form of [`PyArray<T, D>::zeros_bound`]
+    #[deprecated(
+        since = "0.21.0",
+        note = "will be replaced by `PyArray::zeros_bound` in the future"
+    )]
+    pub fn zeros<'py, ID>(py: Python<'py>, dims: ID, is_fortran: bool) -> &Self
+    where
+        ID: IntoDimension<Dim = D>,
+    {
+        Self::zeros_bound(py, dims, is_fortran).into_gil_ref()
+    }
+
     /// Construct a new NumPy array filled with zeros.
     ///
     /// If `is_fortran` is true, then it has Fortran/column-major order,
@@ -512,11 +524,11 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray2;
+    /// use numpy::{PyArray2, PyArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let pyarray: &PyArray2<usize> = PyArray2::zeros(py, [2, 2], true);
+    ///     let pyarray = PyArray2::<usize>::zeros_bound(py, [2, 2], true);
     ///
     ///     assert_eq!(pyarray.readonly().as_slice().unwrap(), [0; 4]);
     /// });
@@ -524,7 +536,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     ///
     /// [numpy-zeros]: https://numpy.org/doc/stable/reference/generated/numpy.zeros.html
     /// [PyArray_Zeros]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_Zeros
-    pub fn zeros<'py, ID>(py: Python<'py>, dims: ID, is_fortran: bool) -> &Self
+    pub fn zeros_bound<ID>(py: Python<'_>, dims: ID, is_fortran: bool) -> Bound<'_, Self>
     where
         ID: IntoDimension<Dim = D>,
     {
@@ -537,7 +549,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
                 T::get_dtype_bound(py).into_dtype_ptr(),
                 if is_fortran { -1 } else { 0 },
             );
-            Self::from_owned_ptr(py, ptr)
+            Bound::from_owned_ptr(py, ptr).downcast_into_unchecked()
         }
     }
 
@@ -1313,11 +1325,11 @@ impl<T: Element, D> PyArray<T, D> {
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyArrayMethods, PyUntypedArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let pyarray = PyArray::<f64, _>::zeros(py, (10, 10), false);
+    ///     let pyarray = PyArray::<f64, _>::zeros_bound(py, (10, 10), false);
     ///     assert_eq!(pyarray.shape(), [10, 10]);
     ///
     ///     unsafe {
@@ -1843,11 +1855,11 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> {
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyArrayMethods, PyUntypedArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let pyarray = PyArray::<f64, _>::zeros(py, (10, 10), false);
+    ///     let pyarray = PyArray::<f64, _>::zeros_bound(py, (10, 10), false);
     ///     assert_eq!(pyarray.shape(), [10, 10]);
     ///
     ///     unsafe {

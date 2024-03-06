@@ -254,7 +254,7 @@ mod tests {
         types::{PyDict, PyModule},
     };
 
-    use crate::array::PyArray1;
+    use crate::array::{PyArray1, PyArrayMethods};
 
     #[test]
     fn from_python_to_rust() {
@@ -283,7 +283,7 @@ mod tests {
     #[test]
     fn from_rust_to_python() {
         Python::with_gil(|py| {
-            let array = PyArray1::<Timedelta<units::Minutes>>::zeros(py, 1, false);
+            let array = PyArray1::<Timedelta<units::Minutes>>::zeros_bound(py, 1, false);
 
             *array.readwrite().get_mut(0).unwrap() = Timedelta::<units::Minutes>::from(5);
 

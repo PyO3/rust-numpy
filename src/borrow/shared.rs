@@ -447,8 +447,9 @@ mod tests {
     use ndarray::Array;
     use pyo3::types::IntoPyDict;
 
-    use crate::array::{PyArray, PyArray1, PyArray2, PyArray3};
+    use crate::array::{PyArray, PyArray1, PyArray2, PyArray3, PyArrayMethods};
     use crate::convert::IntoPyArray;
+    use crate::untyped_array::PyUntypedArrayMethods;
 
     fn get_borrow_flags<'py>(py: Python<'py>) -> &'py BorrowFlagsInner {
         let shared = get_or_insert_shared(py).unwrap();
@@ -459,13 +460,13 @@ mod tests {
     #[test]
     fn without_base_object() {
         Python::with_gil(|py| {
-            let array = PyArray::<f64, _>::zeros(py, (1, 2, 3), false);
+            let array = PyArray::<f64, _>::zeros_bound(py, (1, 2, 3), false);
 
             let base = unsafe { (*array.as_array_ptr()).base };
             assert!(base.is_null());
 
             let base_address = base_address(py, array.as_array_ptr());
-            assert_eq!(base_address, array as *const _ as *mut c_void);
+            assert_eq!(base_address, array.as_ptr().cast());
 
             let data_range = data_range(array.as_array_ptr());
             assert_eq!(data_range.0, array.data() as *mut c_char);
@@ -494,25 +495,25 @@ mod tests {
     #[test]
     fn view_without_base_object() {
         Python::with_gil(|py| {
-            let array = PyArray::<f64, _>::zeros(py, (1, 2, 3), false);
+            let array = PyArray::<f64, _>::zeros_bound(py, (1, 2, 3), false);
 
-            let locals = [("array", array)].into_py_dict(py);
+            let locals = [("array", &array)].into_py_dict_bound(py);
             let view = py
-                .eval("array[:,:,0]", None, Some(locals))
+                .eval_bound("array[:,:,0]", None, Some(&locals))
                 .unwrap()
-                .downcast::<PyArray2<f64>>()
+                .downcast_into::<PyArray2<f64>>()
                 .unwrap();
             assert_ne!(
-                view as *const _ as *mut c_void,
-                array as *const _ as *mut c_void
+                view.as_ptr().cast::<c_void>(),
+                array.as_ptr().cast::<c_void>()
             );
 
             let base = unsafe { (*view.as_array_ptr()).base };
-            assert_eq!(base as *mut c_void, array as *const _ as *mut c_void);
+            assert_eq!(base as *mut c_void, array.as_ptr().cast::<c_void>());
 
             let base_address = base_address(py, view.as_array_ptr());
-            assert_ne!(base_address, view as *const _ as *mut c_void);
-            assert_eq!(base_address, base as *mut c_void);
+            assert_ne!(base_address, view.as_ptr().cast::<c_void>());
+            assert_eq!(base_address, base.cast::<c_void>());
 
             let data_range = data_range(view.as_array_ptr());
             assert_eq!(data_range.0, array.data() as *mut c_char);
@@ -556,43 +557,43 @@ mod tests {
     #[test]
     fn view_of_view_without_base_object() {
         Python::with_gil(|py| {
-            let array = PyArray::<f64, _>::zeros(py, (1, 2, 3), false);
+            let array = PyArray::<f64, _>::zeros_bound(py, (1, 2, 3), false);
 
-            let locals = [("array", array)].into_py_dict(py);
+            let locals = [("array", &array)].into_py_dict_bound(py);
             let view1 = py
-                .eval("array[:,:,0]", None, Some(locals))
+                .eval_bound("array[:,:,0]", None, Some(&locals))
                 .unwrap()
-                .downcast::<PyArray2<f64>>()
+                .downcast_into::<PyArray2<f64>>()
                 .unwrap();
             assert_ne!(
-                view1 as *const _ as *mut c_void,
-                array as *const _ as *mut c_void
+                view1.as_ptr().cast::<c_void>(),
+                array.as_ptr().cast::<c_void>()
             );
 
-            let locals = [("view1", view1)].into_py_dict(py);
+            let locals = [("view1", &view1)].into_py_dict(py);
             let view2 = py
                 .eval("view1[:,0]", None, Some(locals))
                 .unwrap()
                 .downcast::<PyArray1<f64>>()
                 .unwrap();
             assert_ne!(
-                view2 as *const _ as *mut c_void,
-                array as *const _ as *mut c_void
+                view2.as_ptr().cast::<c_void>(),
+                array.as_ptr().cast::<c_void>()
             );
             assert_ne!(
-                view2 as *const _ as *mut c_void,
-                view1 as *const _ as *mut c_void
+                view2.as_ptr().cast::<c_void>(),
+                view1.as_ptr().cast::<c_void>()
             );
 
             let base = unsafe { (*view2.as_array_ptr()).base };
-            assert_eq!(base as *mut c_void, array as *const _ as *mut c_void);
+            assert_eq!(base as *mut c_void, array.as_ptr().cast::<c_void>());
 
             let base = unsafe { (*view1.as_array_ptr()).base };
-            assert_eq!(base as *mut c_void, array as *const _ as *mut c_void);
+            assert_eq!(base as *mut c_void, array.as_ptr().cast::<c_void>());
 
             let base_address = base_address(py, view2.as_array_ptr());
-            assert_ne!(base_address, view2 as *const _ as *mut c_void);
-            assert_ne!(base_address, view1 as *const _ as *mut c_void);
+            assert_ne!(base_address, view2.as_ptr().cast::<c_void>());
+            assert_ne!(base_address, view1.as_ptr().cast::<c_void>());
             assert_eq!(base_address, base as *mut c_void);
 
             let data_range = data_range(view2.as_array_ptr());
@@ -656,25 +657,25 @@ mod tests {
     #[test]
     fn view_with_negative_strides() {
         Python::with_gil(|py| {
-            let array = PyArray::<f64, _>::zeros(py, (1, 2, 3), false);
+            let array = PyArray::<f64, _>::zeros_bound(py, (1, 2, 3), false);
 
-            let locals = [("array", array)].into_py_dict(py);
+            let locals = [("array", &array)].into_py_dict_bound(py);
             let view = py
-                .eval("array[::-1,:,::-1]", None, Some(locals))
+                .eval_bound("array[::-1,:,::-1]", None, Some(&locals))
                 .unwrap()
-                .downcast::<PyArray3<f64>>()
+                .downcast_into::<PyArray3<f64>>()
                 .unwrap();
             assert_ne!(
-                view as *const _ as *mut c_void,
-                array as *const _ as *mut c_void
+                view.as_ptr().cast::<c_void>(),
+                array.as_ptr().cast::<c_void>()
             );
 
             let base = unsafe { (*view.as_array_ptr()).base };
-            assert_eq!(base as *mut c_void, array as *const _ as *mut c_void);
+            assert_eq!(base.cast::<c_void>(), array.as_ptr().cast::<c_void>());
 
             let base_address = base_address(py, view.as_array_ptr());
-            assert_ne!(base_address, view as *const _ as *mut c_void);
-            assert_eq!(base_address, base as *mut c_void);
+            assert_ne!(base_address, view.as_ptr().cast::<c_void>());
+            assert_eq!(base_address, base.cast::<c_void>());
 
             let data_range = data_range(view.as_array_ptr());
             assert_eq!(view.data(), unsafe { array.data().offset(2) });
@@ -688,13 +689,13 @@ mod tests {
     #[test]
     fn array_with_zero_dimensions() {
         Python::with_gil(|py| {
-            let array = PyArray::<f64, _>::zeros(py, (1, 0, 3), false);
+            let array = PyArray::<f64, _>::zeros_bound(py, (1, 0, 3), false);
 
             let base = unsafe { (*array.as_array_ptr()).base };
             assert!(base.is_null());
 
             let base_address = base_address(py, array.as_array_ptr());
-            assert_eq!(base_address, array as *const _ as *mut c_void);
+            assert_eq!(base_address, array.as_ptr().cast::<c_void>());
 
             let data_range = data_range(array.as_array_ptr());
             assert_eq!(data_range.0, array.data() as *mut c_char);
@@ -705,13 +706,13 @@ mod tests {
     #[test]
     fn view_with_non_dividing_strides() {
         Python::with_gil(|py| {
-            let array = PyArray::<f64, _>::zeros(py, (10, 10), false);
-            let locals = [("array", array)].into_py_dict(py);
+            let array = PyArray::<f64, _>::zeros_bound(py, (10, 10), false);
+            let locals = [("array", array)].into_py_dict_bound(py);
 
             let view1 = py
-                .eval("array[:,::3]", None, Some(locals))
+                .eval_bound("array[:,::3]", None, Some(&locals))
                 .unwrap()
-                .downcast::<PyArray2<f64>>()
+                .downcast_into::<PyArray2<f64>>()
                 .unwrap();
 
             let key1 = borrow_key(view1.as_array_ptr());
@@ -720,9 +721,9 @@ mod tests {
             assert_eq!(key1.gcd_strides, 8);
 
             let view2 = py
-                .eval("array[:,1::3]", None, Some(locals))
+                .eval_bound("array[:,1::3]", None, Some(&locals))
                 .unwrap()
-                .downcast::<PyArray2<f64>>()
+                .downcast_into::<PyArray2<f64>>()
                 .unwrap();
 
             let key2 = borrow_key(view2.as_array_ptr());
@@ -731,9 +732,9 @@ mod tests {
             assert_eq!(key2.gcd_strides, 8);
 
             let view3 = py
-                .eval("array[:,::2]", None, Some(locals))
+                .eval_bound("array[:,::2]", None, Some(&locals))
                 .unwrap()
-                .downcast::<PyArray2<f64>>()
+                .downcast_into::<PyArray2<f64>>()
                 .unwrap();
 
             let key3 = borrow_key(view3.as_array_ptr());
@@ -742,9 +743,9 @@ mod tests {
             assert_eq!(key3.gcd_strides, 16);
 
             let view4 = py
-                .eval("array[:,1::2]", None, Some(locals))
+                .eval_bound("array[:,1::2]", None, Some(&locals))
                 .unwrap()
-                .downcast::<PyArray2<f64>>()
+                .downcast_into::<PyArray2<f64>>()
                 .unwrap();
 
             let key4 = borrow_key(view4.as_array_ptr());
@@ -764,8 +765,8 @@ mod tests {
     #[test]
     fn borrow_multiple_arrays() {
         Python::with_gil(|py| {
-            let array1 = PyArray::<f64, _>::zeros(py, 10, false);
-            let array2 = PyArray::<f64, _>::zeros(py, 10, false);
+            let array1 = PyArray::<f64, _>::zeros_bound(py, 10, false);
+            let array2 = PyArray::<f64, _>::zeros_bound(py, 10, false);
 
             let base1 = base_address(py, array1.as_array_ptr());
             let base2 = base_address(py, array2.as_array_ptr());
@@ -809,7 +810,7 @@ mod tests {
     #[test]
     fn borrow_multiple_views() {
         Python::with_gil(|py| {
-            let array = PyArray::<f64, _>::zeros(py, 10, false);
+            let array = PyArray::<f64, _>::zeros_bound(py, 10, false);
             let base = base_address(py, array.as_array_ptr());
 
             let locals = [("array", array)].into_py_dict(py);
