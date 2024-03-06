@@ -143,7 +143,7 @@ impl<T: Element> ToPyArray for [T] {
     type Dim = Ix1;
 
     fn to_pyarray<'py>(&self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
-        PyArray::from_slice(py, self)
+        PyArray::from_slice_bound(py, self).into_gil_ref()
     }
 }
 

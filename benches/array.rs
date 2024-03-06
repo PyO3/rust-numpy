@@ -91,7 +91,7 @@ fn from_slice(bencher: &mut Bencher, size: usize) {
     iter_with_gil(bencher, |py| {
         let slice = black_box(&vec);
 
-        PyArray1::from_slice(py, slice);
+        PyArray1::from_slice_bound(py, slice);
     });
 }
 
@@ -116,7 +116,7 @@ fn from_object_slice(bencher: &mut Bencher, size: usize) {
     iter_with_gil(bencher, |py| {
         let slice = black_box(&vec);
 
-        PyArray1::from_slice(py, slice);
+        PyArray1::from_slice_bound(py, slice);
     });
 }
 
