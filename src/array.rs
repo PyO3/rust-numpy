@@ -803,6 +803,18 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         self.as_borrowed().to_vec()
     }
 
+    /// Deprecated form of [`PyArray<T, D>::from_array_bound`]
+    #[deprecated(
+        since = "0.21.0",
+        note = "will be replaced by PyArray::from_array_bound in the future"
+    )]
+    pub fn from_array<'py, S>(py: Python<'py>, arr: &ArrayBase<S, D>) -> &'py Self
+    where
+        S: Data<Elem = T>,
+    {
+        Self::from_array_bound(py, arr).into_gil_ref()
+    }
+
     /// Construct a NumPy array from a [`ndarray::ArrayBase`].
     ///
     /// This method allocates memory in Python's heap via the NumPy API,
@@ -811,21 +823,21 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyArrayMethods};
     /// use ndarray::array;
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let pyarray = PyArray::from_array(py, &array![[1, 2], [3, 4]]);
+    ///     let pyarray = PyArray::from_array_bound(py, &array![[1, 2], [3, 4]]);
     ///
     ///     assert_eq!(pyarray.readonly().as_array(), array![[1, 2], [3, 4]]);
     /// });
     /// ```
-    pub fn from_array<'py, S>(py: Python<'py>, arr: &ArrayBase<S, D>) -> &'py Self
+    pub fn from_array_bound<'py, S>(py: Python<'py>, arr: &ArrayBase<S, D>) -> Bound<'py, Self>
     where
         S: Data<Elem = T>,
     {
-        ToPyArray::to_pyarray_bound(arr, py).into_gil_ref()
+        ToPyArray::to_pyarray_bound(arr, py)
     }
 
     /// Get an immutable borrow of the NumPy array

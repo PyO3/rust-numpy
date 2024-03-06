@@ -42,7 +42,7 @@ fn to_pyarray_array() {
             .map(|dim| dim * size_of::<f64>() as isize)
             .collect::<Vec<_>>();
 
-        let py_arr = PyArray::from_array(py, &arr);
+        let py_arr = PyArray::from_array_bound(py, &arr);
 
         assert_eq!(py_arr.shape(), shape.as_slice());
         assert_eq!(py_arr.strides(), strides.as_slice());
