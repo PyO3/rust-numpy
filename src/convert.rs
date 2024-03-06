@@ -93,7 +93,7 @@ where
     type Dim = D;
 
     fn into_pyarray<'py>(self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
-        PyArray::from_owned_array(py, self)
+        PyArray::from_owned_array_bound(py, self).into_gil_ref()
     }
 }
 
