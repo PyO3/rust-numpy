@@ -129,7 +129,7 @@ fn zeros() {
 #[test]
 fn arange() {
     Python::with_gil(|py| {
-        let arr = PyArray::<f64, _>::arange(py, 0.0, 1.0, 0.1);
+        let arr = PyArray::<f64, _>::arange_bound(py, 0.0, 1.0, 0.1);
 
         assert_eq!(arr.ndim(), 1);
         assert_eq!(arr.dims(), Dim([10]));
@@ -488,10 +488,10 @@ fn to_owned_works() {
 #[test]
 fn copy_to_works() {
     Python::with_gil(|py| {
-        let arr1 = PyArray::arange(py, 2.0, 5.0, 1.0);
+        let arr1 = PyArray::arange_bound(py, 2.0, 5.0, 1.0);
         let arr2 = unsafe { PyArray::<i64, _>::new_bound(py, [3], false) };
 
-        arr1.copy_to(arr2.as_gil_ref()).unwrap();
+        arr1.copy_to(&arr2).unwrap();
 
         assert_eq!(arr2.readonly().as_slice().unwrap(), &[2, 3, 4]);
     });

@@ -1,4 +1,4 @@
-use numpy::{array, dot, einsum, inner, pyarray, PyArray0, PyArray1, PyArray2};
+use numpy::{array, dot, einsum, inner, pyarray, PyArray0, PyArray1, PyArray2, PyArrayMethods};
 use pyo3::Python;
 
 #[test]
@@ -56,9 +56,10 @@ fn test_inner() {
 #[test]
 fn test_einsum() {
     Python::with_gil(|py| {
-        let a = PyArray1::<i32>::arange(py, 0, 25, 1)
+        let a = PyArray1::<i32>::arange_bound(py, 0, 25, 1)
             .reshape([5, 5])
-            .unwrap();
+            .unwrap()
+            .into_gil_ref();
         let b = pyarray![py, 0, 1, 2, 3, 4];
         let c = pyarray![py, [0, 1, 2], [3, 4, 5]];
 

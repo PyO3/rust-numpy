@@ -122,17 +122,17 @@ impl PyUntypedArray {
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray1;
-    /// use pyo3::{types::IntoPyDict, Python};
+    /// use numpy::{PyArray1, PyUntypedArrayMethods};
+    /// use pyo3::{types::{IntoPyDict, PyAnyMethods}, Python};
     ///
     /// Python::with_gil(|py| {
-    ///     let array = PyArray1::arange(py, 0, 10, 1);
+    ///     let array = PyArray1::arange_bound(py, 0, 10, 1);
     ///     assert!(array.is_contiguous());
     ///
     ///     let view = py
-    ///         .eval("array[::2]", None, Some([("array", array)].into_py_dict(py)))
+    ///         .eval_bound("array[::2]", None, Some(&[("array", array)].into_py_dict_bound(py)))
     ///         .unwrap()
-    ///         .downcast::<PyArray1<i32>>()
+    ///         .downcast_into::<PyArray1<i32>>()
     ///         .unwrap();
     ///     assert!(!view.is_contiguous());
     /// });
@@ -289,17 +289,17 @@ pub trait PyUntypedArrayMethods<'py>: Sealed {
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray1;
-    /// use pyo3::{types::IntoPyDict, Python};
+    /// use numpy::{PyArray1, PyUntypedArrayMethods};
+    /// use pyo3::{types::{IntoPyDict, PyAnyMethods}, Python};
     ///
     /// Python::with_gil(|py| {
-    ///     let array = PyArray1::arange(py, 0, 10, 1);
+    ///     let array = PyArray1::arange_bound(py, 0, 10, 1);
     ///     assert!(array.is_contiguous());
     ///
     ///     let view = py
-    ///         .eval("array[::2]", None, Some([("array", array)].into_py_dict(py)))
+    ///         .eval_bound("array[::2]", None, Some(&[("array", array)].into_py_dict_bound(py)))
     ///         .unwrap()
-    ///         .downcast::<PyArray1<i32>>()
+    ///         .downcast_into::<PyArray1<i32>>()
     ///         .unwrap();
     ///     assert!(!view.is_contiguous());
     /// });

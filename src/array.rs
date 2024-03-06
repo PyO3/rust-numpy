@@ -81,12 +81,12 @@ use crate::untyped_array::{PyUntypedArray, PyUntypedArrayMethods};
 /// # Example
 ///
 /// ```
-/// use numpy::PyArray;
-/// use ndarray::array;
+/// use numpy::{PyArray, PyArrayMethods};
+/// use ndarray::{array, Array};
 /// use pyo3::Python;
 ///
 /// Python::with_gil(|py| {
-///     let pyarray = PyArray::arange(py, 0., 4., 1.).reshape([2, 2]).unwrap();
+///     let pyarray = PyArray::arange_bound(py, 0., 4., 1.).reshape([2, 2]).unwrap();
 ///     let array = array![[3., 4.], [5., 6.]];
 ///
 ///     assert_eq!(
@@ -641,11 +641,11 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let pyarray = PyArray::arange(py, 0, 16, 1).reshape([2, 2, 4]).unwrap();
+    ///     let pyarray = PyArray::arange_bound(py, 0, 16, 1).reshape([2, 2, 4]).unwrap();
     ///
     ///     assert_eq!(unsafe { *pyarray.get([1, 0, 3]).unwrap() }, 11);
     /// });
@@ -669,11 +669,11 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let pyarray = PyArray::arange(py, 0, 16, 1).reshape([2, 2, 4]).unwrap();
+    ///     let pyarray = PyArray::arange_bound(py, 0, 16, 1).reshape([2, 2, 4]).unwrap();
     ///
     ///     unsafe {
     ///         *pyarray.get_mut([1, 0, 3]).unwrap() = 42;
@@ -704,11 +704,11 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let pyarray = PyArray::arange(py, 0, 16, 1).reshape([2, 2, 4]).unwrap();
+    ///     let pyarray = PyArray::arange_bound(py, 0, 16, 1).reshape([2, 2, 4]).unwrap();
     ///
     ///     assert_eq!(unsafe { *pyarray.uget([1, 0, 3]) }, 11);
     /// });
@@ -758,11 +758,11 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     ///
     /// # Example
     /// ```
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let pyarray = PyArray::arange(py, 0, 16, 1).reshape([2, 2, 4]).unwrap();
+    ///     let pyarray = PyArray::arange_bound(py, 0, 16, 1).reshape([2, 2, 4]).unwrap();
     ///
     ///     assert_eq!(pyarray.get_owned([1, 0, 3]), Some(11));
     /// });
@@ -910,12 +910,12 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyArrayMethods};
     /// use ndarray::array;
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let pyarray = PyArray::arange(py, 0, 4, 1).reshape([2, 2]).unwrap();
+    ///     let pyarray = PyArray::arange_bound(py, 0, 4, 1).reshape([2, 2]).unwrap();
     ///
     ///     assert_eq!(
     ///         pyarray.to_owned_array(),
@@ -1241,10 +1241,10 @@ impl<T: Element, D> PyArray<T, D> {
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let pyarray_f = PyArray::arange(py, 2.0, 5.0, 1.0);
+    ///     let pyarray_f = PyArray::arange_bound(py, 2.0, 5.0, 1.0);
     ///     let pyarray_i = unsafe { PyArray::<i64, _>::new_bound(py, [3], false) };
     ///
-    ///     assert!(pyarray_f.copy_to(pyarray_i.as_gil_ref()).is_ok());
+    ///     assert!(pyarray_f.copy_to(&pyarray_i).is_ok());
     ///
     ///     assert_eq!(pyarray_i.readonly().as_slice().unwrap(), &[2, 3, 4]);
     /// });
@@ -1262,11 +1262,11 @@ impl<T: Element, D> PyArray<T, D> {
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let pyarray_f = PyArray::arange(py, 2.0, 5.0, 1.0);
+    ///     let pyarray_f = PyArray::arange_bound(py, 2.0, 5.0, 1.0);
     ///
     ///     let pyarray_i = pyarray_f.cast::<i32>(false).unwrap();
     ///
@@ -1362,6 +1362,15 @@ impl<T: Element, D> PyArray<T, D> {
 }
 
 impl<T: Element + AsPrimitive<f64>> PyArray<T, Ix1> {
+    /// Deprecated form of [`PyArray<T, Ix1>::arange_bound`]
+    #[deprecated(
+        since = "0.21.0",
+        note = "will be replaced by PyArray::arange_bound in the future"
+    )]
+    pub fn arange<'py>(py: Python<'py>, start: T, stop: T, step: T) -> &Self {
+        Self::arange_bound(py, start, stop, step).into_gil_ref()
+    }
+
     /// Return evenly spaced values within a given interval.
     ///
     /// See [numpy.arange][numpy.arange] for the Python API and [PyArray_Arange][PyArray_Arange] for the C API.
@@ -1369,21 +1378,21 @@ impl<T: Element + AsPrimitive<f64>> PyArray<T, Ix1> {
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let pyarray = PyArray::arange(py, 2.0, 4.0, 0.5);
+    ///     let pyarray = PyArray::arange_bound(py, 2.0, 4.0, 0.5);
     ///     assert_eq!(pyarray.readonly().as_slice().unwrap(), &[2.0, 2.5, 3.0, 3.5]);
     ///
-    ///     let pyarray = PyArray::arange(py, -2, 4, 3);
+    ///     let pyarray = PyArray::arange_bound(py, -2, 4, 3);
     ///     assert_eq!(pyarray.readonly().as_slice().unwrap(), &[-2, 1]);
     /// });
     /// ```
     ///
     /// [numpy.arange]: https://numpy.org/doc/stable/reference/generated/numpy.arange.html
     /// [PyArray_Arange]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_Arange
-    pub fn arange<'py>(py: Python<'py>, start: T, stop: T, step: T) -> &Self {
+    pub fn arange_bound<'py>(py: Python<'py>, start: T, stop: T, step: T) -> Bound<'py, Self> {
         unsafe {
             let ptr = PY_ARRAY_API.PyArray_Arange(
                 py,
@@ -1392,7 +1401,7 @@ impl<T: Element + AsPrimitive<f64>> PyArray<T, Ix1> {
                 step.as_(),
                 T::get_dtype_bound(py).num(),
             );
-            Self::from_owned_ptr(py, ptr)
+            Bound::from_owned_ptr(py, ptr).downcast_into_unchecked()
         }
     }
 }
@@ -1482,11 +1491,11 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> {
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let pyarray = PyArray::arange(py, 0, 16, 1).reshape([2, 2, 4]).unwrap();
+    ///     let pyarray = PyArray::arange_bound(py, 0, 16, 1).reshape([2, 2, 4]).unwrap();
     ///
     ///     assert_eq!(unsafe { *pyarray.get([1, 0, 3]).unwrap() }, 11);
     /// });
@@ -1509,11 +1518,11 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> {
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let pyarray = PyArray::arange(py, 0, 16, 1).reshape([2, 2, 4]).unwrap();
+    ///     let pyarray = PyArray::arange_bound(py, 0, 16, 1).reshape([2, 2, 4]).unwrap();
     ///
     ///     unsafe {
     ///         *pyarray.get_mut([1, 0, 3]).unwrap() = 42;
@@ -1543,11 +1552,11 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> {
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let pyarray = PyArray::arange(py, 0, 16, 1).reshape([2, 2, 4]).unwrap();
+    ///     let pyarray = PyArray::arange_bound(py, 0, 16, 1).reshape([2, 2, 4]).unwrap();
     ///
     ///     assert_eq!(unsafe { *pyarray.uget([1, 0, 3]) }, 11);
     /// });
@@ -1604,11 +1613,11 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> {
     ///
     /// # Example
     /// ```
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let pyarray = PyArray::arange(py, 0, 16, 1).reshape([2, 2, 4]).unwrap();
+    ///     let pyarray = PyArray::arange_bound(py, 0, 16, 1).reshape([2, 2, 4]).unwrap();
     ///
     ///     assert_eq!(pyarray.get_owned([1, 0, 3]), Some(11));
     /// });
@@ -1742,12 +1751,12 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> {
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyArrayMethods};
     /// use ndarray::array;
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let pyarray = PyArray::arange(py, 0, 4, 1).reshape([2, 2]).unwrap();
+    ///     let pyarray = PyArray::arange_bound(py, 0, 4, 1).reshape([2, 2]).unwrap();
     ///
     ///     assert_eq!(
     ///         pyarray.to_owned_array(),
@@ -1774,10 +1783,10 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> {
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let pyarray_f = PyArray::arange(py, 2.0, 5.0, 1.0);
+    ///     let pyarray_f = PyArray::arange_bound(py, 2.0, 5.0, 1.0);
     ///     let pyarray_i = unsafe { PyArray::<i64, _>::new_bound(py, [3], false) };
     ///
-    ///     assert!(pyarray_f.copy_to(pyarray_i.as_gil_ref()).is_ok());
+    ///     assert!(pyarray_f.copy_to(&pyarray_i).is_ok());
     ///
     ///     assert_eq!(pyarray_i.readonly().as_slice().unwrap(), &[2, 3, 4]);
     /// });
@@ -1795,11 +1804,11 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> {
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let pyarray_f = PyArray::arange(py, 2.0, 5.0, 1.0);
+    ///     let pyarray_f = PyArray::arange_bound(py, 2.0, 5.0, 1.0);
     ///
     ///     let pyarray_i = pyarray_f.cast::<i32>(false).unwrap();
     ///
