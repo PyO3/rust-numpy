@@ -1055,26 +1055,35 @@ impl<T: Copy + Element> PyArray<T, Ix0> {
 }
 
 impl<T: Element> PyArray<T, Ix1> {
+    /// Deprecated form of [`PyArray<T, Ix1>::from_slice_bound`]
+    #[deprecated(
+        since = "0.21.0",
+        note = "will be replaced by `PyArray::from_slice_bound` in the future"
+    )]
+    pub fn from_slice<'py>(py: Python<'py>, slice: &[T]) -> &'py Self {
+        Self::from_slice_bound(py, slice).into_gil_ref()
+    }
+
     /// Construct a one-dimensional array from a [mod@slice].
     ///
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
     ///     let slice = &[1, 2, 3, 4, 5];
-    ///     let pyarray = PyArray::from_slice(py, slice);
+    ///     let pyarray = PyArray::from_slice_bound(py, slice);
     ///     assert_eq!(pyarray.readonly().as_slice().unwrap(), &[1, 2, 3, 4, 5]);
     /// });
     /// ```
-    pub fn from_slice<'py>(py: Python<'py>, slice: &[T]) -> &'py Self {
+    pub fn from_slice_bound<'py>(py: Python<'py>, slice: &[T]) -> Bound<'py, Self> {
         unsafe {
             let array = PyArray::new_bound(py, [slice.len()], false);
             let mut data_ptr = array.data();
             clone_elements(slice, &mut data_ptr);
-            array.into_gil_ref()
+            array
         }
     }
 
@@ -2287,8 +2296,8 @@ mod tests {
     #[test]
     fn test_hasobject_flag() {
         Python::with_gil(|py| {
-            let array: &PyArray<PyObject, _> =
-                PyArray1::from_slice(py, &[PyList::empty(py).into()]);
+            let array: Bound<'_, PyArray<PyObject, _>> =
+                PyArray1::from_slice_bound(py, &[PyList::empty_bound(py).into()]);
 
             py_run!(py, array, "assert array.dtype.hasobject");
         });

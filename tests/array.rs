@@ -13,7 +13,7 @@ use numpy::{
 use pyo3::{
     py_run, pyclass, pymethods,
     types::{IntoPyDict, PyAnyMethods, PyDict, PyList},
-    Bound, IntoPy, Py, PyAny, PyResult, Python,
+    Bound, Py, PyResult, Python,
 };
 
 fn get_np_locals<'py>(py: Python<'py>) -> &'py PyDict {
@@ -430,7 +430,7 @@ fn borrow_from_array_works() {
 #[test]
 fn downcasting_works() {
     Python::with_gil(|py| {
-        let ob: &PyAny = PyArray::from_slice(py, &[1_i32, 2, 3]);
+        let ob = PyArray::from_slice_bound(py, &[1_i32, 2, 3]).into_any();
 
         assert!(ob.downcast::<PyArray1<i32>>().is_ok());
     });
@@ -439,7 +439,7 @@ fn downcasting_works() {
 #[test]
 fn downcasting_respects_element_type() {
     Python::with_gil(|py| {
-        let ob: &PyAny = PyArray::from_slice(py, &[1_i32, 2, 3]);
+        let ob = PyArray::from_slice_bound(py, &[1_i32, 2, 3]).into_any();
 
         assert!(ob.downcast::<PyArray1<f64>>().is_err());
     });
@@ -448,18 +448,18 @@ fn downcasting_respects_element_type() {
 #[test]
 fn downcasting_respects_dimensionality() {
     Python::with_gil(|py| {
-        let ob: &PyAny = PyArray::from_slice(py, &[1_i32, 2, 3]);
+        let ob = PyArray::from_slice_bound(py, &[1_i32, 2, 3]).into_any();
 
         assert!(ob.downcast::<PyArray2<i32>>().is_err());
     });
 }
 
 #[test]
-fn into_py_works() {
+fn unbind_works() {
     let arr: Py<PyArray1<_>> = Python::with_gil(|py| {
-        let arr = PyArray::from_slice(py, &[1_i32, 2, 3]);
+        let arr = PyArray::from_slice_bound(py, &[1_i32, 2, 3]);
 
-        arr.into_py(py)
+        arr.unbind()
     });
 
     Python::with_gil(|py| {
@@ -472,10 +472,10 @@ fn into_py_works() {
 #[test]
 fn to_owned_works() {
     let arr: Py<PyArray1<_>> = Python::with_gil(|py| {
-        let arr = PyArray::from_slice(py, &[1_i32, 2, 3]);
+        let arr = PyArray::from_slice_bound(py, &[1_i32, 2, 3]);
 
         #[allow(deprecated)]
-        arr.to_owned()
+        arr.as_gil_ref().to_owned()
     });
 
     Python::with_gil(|py| {

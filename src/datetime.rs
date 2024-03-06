@@ -315,7 +315,7 @@ mod tests {
     fn unit_conversion() {
         #[track_caller]
         fn convert<'py, S: Unit, D: Unit>(py: Python<'py>, expected_value: i64) {
-            let array = PyArray1::<Timedelta<S>>::from_slice(py, &[Timedelta::<S>::from(1)]);
+            let array = PyArray1::<Timedelta<S>>::from_slice_bound(py, &[Timedelta::<S>::from(1)]);
             let array = array.cast::<Timedelta<D>>(false).unwrap();
 
             let value: i64 = array.get_owned(0).unwrap().into();
