@@ -7,7 +7,7 @@ use numpy::{
     array::{PyArray0Methods, PyArrayMethods},
     dtype_bound, get_array_module,
     npyffi::NPY_ORDER,
-    pyarray, PyArray, PyArray1, PyArray2, PyArrayDescr, PyArrayDescrMethods, PyArrayDyn,
+    pyarray_bound, PyArray, PyArray1, PyArray2, PyArrayDescr, PyArrayDescrMethods, PyArrayDyn,
     PyFixedString, PyFixedUnicode, PyUntypedArrayMethods, ToPyArray,
 };
 use pyo3::{
@@ -349,8 +349,8 @@ fn extract_fail_by_dtype() {
 #[test]
 fn array_cast() {
     Python::with_gil(|py| {
-        let arr_f64 = pyarray![py, [1.5, 2.5, 3.5], [1.5, 2.5, 3.5]];
-        let arr_i32: &PyArray2<i32> = arr_f64.cast(false).unwrap();
+        let arr_f64 = pyarray_bound![py, [1.5, 2.5, 3.5], [1.5, 2.5, 3.5]];
+        let arr_i32 = arr_f64.cast::<i32>(false).unwrap();
 
         assert_eq!(arr_i32.readonly().as_array(), array![[1, 2, 3], [1, 2, 3]]);
     });
@@ -506,7 +506,7 @@ fn copy_to_works() {
 #[test]
 fn get_works() {
     Python::with_gil(|py| {
-        let array = pyarray![py, [[1, 2], [3, 4]], [[5, 6], [7, 8]], [[9, 10], [11, 12]]];
+        let array = pyarray_bound![py, [[1, 2], [3, 4]], [[5, 6], [7, 8]], [[9, 10], [11, 12]]];
 
         unsafe {
             assert_eq!(array.get([0, 0, 0]), Some(&1));

@@ -56,11 +56,11 @@ where
 /// Note that this function can either return a scalar...
 ///
 /// ```
-/// use pyo3::{Python, PyNativeType};
-/// use numpy::{inner_bound, pyarray, PyArray0};
+/// use pyo3::Python;
+/// use numpy::{inner_bound, pyarray_bound, PyArray0};
 ///
 /// Python::with_gil(|py| {
-///     let vector = pyarray![py, 1.0, 2.0, 3.0].as_borrowed();
+///     let vector = pyarray_bound![py, 1.0, 2.0, 3.0];
 ///     let result: f64 = inner_bound(&vector, &vector).unwrap();
 ///     assert_eq!(result, 14.0);
 /// });
@@ -69,11 +69,12 @@ where
 /// ...or an array depending on its arguments.
 ///
 /// ```
-/// use pyo3::{Python, Bound, PyNativeType};
-/// use numpy::{inner_bound, pyarray, PyArray0, PyArray0Methods};
+/// use pyo3::{Python, Bound};
+/// use numpy::prelude::*;
+/// use numpy::{inner_bound, pyarray_bound, PyArray0};
 ///
 /// Python::with_gil(|py| {
-///     let vector = pyarray![py, 1, 2, 3].as_borrowed();
+///     let vector = pyarray_bound![py, 1, 2, 3];
 ///     let result: Bound<'_, PyArray0<_>> = inner_bound(&vector, &vector).unwrap();
 ///     assert_eq!(result.item(), 14);
 /// });
@@ -125,13 +126,13 @@ where
 /// Note that this function can either return an array...
 ///
 /// ```
-/// use pyo3::{Python, Bound, PyNativeType};
+/// use pyo3::{Python, Bound};
 /// use ndarray::array;
-/// use numpy::{dot_bound, pyarray, PyArray2, PyArrayMethods};
+/// use numpy::{dot_bound, pyarray_bound, PyArray2, PyArrayMethods};
 ///
 /// Python::with_gil(|py| {
-///     let matrix = pyarray![py, [1, 0], [0, 1]].as_borrowed();
-///     let another_matrix = pyarray![py, [4, 1], [2, 2]].as_borrowed();
+///     let matrix = pyarray_bound![py, [1, 0], [0, 1]];
+///     let another_matrix = pyarray_bound![py, [4, 1], [2, 2]];
 ///
 ///     let result: Bound<'_, PyArray2<_>> = dot_bound(&matrix, &another_matrix).unwrap();
 ///
@@ -145,11 +146,11 @@ where
 /// ...or a scalar depending on its arguments.
 ///
 /// ```
-/// use pyo3::{Python, PyNativeType};
-/// use numpy::{dot_bound, pyarray, PyArray0};
+/// use pyo3::Python;
+/// use numpy::{dot_bound, pyarray_bound, PyArray0};
 ///
 /// Python::with_gil(|py| {
-///     let vector = pyarray![py, 1.0, 2.0, 3.0].as_borrowed();
+///     let vector = pyarray_bound![py, 1.0, 2.0, 3.0];
 ///     let result: f64 = dot_bound(&vector, &vector).unwrap();
 ///     assert_eq!(result, 14.0);
 /// });
@@ -246,13 +247,13 @@ macro_rules! einsum {
 /// # Example
 ///
 /// ```
-/// use pyo3::{Python, Bound, PyNativeType};
+/// use pyo3::{Python, Bound};
 /// use ndarray::array;
-/// use numpy::{einsum_bound, pyarray, PyArray, PyArray2, PyArrayMethods};
+/// use numpy::{einsum_bound, pyarray_bound, PyArray, PyArray2, PyArrayMethods};
 ///
 /// Python::with_gil(|py| {
 ///     let tensor = PyArray::arange_bound(py, 0, 2 * 3 * 4, 1).reshape([2, 3, 4]).unwrap();
-///     let another_tensor = pyarray![py, [20, 30], [40, 50], [60, 70]].as_borrowed();
+///     let another_tensor = pyarray_bound![py, [20, 30], [40, 50], [60, 70]];
 ///
 ///     let result: Bound<'_, PyArray2<_>> = einsum_bound!("ijk,ji->ik", tensor, another_tensor).unwrap();
 ///
