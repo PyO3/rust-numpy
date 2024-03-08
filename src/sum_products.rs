@@ -4,7 +4,7 @@ use std::ptr::null_mut;
 
 use ndarray::{Dimension, IxDyn};
 use pyo3::types::PyAnyMethods;
-use pyo3::{AsPyPointer, Bound, FromPyObject, PyNativeType, PyResult};
+use pyo3::{Borrowed, Bound, FromPyObject, PyNativeType, PyResult};
 
 use crate::array::PyArray;
 use crate::dtype::Element;
@@ -20,7 +20,32 @@ where
 {
 }
 
+impl<'py, T, D> ArrayOrScalar<'py, T> for Bound<'py, PyArray<T, D>>
+where
+    T: Element,
+    D: Dimension,
+{
+}
+
 impl<'py, T> ArrayOrScalar<'py, T> for T where T: Element + FromPyObject<'py> {}
+
+/// Deprecated form of [`inner_bound`]
+#[deprecated(
+    since = "0.21.0",
+    note = "will be replaced by `inner_bound` in the future"
+)]
+pub fn inner<'py, T, DIN1, DIN2, OUT>(
+    array1: &'py PyArray<T, DIN1>,
+    array2: &'py PyArray<T, DIN2>,
+) -> PyResult<OUT>
+where
+    T: Element,
+    DIN1: Dimension,
+    DIN2: Dimension,
+    OUT: ArrayOrScalar<'py, T>,
+{
+    inner_bound(&array1.as_borrowed(), &array2.as_borrowed())
+}
 
 /// Return the inner product of two arrays.
 ///
@@ -31,12 +56,12 @@ impl<'py, T> ArrayOrScalar<'py, T> for T where T: Element + FromPyObject<'py> {}
 /// Note that this function can either return a scalar...
 ///
 /// ```
-/// use pyo3::Python;
-/// use numpy::{inner, pyarray, PyArray0};
+/// use pyo3::{Python, PyNativeType};
+/// use numpy::{inner_bound, pyarray, PyArray0};
 ///
 /// Python::with_gil(|py| {
-///     let vector = pyarray![py, 1.0, 2.0, 3.0];
-///     let result: f64 = inner(vector, vector).unwrap();
+///     let vector = pyarray![py, 1.0, 2.0, 3.0].as_borrowed();
+///     let result: f64 = inner_bound(&vector, &vector).unwrap();
 ///     assert_eq!(result, 14.0);
 /// });
 /// ```
@@ -44,20 +69,20 @@ impl<'py, T> ArrayOrScalar<'py, T> for T where T: Element + FromPyObject<'py> {}
 /// ...or an array depending on its arguments.
 ///
 /// ```
-/// use pyo3::Python;
-/// use numpy::{inner, pyarray, PyArray0};
+/// use pyo3::{Python, Bound, PyNativeType};
+/// use numpy::{inner_bound, pyarray, PyArray0, PyArray0Methods};
 ///
 /// Python::with_gil(|py| {
-///     let vector = pyarray![py, 1, 2, 3];
-///     let result: &PyArray0<_> = inner(vector, vector).unwrap();
+///     let vector = pyarray![py, 1, 2, 3].as_borrowed();
+///     let result: Bound<'_, PyArray0<_>> = inner_bound(&vector, &vector).unwrap();
 ///     assert_eq!(result.item(), 14);
 /// });
 /// ```
 ///
 /// [inner]: https://numpy.org/doc/stable/reference/generated/numpy.inner.html
-pub fn inner<'py, T, DIN1, DIN2, OUT>(
-    array1: &'py PyArray<T, DIN1>,
-    array2: &'py PyArray<T, DIN2>,
+pub fn inner_bound<'py, T, DIN1, DIN2, OUT>(
+    array1: &Bound<'py, PyArray<T, DIN1>>,
+    array2: &Bound<'py, PyArray<T, DIN2>>,
 ) -> PyResult<OUT>
 where
     T: Element,
@@ -73,6 +98,24 @@ where
     obj.extract()
 }
 
+/// Deprecated form of [`dot_bound`]
+#[deprecated(
+    since = "0.21.0",
+    note = "will be replaced by `dot_bound` in the future"
+)]
+pub fn dot<'py, T, DIN1, DIN2, OUT>(
+    array1: &'py PyArray<T, DIN1>,
+    array2: &'py PyArray<T, DIN2>,
+) -> PyResult<OUT>
+where
+    T: Element,
+    DIN1: Dimension,
+    DIN2: Dimension,
+    OUT: ArrayOrScalar<'py, T>,
+{
+    dot_bound(&array1.as_borrowed(), &array2.as_borrowed())
+}
+
 /// Return the dot product of two arrays.
 ///
 /// [NumPy's documentation][dot] has the details.
@@ -82,15 +125,15 @@ where
 /// Note that this function can either return an array...
 ///
 /// ```
-/// use pyo3::Python;
+/// use pyo3::{Python, Bound, PyNativeType};
 /// use ndarray::array;
-/// use numpy::{dot, pyarray, PyArray2};
+/// use numpy::{dot_bound, pyarray, PyArray2, PyArrayMethods};
 ///
 /// Python::with_gil(|py| {
-///     let matrix = pyarray![py, [1, 0], [0, 1]];
-///     let another_matrix = pyarray![py, [4, 1], [2, 2]];
+///     let matrix = pyarray![py, [1, 0], [0, 1]].as_borrowed();
+///     let another_matrix = pyarray![py, [4, 1], [2, 2]].as_borrowed();
 ///
-///     let result: &PyArray2<_> = numpy::dot(matrix, another_matrix).unwrap();
+///     let result: Bound<'_, PyArray2<_>> = dot_bound(&matrix, &another_matrix).unwrap();
 ///
 ///     assert_eq!(
 ///         result.readonly().as_array(),
@@ -102,20 +145,20 @@ where
 /// ...or a scalar depending on its arguments.
 ///
 /// ```
-/// use pyo3::Python;
-/// use numpy::{dot, pyarray, PyArray0};
+/// use pyo3::{Python, PyNativeType};
+/// use numpy::{dot_bound, pyarray, PyArray0};
 ///
 /// Python::with_gil(|py| {
-///     let vector = pyarray![py, 1.0, 2.0, 3.0];
-///     let result: f64 = dot(vector, vector).unwrap();
+///     let vector = pyarray![py, 1.0, 2.0, 3.0].as_borrowed();
+///     let result: f64 = dot_bound(&vector, &vector).unwrap();
 ///     assert_eq!(result, 14.0);
 /// });
 /// ```
 ///
 /// [dot]: https://numpy.org/doc/stable/reference/generated/numpy.dot.html
-pub fn dot<'py, T, DIN1, DIN2, OUT>(
-    array1: &'py PyArray<T, DIN1>,
-    array2: &'py PyArray<T, DIN2>,
+pub fn dot_bound<'py, T, DIN1, DIN2, OUT>(
+    array1: &Bound<'py, PyArray<T, DIN1>>,
+    array2: &Bound<'py, PyArray<T, DIN2>>,
 ) -> PyResult<OUT>
 where
     T: Element,
@@ -131,10 +174,30 @@ where
     obj.extract()
 }
 
+/// Deprecated form of [`einsum_bound`]
+#[deprecated(
+    since = "0.21.0",
+    note = "will be replaced by `einsum_bound` in the future"
+)]
+pub fn einsum<'py, T, OUT>(subscripts: &str, arrays: &[&'py PyArray<T, IxDyn>]) -> PyResult<OUT>
+where
+    T: Element,
+    OUT: ArrayOrScalar<'py, T>,
+{
+    // Safety: &PyArray<T, IxDyn> has the same size and layout in memory as
+    // Borrowed<'_, '_, PyArray<T, IxDyn>>
+    einsum_bound(subscripts, unsafe {
+        std::slice::from_raw_parts(arrays.as_ptr().cast(), arrays.len())
+    })
+}
+
 /// Return the Einstein summation convention of given tensors.
 ///
 /// This is usually invoked via the the [`einsum!`][crate::einsum!] macro.
-pub fn einsum<'py, T, OUT>(subscripts: &str, arrays: &[&'py PyArray<T, IxDyn>]) -> PyResult<OUT>
+pub fn einsum_bound<'py, T, OUT>(
+    subscripts: &str,
+    arrays: &[Borrowed<'_, 'py, PyArray<T, IxDyn>>],
+) -> PyResult<OUT>
 where
     T: Element,
     OUT: ArrayOrScalar<'py, T>,
@@ -161,6 +224,20 @@ where
     obj.extract()
 }
 
+/// Deprecated form of [`einsum_bound!`]
+#[deprecated(
+    since = "0.21.0",
+    note = "will be replaced by `einsum_bound!` in the future"
+)]
+#[macro_export]
+macro_rules! einsum {
+    ($subscripts:literal $(,$array:ident)+ $(,)*) => {{
+        use pyo3::PyNativeType;
+        let arrays = [$($array.to_dyn().as_borrowed(),)+];
+        $crate::einsum_bound(concat!($subscripts, "\0"), &arrays)
+    }};
+}
+
 /// Return the Einstein summation convention of given tensors.
 ///
 /// For more about the Einstein summation convention, please refer to
@@ -169,15 +246,15 @@ where
 /// # Example
 ///
 /// ```
-/// use pyo3::Python;
+/// use pyo3::{Python, Bound, PyNativeType};
 /// use ndarray::array;
-/// use numpy::{einsum, pyarray, PyArray, PyArray2, PyArrayMethods};
+/// use numpy::{einsum_bound, pyarray, PyArray, PyArray2, PyArrayMethods};
 ///
 /// Python::with_gil(|py| {
-///     let tensor = PyArray::arange_bound(py, 0, 2 * 3 * 4, 1).reshape([2, 3, 4]).unwrap().into_gil_ref();
-///     let another_tensor = pyarray![py, [20, 30], [40, 50], [60, 70]];
+///     let tensor = PyArray::arange_bound(py, 0, 2 * 3 * 4, 1).reshape([2, 3, 4]).unwrap();
+///     let another_tensor = pyarray![py, [20, 30], [40, 50], [60, 70]].as_borrowed();
 ///
-///     let result: &PyArray2<_> = einsum!("ijk,ji->ik", tensor, another_tensor).unwrap();
+///     let result: Bound<'_, PyArray2<_>> = einsum_bound!("ijk,ji->ik", tensor, another_tensor).unwrap();
 ///
 ///     assert_eq!(
 ///         result.readonly().as_array(),
@@ -188,9 +265,9 @@ where
 ///
 /// [einsum]: https://numpy.org/doc/stable/reference/generated/numpy.einsum.html
 #[macro_export]
-macro_rules! einsum {
+macro_rules! einsum_bound {
     ($subscripts:literal $(,$array:ident)+ $(,)*) => {{
-        let arrays = [$($array.to_dyn(),)+];
-        $crate::einsum(concat!($subscripts, "\0"), &arrays)
+        let arrays = [$($array.to_dyn().as_borrowed(),)+];
+        $crate::einsum_bound(concat!($subscripts, "\0"), &arrays)
     }};
 }
