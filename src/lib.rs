@@ -114,7 +114,9 @@ pub use crate::dtype::{
 pub use crate::error::{BorrowError, FromVecError, NotContiguousError};
 pub use crate::npyffi::{PY_ARRAY_API, PY_UFUNC_API};
 pub use crate::strings::{PyFixedString, PyFixedUnicode};
+#[allow(deprecated)]
 pub use crate::sum_products::{dot, einsum, inner};
+pub use crate::sum_products::{dot_bound, einsum_bound, inner_bound};
 pub use crate::untyped_array::{PyUntypedArray, PyUntypedArrayMethods};
 
 pub use ndarray::{array, Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};
