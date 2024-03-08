@@ -152,25 +152,11 @@ mod doctest {
 #[inline(always)]
 fn cold() {}
 
-/// Create a [`PyArray`] with one, two or three dimensions.
-///
-/// This macro is backed by [`ndarray::array`].
-///
-/// # Example
-///
-/// ```
-/// use numpy::pyo3::Python;
-/// use numpy::ndarray::array;
-/// use numpy::pyarray;
-///
-/// Python::with_gil(|py| {
-///     let array = pyarray![py, [1, 2], [3, 4]];
-///
-///     assert_eq!(
-///         array.readonly().as_array(),
-///         array![[1, 2], [3, 4]]
-///     );
-/// });
+/// Deprecated form of [`pyarray_bound`]
+#[deprecated(
+    since = "0.21.0",
+    note = "will be replace by `pyarray_bound` in the future"
+)]
 #[macro_export]
 macro_rules! pyarray {
     ($py: ident, $([$([$($x:expr),* $(,)*]),+ $(,)*]),+ $(,)*) => {{
@@ -184,5 +170,37 @@ macro_rules! pyarray {
     ($py: ident, $($x:expr),* $(,)*) => {{
         #[allow(deprecated)]
         $crate::IntoPyArray::into_pyarray($crate::array![$($x,)*], $py)
+    }};
+}
+
+/// Create a [`PyArray`] with one, two or three dimensions.
+///
+/// This macro is backed by [`ndarray::array`].
+///
+/// # Example
+///
+/// ```
+/// use numpy::pyo3::Python;
+/// use numpy::ndarray::array;
+/// use numpy::{pyarray_bound, PyArrayMethods};
+///
+/// Python::with_gil(|py| {
+///     let array = pyarray_bound![py, [1, 2], [3, 4]];
+///
+///     assert_eq!(
+///         array.readonly().as_array(),
+///         array![[1, 2], [3, 4]]
+///     );
+/// });
+#[macro_export]
+macro_rules! pyarray_bound {
+    ($py: ident, $([$([$($x:expr),* $(,)*]),+ $(,)*]),+ $(,)*) => {{
+        $crate::IntoPyArray::into_pyarray_bound($crate::array![$([$([$($x,)*],)*],)*], $py)
+    }};
+    ($py: ident, $([$($x:expr),* $(,)*]),+ $(,)*) => {{
+        $crate::IntoPyArray::into_pyarray_bound($crate::array![$([$($x,)*],)*], $py)
+    }};
+    ($py: ident, $($x:expr),* $(,)*) => {{
+        $crate::IntoPyArray::into_pyarray_bound($crate::array![$($x,)*], $py)
     }};
 }

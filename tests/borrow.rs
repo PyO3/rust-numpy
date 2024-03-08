@@ -352,7 +352,7 @@ fn resize_using_exclusive_borrow() {
 #[test]
 fn matrix_from_numpy() {
     Python::with_gil(|py| {
-        let array = numpy::pyarray![py, [0, 1, 2], [3, 4, 5], [6, 7, 8]];
+        let array = numpy::pyarray_bound![py, [0, 1, 2], [3, 4, 5], [6, 7, 8]];
 
         {
             let array = array.readonly();
@@ -390,7 +390,7 @@ fn matrix_from_numpy() {
     });
 
     Python::with_gil(|py| {
-        let array = numpy::pyarray![py, 0, 1, 2];
+        let array = numpy::pyarray_bound![py, 0, 1, 2];
 
         {
             let array = array.readonly();
@@ -425,7 +425,7 @@ fn matrix_from_numpy() {
     });
 
     Python::with_gil(|py| {
-        let array = numpy::pyarray![py, [0, 1, 2], [3, 4, 5], [6, 7, 8]];
+        let array = numpy::pyarray_bound![py, [0, 1, 2], [3, 4, 5], [6, 7, 8]];
         let array = py
             .eval_bound(
                 "a[::-1]",
@@ -443,7 +443,7 @@ fn matrix_from_numpy() {
     });
 
     Python::with_gil(|py| {
-        let array = numpy::pyarray![py, [[0, 1], [2, 3]], [[4, 5], [6, 7]]];
+        let array = numpy::pyarray_bound![py, [[0, 1], [2, 3]], [[4, 5], [6, 7]]];
         let array = py
             .eval_bound(
                 "a[:,:,0]",
@@ -467,7 +467,31 @@ fn matrix_from_numpy() {
     });
 
     Python::with_gil(|py| {
-        let array = numpy::pyarray![py, [0, 1, 2], [3, 4, 5], [6, 7, 8]];
+        let array = numpy::pyarray_bound![py, [[0, 1], [2, 3]], [[4, 5], [6, 7]]];
+        let array = py
+            .eval_bound(
+                "a[:,:,0]",
+                Some(&[("a", &array)].into_py_dict_bound(py)),
+                None,
+            )
+            .unwrap()
+            .downcast_into::<PyArray2<i32>>()
+            .unwrap();
+        let array = array.readonly();
+
+        let matrix: nalgebra::MatrixView<
+            '_,
+            i32,
+            nalgebra::Const<2>,
+            nalgebra::Const<2>,
+            nalgebra::Dyn,
+            nalgebra::Dyn,
+        > = array.try_as_matrix().unwrap();
+        assert_eq!(matrix, nalgebra::Matrix2::new(0, 2, 4, 6));
+    });
+
+    Python::with_gil(|py| {
+        let array = numpy::pyarray_bound![py, [0, 1, 2], [3, 4, 5], [6, 7, 8]];
         let array = array.readonly();
 
         let matrix: Option<
