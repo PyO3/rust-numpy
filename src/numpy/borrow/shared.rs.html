@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/borrow/shared.rs`."><title>shared.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-cb6f1f67f1bcd037.css" id="mainThemeStyle"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="numpy" data-themes="" data-resource-suffix="" data-rustdoc-version="1.73.0 (cc66ad468 2023-10-03)" data-channel="1.73.0" data-search-js="search-6dfdfced5eff6596.js" data-settings-js="settings-de11bff964e9d4e5.js" data-settings-css="settings-8c76f75bfb6bd192.css" data-theme-light-css="light-1596385f77d47ef2.css" data-theme-dark-css="dark-0a43001d3fc2282c.css" data-theme-ayu-css="ayu-fd19013d6ce078bf.css" ><script src="../../../static.files/storage-db41da1a38ea3cb8.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-0795b7d26be81095.js"></script><noscript><link rel="stylesheet" media="(prefers-color-scheme:light)" href="../../../static.files/light-1596385f77d47ef2.css"><link rel="stylesheet" media="(prefers-color-scheme:dark)" href="../../../static.files/dark-0a43001d3fc2282c.css"><link rel="stylesheet" href="../../../static.files/noscript-cffde32267a19fd6.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../../numpy/index.html"><img class="rust-logo" src="../../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/borrow/shared.rs`."><title>shared.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-ac92e1bbe349e143.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="numpy" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0 (07dca489a 2024-02-04)" data-channel="1.76.0" data-search-js="search-2b6ce74ff89ae146.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../../static.files/src-script-39ed315d46fb705f.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-305769736d49e732.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-feafe1bb7466e4bd.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -989,10 +990,8 @@
 <span class="kw">use </span>std::slice::from_raw_parts;
 
 <span class="kw">use </span>num_integer::gcd;
-<span class="kw">use </span>pyo3::{
-    exceptions::PyTypeError, once_cell::GILOnceCell, types::PyCapsule, Py, PyResult, PyTryInto,
-    Python,
-};
+<span class="kw">use </span>pyo3::types::{PyAnyMethods, PyCapsuleMethods};
+<span class="kw">use </span>pyo3::{exceptions::PyTypeError, sync::GILOnceCell, types::PyCapsule, PyResult, Python};
 <span class="kw">use </span>rustc_hash::FxHashMap;
 
 <span class="kw">use </span><span class="kw">crate</span>::array::get_array_module;
@@ -1018,17 +1017,17 @@
 </span><span class="kw">struct </span>Shared {
     version: u64,
     flags: <span class="kw-2">*mut </span>c_void,
-    acquire: <span class="kw">unsafe extern </span><span class="string">&quot;C&quot; </span><span class="kw">fn</span>(flags: <span class="kw-2">*mut </span>c_void, array: <span class="kw-2">*mut </span>PyArrayObject) -&gt; c_int,
-    acquire_mut: <span class="kw">unsafe extern </span><span class="string">&quot;C&quot; </span><span class="kw">fn</span>(flags: <span class="kw-2">*mut </span>c_void, array: <span class="kw-2">*mut </span>PyArrayObject) -&gt; c_int,
-    release: <span class="kw">unsafe extern </span><span class="string">&quot;C&quot; </span><span class="kw">fn</span>(flags: <span class="kw-2">*mut </span>c_void, array: <span class="kw-2">*mut </span>PyArrayObject),
-    release_mut: <span class="kw">unsafe extern </span><span class="string">&quot;C&quot; </span><span class="kw">fn</span>(flags: <span class="kw-2">*mut </span>c_void, array: <span class="kw-2">*mut </span>PyArrayObject),
+    acquire: <span class="kw">unsafe extern </span><span class="string">"C" </span><span class="kw">fn</span>(flags: <span class="kw-2">*mut </span>c_void, array: <span class="kw-2">*mut </span>PyArrayObject) -&gt; c_int,
+    acquire_mut: <span class="kw">unsafe extern </span><span class="string">"C" </span><span class="kw">fn</span>(flags: <span class="kw-2">*mut </span>c_void, array: <span class="kw-2">*mut </span>PyArrayObject) -&gt; c_int,
+    release: <span class="kw">unsafe extern </span><span class="string">"C" </span><span class="kw">fn</span>(flags: <span class="kw-2">*mut </span>c_void, array: <span class="kw-2">*mut </span>PyArrayObject),
+    release_mut: <span class="kw">unsafe extern </span><span class="string">"C" </span><span class="kw">fn</span>(flags: <span class="kw-2">*mut </span>c_void, array: <span class="kw-2">*mut </span>PyArrayObject),
 }
 
 <span class="kw">unsafe impl </span>Send <span class="kw">for </span>Shared {}
 
 <span class="comment">// These are the entry points which implement the shared borrow checking API:
 
-</span><span class="kw">unsafe extern </span><span class="string">&quot;C&quot; </span><span class="kw">fn </span>acquire_shared(flags: <span class="kw-2">*mut </span>c_void, array: <span class="kw-2">*mut </span>PyArrayObject) -&gt; c_int {
+</span><span class="kw">unsafe extern </span><span class="string">"C" </span><span class="kw">fn </span>acquire_shared(flags: <span class="kw-2">*mut </span>c_void, array: <span class="kw-2">*mut </span>PyArrayObject) -&gt; c_int {
     <span class="comment">// SAFETY: GIL must be held when calling `acquire_shared`.
     </span><span class="kw">let </span>py = Python::assume_gil_acquired();
     <span class="kw">let </span>flags = <span class="kw-2">&amp;mut *</span>(flags <span class="kw">as </span><span class="kw-2">*mut </span>BorrowFlags);
@@ -1042,7 +1041,7 @@
     }
 }
 
-<span class="kw">unsafe extern </span><span class="string">&quot;C&quot; </span><span class="kw">fn </span>acquire_mut_shared(flags: <span class="kw-2">*mut </span>c_void, array: <span class="kw-2">*mut </span>PyArrayObject) -&gt; c_int {
+<span class="kw">unsafe extern </span><span class="string">"C" </span><span class="kw">fn </span>acquire_mut_shared(flags: <span class="kw-2">*mut </span>c_void, array: <span class="kw-2">*mut </span>PyArrayObject) -&gt; c_int {
     <span class="kw">if </span>(<span class="kw-2">*</span>array).flags &amp; NPY_ARRAY_WRITEABLE == <span class="number">0 </span>{
         <span class="kw">return </span>-<span class="number">2</span>;
     }
@@ -1060,7 +1059,7 @@
     }
 }
 
-<span class="kw">unsafe extern </span><span class="string">&quot;C&quot; </span><span class="kw">fn </span>release_shared(flags: <span class="kw-2">*mut </span>c_void, array: <span class="kw-2">*mut </span>PyArrayObject) {
+<span class="kw">unsafe extern </span><span class="string">"C" </span><span class="kw">fn </span>release_shared(flags: <span class="kw-2">*mut </span>c_void, array: <span class="kw-2">*mut </span>PyArrayObject) {
     <span class="comment">// SAFETY: GIL must be held when calling `acquire_shared`.
     </span><span class="kw">let </span>py = Python::assume_gil_acquired();
     <span class="kw">let </span>flags = <span class="kw-2">&amp;mut *</span>(flags <span class="kw">as </span><span class="kw-2">*mut </span>BorrowFlags);
@@ -1071,7 +1070,7 @@
     flags.release(address, key);
 }
 
-<span class="kw">unsafe extern </span><span class="string">&quot;C&quot; </span><span class="kw">fn </span>release_mut_shared(flags: <span class="kw-2">*mut </span>c_void, array: <span class="kw-2">*mut </span>PyArrayObject) {
+<span class="kw">unsafe extern </span><span class="string">"C" </span><span class="kw">fn </span>release_mut_shared(flags: <span class="kw-2">*mut </span>c_void, array: <span class="kw-2">*mut </span>PyArrayObject) {
     <span class="comment">// SAFETY: GIL must be held when calling `acquire_shared`.
     </span><span class="kw">let </span>py = Python::assume_gil_acquired();
     <span class="kw">let </span>flags = <span class="kw-2">&amp;mut *</span>(flags <span class="kw">as </span><span class="kw-2">*mut </span>BorrowFlags);
@@ -1092,7 +1091,7 @@
 
 <span class="kw">static </span>SHARED: SharedPtr = SharedPtr(GILOnceCell::new());
 
-<span class="kw">fn </span>get_or_insert_shared&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;) -&gt; PyResult&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span>Shared&gt; {
+<span class="kw">fn </span>get_or_insert_shared&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; PyResult&lt;<span class="kw-2">&amp;</span><span class="lifetime">'py </span>Shared&gt; {
     <span class="kw">let </span>shared = SHARED.<span class="number">0</span>.get_or_try_init(py, || insert_shared(py))<span class="question-mark">?</span>;
 
     <span class="comment">// SAFETY: We inserted the capsule if it was missing
@@ -1100,16 +1099,16 @@
     </span><span class="prelude-val">Ok</span>(<span class="kw">unsafe </span>{ <span class="kw-2">&amp;**</span>shared })
 }
 
-<span class="comment">// This function will publish this extension&#39;s version of the shared borrow checking API
+<span class="comment">// This function will publish this extension's version of the shared borrow checking API
 // as a capsule placed at `numpy.core.multiarray._RUST_NUMPY_BORROW_CHECKING_API` and
 // immediately initialize the cache used access it from this extension.
 
 </span><span class="attr">#[cold]
-</span><span class="kw">fn </span>insert_shared&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;) -&gt; PyResult&lt;<span class="kw-2">*const </span>Shared&gt; {
+</span><span class="kw">fn </span>insert_shared&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; PyResult&lt;<span class="kw-2">*const </span>Shared&gt; {
     <span class="kw">let </span>module = get_array_module(py)<span class="question-mark">?</span>;
 
-    <span class="kw">let </span>capsule: <span class="kw-2">&amp;</span>PyCapsule = <span class="kw">match </span>module.getattr(<span class="string">&quot;_RUST_NUMPY_BORROW_CHECKING_API&quot;</span>) {
-        <span class="prelude-val">Ok</span>(capsule) =&gt; PyTryInto::try_into(capsule)<span class="question-mark">?</span>,
+    <span class="kw">let </span>capsule = <span class="kw">match </span>module.getattr(<span class="string">"_RUST_NUMPY_BORROW_CHECKING_API"</span>) {
+        <span class="prelude-val">Ok</span>(capsule) =&gt; capsule.downcast_into::&lt;PyCapsule&gt;()<span class="question-mark">?</span>,
         <span class="prelude-val">Err</span>(_err) =&gt; {
             <span class="kw">let </span>flags: <span class="kw-2">*mut </span>BorrowFlags = Box::into_raw(Box::default());
 
@@ -1122,52 +1121,54 @@
                 release_mut: release_mut_shared,
             };
 
-            <span class="kw">let </span>capsule = PyCapsule::new_with_destructor(
+            <span class="kw">let </span>capsule = PyCapsule::new_bound_with_destructor(
                 py,
                 shared,
-                <span class="prelude-val">Some</span>(CString::new(<span class="string">&quot;_RUST_NUMPY_BORROW_CHECKING_API&quot;</span>).unwrap()),
+                <span class="prelude-val">Some</span>(CString::new(<span class="string">"_RUST_NUMPY_BORROW_CHECKING_API"</span>).unwrap()),
                 |shared, _ctx| {
                     <span class="comment">// SAFETY: `shared.flags` was initialized using `Box::into_raw`.
                     </span><span class="kw">let _ </span>= <span class="kw">unsafe </span>{ Box::from_raw(shared.flags <span class="kw">as </span><span class="kw-2">*mut </span>BorrowFlags) };
                 },
             )<span class="question-mark">?</span>;
-            module.setattr(<span class="string">&quot;_RUST_NUMPY_BORROW_CHECKING_API&quot;</span>, capsule)<span class="question-mark">?</span>;
+            module.setattr(<span class="string">"_RUST_NUMPY_BORROW_CHECKING_API"</span>, <span class="kw-2">&amp;</span>capsule)<span class="question-mark">?</span>;
             capsule
         }
     };
 
     <span class="comment">// SAFETY: All versions of the shared borrow checking API start with a version field.
-    </span><span class="kw">let </span>version = <span class="kw">unsafe </span>{ <span class="kw-2">*</span>(capsule.pointer() <span class="kw">as </span><span class="kw-2">*mut </span>u64) };
+    </span><span class="kw">let </span>version = <span class="kw">unsafe </span>{ <span class="kw-2">*</span>capsule.pointer().cast::&lt;u64&gt;() };
     <span class="kw">if </span>version &lt; <span class="number">1 </span>{
         <span class="kw">return </span><span class="prelude-val">Err</span>(PyTypeError::new_err(<span class="macro">format!</span>(
-            <span class="string">&quot;Version {} of borrow checking API is not supported by this version of rust-numpy&quot;</span>,
+            <span class="string">"Version {} of borrow checking API is not supported by this version of rust-numpy"</span>,
             version
         )));
     }
 
+    <span class="kw">let </span>ptr = capsule.pointer();
+
     <span class="comment">// Intentionally leak a reference to the capsule
     // so we can safely cache a pointer into its interior.
-    </span>forget(Py::&lt;PyCapsule&gt;::from(capsule));
+    </span>forget(capsule);
 
-    <span class="prelude-val">Ok</span>(capsule.pointer() <span class="kw">as </span><span class="kw-2">*const </span>Shared)
+    <span class="prelude-val">Ok</span>(ptr.cast())
 }
 
 <span class="comment">// These entry points will be used to access the shared borrow checking API from this extension:
 
-</span><span class="kw">pub fn </span>acquire&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, array: <span class="kw-2">*mut </span>PyArrayObject) -&gt; <span class="prelude-ty">Result</span>&lt;(), BorrowError&gt; {
-    <span class="kw">let </span>shared = get_or_insert_shared(py).expect(<span class="string">&quot;Interal borrow checking API error&quot;</span>);
+</span><span class="kw">pub fn </span>acquire&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, array: <span class="kw-2">*mut </span>PyArrayObject) -&gt; <span class="prelude-ty">Result</span>&lt;(), BorrowError&gt; {
+    <span class="kw">let </span>shared = get_or_insert_shared(py).expect(<span class="string">"Interal borrow checking API error"</span>);
 
     <span class="kw">let </span>rc = <span class="kw">unsafe </span>{ (shared.acquire)(shared.flags, array) };
 
     <span class="kw">match </span>rc {
         <span class="number">0 </span>=&gt; <span class="prelude-val">Ok</span>(()),
         -<span class="number">1 </span>=&gt; <span class="prelude-val">Err</span>(BorrowError::AlreadyBorrowed),
-        rc =&gt; <span class="macro">panic!</span>(<span class="string">&quot;Unexpected return code {} from borrow checking API&quot;</span>, rc),
+        rc =&gt; <span class="macro">panic!</span>(<span class="string">"Unexpected return code {} from borrow checking API"</span>, rc),
     }
 }
 
-<span class="kw">pub fn </span>acquire_mut&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, array: <span class="kw-2">*mut </span>PyArrayObject) -&gt; <span class="prelude-ty">Result</span>&lt;(), BorrowError&gt; {
-    <span class="kw">let </span>shared = get_or_insert_shared(py).expect(<span class="string">&quot;Interal borrow checking API error&quot;</span>);
+<span class="kw">pub fn </span>acquire_mut&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, array: <span class="kw-2">*mut </span>PyArrayObject) -&gt; <span class="prelude-ty">Result</span>&lt;(), BorrowError&gt; {
+    <span class="kw">let </span>shared = get_or_insert_shared(py).expect(<span class="string">"Interal borrow checking API error"</span>);
 
     <span class="kw">let </span>rc = <span class="kw">unsafe </span>{ (shared.acquire_mut)(shared.flags, array) };
 
@@ -1175,20 +1176,20 @@
         <span class="number">0 </span>=&gt; <span class="prelude-val">Ok</span>(()),
         -<span class="number">1 </span>=&gt; <span class="prelude-val">Err</span>(BorrowError::AlreadyBorrowed),
         -<span class="number">2 </span>=&gt; <span class="prelude-val">Err</span>(BorrowError::NotWriteable),
-        rc =&gt; <span class="macro">panic!</span>(<span class="string">&quot;Unexpected return code {} from borrow checking API&quot;</span>, rc),
+        rc =&gt; <span class="macro">panic!</span>(<span class="string">"Unexpected return code {} from borrow checking API"</span>, rc),
     }
 }
 
-<span class="kw">pub fn </span>release&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, array: <span class="kw-2">*mut </span>PyArrayObject) {
-    <span class="kw">let </span>shared = get_or_insert_shared(py).expect(<span class="string">&quot;Interal borrow checking API error&quot;</span>);
+<span class="kw">pub fn </span>release&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, array: <span class="kw-2">*mut </span>PyArrayObject) {
+    <span class="kw">let </span>shared = get_or_insert_shared(py).expect(<span class="string">"Interal borrow checking API error"</span>);
 
     <span class="kw">unsafe </span>{
         (shared.release)(shared.flags, array);
     }
 }
 
-<span class="kw">pub fn </span>release_mut&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, array: <span class="kw-2">*mut </span>PyArrayObject) {
-    <span class="kw">let </span>shared = get_or_insert_shared(py).expect(<span class="string">&quot;Interal borrow checking API error&quot;</span>);
+<span class="kw">pub fn </span>release_mut&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, array: <span class="kw-2">*mut </span>PyArrayObject) {
+    <span class="kw">let </span>shared = get_or_insert_shared(py).expect(<span class="string">"Interal borrow checking API error"</span>);
 
     <span class="kw">unsafe </span>{
         (shared.release_mut)(shared.flags, array);
@@ -1349,7 +1350,7 @@
     }
 }
 
-<span class="kw">fn </span>base_address&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, <span class="kw-2">mut </span>array: <span class="kw-2">*mut </span>PyArrayObject) -&gt; <span class="kw-2">*mut </span>c_void {
+<span class="kw">fn </span>base_address&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, <span class="kw-2">mut </span>array: <span class="kw-2">*mut </span>PyArrayObject) -&gt; <span class="kw-2">*mut </span>c_void {
     <span class="kw">loop </span>{
         <span class="kw">let </span>base = <span class="kw">unsafe </span>{ (<span class="kw-2">*</span>array).base };
 
@@ -1434,7 +1435,7 @@
     <span class="kw">use </span><span class="kw">crate</span>::array::{PyArray, PyArray1, PyArray2, PyArray3};
     <span class="kw">use </span><span class="kw">crate</span>::convert::IntoPyArray;
 
-    <span class="kw">fn </span>get_borrow_flags&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span>BorrowFlagsInner {
+    <span class="kw">fn </span>get_borrow_flags&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span>BorrowFlagsInner {
         <span class="kw">let </span>shared = get_or_insert_shared(py).unwrap();
         <span class="macro">assert_eq!</span>(shared.version, <span class="number">1</span>);
         <span class="kw">unsafe </span>{ <span class="kw-2">&amp;</span>(<span class="kw-2">*</span>(shared.flags <span class="kw">as </span><span class="kw-2">*mut </span>BorrowFlags)).<span class="number">0 </span>}
@@ -1480,9 +1481,9 @@
         Python::with_gil(|py| {
             <span class="kw">let </span>array = PyArray::&lt;f64, <span class="kw">_</span>&gt;::zeros(py, (<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>), <span class="bool-val">false</span>);
 
-            <span class="kw">let </span>locals = [(<span class="string">&quot;array&quot;</span>, array)].into_py_dict(py);
+            <span class="kw">let </span>locals = [(<span class="string">"array"</span>, array)].into_py_dict(py);
             <span class="kw">let </span>view = py
-                .eval(<span class="string">&quot;array[:,:,0]&quot;</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
+                .eval(<span class="string">"array[:,:,0]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
                 .unwrap()
                 .downcast::&lt;PyArray2&lt;f64&gt;&gt;()
                 .unwrap();
@@ -1509,9 +1510,9 @@
         Python::with_gil(|py| {
             <span class="kw">let </span>array = Array::&lt;f64, <span class="kw">_</span>&gt;::zeros((<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>)).into_pyarray(py);
 
-            <span class="kw">let </span>locals = [(<span class="string">&quot;array&quot;</span>, array)].into_py_dict(py);
+            <span class="kw">let </span>locals = [(<span class="string">"array"</span>, array)].into_py_dict(py);
             <span class="kw">let </span>view = py
-                .eval(<span class="string">&quot;array[:,:,0]&quot;</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
+                .eval(<span class="string">"array[:,:,0]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
                 .unwrap()
                 .downcast::&lt;PyArray2&lt;f64&gt;&gt;()
                 .unwrap();
@@ -1542,9 +1543,9 @@
         Python::with_gil(|py| {
             <span class="kw">let </span>array = PyArray::&lt;f64, <span class="kw">_</span>&gt;::zeros(py, (<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>), <span class="bool-val">false</span>);
 
-            <span class="kw">let </span>locals = [(<span class="string">&quot;array&quot;</span>, array)].into_py_dict(py);
+            <span class="kw">let </span>locals = [(<span class="string">"array"</span>, array)].into_py_dict(py);
             <span class="kw">let </span>view1 = py
-                .eval(<span class="string">&quot;array[:,:,0]&quot;</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
+                .eval(<span class="string">"array[:,:,0]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
                 .unwrap()
                 .downcast::&lt;PyArray2&lt;f64&gt;&gt;()
                 .unwrap();
@@ -1553,9 +1554,9 @@
                 array <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">_ as </span><span class="kw-2">*mut </span>c_void
             );
 
-            <span class="kw">let </span>locals = [(<span class="string">&quot;view1&quot;</span>, view1)].into_py_dict(py);
+            <span class="kw">let </span>locals = [(<span class="string">"view1"</span>, view1)].into_py_dict(py);
             <span class="kw">let </span>view2 = py
-                .eval(<span class="string">&quot;view1[:,0]&quot;</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
+                .eval(<span class="string">"view1[:,0]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
                 .unwrap()
                 .downcast::&lt;PyArray1&lt;f64&gt;&gt;()
                 .unwrap();
@@ -1590,9 +1591,9 @@
         Python::with_gil(|py| {
             <span class="kw">let </span>array = Array::&lt;f64, <span class="kw">_</span>&gt;::zeros((<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>)).into_pyarray(py);
 
-            <span class="kw">let </span>locals = [(<span class="string">&quot;array&quot;</span>, array)].into_py_dict(py);
+            <span class="kw">let </span>locals = [(<span class="string">"array"</span>, array)].into_py_dict(py);
             <span class="kw">let </span>view1 = py
-                .eval(<span class="string">&quot;array[:,:,0]&quot;</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
+                .eval(<span class="string">"array[:,:,0]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
                 .unwrap()
                 .downcast::&lt;PyArray2&lt;f64&gt;&gt;()
                 .unwrap();
@@ -1601,9 +1602,9 @@
                 array <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">_ as </span><span class="kw-2">*mut </span>c_void
             );
 
-            <span class="kw">let </span>locals = [(<span class="string">&quot;view1&quot;</span>, view1)].into_py_dict(py);
+            <span class="kw">let </span>locals = [(<span class="string">"view1"</span>, view1)].into_py_dict(py);
             <span class="kw">let </span>view2 = py
-                .eval(<span class="string">&quot;view1[:,0]&quot;</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
+                .eval(<span class="string">"view1[:,0]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
                 .unwrap()
                 .downcast::&lt;PyArray1&lt;f64&gt;&gt;()
                 .unwrap();
@@ -1642,9 +1643,9 @@
         Python::with_gil(|py| {
             <span class="kw">let </span>array = PyArray::&lt;f64, <span class="kw">_</span>&gt;::zeros(py, (<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>), <span class="bool-val">false</span>);
 
-            <span class="kw">let </span>locals = [(<span class="string">&quot;array&quot;</span>, array)].into_py_dict(py);
+            <span class="kw">let </span>locals = [(<span class="string">"array"</span>, array)].into_py_dict(py);
             <span class="kw">let </span>view = py
-                .eval(<span class="string">&quot;array[::-1,:,::-1]&quot;</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
+                .eval(<span class="string">"array[::-1,:,::-1]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
                 .unwrap()
                 .downcast::&lt;PyArray3&lt;f64&gt;&gt;()
                 .unwrap();
@@ -1690,10 +1691,10 @@
     </span><span class="kw">fn </span>view_with_non_dividing_strides() {
         Python::with_gil(|py| {
             <span class="kw">let </span>array = PyArray::&lt;f64, <span class="kw">_</span>&gt;::zeros(py, (<span class="number">10</span>, <span class="number">10</span>), <span class="bool-val">false</span>);
-            <span class="kw">let </span>locals = [(<span class="string">&quot;array&quot;</span>, array)].into_py_dict(py);
+            <span class="kw">let </span>locals = [(<span class="string">"array"</span>, array)].into_py_dict(py);
 
             <span class="kw">let </span>view1 = py
-                .eval(<span class="string">&quot;array[:,::3]&quot;</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
+                .eval(<span class="string">"array[:,::3]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
                 .unwrap()
                 .downcast::&lt;PyArray2&lt;f64&gt;&gt;()
                 .unwrap();
@@ -1704,7 +1705,7 @@
             <span class="macro">assert_eq!</span>(key1.gcd_strides, <span class="number">8</span>);
 
             <span class="kw">let </span>view2 = py
-                .eval(<span class="string">&quot;array[:,1::3]&quot;</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
+                .eval(<span class="string">"array[:,1::3]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
                 .unwrap()
                 .downcast::&lt;PyArray2&lt;f64&gt;&gt;()
                 .unwrap();
@@ -1715,7 +1716,7 @@
             <span class="macro">assert_eq!</span>(key2.gcd_strides, <span class="number">8</span>);
 
             <span class="kw">let </span>view3 = py
-                .eval(<span class="string">&quot;array[:,::2]&quot;</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
+                .eval(<span class="string">"array[:,::2]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
                 .unwrap()
                 .downcast::&lt;PyArray2&lt;f64&gt;&gt;()
                 .unwrap();
@@ -1726,7 +1727,7 @@
             <span class="macro">assert_eq!</span>(key3.gcd_strides, <span class="number">16</span>);
 
             <span class="kw">let </span>view4 = py
-                .eval(<span class="string">&quot;array[:,1::2]&quot;</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
+                .eval(<span class="string">"array[:,1::2]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
                 .unwrap()
                 .downcast::&lt;PyArray2&lt;f64&gt;&gt;()
                 .unwrap();
@@ -1796,10 +1797,10 @@
             <span class="kw">let </span>array = PyArray::&lt;f64, <span class="kw">_</span>&gt;::zeros(py, <span class="number">10</span>, <span class="bool-val">false</span>);
             <span class="kw">let </span>base = base_address(py, array.as_array_ptr());
 
-            <span class="kw">let </span>locals = [(<span class="string">&quot;array&quot;</span>, array)].into_py_dict(py);
+            <span class="kw">let </span>locals = [(<span class="string">"array"</span>, array)].into_py_dict(py);
 
             <span class="kw">let </span>view1 = py
-                .eval(<span class="string">&quot;array[:5]&quot;</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
+                .eval(<span class="string">"array[:5]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
                 .unwrap()
                 .downcast::&lt;PyArray1&lt;f64&gt;&gt;()
                 .unwrap();
@@ -1819,7 +1820,7 @@
             }
 
             <span class="kw">let </span>view2 = py
-                .eval(<span class="string">&quot;array[5:]&quot;</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
+                .eval(<span class="string">"array[5:]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
                 .unwrap()
                 .downcast::&lt;PyArray1&lt;f64&gt;&gt;()
                 .unwrap();
@@ -1842,7 +1843,7 @@
             }
 
             <span class="kw">let </span>view3 = py
-                .eval(<span class="string">&quot;array[5:]&quot;</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
+                .eval(<span class="string">"array[5:]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
                 .unwrap()
                 .downcast::&lt;PyArray1&lt;f64&gt;&gt;()
                 .unwrap();
@@ -1868,7 +1869,7 @@
             }
 
             <span class="kw">let </span>view4 = py
-                .eval(<span class="string">&quot;array[7:]&quot;</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
+                .eval(<span class="string">"array[7:]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
                 .unwrap()
                 .downcast::&lt;PyArray1&lt;f64&gt;&gt;()
                 .unwrap();

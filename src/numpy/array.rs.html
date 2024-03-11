@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/array.rs`."><title>array.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-cb6f1f67f1bcd037.css" id="mainThemeStyle"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="numpy" data-themes="" data-resource-suffix="" data-rustdoc-version="1.73.0 (cc66ad468 2023-10-03)" data-channel="1.73.0" data-search-js="search-6dfdfced5eff6596.js" data-settings-js="settings-de11bff964e9d4e5.js" data-settings-css="settings-8c76f75bfb6bd192.css" data-theme-light-css="light-1596385f77d47ef2.css" data-theme-dark-css="dark-0a43001d3fc2282c.css" data-theme-ayu-css="ayu-fd19013d6ce078bf.css" ><script src="../../static.files/storage-db41da1a38ea3cb8.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-0795b7d26be81095.js"></script><noscript><link rel="stylesheet" media="(prefers-color-scheme:light)" href="../../static.files/light-1596385f77d47ef2.css"><link rel="stylesheet" media="(prefers-color-scheme:dark)" href="../../static.files/dark-0a43001d3fc2282c.css"><link rel="stylesheet" href="../../static.files/noscript-cffde32267a19fd6.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../numpy/index.html"><img class="rust-logo" src="../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/array.rs`."><title>array.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-ac92e1bbe349e143.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="numpy" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0 (07dca489a 2024-02-04)" data-channel="1.76.0" data-search-js="search-2b6ce74ff89ae146.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../static.files/src-script-39ed315d46fb705f.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-305769736d49e732.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-feafe1bb7466e4bd.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -1503,7 +1504,13 @@
 <a href="#1503" id="1503">1503</a>
 <a href="#1504" id="1504">1504</a>
 <a href="#1505" id="1505">1505</a>
-</pre></div><pre class="rust"><code><span class="doccomment">//! Safe interface for NumPy&#39;s [N-dimensional arrays][ndarray]
+<a href="#1506" id="1506">1506</a>
+<a href="#1507" id="1507">1507</a>
+<a href="#1508" id="1508">1508</a>
+<a href="#1509" id="1509">1509</a>
+<a href="#1510" id="1510">1510</a>
+<a href="#1511" id="1511">1511</a>
+</pre></div><pre class="rust"><code><span class="doccomment">//! Safe interface for NumPy's [N-dimensional arrays][ndarray]
 //!
 //! [ndarray]: https://numpy.org/doc/stable/reference/arrays.ndarray.html
 
@@ -1522,9 +1529,10 @@
 };
 <span class="kw">use </span>num_traits::AsPrimitive;
 <span class="kw">use </span>pyo3::{
-    ffi, pyobject_native_type_base, types::PyModule, AsPyPointer, FromPyObject, IntoPy, Py, PyAny,
-    PyClassInitializer, PyDowncastError, PyErr, PyNativeType, PyObject, PyResult, PyTypeInfo,
-    Python, ToPyObject,
+    ffi, pyobject_native_type_base,
+    types::{DerefToPyAny, PyAnyMethods, PyModule},
+    AsPyPointer, Bound, DowncastError, FromPyObject, IntoPy, Py, PyAny, PyErr, PyNativeType,
+    PyObject, PyResult, PyTypeInfo, Python, ToPyObject,
 };
 
 <span class="kw">use </span><span class="kw">crate</span>::borrow::{PyReadonlyArray, PyReadwriteArray};
@@ -1539,7 +1547,7 @@
 <span class="kw">use </span><span class="kw">crate</span>::slice_container::PySliceContainer;
 <span class="kw">use </span><span class="kw">crate</span>::untyped_array::PyUntypedArray;
 
-<span class="doccomment">/// A safe, statically-typed wrapper for NumPy&#39;s [`ndarray`][ndarray] class.
+<span class="doccomment">/// A safe, statically-typed wrapper for NumPy's [`ndarray`][ndarray] class.
 ///
 /// # Memory location
 ///
@@ -1555,7 +1563,7 @@
 /// - Allocated by NumPy: Constructed via other methods, like [`ToPyArray`] or
 /// [`from_slice`][Self::from_slice] or [`from_array`][Self::from_array].
 ///
-/// These methods allocate memory in Python&#39;s private heap via NumPy&#39;s API.
+/// These methods allocate memory in Python's private heap via NumPy's API.
 ///
 /// In both cases, `PyArray` is managed by Python so it can neither be moved from
 /// nor deallocated manually.
@@ -1563,8 +1571,8 @@
 /// # References
 ///
 /// Like [`new`][Self::new], all constructor methods of `PyArray` return a shared reference `&amp;PyArray`
-/// instead of an owned value. This design follows [PyO3&#39;s ownership concept][pyo3-memory],
-/// i.e. the return value is GIL-bound owning reference into Python&#39;s heap.
+/// instead of an owned value. This design follows [PyO3's ownership concept][pyo3-memory],
+/// i.e. the return value is GIL-bound owning reference into Python's heap.
 ///
 /// # Element type and dimensionality
 ///
@@ -1622,22 +1630,22 @@
 <span class="doccomment">/// Dynamic-dimensional array.
 </span><span class="kw">pub type </span>PyArrayDyn&lt;T&gt; = PyArray&lt;T, IxDyn&gt;;
 
-<span class="doccomment">/// Returns a handle to NumPy&#39;s multiarray module.
-</span><span class="kw">pub fn </span>get_array_module&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;) -&gt; PyResult&lt;<span class="kw-2">&amp;</span>PyModule&gt; {
-    PyModule::import(py, npyffi::array::MOD_NAME)
+<span class="doccomment">/// Returns a handle to NumPy's multiarray module.
+</span><span class="kw">pub fn </span>get_array_module&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; PyResult&lt;Bound&lt;<span class="lifetime">'_</span>, PyModule&gt;&gt; {
+    PyModule::import_bound(py, npyffi::array::MOD_NAME)
 }
 
+<span class="kw">impl</span>&lt;T, D&gt; DerefToPyAny <span class="kw">for </span>PyArray&lt;T, D&gt; {}
+
 <span class="kw">unsafe impl</span>&lt;T: Element, D: Dimension&gt; PyTypeInfo <span class="kw">for </span>PyArray&lt;T, D&gt; {
-    <span class="kw">type </span>AsRefTarget = <span class="self">Self</span>;
+    <span class="kw">const </span>NAME: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str = <span class="string">"PyArray&lt;T, D&gt;"</span>;
+    <span class="kw">const </span>MODULE: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'static </span>str&gt; = <span class="prelude-val">Some</span>(<span class="string">"numpy"</span>);
 
-    <span class="kw">const </span>NAME: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str = <span class="string">&quot;PyArray&lt;T, D&gt;&quot;</span>;
-    <span class="kw">const </span>MODULE: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt; = <span class="prelude-val">Some</span>(<span class="string">&quot;numpy&quot;</span>);
-
-    <span class="kw">fn </span>type_object_raw&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;) -&gt; <span class="kw-2">*mut </span>ffi::PyTypeObject {
+    <span class="kw">fn </span>type_object_raw&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; <span class="kw-2">*mut </span>ffi::PyTypeObject {
         <span class="kw">unsafe </span>{ npyffi::PY_ARRAY_API.get_type_object(py, npyffi::NpyTypes::PyArray_Type) }
     }
 
-    <span class="kw">fn </span>is_type_of(ob: <span class="kw-2">&amp;</span>PyAny) -&gt; bool {
+    <span class="kw">fn </span>is_type_of_bound(ob: <span class="kw-2">&amp;</span>Bound&lt;<span class="lifetime">'_</span>, PyAny&gt;) -&gt; bool {
         <span class="self">Self</span>::extract::&lt;IgnoreError&gt;(ob).is_ok()
     }
 }
@@ -1667,35 +1675,38 @@
     }
 }
 
-<span class="kw">impl</span>&lt;T, D&gt; IntoPy&lt;Py&lt;PyArray&lt;T, D&gt;&gt;&gt; <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">&#39;_ </span>PyArray&lt;T, D&gt; {
+<span class="kw">impl</span>&lt;T, D&gt; IntoPy&lt;Py&lt;PyArray&lt;T, D&gt;&gt;&gt; <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">'_ </span>PyArray&lt;T, D&gt; {
     <span class="attr">#[inline]
-    </span><span class="kw">fn </span>into_py&lt;<span class="lifetime">&#39;py</span>&gt;(<span class="self">self</span>, py: Python&lt;<span class="lifetime">&#39;py</span>&gt;) -&gt; Py&lt;PyArray&lt;T, D&gt;&gt; {
+    </span><span class="kw">fn </span>into_py&lt;<span class="lifetime">'py</span>&gt;(<span class="self">self</span>, py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; Py&lt;PyArray&lt;T, D&gt;&gt; {
         <span class="kw">unsafe </span>{ Py::from_borrowed_ptr(py, <span class="self">self</span>.as_ptr()) }
     }
 }
 
-<span class="kw">impl</span>&lt;T, D&gt; From&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;_ </span>PyArray&lt;T, D&gt;&gt; <span class="kw">for </span>Py&lt;PyArray&lt;T, D&gt;&gt; {
+<span class="kw">impl</span>&lt;T, D&gt; From&lt;<span class="kw-2">&amp;</span><span class="lifetime">'_ </span>PyArray&lt;T, D&gt;&gt; <span class="kw">for </span>Py&lt;PyArray&lt;T, D&gt;&gt; {
     <span class="attr">#[inline]
     </span><span class="kw">fn </span>from(other: <span class="kw-2">&amp;</span>PyArray&lt;T, D&gt;) -&gt; <span class="self">Self </span>{
         <span class="kw">unsafe </span>{ Py::from_borrowed_ptr(other.py(), other.as_ptr()) }
     }
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T, D&gt; From&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>PyArray&lt;T, D&gt;&gt; <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>PyAny {
-    <span class="kw">fn </span>from(ob: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>PyArray&lt;T, D&gt;) -&gt; <span class="self">Self </span>{
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, D&gt; From&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>PyArray&lt;T, D&gt;&gt; <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">'a </span>PyAny {
+    <span class="kw">fn </span>from(ob: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>PyArray&lt;T, D&gt;) -&gt; <span class="self">Self </span>{
         <span class="kw">unsafe </span>{ <span class="kw-2">&amp;*</span>(ob <span class="kw">as </span><span class="kw-2">*const </span>PyArray&lt;T, D&gt; <span class="kw">as </span><span class="kw-2">*const </span>PyAny) }
     }
 }
 
 <span class="kw">impl</span>&lt;T, D&gt; IntoPy&lt;PyObject&gt; <span class="kw">for </span>PyArray&lt;T, D&gt; {
-    <span class="kw">fn </span>into_py&lt;<span class="lifetime">&#39;py</span>&gt;(<span class="self">self</span>, py: Python&lt;<span class="lifetime">&#39;py</span>&gt;) -&gt; PyObject {
+    <span class="kw">fn </span>into_py&lt;<span class="lifetime">'py</span>&gt;(<span class="self">self</span>, py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; PyObject {
         <span class="kw">unsafe </span>{ PyObject::from_borrowed_ptr(py, <span class="self">self</span>.as_ptr()) }
     }
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;py</span>, T: Element, D: Dimension&gt; FromPyObject&lt;<span class="lifetime">&#39;py</span>&gt; <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span>PyArray&lt;T, D&gt; {
-    <span class="kw">fn </span>extract(ob: <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span>PyAny) -&gt; PyResult&lt;<span class="self">Self</span>&gt; {
-        PyArray::extract(ob)
+<span class="kw">impl</span>&lt;<span class="lifetime">'py</span>, T: Element, D: Dimension&gt; FromPyObject&lt;<span class="lifetime">'py</span>&gt; <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">'py </span>PyArray&lt;T, D&gt; {
+    <span class="kw">fn </span>extract_bound(ob: <span class="kw-2">&amp;</span>Bound&lt;<span class="lifetime">'py</span>, PyAny&gt;) -&gt; PyResult&lt;<span class="self">Self</span>&gt; {
+        <span class="attr">#[allow(clippy::map_clone)] </span><span class="comment">// due to MSRV
+        </span>PyArray::extract(ob)
+            .map(Clone::clone)
+            .map(Bound::into_gil_ref)
     }
 }
 
@@ -1707,7 +1718,7 @@
     }
 
     <span class="doccomment">/// Turn `&amp;PyArray&lt;T,D&gt;` into `Py&lt;PyArray&lt;T,D&gt;&gt;`,
-    /// i.e. a pointer into Python&#39;s heap which is independent of the GIL lifetime.
+    /// i.e. a pointer into Python's heap which is independent of the GIL lifetime.
     ///
     /// This method can be used to avoid lifetime annotations of function arguments
     /// or return values.
@@ -1735,7 +1746,7 @@
     /// # Safety
     ///
     /// This is a wrapper around [`pyo3::FromPyPointer::from_owned_ptr_or_opt`] and inherits its safety contract.
-    </span><span class="kw">pub unsafe fn </span>from_owned_ptr&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, ptr: <span class="kw-2">*mut </span>ffi::PyObject) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span><span class="self">Self </span>{
+    </span><span class="kw">pub unsafe fn </span>from_owned_ptr&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, ptr: <span class="kw-2">*mut </span>ffi::PyObject) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span><span class="self">Self </span>{
         py.from_owned_ptr(ptr)
     }
 
@@ -1744,7 +1755,7 @@
     /// # Safety
     ///
     /// This is a wrapper around [`pyo3::FromPyPointer::from_borrowed_ptr_or_opt`] and inherits its safety contract.
-    </span><span class="kw">pub unsafe fn </span>from_borrowed_ptr&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, ptr: <span class="kw-2">*mut </span>ffi::PyObject) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span><span class="self">Self </span>{
+    </span><span class="kw">pub unsafe fn </span>from_borrowed_ptr&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, ptr: <span class="kw-2">*mut </span>ffi::PyObject) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span><span class="self">Self </span>{
         py.from_borrowed_ptr(ptr)
     }
 
@@ -1756,20 +1767,22 @@
 }
 
 <span class="kw">impl</span>&lt;T: Element, D: Dimension&gt; PyArray&lt;T, D&gt; {
-    <span class="kw">fn </span>extract&lt;<span class="lifetime">&#39;py</span>, E&gt;(ob: <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span>PyAny) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span><span class="self">Self</span>, E&gt;
+    <span class="kw">fn </span>extract&lt;<span class="lifetime">'a</span>, <span class="lifetime">'py</span>, E&gt;(ob: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>Bound&lt;<span class="lifetime">'py</span>, PyAny&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>Bound&lt;<span class="lifetime">'py</span>, <span class="self">Self</span>&gt;, E&gt;
     <span class="kw">where
-        </span>E: From&lt;PyDowncastError&lt;<span class="lifetime">&#39;py</span>&gt;&gt; + From&lt;DimensionalityError&gt; + From&lt;TypeError&lt;<span class="lifetime">&#39;py</span>&gt;&gt;,
+        </span>E: From&lt;DowncastError&lt;<span class="lifetime">'a</span>, <span class="lifetime">'py</span>&gt;&gt; + From&lt;DimensionalityError&gt; + From&lt;TypeError&lt;<span class="lifetime">'a</span>&gt;&gt;,
     {
         <span class="comment">// Check if the object is an array.
         </span><span class="kw">let </span>array = <span class="kw">unsafe </span>{
             <span class="kw">if </span>npyffi::PyArray_Check(ob.py(), ob.as_ptr()) == <span class="number">0 </span>{
-                <span class="kw">return </span><span class="prelude-val">Err</span>(PyDowncastError::new(ob, <span class="self">Self</span>::NAME).into());
+                <span class="kw">return </span><span class="prelude-val">Err</span>(DowncastError::new(ob, &lt;<span class="self">Self </span><span class="kw">as </span>PyTypeInfo&gt;::NAME).into());
             }
-            <span class="kw-2">&amp;*</span>(ob <span class="kw">as </span><span class="kw-2">*const </span>PyAny <span class="kw">as </span><span class="kw-2">*const </span><span class="self">Self</span>)
+            ob.downcast_unchecked()
         };
 
+        <span class="kw">let </span>arr_gil_ref: <span class="kw-2">&amp;</span>PyArray&lt;T, D&gt; = array.as_gil_ref();
+
         <span class="comment">// Check if the dimensionality matches `D`.
-        </span><span class="kw">let </span>src_ndim = array.ndim();
+        </span><span class="kw">let </span>src_ndim = arr_gil_ref.ndim();
         <span class="kw">if let </span><span class="prelude-val">Some</span>(dst_ndim) = D::NDIM {
             <span class="kw">if </span>src_ndim != dst_ndim {
                 <span class="kw">return </span><span class="prelude-val">Err</span>(DimensionalityError::new(src_ndim, dst_ndim).into());
@@ -1777,7 +1790,7 @@
         }
 
         <span class="comment">// Check if the element type matches `T`.
-        </span><span class="kw">let </span>src_dtype = array.dtype();
+        </span><span class="kw">let </span>src_dtype = arr_gil_ref.dtype();
         <span class="kw">let </span>dst_dtype = T::get_dtype(ob.py());
         <span class="kw">if </span>!src_dtype.is_equiv_to(dst_dtype) {
             <span class="kw">return </span><span class="prelude-val">Err</span>(TypeError::new(src_dtype, dst_dtype).into());
@@ -1801,7 +1814,7 @@
     ///
     /// The returned array will always be safe to be dropped as the elements must either
     /// be trivially copyable (as indicated by `&lt;T as Element&gt;::IS_COPY`) or be pointers
-    /// into Python&#39;s heap, which NumPy will automatically zero-initialize.
+    /// into Python's heap, which NumPy will automatically zero-initialize.
     ///
     /// However, the elements themselves will not be valid and should be initialized manually
     /// using raw pointers obtained via [`uget_raw`][Self::uget_raw]. Before that, all methods
@@ -1832,7 +1845,7 @@
     ///     assert_eq!(arr.shape(), &amp;[4, 5, 6]);
     /// });
     /// ```
-    </span><span class="kw">pub unsafe fn </span>new&lt;<span class="lifetime">&#39;py</span>, ID&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, dims: ID, is_fortran: bool) -&gt; <span class="kw-2">&amp;</span><span class="self">Self
+    </span><span class="kw">pub unsafe fn </span>new&lt;<span class="lifetime">'py</span>, ID&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, dims: ID, is_fortran: bool) -&gt; <span class="kw-2">&amp;</span><span class="self">Self
     </span><span class="kw">where
         </span>ID: IntoDimension&lt;Dim = D&gt;,
     {
@@ -1840,8 +1853,8 @@
         <span class="self">Self</span>::new_uninit(py, dims, ptr::null_mut(), flags)
     }
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">unsafe fn </span>new_uninit&lt;<span class="lifetime">&#39;py</span>, ID&gt;(
-        py: Python&lt;<span class="lifetime">&#39;py</span>&gt;,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">unsafe fn </span>new_uninit&lt;<span class="lifetime">'py</span>, ID&gt;(
+        py: Python&lt;<span class="lifetime">'py</span>&gt;,
         dims: ID,
         strides: <span class="kw-2">*const </span>npy_intp,
         flag: c_int,
@@ -1865,13 +1878,13 @@
         <span class="self">Self</span>::from_owned_ptr(py, ptr)
     }
 
-    <span class="kw">unsafe fn </span>new_with_data&lt;<span class="lifetime">&#39;py</span>, ID&gt;(
-        py: Python&lt;<span class="lifetime">&#39;py</span>&gt;,
+    <span class="kw">unsafe fn </span>new_with_data&lt;<span class="lifetime">'py</span>, ID&gt;(
+        py: Python&lt;<span class="lifetime">'py</span>&gt;,
         dims: ID,
         strides: <span class="kw-2">*const </span>npy_intp,
         data_ptr: <span class="kw-2">*const </span>T,
         container: <span class="kw-2">*mut </span>PyAny,
-    ) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span><span class="self">Self
+    ) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span><span class="self">Self
     </span><span class="kw">where
         </span>ID: IntoDimension&lt;Dim = D&gt;,
     {
@@ -1897,18 +1910,18 @@
         <span class="self">Self</span>::from_owned_ptr(py, ptr)
     }
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">unsafe fn </span>from_raw_parts&lt;<span class="lifetime">&#39;py</span>&gt;(
-        py: Python&lt;<span class="lifetime">&#39;py</span>&gt;,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">unsafe fn </span>from_raw_parts&lt;<span class="lifetime">'py</span>&gt;(
+        py: Python&lt;<span class="lifetime">'py</span>&gt;,
         dims: D,
         strides: <span class="kw-2">*const </span>npy_intp,
         data_ptr: <span class="kw-2">*const </span>T,
         container: PySliceContainer,
-    ) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span><span class="self">Self </span>{
-        <span class="kw">let </span>container = PyClassInitializer::from(container)
-            .create_cell(py)
-            .expect(<span class="string">&quot;Failed to create slice container&quot;</span>);
+    ) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span><span class="self">Self </span>{
+        <span class="kw">let </span>container = Bound::new(py, container)
+            .expect(<span class="string">"Failed to create slice container"</span>)
+            .into_ptr();
 
-        <span class="self">Self</span>::new_with_data(py, dims, strides, data_ptr, container <span class="kw">as </span><span class="kw-2">*mut </span>PyAny)
+        <span class="self">Self</span>::new_with_data(py, dims, strides, data_ptr, container.cast())
     }
 
     <span class="doccomment">/// Creates a NumPy array backed by `array` and ties its ownership to the Python object `container`.
@@ -1932,7 +1945,7 @@
     /// #[pymethods]
     /// impl Owner {
     ///     #[getter]
-    ///     fn array&lt;&#39;py&gt;(this: &amp;&#39;py PyCell&lt;Self&gt;) -&gt; &amp;&#39;py PyArray1&lt;f64&gt; {
+    ///     fn array&lt;'py&gt;(this: &amp;'py PyCell&lt;Self&gt;) -&gt; &amp;'py PyArray1&lt;f64&gt; {
     ///         let array = &amp;this.borrow().array;
     ///
     ///         // SAFETY: The memory backing `array` will stay valid as long as this object is alive
@@ -1941,10 +1954,10 @@
     ///     }
     /// }
     /// ```
-    </span><span class="kw">pub unsafe fn </span>borrow_from_array&lt;<span class="lifetime">&#39;py</span>, S&gt;(
+    </span><span class="kw">pub unsafe fn </span>borrow_from_array&lt;<span class="lifetime">'py</span>, S&gt;(
         array: <span class="kw-2">&amp;</span>ArrayBase&lt;S, D&gt;,
-        container: <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span>PyAny,
-    ) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span><span class="self">Self
+        container: <span class="kw-2">&amp;</span><span class="lifetime">'py </span>PyAny,
+    ) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span><span class="self">Self
     </span><span class="kw">where
         </span>S: Data&lt;Elem = T&gt;,
     {
@@ -1989,7 +2002,7 @@
     ///
     /// [numpy-zeros]: https://numpy.org/doc/stable/reference/generated/numpy.zeros.html
     /// [PyArray_Zeros]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_Zeros
-    </span><span class="kw">pub fn </span>zeros&lt;<span class="lifetime">&#39;py</span>, ID&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, dims: ID, is_fortran: bool) -&gt; <span class="kw-2">&amp;</span><span class="self">Self
+    </span><span class="kw">pub fn </span>zeros&lt;<span class="lifetime">'py</span>, ID&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, dims: ID, is_fortran: bool) -&gt; <span class="kw-2">&amp;</span><span class="self">Self
     </span><span class="kw">where
         </span>ID: IntoDimension&lt;Dim = D&gt;,
     {
@@ -2057,7 +2070,7 @@
     ///     assert_eq!(pyarray.readonly().as_array(), array![[1, 2], [3, 4]]);
     /// });
     /// ```
-    </span><span class="kw">pub fn </span>from_owned_array&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, <span class="kw-2">mut </span>arr: Array&lt;T, D&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span><span class="self">Self </span>{
+    </span><span class="kw">pub fn </span>from_owned_array&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, <span class="kw-2">mut </span>arr: Array&lt;T, D&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span><span class="self">Self </span>{
         <span class="kw">let </span>(strides, dims) = (arr.npy_strides(), arr.raw_dim());
         <span class="kw">let </span>data_ptr = arr.as_mut_ptr();
         <span class="kw">unsafe </span>{
@@ -2244,7 +2257,7 @@
     ///
     /// Python::with_gil(|py| {
     ///     let pyarray= py
-    ///         .eval(&quot;__import__(&#39;numpy&#39;).array([[0, 1], [2, 3]], dtype=&#39;int64&#39;)&quot;, None, None)
+    ///         .eval("__import__('numpy').array([[0, 1], [2, 3]], dtype='int64')", None, None)
     ///         .unwrap()
     ///         .downcast::&lt;PyArray2&lt;i64&gt;&gt;()
     ///         .unwrap();
@@ -2258,7 +2271,7 @@
 
     <span class="doccomment">/// Construct a NumPy array from a [`ndarray::ArrayBase`].
     ///
-    /// This method allocates memory in Python&#39;s heap via the NumPy API,
+    /// This method allocates memory in Python's heap via the NumPy API,
     /// and then copies all elements of the array there.
     ///
     /// # Example
@@ -2274,7 +2287,7 @@
     ///     assert_eq!(pyarray.readonly().as_array(), array![[1, 2], [3, 4]]);
     /// });
     /// ```
-    </span><span class="kw">pub fn </span>from_array&lt;<span class="lifetime">&#39;py</span>, S&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, arr: <span class="kw-2">&amp;</span>ArrayBase&lt;S, D&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span><span class="self">Self
+    </span><span class="kw">pub fn </span>from_array&lt;<span class="lifetime">'py</span>, S&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, arr: <span class="kw-2">&amp;</span>ArrayBase&lt;S, D&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span><span class="self">Self
     </span><span class="kw">where
         </span>S: Data&lt;Elem = T&gt;,
     {
@@ -2282,7 +2295,7 @@
     }
 
     <span class="doccomment">/// Get an immutable borrow of the NumPy array
-    </span><span class="kw">pub fn </span>try_readonly(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;PyReadonlyArray&lt;<span class="lifetime">&#39;_</span>, T, D&gt;, BorrowError&gt; {
+    </span><span class="kw">pub fn </span>try_readonly(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;PyReadonlyArray&lt;<span class="lifetime">'_</span>, T, D&gt;, BorrowError&gt; {
         PyReadonlyArray::try_new(<span class="self">self</span>)
     }
 
@@ -2293,12 +2306,12 @@
     /// Panics if the allocation backing the array is currently mutably borrowed.
     ///
     /// For a non-panicking variant, use [`try_readonly`][Self::try_readonly].
-    </span><span class="kw">pub fn </span>readonly(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PyReadonlyArray&lt;<span class="lifetime">&#39;_</span>, T, D&gt; {
+    </span><span class="kw">pub fn </span>readonly(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PyReadonlyArray&lt;<span class="lifetime">'_</span>, T, D&gt; {
         <span class="self">self</span>.try_readonly().unwrap()
     }
 
     <span class="doccomment">/// Get a mutable borrow of the NumPy array
-    </span><span class="kw">pub fn </span>try_readwrite(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;PyReadwriteArray&lt;<span class="lifetime">&#39;_</span>, T, D&gt;, BorrowError&gt; {
+    </span><span class="kw">pub fn </span>try_readwrite(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;PyReadwriteArray&lt;<span class="lifetime">'_</span>, T, D&gt;, BorrowError&gt; {
         PyReadwriteArray::try_new(<span class="self">self</span>)
     }
 
@@ -2312,7 +2325,7 @@
     /// For a non-panicking variant, use [`try_readwrite`][Self::try_readwrite].
     ///
     /// [flags]: https://numpy.org/doc/stable/reference/generated/numpy.ndarray.flags.html
-    </span><span class="kw">pub fn </span>readwrite(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PyReadwriteArray&lt;<span class="lifetime">&#39;_</span>, T, D&gt; {
+    </span><span class="kw">pub fn </span>readwrite(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PyReadwriteArray&lt;<span class="lifetime">'_</span>, T, D&gt; {
         <span class="self">self</span>.try_readwrite().unwrap()
     }
 
@@ -2328,14 +2341,14 @@
         ) -&gt; (StrideShape&lt;D&gt;, u32, <span class="kw-2">*mut </span>u8) {
             <span class="kw">let </span>shape = D::from_dimension(<span class="kw-2">&amp;</span>Dim(shape)).expect(DIMENSIONALITY_MISMATCH_ERR);
 
-            <span class="macro">assert!</span>(strides.len() &lt;= <span class="number">32</span>, <span class="string">&quot;{}&quot;</span>, MAX_DIMENSIONALITY_ERR);
+            <span class="macro">assert!</span>(strides.len() &lt;= <span class="number">32</span>, <span class="string">"{}"</span>, MAX_DIMENSIONALITY_ERR);
 
             <span class="kw">let </span><span class="kw-2">mut </span>new_strides = D::zeros(strides.len());
             <span class="kw">let </span><span class="kw-2">mut </span>inverted_axes = <span class="number">0_u32</span>;
 
             <span class="kw">for </span>i <span class="kw">in </span><span class="number">0</span>..strides.len() {
                 <span class="comment">// FIXME(kngwyu): Replace this hacky negative strides support with
-                // a proper constructor, when it&#39;s implemented.
+                // a proper constructor, when it's implemented.
                 // See https://github.com/rust-ndarray/ndarray/issues/842 for more.
                 </span><span class="kw">if </span>strides[i] &gt;= <span class="number">0 </span>{
                     new_strides[i] = strides[i] <span class="kw">as </span>usize / itemsize;
@@ -2377,7 +2390,7 @@
     /// # Safety
     ///
     /// Calling this method invalidates all exclusive references to the internal data, e.g. `&amp;mut [T]` or `ArrayViewMut`.
-    </span><span class="kw">pub unsafe fn </span>as_array(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; ArrayView&lt;<span class="lifetime">&#39;_</span>, T, D&gt; {
+    </span><span class="kw">pub unsafe fn </span>as_array(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; ArrayView&lt;<span class="lifetime">'_</span>, T, D&gt; {
         <span class="self">self</span>.as_view(|shape, ptr| ArrayView::from_shape_ptr(shape, ptr))
     }
 
@@ -2388,7 +2401,7 @@
     /// # Safety
     ///
     /// Calling this method invalidates all other references to the internal data, e.g. `ArrayView` or `ArrayViewMut`.
-    </span><span class="kw">pub unsafe fn </span>as_array_mut(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; ArrayViewMut&lt;<span class="lifetime">&#39;_</span>, T, D&gt; {
+    </span><span class="kw">pub unsafe fn </span>as_array_mut(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; ArrayViewMut&lt;<span class="lifetime">'_</span>, T, D&gt; {
         <span class="self">self</span>.as_view(|shape, ptr| ArrayViewMut::from_shape_ptr(shape, ptr))
     }
 
@@ -2425,7 +2438,7 @@
     }
 }
 
-<span class="attr">#[cfg(feature = <span class="string">&quot;nalgebra&quot;</span>)]
+<span class="attr">#[cfg(feature = <span class="string">"nalgebra"</span>)]
 </span><span class="kw">impl</span>&lt;N, D&gt; PyArray&lt;N, D&gt;
 <span class="kw">where
     </span>N: nalgebra::Scalar + Element,
@@ -2491,10 +2504,10 @@
     /// # Safety
     ///
     /// Calling this method invalidates all exclusive references to the internal data, e.g. `ArrayViewMut` or `MatrixSliceMut`.
-    </span><span class="attr">#[doc(alias = <span class="string">&quot;nalgebra&quot;</span>)]
+    </span><span class="attr">#[doc(alias = <span class="string">"nalgebra"</span>)]
     </span><span class="kw">pub unsafe fn </span>try_as_matrix&lt;R, C, RStride, CStride&gt;(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-    ) -&gt; <span class="prelude-ty">Option</span>&lt;nalgebra::MatrixView&lt;<span class="lifetime">&#39;_</span>, N, R, C, RStride, CStride&gt;&gt;
+    ) -&gt; <span class="prelude-ty">Option</span>&lt;nalgebra::MatrixView&lt;<span class="lifetime">'_</span>, N, R, C, RStride, CStride&gt;&gt;
     <span class="kw">where
         </span>R: nalgebra::Dim,
         C: nalgebra::Dim,
@@ -2513,10 +2526,10 @@
     /// # Safety
     ///
     /// Calling this method invalidates all other references to the internal data, e.g. `ArrayView`, `MatrixSlice`, `ArrayViewMut` or `MatrixSliceMut`.
-    </span><span class="attr">#[doc(alias = <span class="string">&quot;nalgebra&quot;</span>)]
+    </span><span class="attr">#[doc(alias = <span class="string">"nalgebra"</span>)]
     </span><span class="kw">pub unsafe fn </span>try_as_matrix_mut&lt;R, C, RStride, CStride&gt;(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-    ) -&gt; <span class="prelude-ty">Option</span>&lt;nalgebra::MatrixViewMut&lt;<span class="lifetime">&#39;_</span>, N, R, C, RStride, CStride&gt;&gt;
+    ) -&gt; <span class="prelude-ty">Option</span>&lt;nalgebra::MatrixViewMut&lt;<span class="lifetime">'_</span>, N, R, C, RStride, CStride&gt;&gt;
     <span class="kw">where
         </span>R: nalgebra::Dim,
         C: nalgebra::Dim,
@@ -2566,7 +2579,7 @@
     ///     assert!(pyarray.readonly().as_array().get(0).unwrap().as_ref(py).is_instance_of::&lt;CustomElement&gt;());
     /// });
     /// ```
-    </span><span class="kw">pub fn </span>from_owned_object_array&lt;<span class="lifetime">&#39;py</span>, T&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, <span class="kw-2">mut </span>arr: Array&lt;Py&lt;T&gt;, D&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span><span class="self">Self </span>{
+    </span><span class="kw">pub fn </span>from_owned_object_array&lt;<span class="lifetime">'py</span>, T&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, <span class="kw-2">mut </span>arr: Array&lt;Py&lt;T&gt;, D&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span><span class="self">Self </span>{
         <span class="kw">let </span>(strides, dims) = (arr.npy_strides(), arr.raw_dim());
         <span class="kw">let </span>data_ptr = arr.as_mut_ptr() <span class="kw">as </span><span class="kw-2">*const </span>PyObject;
         <span class="kw">unsafe </span>{
@@ -2605,7 +2618,7 @@
     ///     assert_eq!(pyarray.readonly().as_slice().unwrap(), &amp;[1, 2, 3, 4, 5]);
     /// });
     /// ```
-    </span><span class="kw">pub fn </span>from_slice&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, slice: <span class="kw-2">&amp;</span>[T]) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span><span class="self">Self </span>{
+    </span><span class="kw">pub fn </span>from_slice&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, slice: <span class="kw-2">&amp;</span>[T]) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span><span class="self">Self </span>{
         <span class="kw">unsafe </span>{
             <span class="kw">let </span>array = PyArray::new(py, [slice.len()], <span class="bool-val">false</span>);
             <span class="kw">let </span><span class="kw-2">mut </span>data_ptr = array.data();
@@ -2629,7 +2642,7 @@
     /// });
     /// ```
     </span><span class="attr">#[inline(always)]
-    </span><span class="kw">pub fn </span>from_vec&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, vec: Vec&lt;T&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span><span class="self">Self </span>{
+    </span><span class="kw">pub fn </span>from_vec&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, vec: Vec&lt;T&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span><span class="self">Self </span>{
         vec.into_pyarray(py)
     }
 
@@ -2645,11 +2658,11 @@
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let pyarray = PyArray::from_iter(py, &quot;abcde&quot;.chars().map(u32::from));
+    ///     let pyarray = PyArray::from_iter(py, "abcde".chars().map(u32::from));
     ///     assert_eq!(pyarray.readonly().as_slice().unwrap(), &amp;[97, 98, 99, 100, 101]);
     /// });
     /// ```
-    </span><span class="kw">pub fn </span>from_iter&lt;<span class="lifetime">&#39;py</span>, I&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, iter: I) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span><span class="self">Self
+    </span><span class="kw">pub fn </span>from_iter&lt;<span class="lifetime">'py</span>, I&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, iter: I) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span><span class="self">Self
     </span><span class="kw">where
         </span>I: IntoIterator&lt;Item = T&gt;,
     {
@@ -2680,7 +2693,7 @@
     ///     assert!(PyArray::from_vec2(py, &amp;ragged_vec2).is_err());
     /// });
     /// ```
-    </span><span class="kw">pub fn </span>from_vec2&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, v: <span class="kw-2">&amp;</span>[Vec&lt;T&gt;]) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span><span class="self">Self</span>, FromVecError&gt; {
+    </span><span class="kw">pub fn </span>from_vec2&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, v: <span class="kw-2">&amp;</span>[Vec&lt;T&gt;]) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'py </span><span class="self">Self</span>, FromVecError&gt; {
         <span class="kw">let </span>len2 = v.first().map_or(<span class="number">0</span>, |v| v.len());
         <span class="kw">let </span>dims = [v.len(), len2];
         <span class="comment">// SAFETY: The result of `Self::new` is always safe to drop.
@@ -2730,7 +2743,7 @@
     ///     assert!(PyArray::from_vec3(py, &amp;ragged_vec3).is_err());
     /// });
     /// ```
-    </span><span class="kw">pub fn </span>from_vec3&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, v: <span class="kw-2">&amp;</span>[Vec&lt;Vec&lt;T&gt;&gt;]) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span><span class="self">Self</span>, FromVecError&gt; {
+    </span><span class="kw">pub fn </span>from_vec3&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, v: <span class="kw-2">&amp;</span>[Vec&lt;Vec&lt;T&gt;&gt;]) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'py </span><span class="self">Self</span>, FromVecError&gt; {
         <span class="kw">let </span>len2 = v.first().map_or(<span class="number">0</span>, |v| v.len());
         <span class="kw">let </span>len3 = v.first().map_or(<span class="number">0</span>, |v| v.first().map_or(<span class="number">0</span>, |v| v.len()));
         <span class="kw">let </span>dims = [v.len(), len2, len3];
@@ -2809,7 +2822,7 @@
     /// ```
     ///
     /// [PyArray_CastToType]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_CastToType
-    </span><span class="kw">pub fn </span>cast&lt;<span class="lifetime">&#39;py</span>, U: Element&gt;(<span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span><span class="self">self</span>, is_fortran: bool) -&gt; PyResult&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span>PyArray&lt;U, D&gt;&gt; {
+    </span><span class="kw">pub fn </span>cast&lt;<span class="lifetime">'py</span>, U: Element&gt;(<span class="kw-2">&amp;</span><span class="lifetime">'py </span><span class="self">self</span>, is_fortran: bool) -&gt; PyResult&lt;<span class="kw-2">&amp;</span><span class="lifetime">'py </span>PyArray&lt;U, D&gt;&gt; {
         <span class="kw">let </span>ptr = <span class="kw">unsafe </span>{
             PY_ARRAY_API.PyArray_CastToType(
                 <span class="self">self</span>.py(),
@@ -2851,11 +2864,11 @@
     ///
     /// [numpy-reshape]: https://numpy.org/doc/stable/reference/generated/numpy.reshape.html
     /// [PyArray_Newshape]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_Newshape
-    </span><span class="kw">pub fn </span>reshape_with_order&lt;<span class="lifetime">&#39;py</span>, ID: IntoDimension&gt;(
-        <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span><span class="self">self</span>,
+    </span><span class="kw">pub fn </span>reshape_with_order&lt;<span class="lifetime">'py</span>, ID: IntoDimension&gt;(
+        <span class="kw-2">&amp;</span><span class="lifetime">'py </span><span class="self">self</span>,
         dims: ID,
         order: NPY_ORDER,
-    ) -&gt; PyResult&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span>PyArray&lt;T, ID::Dim&gt;&gt; {
+    ) -&gt; PyResult&lt;<span class="kw-2">&amp;</span><span class="lifetime">'py </span>PyArray&lt;T, ID::Dim&gt;&gt; {
         <span class="kw">let </span><span class="kw-2">mut </span>dims = dims.into_dimension();
         <span class="kw">let </span><span class="kw-2">mut </span>dims = dims.to_npy_dims();
         <span class="kw">let </span>ptr = <span class="kw">unsafe </span>{
@@ -2875,10 +2888,10 @@
 
     <span class="doccomment">/// Special case of [`reshape_with_order`][Self::reshape_with_order] which keeps the memory order the same.
     </span><span class="attr">#[inline(always)]
-    </span><span class="kw">pub fn </span>reshape&lt;<span class="lifetime">&#39;py</span>, ID: IntoDimension&gt;(
-        <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span><span class="self">self</span>,
+    </span><span class="kw">pub fn </span>reshape&lt;<span class="lifetime">'py</span>, ID: IntoDimension&gt;(
+        <span class="kw-2">&amp;</span><span class="lifetime">'py </span><span class="self">self</span>,
         dims: ID,
-    ) -&gt; PyResult&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span>PyArray&lt;T, ID::Dim&gt;&gt; {
+    ) -&gt; PyResult&lt;<span class="kw-2">&amp;</span><span class="lifetime">'py </span>PyArray&lt;T, ID::Dim&gt;&gt; {
         <span class="self">self</span>.reshape_with_order(dims, NPY_ORDER::NPY_ANYORDER)
     }
 
@@ -2953,7 +2966,7 @@
     ///
     /// [numpy.arange]: https://numpy.org/doc/stable/reference/generated/numpy.arange.html
     /// [PyArray_Arange]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_Arange
-    </span><span class="kw">pub fn </span>arange&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, start: T, stop: T, step: T) -&gt; <span class="kw-2">&amp;</span><span class="self">Self </span>{
+    </span><span class="kw">pub fn </span>arange&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, start: T, stop: T, step: T) -&gt; <span class="kw-2">&amp;</span><span class="self">Self </span>{
         <span class="kw">unsafe </span>{
             <span class="kw">let </span>ptr = PY_ARRAY_API.PyArray_Arange(
                 py,
@@ -3004,7 +3017,7 @@
             <span class="kw">let </span>array: <span class="kw-2">&amp;</span>PyArray&lt;PyObject, <span class="kw">_</span>&gt; =
                 PyArray1::from_slice(py, <span class="kw-2">&amp;</span>[PyList::empty(py).into()]);
 
-            <span class="macro">py_run!</span>(py, array, <span class="string">&quot;assert array.dtype.hasobject&quot;</span>);
+            <span class="macro">py_run!</span>(py, array, <span class="string">"assert array.dtype.hasobject"</span>);
         });
     }
 }

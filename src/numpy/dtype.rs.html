@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/dtype.rs`."><title>dtype.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-cb6f1f67f1bcd037.css" id="mainThemeStyle"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="numpy" data-themes="" data-resource-suffix="" data-rustdoc-version="1.73.0 (cc66ad468 2023-10-03)" data-channel="1.73.0" data-search-js="search-6dfdfced5eff6596.js" data-settings-js="settings-de11bff964e9d4e5.js" data-settings-css="settings-8c76f75bfb6bd192.css" data-theme-light-css="light-1596385f77d47ef2.css" data-theme-dark-css="dark-0a43001d3fc2282c.css" data-theme-ayu-css="ayu-fd19013d6ce078bf.css" ><script src="../../static.files/storage-db41da1a38ea3cb8.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-0795b7d26be81095.js"></script><noscript><link rel="stylesheet" media="(prefers-color-scheme:light)" href="../../static.files/light-1596385f77d47ef2.css"><link rel="stylesheet" media="(prefers-color-scheme:dark)" href="../../static.files/dark-0a43001d3fc2282c.css"><link rel="stylesheet" href="../../static.files/noscript-cffde32267a19fd6.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../numpy/index.html"><img class="rust-logo" src="../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/dtype.rs`."><title>dtype.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-ac92e1bbe349e143.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="numpy" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0 (07dca489a 2024-02-04)" data-channel="1.76.0" data-search-js="search-2b6ce74ff89ae146.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../static.files/src-script-39ed315d46fb705f.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-305769736d49e732.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-feafe1bb7466e4bd.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -690,24 +691,25 @@
 <a href="#690" id="690">690</a>
 <a href="#691" id="691">691</a>
 <a href="#692" id="692">692</a>
+<a href="#693" id="693">693</a>
+<a href="#694" id="694">694</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::mem::size_of;
 <span class="kw">use </span>std::os::raw::{
     c_char, c_int, c_long, c_longlong, c_short, c_uint, c_ulong, c_ulonglong, c_ushort,
 };
 <span class="kw">use </span>std::ptr;
 
-<span class="attr">#[cfg(feature = <span class="string">&quot;half&quot;</span>)]
+<span class="attr">#[cfg(feature = <span class="string">"half"</span>)]
 </span><span class="kw">use </span>half::{bf16, f16};
 <span class="kw">use </span>num_traits::{Bounded, Zero};
 <span class="kw">use </span>pyo3::{
     exceptions::{PyIndexError, PyValueError},
     ffi::{<span class="self">self</span>, PyTuple_Size},
     pyobject_native_type_extract, pyobject_native_type_named,
-    types::{PyDict, PyTuple, PyType},
-    AsPyPointer, FromPyObject, FromPyPointer, PyAny, PyNativeType, PyObject, PyResult, PyTypeInfo,
-    Python, ToPyObject,
+    types::{PyAnyMethods, PyDict, PyDictMethods, PyTuple, PyType},
+    AsPyPointer, Borrowed, PyAny, PyNativeType, PyObject, PyResult, PyTypeInfo, Python, ToPyObject,
 };
-<span class="attr">#[cfg(feature = <span class="string">&quot;half&quot;</span>)]
+<span class="attr">#[cfg(feature = <span class="string">"half"</span>)]
 </span><span class="kw">use </span>pyo3::{sync::GILOnceCell, IntoPy, Py};
 
 <span class="kw">use </span><span class="kw">crate</span>::npyffi::{
@@ -726,10 +728,10 @@
 /// use numpy::pyo3::{types::IntoPyDict, Python};
 ///
 /// Python::with_gil(|py| {
-///     let locals = [(&quot;np&quot;, get_array_module(py).unwrap())].into_py_dict(py);
+///     let locals = [("np", get_array_module(py).unwrap())].into_py_dict(py);
 ///
 ///     let dt: &amp;PyArrayDescr = py
-///         .eval(&quot;np.array([1, 2, 3.0]).dtype&quot;, Some(locals), None)
+///         .eval("np.array([1, 2, 3.0]).dtype", Some(locals), None)
 ///         .unwrap()
 ///         .downcast()
 ///         .unwrap();
@@ -745,13 +747,11 @@
 <span class="macro">pyobject_native_type_named!</span>(PyArrayDescr);
 
 <span class="kw">unsafe impl </span>PyTypeInfo <span class="kw">for </span>PyArrayDescr {
-    <span class="kw">type </span>AsRefTarget = <span class="self">Self</span>;
-
-    <span class="kw">const </span>NAME: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str = <span class="string">&quot;PyArrayDescr&quot;</span>;
-    <span class="kw">const </span>MODULE: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt; = <span class="prelude-val">Some</span>(<span class="string">&quot;numpy&quot;</span>);
+    <span class="kw">const </span>NAME: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str = <span class="string">"PyArrayDescr"</span>;
+    <span class="kw">const </span>MODULE: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'static </span>str&gt; = <span class="prelude-val">Some</span>(<span class="string">"numpy"</span>);
 
     <span class="attr">#[inline]
-    </span><span class="kw">fn </span>type_object_raw&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;) -&gt; <span class="kw-2">*mut </span>ffi::PyTypeObject {
+    </span><span class="kw">fn </span>type_object_raw&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; <span class="kw-2">*mut </span>ffi::PyTypeObject {
         <span class="kw">unsafe </span>{ PY_ARRAY_API.get_type_object(py, NpyTypes::PyArrayDescr_Type) }
     }
 
@@ -762,20 +762,20 @@
 
 <span class="macro">pyobject_native_type_extract!</span>(PyArrayDescr);
 
-<span class="doccomment">/// Returns the type descriptor (&quot;dtype&quot;) for a registered type.
-</span><span class="kw">pub fn </span>dtype&lt;<span class="lifetime">&#39;py</span>, T: Element&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span>PyArrayDescr {
+<span class="doccomment">/// Returns the type descriptor ("dtype") for a registered type.
+</span><span class="kw">pub fn </span>dtype&lt;<span class="lifetime">'py</span>, T: Element&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span>PyArrayDescr {
     T::get_dtype(py)
 }
 
 <span class="kw">impl </span>PyArrayDescr {
-    <span class="doccomment">/// Creates a new type descriptor (&quot;dtype&quot;) object from an arbitrary object.
+    <span class="doccomment">/// Creates a new type descriptor ("dtype") object from an arbitrary object.
     ///
     /// Equivalent to invoking the constructor of [`numpy.dtype`][dtype].
     ///
     /// [dtype]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.html
     </span><span class="attr">#[inline]
-    </span><span class="kw">pub fn </span>new&lt;<span class="lifetime">&#39;py</span>, T: ToPyObject + <span class="question-mark">?</span>Sized&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, ob: <span class="kw-2">&amp;</span>T) -&gt; PyResult&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span><span class="self">Self</span>&gt; {
-        <span class="kw">fn </span>inner&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, obj: PyObject) -&gt; PyResult&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span>PyArrayDescr&gt; {
+    </span><span class="kw">pub fn </span>new&lt;<span class="lifetime">'py</span>, T: ToPyObject + <span class="question-mark">?</span>Sized&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, ob: <span class="kw-2">&amp;</span>T) -&gt; PyResult&lt;<span class="kw-2">&amp;</span><span class="lifetime">'py </span><span class="self">Self</span>&gt; {
+        <span class="kw">fn </span>inner&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, obj: PyObject) -&gt; PyResult&lt;<span class="kw-2">&amp;</span><span class="lifetime">'py </span>PyArrayDescr&gt; {
             <span class="kw">let </span><span class="kw-2">mut </span>descr: <span class="kw-2">*mut </span>PyArray_Descr = ptr::null_mut();
             <span class="kw">unsafe </span>{
                 <span class="comment">// None is an invalid input here and is not converted to NPY_DEFAULT_TYPE
@@ -800,12 +800,12 @@
     </span>}
 
     <span class="doccomment">/// Shortcut for creating a type descriptor of `object` type.
-    </span><span class="kw">pub fn </span>object&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span><span class="self">Self </span>{
+    </span><span class="kw">pub fn </span>object&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span><span class="self">Self </span>{
         <span class="self">Self</span>::from_npy_type(py, NPY_TYPES::NPY_OBJECT)
     }
 
     <span class="doccomment">/// Returns the type descriptor for a registered type.
-    </span><span class="kw">pub fn </span>of&lt;<span class="lifetime">&#39;py</span>, T: Element&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span><span class="self">Self </span>{
+    </span><span class="kw">pub fn </span>of&lt;<span class="lifetime">'py</span>, T: Element&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span><span class="self">Self </span>{
         T::get_dtype(py)
     }
 
@@ -820,14 +820,14 @@
         </span>}
     }
 
-    <span class="kw">fn </span>from_npy_type&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, npy_type: NPY_TYPES) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span><span class="self">Self </span>{
+    <span class="kw">fn </span>from_npy_type&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, npy_type: NPY_TYPES) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span><span class="self">Self </span>{
         <span class="kw">unsafe </span>{
             <span class="kw">let </span>descr = PY_ARRAY_API.PyArray_DescrFromType(py, npy_type <span class="kw">as _</span>);
             py.from_owned_ptr(descr <span class="kw">as _</span>)
         }
     }
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>new_from_npy_type&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;, npy_type: NPY_TYPES) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span><span class="self">Self </span>{
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>new_from_npy_type&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, npy_type: NPY_TYPES) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span><span class="self">Self </span>{
         <span class="kw">unsafe </span>{
             <span class="kw">let </span>descr = PY_ARRAY_API.PyArray_DescrNewFromType(py, npy_type <span class="kw">as _</span>);
             py.from_owned_ptr(descr <span class="kw">as _</span>)
@@ -941,7 +941,9 @@
         <span class="kw">if </span>!<span class="self">self</span>.has_subarray() {
             <span class="self">self
         </span>} <span class="kw">else </span>{
-            <span class="kw">unsafe </span>{
+            <span class="attr">#[allow(deprecated)]
+            </span><span class="kw">unsafe </span>{
+                <span class="kw">use </span>pyo3::FromPyPointer;
                 <span class="self">Self</span>::from_borrowed_ptr(<span class="self">self</span>.py(), (<span class="kw-2">*</span>(<span class="kw-2">*</span><span class="self">self</span>.as_dtype_ptr()).subarray).base <span class="kw">as _</span>)
             }
         }
@@ -959,11 +961,9 @@
             Vec::new()
         } <span class="kw">else </span>{
             <span class="comment">// NumPy guarantees that shape is a tuple of non-negative integers so this should never panic.
-            </span><span class="kw">unsafe </span>{
-                PyTuple::from_borrowed_ptr(<span class="self">self</span>.py(), (<span class="kw-2">*</span>(<span class="kw-2">*</span><span class="self">self</span>.as_dtype_ptr()).subarray).shape)
-            }
-            .extract()
-            .unwrap()
+            </span><span class="kw">unsafe </span>{ Borrowed::from_ptr(<span class="self">self</span>.py(), (<span class="kw-2">*</span>(<span class="kw-2">*</span><span class="self">self</span>.as_dtype_ptr()).subarray).shape) }
+                .extract()
+                .unwrap()
         }
     }
 
@@ -1004,8 +1004,8 @@
     </span><span class="kw">pub fn </span>is_native_byteorder(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;bool&gt; {
         <span class="comment">// based on PyArray_ISNBO(self-&gt;byteorder)
         </span><span class="kw">match </span><span class="self">self</span>.byteorder() {
-            <span class="string">b&#39;=&#39; </span>=&gt; <span class="prelude-val">Some</span>(<span class="bool-val">true</span>),
-            <span class="string">b&#39;|&#39; </span>=&gt; <span class="prelude-val">None</span>,
+            <span class="string">b'=' </span>=&gt; <span class="prelude-val">Some</span>(<span class="bool-val">true</span>),
+            <span class="string">b'|' </span>=&gt; <span class="prelude-val">None</span>,
             byteorder =&gt; <span class="prelude-val">Some</span>(byteorder == NPY_BYTEORDER_CHAR::NPY_NATBYTE <span class="kw">as </span>u8),
         }
     }
@@ -1021,8 +1021,8 @@
         <span class="kw">if </span>!<span class="self">self</span>.has_fields() {
             <span class="kw">return </span><span class="prelude-val">None</span>;
         }
-        <span class="kw">let </span>names = <span class="kw">unsafe </span>{ PyTuple::from_borrowed_ptr(<span class="self">self</span>.py(), (<span class="kw-2">*</span><span class="self">self</span>.as_dtype_ptr()).names) };
-        FromPyObject::extract(names).ok()
+        <span class="kw">let </span>names = <span class="kw">unsafe </span>{ Borrowed::from_ptr(<span class="self">self</span>.py(), (<span class="kw-2">*</span><span class="self">self</span>.as_dtype_ptr()).names) };
+        names.extract().ok()
     }
 
     <span class="doccomment">/// Returns the type descriptor and offset of the field with the given name.
@@ -1038,20 +1038,25 @@
     </span><span class="kw">pub fn </span>get_field(<span class="kw-2">&amp;</span><span class="self">self</span>, name: <span class="kw-2">&amp;</span>str) -&gt; PyResult&lt;(<span class="kw-2">&amp;</span>PyArrayDescr, usize)&gt; {
         <span class="kw">if </span>!<span class="self">self</span>.has_fields() {
             <span class="kw">return </span><span class="prelude-val">Err</span>(PyValueError::new_err(
-                <span class="string">&quot;cannot get field information: type descriptor has no fields&quot;</span>,
+                <span class="string">"cannot get field information: type descriptor has no fields"</span>,
             ));
         }
-        <span class="kw">let </span>dict = <span class="kw">unsafe </span>{ PyDict::from_borrowed_ptr(<span class="self">self</span>.py(), (<span class="kw-2">*</span><span class="self">self</span>.as_dtype_ptr()).fields) };
+        <span class="kw">let </span>dict = <span class="kw">unsafe </span>{ Borrowed::from_ptr(<span class="self">self</span>.py(), (<span class="kw-2">*</span><span class="self">self</span>.as_dtype_ptr()).fields) };
+        <span class="kw">let </span>dict = <span class="kw">unsafe </span>{ dict.downcast_unchecked::&lt;PyDict&gt;() };
         <span class="comment">// NumPy guarantees that fields are tuples of proper size and type, so this should never panic.
         </span><span class="kw">let </span>tuple = dict
             .get_item(name)<span class="question-mark">?
             </span>.ok_or_else(|| PyIndexError::new_err(name.to_owned()))<span class="question-mark">?
-            </span>.downcast::&lt;PyTuple&gt;()
+            </span>.downcast_into::&lt;PyTuple&gt;()
             .unwrap();
         <span class="comment">// Note that we cannot just extract the entire tuple since the third element can be a title.
-        </span><span class="kw">let </span>dtype = FromPyObject::extract(tuple.as_ref().get_item(<span class="number">0</span>).unwrap()).unwrap();
-        <span class="kw">let </span>offset = FromPyObject::extract(tuple.as_ref().get_item(<span class="number">1</span>).unwrap()).unwrap();
-        <span class="prelude-val">Ok</span>((dtype, offset))
+        </span><span class="kw">let </span>dtype = tuple
+            .get_item(<span class="number">0</span>)
+            .unwrap()
+            .downcast_into::&lt;PyArrayDescr&gt;()
+            .unwrap();
+        <span class="kw">let </span>offset = tuple.get_item(<span class="number">1</span>).unwrap().extract().unwrap();
+        <span class="prelude-val">Ok</span>((dtype.into_gil_ref(), offset))
     }
 }
 
@@ -1060,19 +1065,19 @@
 /// Currently, only integer/float/complex/object types are supported. The [NumPy documentation][enumerated-types]
 /// list the other built-in types which we are not yet implemented.
 ///
-/// Note that NumPy&#39;s integer types like `numpy.int_` and `numpy.uint` are based on C&#39;s integer hierarchy
-/// which implies that their widths change depending on the platform&#39;s [data model][data-models].
-/// For example, `numpy.int_` matches C&#39;s `long` which is 32 bits wide on Windows (using the LLP64 data model)
+/// Note that NumPy's integer types like `numpy.int_` and `numpy.uint` are based on C's integer hierarchy
+/// which implies that their widths change depending on the platform's [data model][data-models].
+/// For example, `numpy.int_` matches C's `long` which is 32 bits wide on Windows (using the LLP64 data model)
 /// but 64 bits wide on Linux (using the LP64 data model).
 ///
-/// In contrast, Rust&#39;s [`isize`] and [`usize`] types are defined to have the same width as a pointer
-/// and are therefore always 64 bits wide on 64-bit platforms. If you want to match NumPy&#39;s behaviour,
+/// In contrast, Rust's [`isize`] and [`usize`] types are defined to have the same width as a pointer
+/// and are therefore always 64 bits wide on 64-bit platforms. If you want to match NumPy's behaviour,
 /// consider using the [`c_long`][std::ffi::c_long] and [`c_ulong`][std::ffi::c_ulong] type aliases.
 ///
 /// # Safety
 ///
 /// A type `T` that implements this trait should be safe when managed by a NumPy
-/// array, thus implementing this trait is marked unsafe. Data types that don&#39;t
+/// array, thus implementing this trait is marked unsafe. Data types that don't
 /// contain Python objects (i.e., either the object type itself or record types
 /// containing object-type fields) are assumed to be trivially copyable, which
 /// is reflected in the `IS_COPY` flag. Furthermore, it is assumed that for
@@ -1102,8 +1107,8 @@
     /// that contain object-type fields.
     </span><span class="kw">const </span>IS_COPY: bool;
 
-    <span class="doccomment">/// Returns the associated type descriptor (&quot;dtype&quot;) for the given element type.
-    </span><span class="kw">fn </span>get_dtype&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span>PyArrayDescr;
+    <span class="doccomment">/// Returns the associated type descriptor ("dtype") for the given element type.
+    </span><span class="kw">fn </span>get_dtype&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span>PyArrayDescr;
 }
 
 <span class="kw">fn </span>npy_int_type_lookup&lt;T, T0, T1, T2&gt;(npy_types: [NPY_TYPES; <span class="number">3</span>]) -&gt; NPY_TYPES {
@@ -1114,7 +1119,7 @@
         x <span class="kw">if </span>x == size_of::&lt;T0&gt;() =&gt; npy_types[<span class="number">0</span>],
         x <span class="kw">if </span>x == size_of::&lt;T1&gt;() =&gt; npy_types[<span class="number">1</span>],
         x <span class="kw">if </span>x == size_of::&lt;T2&gt;() =&gt; npy_types[<span class="number">2</span>],
-        <span class="kw">_ </span>=&gt; <span class="macro">panic!</span>(<span class="string">&quot;Unable to match integer type descriptor: {:?}&quot;</span>, npy_types),
+        <span class="kw">_ </span>=&gt; <span class="macro">panic!</span>(<span class="string">"Unable to match integer type descriptor: {:?}"</span>, npy_types),
     }
 }
 
@@ -1157,7 +1162,7 @@
         <span class="kw">unsafe impl </span>Element <span class="kw">for </span><span class="macro-nonterminal">$ty </span>{
             <span class="kw">const </span>IS_COPY: bool = <span class="bool-val">true</span>;
 
-            <span class="kw">fn </span>get_dtype&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;py </span>PyArrayDescr {
+            <span class="kw">fn </span>get_dtype&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span>PyArrayDescr {
                 PyArrayDescr::from_npy_type(py, <span class="macro-nonterminal">$npy_type</span>)
             }
         }
@@ -1178,19 +1183,19 @@
 <span class="macro">impl_element_scalar!</span>(f32 =&gt; NPY_FLOAT);
 <span class="macro">impl_element_scalar!</span>(f64 =&gt; NPY_DOUBLE);
 
-<span class="attr">#[cfg(feature = <span class="string">&quot;half&quot;</span>)]
+<span class="attr">#[cfg(feature = <span class="string">"half"</span>)]
 </span><span class="macro">impl_element_scalar!</span>(f16 =&gt; NPY_HALF);
 
-<span class="attr">#[cfg(feature = <span class="string">&quot;half&quot;</span>)]
+<span class="attr">#[cfg(feature = <span class="string">"half"</span>)]
 </span><span class="kw">unsafe impl </span>Element <span class="kw">for </span>bf16 {
     <span class="kw">const </span>IS_COPY: bool = <span class="bool-val">true</span>;
 
-    <span class="kw">fn </span>get_dtype&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;) -&gt; <span class="kw-2">&amp;</span>PyArrayDescr {
+    <span class="kw">fn </span>get_dtype&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; <span class="kw-2">&amp;</span>PyArrayDescr {
         <span class="kw">static </span>DTYPE: GILOnceCell&lt;Py&lt;PyArrayDescr&gt;&gt; = GILOnceCell::new();
 
         DTYPE
             .get_or_init(py, || {
-                PyArrayDescr::new(py, <span class="string">&quot;bfloat16&quot;</span>).expect(<span class="string">&quot;A package which provides a `bfloat16` data type for NumPy is required to use the `half::bf16` element type.&quot;</span>).into_py(py)
+                PyArrayDescr::new(py, <span class="string">"bfloat16"</span>).expect(<span class="string">"A package which provides a `bfloat16` data type for NumPy is required to use the `half::bf16` element type."</span>).into_py(py)
             })
             .clone()
             .into_ref(py)
@@ -1198,17 +1203,17 @@
 }
 
 <span class="macro">impl_element_scalar!</span>(Complex32 =&gt; NPY_CFLOAT,
-    <span class="attr">#[doc = <span class="string">&quot;Complex type with `f32` components which maps to `numpy.csingle` (`numpy.complex64`).&quot;</span>]</span>);
+    <span class="attr">#[doc = <span class="string">"Complex type with `f32` components which maps to `numpy.csingle` (`numpy.complex64`)."</span>]</span>);
 <span class="macro">impl_element_scalar!</span>(Complex64 =&gt; NPY_CDOUBLE,
-    <span class="attr">#[doc = <span class="string">&quot;Complex type with `f64` components which maps to `numpy.cdouble` (`numpy.complex128`).&quot;</span>]</span>);
+    <span class="attr">#[doc = <span class="string">"Complex type with `f64` components which maps to `numpy.cdouble` (`numpy.complex128`)."</span>]</span>);
 
-<span class="attr">#[cfg(any(target_pointer_width = <span class="string">&quot;32&quot;</span>, target_pointer_width = <span class="string">&quot;64&quot;</span>))]
+<span class="attr">#[cfg(any(target_pointer_width = <span class="string">"32"</span>, target_pointer_width = <span class="string">"64"</span>))]
 </span><span class="macro">impl_element_scalar!</span>(usize, isize);
 
 <span class="kw">unsafe impl </span>Element <span class="kw">for </span>PyObject {
     <span class="kw">const </span>IS_COPY: bool = <span class="bool-val">false</span>;
 
-    <span class="kw">fn </span>get_dtype&lt;<span class="lifetime">&#39;py</span>&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;) -&gt; <span class="kw-2">&amp;</span>PyArrayDescr {
+    <span class="kw">fn </span>get_dtype&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; <span class="kw-2">&amp;</span>PyArrayDescr {
         PyArrayDescr::object(py)
     }
 }
@@ -1224,15 +1229,15 @@
     <span class="attr">#[test]
     </span><span class="kw">fn </span>test_dtype_new() {
         Python::with_gil(|py| {
-            <span class="macro">assert!</span>(PyArrayDescr::new(py, <span class="string">&quot;float64&quot;</span>)
+            <span class="macro">assert!</span>(PyArrayDescr::new(py, <span class="string">"float64"</span>)
                 .unwrap()
                 .is(dtype::&lt;f64&gt;(py)));
 
-            <span class="kw">let </span>dt = PyArrayDescr::new(py, [(<span class="string">&quot;a&quot;</span>, <span class="string">&quot;O&quot;</span>), (<span class="string">&quot;b&quot;</span>, <span class="string">&quot;?&quot;</span>)].as_ref()).unwrap();
-            <span class="macro">assert_eq!</span>(dt.names(), <span class="prelude-val">Some</span>(<span class="macro">vec!</span>[<span class="string">&quot;a&quot;</span>, <span class="string">&quot;b&quot;</span>]));
+            <span class="kw">let </span>dt = PyArrayDescr::new(py, [(<span class="string">"a"</span>, <span class="string">"O"</span>), (<span class="string">"b"</span>, <span class="string">"?"</span>)].as_ref()).unwrap();
+            <span class="macro">assert_eq!</span>(dt.names(), <span class="prelude-val">Some</span>(<span class="macro">vec!</span>[<span class="string">"a"</span>, <span class="string">"b"</span>]));
             <span class="macro">assert!</span>(dt.has_object());
-            <span class="macro">assert!</span>(dt.get_field(<span class="string">&quot;a&quot;</span>).unwrap().<span class="number">0</span>.is(dtype::&lt;PyObject&gt;(py)));
-            <span class="macro">assert!</span>(dt.get_field(<span class="string">&quot;b&quot;</span>).unwrap().<span class="number">0</span>.is(dtype::&lt;bool&gt;(py)));
+            <span class="macro">assert!</span>(dt.get_field(<span class="string">"a"</span>).unwrap().<span class="number">0</span>.is(dtype::&lt;PyObject&gt;(py)));
+            <span class="macro">assert!</span>(dt.get_field(<span class="string">"b"</span>).unwrap().<span class="number">0</span>.is(dtype::&lt;bool&gt;(py)));
 
             <span class="macro">assert!</span>(PyArrayDescr::new(py, <span class="kw-2">&amp;</span><span class="number">123_usize</span>).is_err());
         });
@@ -1240,36 +1245,36 @@
 
     <span class="attr">#[test]
     </span><span class="kw">fn </span>test_dtype_names() {
-        <span class="kw">fn </span>type_name&lt;<span class="lifetime">&#39;py</span>, T: Element&gt;(py: Python&lt;<span class="lifetime">&#39;py</span>&gt;) -&gt; <span class="kw-2">&amp;</span>str {
-            dtype::&lt;T&gt;(py).typeobj().name().unwrap()
+        <span class="kw">fn </span>type_name&lt;<span class="lifetime">'py</span>, T: Element&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; String {
+            dtype::&lt;T&gt;(py).typeobj().qualname().unwrap()
         }
         Python::with_gil(|py| {
-            <span class="macro">assert_eq!</span>(type_name::&lt;bool&gt;(py), <span class="string">&quot;bool_&quot;</span>);
+            <span class="macro">assert_eq!</span>(type_name::&lt;bool&gt;(py), <span class="string">"bool_"</span>);
 
-            <span class="macro">assert_eq!</span>(type_name::&lt;i8&gt;(py), <span class="string">&quot;int8&quot;</span>);
-            <span class="macro">assert_eq!</span>(type_name::&lt;i16&gt;(py), <span class="string">&quot;int16&quot;</span>);
-            <span class="macro">assert_eq!</span>(type_name::&lt;i32&gt;(py), <span class="string">&quot;int32&quot;</span>);
-            <span class="macro">assert_eq!</span>(type_name::&lt;i64&gt;(py), <span class="string">&quot;int64&quot;</span>);
-            <span class="macro">assert_eq!</span>(type_name::&lt;u8&gt;(py), <span class="string">&quot;uint8&quot;</span>);
-            <span class="macro">assert_eq!</span>(type_name::&lt;u16&gt;(py), <span class="string">&quot;uint16&quot;</span>);
-            <span class="macro">assert_eq!</span>(type_name::&lt;u32&gt;(py), <span class="string">&quot;uint32&quot;</span>);
-            <span class="macro">assert_eq!</span>(type_name::&lt;u64&gt;(py), <span class="string">&quot;uint64&quot;</span>);
-            <span class="macro">assert_eq!</span>(type_name::&lt;f32&gt;(py), <span class="string">&quot;float32&quot;</span>);
-            <span class="macro">assert_eq!</span>(type_name::&lt;f64&gt;(py), <span class="string">&quot;float64&quot;</span>);
+            <span class="macro">assert_eq!</span>(type_name::&lt;i8&gt;(py), <span class="string">"int8"</span>);
+            <span class="macro">assert_eq!</span>(type_name::&lt;i16&gt;(py), <span class="string">"int16"</span>);
+            <span class="macro">assert_eq!</span>(type_name::&lt;i32&gt;(py), <span class="string">"int32"</span>);
+            <span class="macro">assert_eq!</span>(type_name::&lt;i64&gt;(py), <span class="string">"int64"</span>);
+            <span class="macro">assert_eq!</span>(type_name::&lt;u8&gt;(py), <span class="string">"uint8"</span>);
+            <span class="macro">assert_eq!</span>(type_name::&lt;u16&gt;(py), <span class="string">"uint16"</span>);
+            <span class="macro">assert_eq!</span>(type_name::&lt;u32&gt;(py), <span class="string">"uint32"</span>);
+            <span class="macro">assert_eq!</span>(type_name::&lt;u64&gt;(py), <span class="string">"uint64"</span>);
+            <span class="macro">assert_eq!</span>(type_name::&lt;f32&gt;(py), <span class="string">"float32"</span>);
+            <span class="macro">assert_eq!</span>(type_name::&lt;f64&gt;(py), <span class="string">"float64"</span>);
 
-            <span class="macro">assert_eq!</span>(type_name::&lt;Complex32&gt;(py), <span class="string">&quot;complex64&quot;</span>);
-            <span class="macro">assert_eq!</span>(type_name::&lt;Complex64&gt;(py), <span class="string">&quot;complex128&quot;</span>);
+            <span class="macro">assert_eq!</span>(type_name::&lt;Complex32&gt;(py), <span class="string">"complex64"</span>);
+            <span class="macro">assert_eq!</span>(type_name::&lt;Complex64&gt;(py), <span class="string">"complex128"</span>);
 
-            <span class="attr">#[cfg(target_pointer_width = <span class="string">&quot;32&quot;</span>)]
+            <span class="attr">#[cfg(target_pointer_width = <span class="string">"32"</span>)]
             </span>{
-                <span class="macro">assert_eq!</span>(type_name::&lt;usize&gt;(py), <span class="string">&quot;uint32&quot;</span>);
-                <span class="macro">assert_eq!</span>(type_name::&lt;isize&gt;(py), <span class="string">&quot;int32&quot;</span>);
+                <span class="macro">assert_eq!</span>(type_name::&lt;usize&gt;(py), <span class="string">"uint32"</span>);
+                <span class="macro">assert_eq!</span>(type_name::&lt;isize&gt;(py), <span class="string">"int32"</span>);
             }
 
-            <span class="attr">#[cfg(target_pointer_width = <span class="string">&quot;64&quot;</span>)]
+            <span class="attr">#[cfg(target_pointer_width = <span class="string">"64"</span>)]
             </span>{
-                <span class="macro">assert_eq!</span>(type_name::&lt;usize&gt;(py), <span class="string">&quot;uint64&quot;</span>);
-                <span class="macro">assert_eq!</span>(type_name::&lt;isize&gt;(py), <span class="string">&quot;int64&quot;</span>);
+                <span class="macro">assert_eq!</span>(type_name::&lt;usize&gt;(py), <span class="string">"uint64"</span>);
+                <span class="macro">assert_eq!</span>(type_name::&lt;isize&gt;(py), <span class="string">"int64"</span>);
             }
         });
     }
@@ -1281,10 +1286,10 @@
 
             <span class="macro">assert_eq!</span>(dt.num(), NPY_TYPES::NPY_DOUBLE <span class="kw">as </span>c_int);
             <span class="macro">assert_eq!</span>(dt.flags(), <span class="number">0</span>);
-            <span class="macro">assert_eq!</span>(dt.typeobj().name().unwrap(), <span class="string">&quot;float64&quot;</span>);
-            <span class="macro">assert_eq!</span>(dt.char(), <span class="string">b&#39;d&#39;</span>);
-            <span class="macro">assert_eq!</span>(dt.kind(), <span class="string">b&#39;f&#39;</span>);
-            <span class="macro">assert_eq!</span>(dt.byteorder(), <span class="string">b&#39;=&#39;</span>);
+            <span class="macro">assert_eq!</span>(dt.typeobj().qualname().unwrap(), <span class="string">"float64"</span>);
+            <span class="macro">assert_eq!</span>(dt.char(), <span class="string">b'd'</span>);
+            <span class="macro">assert_eq!</span>(dt.kind(), <span class="string">b'f'</span>);
+            <span class="macro">assert_eq!</span>(dt.byteorder(), <span class="string">b'='</span>);
             <span class="macro">assert_eq!</span>(dt.is_native_byteorder(), <span class="prelude-val">Some</span>(<span class="bool-val">true</span>));
             <span class="macro">assert_eq!</span>(dt.itemsize(), <span class="number">8</span>);
             <span class="macro">assert_eq!</span>(dt.alignment(), <span class="number">8</span>);
@@ -1306,10 +1311,10 @@
             <span class="macro">py_run!</span>(
                 py,
                 <span class="kw-2">*</span>locals,
-                <span class="string">&quot;dtype = __import__(&#39;numpy&#39;).dtype((&#39;f8&#39;, (2, 3)))&quot;
+                <span class="string">"dtype = __import__('numpy').dtype(('f8', (2, 3)))"
             </span>);
             <span class="kw">let </span>dt = locals
-                .get_item(<span class="string">&quot;dtype&quot;</span>)
+                .get_item(<span class="string">"dtype"</span>)
                 .unwrap()
                 .unwrap()
                 .downcast::&lt;PyArrayDescr&gt;()
@@ -1317,10 +1322,10 @@
 
             <span class="macro">assert_eq!</span>(dt.num(), NPY_TYPES::NPY_VOID <span class="kw">as </span>c_int);
             <span class="macro">assert_eq!</span>(dt.flags(), <span class="number">0</span>);
-            <span class="macro">assert_eq!</span>(dt.typeobj().name().unwrap(), <span class="string">&quot;void&quot;</span>);
-            <span class="macro">assert_eq!</span>(dt.char(), <span class="string">b&#39;V&#39;</span>);
-            <span class="macro">assert_eq!</span>(dt.kind(), <span class="string">b&#39;V&#39;</span>);
-            <span class="macro">assert_eq!</span>(dt.byteorder(), <span class="string">b&#39;|&#39;</span>);
+            <span class="macro">assert_eq!</span>(dt.typeobj().qualname().unwrap(), <span class="string">"void"</span>);
+            <span class="macro">assert_eq!</span>(dt.char(), <span class="string">b'V'</span>);
+            <span class="macro">assert_eq!</span>(dt.kind(), <span class="string">b'V'</span>);
+            <span class="macro">assert_eq!</span>(dt.byteorder(), <span class="string">b'|'</span>);
             <span class="macro">assert_eq!</span>(dt.is_native_byteorder(), <span class="prelude-val">None</span>);
             <span class="macro">assert_eq!</span>(dt.itemsize(), <span class="number">48</span>);
             <span class="macro">assert_eq!</span>(dt.alignment(), <span class="number">8</span>);
@@ -1342,10 +1347,10 @@
             <span class="macro">py_run!</span>(
                 py,
                 <span class="kw-2">*</span>locals,
-                <span class="string">&quot;dtype = __import__(&#39;numpy&#39;).dtype([(&#39;x&#39;, &#39;u1&#39;), (&#39;y&#39;, &#39;f8&#39;), (&#39;z&#39;, &#39;O&#39;)], align=True)&quot;
+                <span class="string">"dtype = __import__('numpy').dtype([('x', 'u1'), ('y', 'f8'), ('z', 'O')], align=True)"
             </span>);
             <span class="kw">let </span>dt = locals
-                .get_item(<span class="string">&quot;dtype&quot;</span>)
+                .get_item(<span class="string">"dtype"</span>)
                 .unwrap()
                 .unwrap()
                 .downcast::&lt;PyArrayDescr&gt;()
@@ -1355,28 +1360,28 @@
             <span class="macro">assert_ne!</span>(dt.flags() &amp; NPY_ITEM_HASOBJECT, <span class="number">0</span>);
             <span class="macro">assert_ne!</span>(dt.flags() &amp; NPY_NEEDS_PYAPI, <span class="number">0</span>);
             <span class="macro">assert_ne!</span>(dt.flags() &amp; NPY_ALIGNED_STRUCT, <span class="number">0</span>);
-            <span class="macro">assert_eq!</span>(dt.typeobj().name().unwrap(), <span class="string">&quot;void&quot;</span>);
-            <span class="macro">assert_eq!</span>(dt.char(), <span class="string">b&#39;V&#39;</span>);
-            <span class="macro">assert_eq!</span>(dt.kind(), <span class="string">b&#39;V&#39;</span>);
-            <span class="macro">assert_eq!</span>(dt.byteorder(), <span class="string">b&#39;|&#39;</span>);
+            <span class="macro">assert_eq!</span>(dt.typeobj().qualname().unwrap(), <span class="string">"void"</span>);
+            <span class="macro">assert_eq!</span>(dt.char(), <span class="string">b'V'</span>);
+            <span class="macro">assert_eq!</span>(dt.kind(), <span class="string">b'V'</span>);
+            <span class="macro">assert_eq!</span>(dt.byteorder(), <span class="string">b'|'</span>);
             <span class="macro">assert_eq!</span>(dt.is_native_byteorder(), <span class="prelude-val">None</span>);
             <span class="macro">assert_eq!</span>(dt.itemsize(), <span class="number">24</span>);
             <span class="macro">assert_eq!</span>(dt.alignment(), <span class="number">8</span>);
             <span class="macro">assert!</span>(dt.has_object());
-            <span class="macro">assert_eq!</span>(dt.names(), <span class="prelude-val">Some</span>(<span class="macro">vec!</span>[<span class="string">&quot;x&quot;</span>, <span class="string">&quot;y&quot;</span>, <span class="string">&quot;z&quot;</span>]));
+            <span class="macro">assert_eq!</span>(dt.names(), <span class="prelude-val">Some</span>(<span class="macro">vec!</span>[<span class="string">"x"</span>, <span class="string">"y"</span>, <span class="string">"z"</span>]));
             <span class="macro">assert!</span>(dt.has_fields());
             <span class="macro">assert!</span>(dt.is_aligned_struct());
             <span class="macro">assert!</span>(!dt.has_subarray());
             <span class="macro">assert_eq!</span>(dt.ndim(), <span class="number">0</span>);
             <span class="macro">assert_eq!</span>(dt.shape(), <span class="macro">vec!</span>[]);
             <span class="macro">assert!</span>(dt.base().is_equiv_to(dt));
-            <span class="kw">let </span>x = dt.get_field(<span class="string">&quot;x&quot;</span>).unwrap();
+            <span class="kw">let </span>x = dt.get_field(<span class="string">"x"</span>).unwrap();
             <span class="macro">assert!</span>(x.<span class="number">0</span>.is_equiv_to(dtype::&lt;u8&gt;(py)));
             <span class="macro">assert_eq!</span>(x.<span class="number">1</span>, <span class="number">0</span>);
-            <span class="kw">let </span>y = dt.get_field(<span class="string">&quot;y&quot;</span>).unwrap();
+            <span class="kw">let </span>y = dt.get_field(<span class="string">"y"</span>).unwrap();
             <span class="macro">assert!</span>(y.<span class="number">0</span>.is_equiv_to(dtype::&lt;f64&gt;(py)));
             <span class="macro">assert_eq!</span>(y.<span class="number">1</span>, <span class="number">8</span>);
-            <span class="kw">let </span>z = dt.get_field(<span class="string">&quot;z&quot;</span>).unwrap();
+            <span class="kw">let </span>z = dt.get_field(<span class="string">"z"</span>).unwrap();
             <span class="macro">assert!</span>(z.<span class="number">0</span>.is_equiv_to(dtype::&lt;PyObject&gt;(py)));
             <span class="macro">assert_eq!</span>(z.<span class="number">1</span>, <span class="number">16</span>);
         });
