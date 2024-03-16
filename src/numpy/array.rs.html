@@ -1510,6 +1510,20 @@
 <a href="#1509" id="1509">1509</a>
 <a href="#1510" id="1510">1510</a>
 <a href="#1511" id="1511">1511</a>
+<a href="#1512" id="1512">1512</a>
+<a href="#1513" id="1513">1513</a>
+<a href="#1514" id="1514">1514</a>
+<a href="#1515" id="1515">1515</a>
+<a href="#1516" id="1516">1516</a>
+<a href="#1517" id="1517">1517</a>
+<a href="#1518" id="1518">1518</a>
+<a href="#1519" id="1519">1519</a>
+<a href="#1520" id="1520">1520</a>
+<a href="#1521" id="1521">1521</a>
+<a href="#1522" id="1522">1522</a>
+<a href="#1523" id="1523">1523</a>
+<a href="#1524" id="1524">1524</a>
+<a href="#1525" id="1525">1525</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Safe interface for NumPy's [N-dimensional arrays][ndarray]
 //!
 //! [ndarray]: https://numpy.org/doc/stable/reference/arrays.ndarray.html
@@ -1545,7 +1559,7 @@
 };
 <span class="kw">use </span><span class="kw">crate</span>::npyffi::{<span class="self">self</span>, npy_intp, NPY_ORDER, PY_ARRAY_API};
 <span class="kw">use </span><span class="kw">crate</span>::slice_container::PySliceContainer;
-<span class="kw">use </span><span class="kw">crate</span>::untyped_array::PyUntypedArray;
+<span class="kw">use </span><span class="kw">crate</span>::untyped_array::{PyUntypedArray, PyUntypedArrayMethods};
 
 <span class="doccomment">/// A safe, statically-typed wrapper for NumPy's [`ndarray`][ndarray] class.
 ///
@@ -2989,6 +3003,20 @@
             data_ptr.write(elem.clone());
             <span class="kw-2">*</span>data_ptr = data_ptr.add(<span class="number">1</span>);
         }
+    }
+}
+
+<span class="doccomment">/// Implementation of functionality for [`PyArray&lt;T, D&gt;`].
+</span><span class="attr">#[doc(alias = <span class="string">"PyArray"</span>)]
+</span><span class="kw">pub trait </span>PyArrayMethods&lt;<span class="lifetime">'py</span>, T, D&gt;: PyUntypedArrayMethods&lt;<span class="lifetime">'py</span>&gt; {
+    <span class="doccomment">/// Access an untyped representation of this array.
+    </span><span class="kw">fn </span>as_untyped(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>Bound&lt;<span class="lifetime">'py</span>, PyUntypedArray&gt;;
+}
+
+<span class="kw">impl</span>&lt;<span class="lifetime">'py</span>, T, D&gt; PyArrayMethods&lt;<span class="lifetime">'py</span>, T, D&gt; <span class="kw">for </span>Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;T, D&gt;&gt; {
+    <span class="attr">#[inline(always)]
+    </span><span class="kw">fn </span>as_untyped(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>Bound&lt;<span class="lifetime">'py</span>, PyUntypedArray&gt; {
+        <span class="kw">unsafe </span>{ <span class="self">self</span>.downcast_unchecked() }
     }
 }
 

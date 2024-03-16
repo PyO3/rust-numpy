@@ -261,7 +261,7 @@ as well as the [`PyReadonlyArray::try_as_matrix`] and [`PyReadwriteArray::try_as
 
 <span class="kw">pub use </span><span class="kw">crate</span>::array::{
     get_array_module, PyArray, PyArray0, PyArray1, PyArray2, PyArray3, PyArray4, PyArray5,
-    PyArray6, PyArrayDyn,
+    PyArray6, PyArrayDyn, PyArrayMethods,
 };
 <span class="kw">pub use </span><span class="kw">crate</span>::array_like::{
     AllowTypeChange, PyArrayLike, PyArrayLike0, PyArrayLike1, PyArrayLike2, PyArrayLike3,
@@ -279,7 +279,7 @@ as well as the [`PyReadonlyArray::try_as_matrix`] and [`PyReadwriteArray::try_as
 <span class="kw">pub use </span><span class="kw">crate</span>::npyffi::{PY_ARRAY_API, PY_UFUNC_API};
 <span class="kw">pub use </span><span class="kw">crate</span>::strings::{PyFixedString, PyFixedUnicode};
 <span class="kw">pub use </span><span class="kw">crate</span>::sum_products::{dot, einsum, inner};
-<span class="kw">pub use </span><span class="kw">crate</span>::untyped_array::PyUntypedArray;
+<span class="kw">pub use </span><span class="kw">crate</span>::untyped_array::{PyUntypedArray, PyUntypedArrayMethods};
 
 <span class="kw">pub use </span>ndarray::{array, Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};
 

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["get_array_module"],"struct":["PyArray"],"type":["PyArray0","PyArray1","PyArray2","PyArray3","PyArray4","PyArray5","PyArray6","PyArrayDyn"]};
+window.SIDEBAR_ITEMS = {"fn":["get_array_module"],"struct":["PyArray"],"trait":["PyArrayMethods"],"type":["PyArray0","PyArray1","PyArray2","PyArray3","PyArray4","PyArray5","PyArray6","PyArrayDyn"]};
