@@ -3,7 +3,9 @@
 use std::error::Error;
 use std::fmt;
 
-use pyo3::{exceptions::PyTypeError, Py, PyErr, PyErrArguments, PyObject, Python, ToPyObject};
+use pyo3::{
+    exceptions::PyTypeError, Bound, Py, PyErr, PyErrArguments, PyObject, Python, ToPyObject,
+};
 
 use crate::dtype::PyArrayDescr;
 
@@ -59,13 +61,13 @@ impl_pyerr!(DimensionalityError);
 
 /// Represents that types of the given arrays do not match.
 #[derive(Debug)]
-pub struct TypeError<'a> {
-    from: &'a PyArrayDescr,
-    to: &'a PyArrayDescr,
+pub struct TypeError<'py> {
+    from: Bound<'py, PyArrayDescr>,
+    to: Bound<'py, PyArrayDescr>,
 }
 
-impl<'a> TypeError<'a> {
-    pub(crate) fn new(from: &'a PyArrayDescr, to: &'a PyArrayDescr) -> Self {
+impl<'py> TypeError<'py> {
+    pub(crate) fn new(from: Bound<'py, PyArrayDescr>, to: Bound<'py, PyArrayDescr>) -> Self {
         Self { from, to }
     }
 }
@@ -86,8 +88,8 @@ struct TypeErrorArguments {
 impl PyErrArguments for TypeErrorArguments {
     fn arguments<'py>(self, py: Python<'py>) -> PyObject {
         let err = TypeError {
-            from: self.from.as_ref(py),
-            to: self.to.as_ref(py),
+            from: self.from.into_bound(py),
+            to: self.to.into_bound(py),
         };
 
         err.to_string().to_object(py)
