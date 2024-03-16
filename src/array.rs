@@ -281,7 +281,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         let src_dtype = array.dtype();
         let dst_dtype = T::get_dtype_bound(ob.py());
         if !src_dtype.is_equiv_to(&dst_dtype) {
-            return Err(TypeError::new(src_dtype.into_gil_ref(), dst_dtype.into_gil_ref()).into());
+            return Err(TypeError::new(src_dtype, dst_dtype).into());
         }
 
         Ok(array)
