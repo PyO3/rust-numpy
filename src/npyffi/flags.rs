@@ -81,3 +81,10 @@ pub const NPY_OBJECT_DTYPE_FLAGS: npy_char = NPY_LIST_PICKLE
     | NPY_ITEM_REFCOUNT
     | NPY_NEEDS_INIT
     | NPY_NEEDS_PYAPI;
+
+pub const NPY_UFUNC_ZERO: c_int = 0;
+pub const NPY_UFUNC_ONE: c_int = 1;
+pub const NPY_UFUNC_MINUS_ONE: c_int = 2;
+pub const NPY_UFUNC_NONE: c_int = -1;
+pub const NPY_UFUNC_REORDERABLE_NONE: c_int = -2;
+pub const NPY_UFUNC_IDENTITY_VALUE: c_int = -3;
