@@ -13,7 +13,7 @@ use crate::cold;
 use crate::dtype::PyArrayDescr;
 use crate::npyffi;
 
-/// A safe, untyped wrapper for NumPy's [`ndarray`][ndarray] class.
+/// A safe, untyped wrapper for NumPy's [`ndarray`] class.
 ///
 /// Unlike [`PyArray<T,D>`][crate::PyArray], this type does not constrain either element type `T` nor the dimensionality `D`.
 /// This can be useful to inspect function arguments, but it prevents operating on the elements without further downcasts.

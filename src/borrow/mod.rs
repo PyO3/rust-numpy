@@ -279,6 +279,43 @@ where
     D: Dimension,
 {
     /// Try to convert this array into a [`nalgebra::MatrixView`] using the given shape and strides.
+    ///
+    /// Note that nalgebra's types default to Fortan/column-major standard strides whereas NumPy creates C/row-major strides by default.
+    /// Furthermore, array views created by slicing into existing arrays will often have non-standard strides.
+    ///
+    /// If you do not fully control the memory layout of a given array, e.g. at your API entry points,
+    /// it can be useful to opt into nalgebra's support for [dynamic strides][nalgebra::Dyn], for example
+    ///
+    /// ```rust
+    /// # use pyo3::prelude::*;
+    /// use pyo3::py_run;
+    /// use numpy::{get_array_module, PyReadonlyArray2};
+    /// use nalgebra::{MatrixView, Const, Dyn};
+    ///
+    /// #[pyfunction]
+    /// fn sum_standard_layout<'py>(py: Python<'py>, array: PyReadonlyArray2<'py, f64>) -> Option<f64> {
+    ///     let matrix: Option<MatrixView<f64, Const<2>, Const<2>>> = array.try_as_matrix();
+    ///     matrix.map(|matrix| matrix.sum())
+    /// }
+    ///
+    /// #[pyfunction]
+    /// fn sum_dynamic_strides<'py>(py: Python<'py>, array: PyReadonlyArray2<'py, f64>) -> Option<f64> {
+    ///     let matrix: Option<MatrixView<f64, Const<2>, Const<2>, Dyn, Dyn>> = array.try_as_matrix();
+    ///     matrix.map(|matrix| matrix.sum())
+    /// }
+    ///
+    /// Python::with_gil(|py| {
+    ///     let np = py.eval("__import__('numpy')", None, None).unwrap();
+    ///     let sum_standard_layout = wrap_pyfunction!(sum_standard_layout)(py).unwrap();
+    ///     let sum_dynamic_strides = wrap_pyfunction!(sum_dynamic_strides)(py).unwrap();
+    ///
+    ///     py_run!(py, np sum_standard_layout, r"assert sum_standard_layout(np.ones((2, 2), order='F')) == 4.");
+    ///     py_run!(py, np sum_standard_layout, r"assert sum_standard_layout(np.ones((2, 2, 2))[:,:,0]) is None");
+    ///
+    ///     py_run!(py, np sum_dynamic_strides, r"assert sum_dynamic_strides(np.ones((2, 2), order='F')) == 4.");
+    ///     py_run!(py, np sum_dynamic_strides, r"assert sum_dynamic_strides(np.ones((2, 2, 2))[:,:,0]) == 4.");
+    /// });
+    /// ```
     #[doc(alias = "nalgebra")]
     pub fn try_as_matrix<R, C, RStride, CStride>(
         &self,
@@ -466,6 +503,8 @@ where
     D: Dimension,
 {
     /// Try to convert this array into a [`nalgebra::MatrixViewMut`] using the given shape and strides.
+    ///
+    /// See [`PyReadonlyArray::try_as_matrix`] for a discussion of the memory layout requirements.
     #[doc(alias = "nalgebra")]
     pub fn try_as_matrix_mut<R, C, RStride, CStride>(
         &self,

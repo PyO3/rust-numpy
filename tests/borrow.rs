@@ -435,6 +435,26 @@ fn matrix_from_numpy() {
     });
 
     Python::with_gil(|py| {
+        let array = numpy::pyarray![py, [[0, 1], [2, 3]], [[4, 5], [6, 7]]];
+        let array: &PyArray2<i32> = py
+            .eval("a[:,:,0]", Some([("a", array)].into_py_dict(py)), None)
+            .unwrap()
+            .downcast()
+            .unwrap();
+        let array = array.readonly();
+
+        let matrix: nalgebra::MatrixView<
+            '_,
+            i32,
+            nalgebra::Const<2>,
+            nalgebra::Const<2>,
+            nalgebra::Dyn,
+            nalgebra::Dyn,
+        > = array.try_as_matrix().unwrap();
+        assert_eq!(matrix, nalgebra::Matrix2::new(0, 2, 4, 6));
+    });
+
+    Python::with_gil(|py| {
         let array = numpy::pyarray![py, [0, 1, 2], [3, 4, 5], [6, 7, 8]];
         let array = array.readonly();
 
