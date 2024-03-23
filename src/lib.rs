@@ -92,8 +92,8 @@ pub use pyo3;
 pub use nalgebra;
 
 pub use crate::array::{
-    get_array_module, PyArray, PyArray0, PyArray1, PyArray2, PyArray3, PyArray4, PyArray5,
-    PyArray6, PyArrayDyn, PyArrayMethods,
+    get_array_module, PyArray, PyArray0, PyArray0Methods, PyArray1, PyArray2, PyArray3, PyArray4,
+    PyArray5, PyArray6, PyArrayDyn, PyArrayMethods,
 };
 pub use crate::array_like::{
     AllowTypeChange, PyArrayLike, PyArrayLike0, PyArrayLike1, PyArrayLike2, PyArrayLike3,
