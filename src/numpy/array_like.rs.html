@@ -199,6 +199,7 @@
 <a href="#198" id="198">198</a>
 <a href="#199" id="199">199</a>
 <a href="#200" id="200">200</a>
+<a href="#201" id="201">201</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
 <span class="kw">use </span>std::ops::Deref;
 
@@ -207,9 +208,10 @@
     intern,
     sync::GILOnceCell,
     types::{PyAnyMethods, PyDict},
-    FromPyObject, Py, PyAny, PyResult,
+    Bound, FromPyObject, Py, PyAny, PyResult,
 };
 
+<span class="kw">use </span><span class="kw">crate</span>::array::PyArrayMethods;
 <span class="kw">use </span><span class="kw">crate</span>::sealed::Sealed;
 <span class="kw">use crate</span>::{get_array_module, Element, IntoPyArray, PyArray, PyReadonlyArray};
 
@@ -332,12 +334,12 @@
 
 <span class="kw">impl</span>&lt;<span class="lifetime">'py</span>, T, D, C&gt; FromPyObject&lt;<span class="lifetime">'py</span>&gt; <span class="kw">for </span>PyArrayLike&lt;<span class="lifetime">'py</span>, T, D, C&gt;
 <span class="kw">where
-    </span>T: Element,
-    D: Dimension,
+    </span>T: Element + <span class="lifetime">'py</span>,
+    D: Dimension + <span class="lifetime">'py</span>,
     C: Coerce,
     Vec&lt;T&gt;: FromPyObject&lt;<span class="lifetime">'py</span>&gt;,
 {
-    <span class="kw">fn </span>extract(ob: <span class="kw-2">&amp;</span><span class="lifetime">'py </span>PyAny) -&gt; PyResult&lt;<span class="self">Self</span>&gt; {
+    <span class="kw">fn </span>extract_bound(ob: <span class="kw-2">&amp;</span>Bound&lt;<span class="lifetime">'py</span>, PyAny&gt;) -&gt; PyResult&lt;<span class="self">Self</span>&gt; {
         <span class="kw">if let </span><span class="prelude-val">Ok</span>(array) = ob.downcast::&lt;PyArray&lt;T, D&gt;&gt;() {
             <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="self">Self</span>(array.readonly(), PhantomData));
         }

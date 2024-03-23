@@ -645,6 +645,12 @@
 <a href="#644" id="644">644</a>
 <a href="#645" id="645">645</a>
 <a href="#646" id="646">646</a>
+<a href="#647" id="647">647</a>
+<a href="#648" id="648">648</a>
+<a href="#649" id="649">649</a>
+<a href="#650" id="650">650</a>
+<a href="#651" id="651">651</a>
+<a href="#652" id="652">652</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Types to safely create references into NumPy arrays
 //!
 //! It is assumed that unchecked code - which includes unsafe Rust and Python - is validated by its author
@@ -816,12 +822,13 @@
 <span class="kw">use </span>ndarray::{
     ArrayView, ArrayViewMut, Dimension, IntoDimension, Ix0, Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn,
 };
-<span class="kw">use </span>pyo3::{FromPyObject, PyAny, PyResult};
+<span class="kw">use </span>pyo3::{types::PyAnyMethods, Bound, FromPyObject, PyAny, PyResult};
 
-<span class="kw">use </span><span class="kw">crate</span>::array::PyArray;
+<span class="kw">use </span><span class="kw">crate</span>::array::{PyArray, PyArrayMethods};
 <span class="kw">use </span><span class="kw">crate</span>::convert::NpyIndex;
 <span class="kw">use </span><span class="kw">crate</span>::dtype::Element;
 <span class="kw">use </span><span class="kw">crate</span>::error::{BorrowError, NotContiguousError};
+<span class="kw">use </span><span class="kw">crate</span>::untyped_array::PyUntypedArrayMethods;
 
 <span class="kw">use </span>shared::{acquire, acquire_mut, release, release_mut};
 
@@ -837,7 +844,7 @@
     </span>T: Element,
     D: Dimension,
 {
-    array: <span class="kw-2">&amp;</span><span class="lifetime">'py </span>PyArray&lt;T, D&gt;,
+    array: Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;T, D&gt;&gt;,
 }
 
 <span class="doccomment">/// Read-only borrow of a zero-dimensional array.
@@ -869,16 +876,16 @@
     </span>T: Element,
     D: Dimension,
 {
-    <span class="kw">type </span>Target = PyArray&lt;T, D&gt;;
+    <span class="kw">type </span>Target = Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;T, D&gt;&gt;;
 
     <span class="kw">fn </span>deref(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="self">Self</span>::Target {
-        <span class="self">self</span>.array
+        <span class="kw-2">&amp;</span><span class="self">self</span>.array
     }
 }
 
 <span class="kw">impl</span>&lt;<span class="lifetime">'py</span>, T: Element, D: Dimension&gt; FromPyObject&lt;<span class="lifetime">'py</span>&gt; <span class="kw">for </span>PyReadonlyArray&lt;<span class="lifetime">'py</span>, T, D&gt; {
-    <span class="kw">fn </span>extract(obj: <span class="kw-2">&amp;</span><span class="lifetime">'py </span>PyAny) -&gt; PyResult&lt;<span class="self">Self</span>&gt; {
-        <span class="kw">let </span>array: <span class="kw-2">&amp;</span><span class="lifetime">'py </span>PyArray&lt;T, D&gt; = obj.extract()<span class="question-mark">?</span>;
+    <span class="kw">fn </span>extract_bound(obj: <span class="kw-2">&amp;</span>Bound&lt;<span class="lifetime">'py</span>, PyAny&gt;) -&gt; PyResult&lt;<span class="self">Self</span>&gt; {
+        <span class="kw">let </span>array = obj.downcast::&lt;PyArray&lt;T, D&gt;&gt;()<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(array.readonly())
     }
 }
@@ -888,7 +895,7 @@
     </span>T: Element,
     D: Dimension,
 {
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>try_new(array: <span class="kw-2">&amp;</span><span class="lifetime">'py </span>PyArray&lt;T, D&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, BorrowError&gt; {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>try_new(array: Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;T, D&gt;&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, BorrowError&gt; {
         acquire(array.py(), array.as_array_ptr())<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(<span class="self">Self </span>{ array })
@@ -971,7 +978,7 @@
     }
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, D&gt; Clone <span class="kw">for </span>PyReadonlyArray&lt;<span class="lifetime">'a</span>, T, D&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'py</span>, T, D&gt; Clone <span class="kw">for </span>PyReadonlyArray&lt;<span class="lifetime">'py</span>, T, D&gt;
 <span class="kw">where
     </span>T: Element,
     D: Dimension,
@@ -979,11 +986,13 @@
     <span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
         acquire(<span class="self">self</span>.array.py(), <span class="self">self</span>.array.as_array_ptr()).unwrap();
 
-        <span class="self">Self </span>{ array: <span class="self">self</span>.array }
+        <span class="self">Self </span>{
+            array: <span class="self">self</span>.array.clone(),
+        }
     }
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, D&gt; Drop <span class="kw">for </span>PyReadonlyArray&lt;<span class="lifetime">'a</span>, T, D&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'py</span>, T, D&gt; Drop <span class="kw">for </span>PyReadonlyArray&lt;<span class="lifetime">'py</span>, T, D&gt;
 <span class="kw">where
     </span>T: Element,
     D: Dimension,
@@ -1021,7 +1030,7 @@
     </span>T: Element,
     D: Dimension,
 {
-    array: <span class="kw-2">&amp;</span><span class="lifetime">'py </span>PyArray&lt;T, D&gt;,
+    array: Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;T, D&gt;&gt;,
 }
 
 <span class="doccomment">/// Read-write borrow of a zero-dimensional array.
@@ -1062,8 +1071,8 @@
 }
 
 <span class="kw">impl</span>&lt;<span class="lifetime">'py</span>, T: Element, D: Dimension&gt; FromPyObject&lt;<span class="lifetime">'py</span>&gt; <span class="kw">for </span>PyReadwriteArray&lt;<span class="lifetime">'py</span>, T, D&gt; {
-    <span class="kw">fn </span>extract(obj: <span class="kw-2">&amp;</span><span class="lifetime">'py </span>PyAny) -&gt; PyResult&lt;<span class="self">Self</span>&gt; {
-        <span class="kw">let </span>array: <span class="kw-2">&amp;</span><span class="lifetime">'py </span>PyArray&lt;T, D&gt; = obj.extract()<span class="question-mark">?</span>;
+    <span class="kw">fn </span>extract_bound(obj: <span class="kw-2">&amp;</span>Bound&lt;<span class="lifetime">'py</span>, PyAny&gt;) -&gt; PyResult&lt;<span class="self">Self</span>&gt; {
+        <span class="kw">let </span>array = obj.downcast::&lt;PyArray&lt;T, D&gt;&gt;()<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(array.readwrite())
     }
 }
@@ -1073,7 +1082,7 @@
     </span>T: Element,
     D: Dimension,
 {
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>try_new(array: <span class="kw-2">&amp;</span><span class="lifetime">'py </span>PyArray&lt;T, D&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, BorrowError&gt; {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>try_new(array: Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;T, D&gt;&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, BorrowError&gt; {
         acquire_mut(array.py(), array.as_array_ptr())<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(<span class="self">Self </span>{ array })
@@ -1167,7 +1176,7 @@
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyUntypedArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
@@ -1180,20 +1189,23 @@
     /// });
     /// ```
     </span><span class="kw">pub fn </span>resize&lt;ID: IntoDimension&gt;(<span class="self">self</span>, dims: ID) -&gt; PyResult&lt;<span class="self">Self</span>&gt; {
-        <span class="kw">let </span>array = <span class="self">self</span>.array;
-
         <span class="comment">// SAFETY: Ownership of `self` proves exclusive access to the interior of the array.
         </span><span class="kw">unsafe </span>{
-            array.resize(dims)<span class="question-mark">?</span>;
+            <span class="self">self</span>.array.resize(dims)<span class="question-mark">?</span>;
         }
 
-        drop(<span class="self">self</span>);
+        <span class="kw">let </span>py = <span class="self">self</span>.array.py();
+        <span class="kw">let </span>ptr = <span class="self">self</span>.array.as_array_ptr();
 
-        <span class="prelude-val">Ok</span>(<span class="self">Self</span>::try_new(array).unwrap())
+        <span class="comment">// Update the borrow metadata to match the shape change.
+        </span>release_mut(py, ptr);
+        acquire_mut(py, ptr).unwrap();
+
+        <span class="prelude-val">Ok</span>(<span class="self">self</span>)
     }
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, D&gt; Drop <span class="kw">for </span>PyReadwriteArray&lt;<span class="lifetime">'a</span>, T, D&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'py</span>, T, D&gt; Drop <span class="kw">for </span>PyReadwriteArray&lt;<span class="lifetime">'py</span>, T, D&gt;
 <span class="kw">where
     </span>T: Element,
     D: Dimension,
