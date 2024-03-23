@@ -879,6 +879,8 @@ where
 {
     /// Try to convert this array into a [`nalgebra::MatrixView`] using the given shape and strides.
     ///
+    /// See [`PyReadonlyArray::try_as_matrix`] for a discussion of the memory layout requirements.
+    ///
     /// # Safety
     ///
     /// Calling this method invalidates all exclusive references to the internal data, e.g. `ArrayViewMut` or `MatrixSliceMut`.
@@ -900,6 +902,8 @@ where
     }
 
     /// Try to convert this array into a [`nalgebra::MatrixViewMut`] using the given shape and strides.
+    ///
+    /// See [`PyReadonlyArray::try_as_matrix`] for a discussion of the memory layout requirements.
     ///
     /// # Safety
     ///
