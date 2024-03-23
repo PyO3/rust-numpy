@@ -243,11 +243,11 @@
 <span class="kw">use </span>pyo3::{
     ffi::{Py_UCS1, Py_UCS4},
     sync::GILProtected,
-    Py, Python,
+    Bound, Py, Python,
 };
 <span class="kw">use </span>rustc_hash::FxHashMap;
 
-<span class="kw">use </span><span class="kw">crate</span>::dtype::{Element, PyArrayDescr};
+<span class="kw">use </span><span class="kw">crate</span>::dtype::{Element, PyArrayDescr, PyArrayDescrMethods};
 <span class="kw">use </span><span class="kw">crate</span>::npyffi::NPY_TYPES;
 
 <span class="doccomment">/// A newtype wrapper around [`[u8; N]`][Py_UCS1] to handle [`byte` scalars][numpy-bytes] while satisfying coherence.
@@ -306,7 +306,7 @@
 <span class="kw">unsafe impl</span>&lt;<span class="kw">const </span>N: usize&gt; Element <span class="kw">for </span>PyFixedString&lt;N&gt; {
     <span class="kw">const </span>IS_COPY: bool = <span class="bool-val">true</span>;
 
-    <span class="kw">fn </span>get_dtype&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; <span class="kw-2">&amp;</span>PyArrayDescr {
+    <span class="kw">fn </span>get_dtype_bound(py: Python&lt;<span class="lifetime">'_</span>&gt;) -&gt; Bound&lt;<span class="lifetime">'_</span>, PyArrayDescr&gt; {
         <span class="kw">static </span>DTYPES: TypeDescriptors = TypeDescriptors::new();
 
         <span class="kw">unsafe </span>{ DTYPES.from_size(py, NPY_TYPES::NPY_STRING, <span class="string">b'|' </span><span class="kw">as _</span>, size_of::&lt;<span class="self">Self</span>&gt;()) }
@@ -377,7 +377,7 @@
 <span class="kw">unsafe impl</span>&lt;<span class="kw">const </span>N: usize&gt; Element <span class="kw">for </span>PyFixedUnicode&lt;N&gt; {
     <span class="kw">const </span>IS_COPY: bool = <span class="bool-val">true</span>;
 
-    <span class="kw">fn </span>get_dtype&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; <span class="kw-2">&amp;</span>PyArrayDescr {
+    <span class="kw">fn </span>get_dtype_bound(py: Python&lt;<span class="lifetime">'_</span>&gt;) -&gt; Bound&lt;<span class="lifetime">'_</span>, PyArrayDescr&gt; {
         <span class="kw">static </span>DTYPES: TypeDescriptors = TypeDescriptors::new();
 
         <span class="kw">unsafe </span>{ DTYPES.from_size(py, NPY_TYPES::NPY_UNICODE, <span class="string">b'=' </span><span class="kw">as _</span>, size_of::&lt;<span class="self">Self</span>&gt;()) }
@@ -399,12 +399,12 @@
     <span class="doccomment">/// `npy_type` must be either `NPY_STRING` or `NPY_UNICODE` with matching `byteorder` and `size`
     </span><span class="attr">#[allow(clippy::wrong_self_convention)]
     </span><span class="kw">unsafe fn </span>from_size&lt;<span class="lifetime">'py</span>&gt;(
-        <span class="kw-2">&amp;</span><span class="lifetime">'py </span><span class="self">self</span>,
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
         py: Python&lt;<span class="lifetime">'py</span>&gt;,
         npy_type: NPY_TYPES,
         byteorder: c_char,
         size: usize,
-    ) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span>PyArrayDescr {
+    ) -&gt; Bound&lt;<span class="lifetime">'py</span>, PyArrayDescr&gt; {
         <span class="kw">let </span><span class="kw-2">mut </span>dtypes = <span class="self">self</span>.dtypes.get(py).borrow_mut();
 
         <span class="kw">let </span>dtype = <span class="kw">match </span>dtypes.get_or_insert_with(Default::default).entry(size) {
@@ -420,7 +420,7 @@
             }
         };
 
-        dtype.clone().into_ref(py)
+        dtype.clone().into_bound(py)
     }
 }
 

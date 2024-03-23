@@ -166,6 +166,10 @@
 <a href="#165" id="165">165</a>
 <a href="#166" id="166">166</a>
 <a href="#167" id="167">167</a>
+<a href="#168" id="168">168</a>
+<a href="#169" id="169">169</a>
+<a href="#170" id="170">170</a>
+<a href="#171" id="171">171</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! This crate provides Rust interfaces for [NumPy C APIs][c-api],
 //! especially for the [ndarray][ndarray] class.
 //!
@@ -274,7 +278,11 @@ as well as the [`PyReadonlyArray::try_as_matrix`] and [`PyReadwriteArray::try_as
     PyReadwriteArray5, PyReadwriteArray6, PyReadwriteArrayDyn,
 };
 <span class="kw">pub use </span><span class="kw">crate</span>::convert::{IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
-<span class="kw">pub use </span><span class="kw">crate</span>::dtype::{dtype, Complex32, Complex64, Element, PyArrayDescr};
+<span class="attr">#[allow(deprecated)]
+</span><span class="kw">pub use </span><span class="kw">crate</span>::dtype::dtype;
+<span class="kw">pub use </span><span class="kw">crate</span>::dtype::{
+    dtype_bound, Complex32, Complex64, Element, PyArrayDescr, PyArrayDescrMethods,
+};
 <span class="kw">pub use </span><span class="kw">crate</span>::error::{BorrowError, FromVecError, NotContiguousError};
 <span class="kw">pub use </span><span class="kw">crate</span>::npyffi::{PY_ARRAY_API, PY_UFUNC_API};
 <span class="kw">pub use </span><span class="kw">crate</span>::strings::{PyFixedString, PyFixedUnicode};

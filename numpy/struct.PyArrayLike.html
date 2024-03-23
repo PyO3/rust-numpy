@@ -335,13 +335,13 @@ Python::with_gil(|py| {
 </div></details><details class="toggle method-toggle" open><summary><section id="method.dtype" class="method"><a class="src rightside" href="../src/numpy/untyped_array.rs.html#114-116">source</a><h4 class="code-header">pub fn <a href="#method.dtype" class="fn">dtype</a>(&amp;self) -&gt; &amp;<a class="struct" href="struct.PyArrayDescr.html" title="struct numpy::PyArrayDescr">PyArrayDescr</a></h4></section></summary><div class="docblock"><p>Returns the <code>dtype</code> of the array.</p>
 <p>See also <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.dtype.html"><code>ndarray.dtype</code></a> and <a href="https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_DTYPE"><code>PyArray_DTYPE</code></a>.</p>
 <h5 id="example-12"><a href="#example-12">Example</a></h5>
-<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>numpy::{dtype, PyArray};
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>numpy::{dtype_bound, PyArray};
 <span class="kw">use </span>pyo3::Python;
 
 Python::with_gil(|py| {
    <span class="kw">let </span>array = PyArray::from_vec(py, <span class="macro">vec!</span>[<span class="number">1_i32</span>, <span class="number">2</span>, <span class="number">3</span>]);
 
-   <span class="macro">assert!</span>(array.dtype().is_equiv_to(dtype::&lt;i32&gt;(py)));
+   <span class="macro">assert!</span>(array.dtype().is_equiv_to(dtype_bound::&lt;i32&gt;(py).as_gil_ref()));
 });</code></pre></div>
 </div></details><details class="toggle method-toggle" open><summary><section id="method.is_contiguous" class="method"><a class="src rightside" href="../src/numpy/untyped_array.rs.html#140-142">source</a><h4 class="code-header">pub fn <a href="#method.is_contiguous" class="fn">is_contiguous</a>(&amp;self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/1.76.0/std/primitive.bool.html">bool</a></h4></section></summary><div class="docblock"><p>Returns <code>true</code> if the internal data of the array is contiguous,
 indepedently of whether C-style/row-major or Fortran-style/column-major.</p>

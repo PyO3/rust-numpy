@@ -407,10 +407,10 @@
 <span class="kw">use </span>std::hash::Hash;
 <span class="kw">use </span>std::marker::PhantomData;
 
-<span class="kw">use </span>pyo3::{sync::GILProtected, Py, Python};
+<span class="kw">use </span>pyo3::{sync::GILProtected, Bound, Py, Python};
 <span class="kw">use </span>rustc_hash::FxHashMap;
 
-<span class="kw">use </span><span class="kw">crate</span>::dtype::{Element, PyArrayDescr};
+<span class="kw">use </span><span class="kw">crate</span>::dtype::{Element, PyArrayDescr, PyArrayDescrMethods};
 <span class="kw">use </span><span class="kw">crate</span>::npyffi::{PyArray_DatetimeDTypeMetaData, NPY_DATETIMEUNIT, NPY_TYPES};
 
 <span class="doccomment">/// Represents the [datetime units][datetime-units] supported by NumPy
@@ -500,7 +500,7 @@
 <span class="kw">unsafe impl</span>&lt;U: Unit&gt; Element <span class="kw">for </span>Datetime&lt;U&gt; {
     <span class="kw">const </span>IS_COPY: bool = <span class="bool-val">true</span>;
 
-    <span class="kw">fn </span>get_dtype&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span>PyArrayDescr {
+    <span class="kw">fn </span>get_dtype_bound(py: Python&lt;<span class="lifetime">'_</span>&gt;) -&gt; Bound&lt;<span class="lifetime">'_</span>, PyArrayDescr&gt; {
         <span class="kw">static </span>DTYPES: TypeDescriptors = <span class="kw">unsafe </span>{ TypeDescriptors::new(NPY_TYPES::NPY_DATETIME) };
 
         DTYPES.from_unit(py, U::UNIT)
@@ -535,7 +535,7 @@
 <span class="kw">unsafe impl</span>&lt;U: Unit&gt; Element <span class="kw">for </span>Timedelta&lt;U&gt; {
     <span class="kw">const </span>IS_COPY: bool = <span class="bool-val">true</span>;
 
-    <span class="kw">fn </span>get_dtype&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span>PyArrayDescr {
+    <span class="kw">fn </span>get_dtype_bound(py: Python&lt;<span class="lifetime">'_</span>&gt;) -&gt; Bound&lt;<span class="lifetime">'_</span>, PyArrayDescr&gt; {
         <span class="kw">static </span>DTYPES: TypeDescriptors = <span class="kw">unsafe </span>{ TypeDescriptors::new(NPY_TYPES::NPY_TIMEDELTA) };
 
         DTYPES.from_unit(py, U::UNIT)
@@ -564,7 +564,7 @@
     }
 
     <span class="attr">#[allow(clippy::wrong_self_convention)]
-    </span><span class="kw">fn </span>from_unit&lt;<span class="lifetime">'py</span>&gt;(<span class="kw-2">&amp;</span><span class="lifetime">'py </span><span class="self">self</span>, py: Python&lt;<span class="lifetime">'py</span>&gt;, unit: NPY_DATETIMEUNIT) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span>PyArrayDescr {
+    </span><span class="kw">fn </span>from_unit&lt;<span class="lifetime">'py</span>&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, py: Python&lt;<span class="lifetime">'py</span>&gt;, unit: NPY_DATETIMEUNIT) -&gt; Bound&lt;<span class="lifetime">'py</span>, PyArrayDescr&gt; {
         <span class="kw">let </span><span class="kw-2">mut </span>dtypes = <span class="self">self</span>.dtypes.get(py).borrow_mut();
 
         <span class="kw">let </span>dtype = <span class="kw">match </span>dtypes.get_or_insert_with(Default::default).entry(unit) {
@@ -585,7 +585,7 @@
             }
         };
 
-        dtype.clone().into_ref(py)
+        dtype.clone().into_bound(py)
     }
 }
 

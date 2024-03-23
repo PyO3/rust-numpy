@@ -1552,7 +1552,7 @@
 <span class="kw">use </span><span class="kw">crate</span>::borrow::{PyReadonlyArray, PyReadwriteArray};
 <span class="kw">use </span><span class="kw">crate</span>::cold;
 <span class="kw">use </span><span class="kw">crate</span>::convert::{ArrayExt, IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
-<span class="kw">use </span><span class="kw">crate</span>::dtype::Element;
+<span class="kw">use </span><span class="kw">crate</span>::dtype::{Element, PyArrayDescrMethods};
 <span class="kw">use </span><span class="kw">crate</span>::error::{
     BorrowError, DimensionalityError, FromVecError, IgnoreError, NotContiguousError, TypeError,
     DIMENSIONALITY_MISMATCH_ERR, MAX_DIMENSIONALITY_ERR,
@@ -1804,9 +1804,9 @@
         }
 
         <span class="comment">// Check if the element type matches `T`.
-        </span><span class="kw">let </span>src_dtype = arr_gil_ref.dtype();
-        <span class="kw">let </span>dst_dtype = T::get_dtype(ob.py());
-        <span class="kw">if </span>!src_dtype.is_equiv_to(dst_dtype) {
+        </span><span class="kw">let </span>src_dtype = array.dtype();
+        <span class="kw">let </span>dst_dtype = T::get_dtype_bound(ob.py());
+        <span class="kw">if </span>!src_dtype.is_equiv_to(<span class="kw-2">&amp;</span>dst_dtype) {
             <span class="kw">return </span><span class="prelude-val">Err</span>(TypeError::new(src_dtype, dst_dtype).into());
         }
 
@@ -1880,7 +1880,7 @@
         <span class="kw">let </span>ptr = PY_ARRAY_API.PyArray_NewFromDescr(
             py,
             PY_ARRAY_API.get_type_object(py, npyffi::NpyTypes::PyArray_Type),
-            T::get_dtype(py).into_dtype_ptr(),
+            T::get_dtype_bound(py).into_dtype_ptr(),
             dims.ndim_cint(),
             dims.as_dims_ptr(),
             strides <span class="kw">as </span><span class="kw-2">*mut </span>npy_intp, <span class="comment">// strides
@@ -1906,7 +1906,7 @@
         <span class="kw">let </span>ptr = PY_ARRAY_API.PyArray_NewFromDescr(
             py,
             PY_ARRAY_API.get_type_object(py, npyffi::NpyTypes::PyArray_Type),
-            T::get_dtype(py).into_dtype_ptr(),
+            T::get_dtype_bound(py).into_dtype_ptr(),
             dims.ndim_cint(),
             dims.as_dims_ptr(),
             strides <span class="kw">as </span><span class="kw-2">*mut </span>npy_intp,    <span class="comment">// strides
@@ -2026,7 +2026,7 @@
                 py,
                 dims.ndim_cint(),
                 dims.as_dims_ptr(),
-                T::get_dtype(py).into_dtype_ptr(),
+                T::get_dtype_bound(py).into_dtype_ptr(),
                 <span class="kw">if </span>is_fortran { -<span class="number">1 </span>} <span class="kw">else </span>{ <span class="number">0 </span>},
             );
             <span class="self">Self</span>::from_owned_ptr(py, ptr)
@@ -2841,7 +2841,7 @@
             PY_ARRAY_API.PyArray_CastToType(
                 <span class="self">self</span>.py(),
                 <span class="self">self</span>.as_array_ptr(),
-                U::get_dtype(<span class="self">self</span>.py()).into_dtype_ptr(),
+                U::get_dtype_bound(<span class="self">self</span>.py()).into_dtype_ptr(),
                 <span class="kw">if </span>is_fortran { -<span class="number">1 </span>} <span class="kw">else </span>{ <span class="number">0 </span>},
             )
         };
@@ -2987,7 +2987,7 @@
                 start.as_(),
                 stop.as_(),
                 step.as_(),
-                T::get_dtype(py).num(),
+                T::get_dtype_bound(py).num(),
             );
             <span class="self">Self</span>::from_owned_ptr(py, ptr)
         }
