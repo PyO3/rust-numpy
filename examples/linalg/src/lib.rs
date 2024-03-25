@@ -1,16 +1,19 @@
 use ndarray_linalg::solve::Inverse;
 use numpy::{IntoPyArray, PyArray2, PyReadonlyArray2};
-use pyo3::{exceptions::PyRuntimeError, pymodule, types::PyModule, PyResult, Python};
+use pyo3::{exceptions::PyRuntimeError, pymodule, types::PyModule, Bound, PyResult, Python};
 
 #[pymodule]
-fn rust_linalg<'py>(_py: Python<'py>, m: &'py PyModule) -> PyResult<()> {
+fn rust_linalg<'py>(m: &Bound<'py, PyModule>) -> PyResult<()> {
     #[pyfn(m)]
-    fn inv<'py>(py: Python<'py>, x: PyReadonlyArray2<'py, f64>) -> PyResult<&'py PyArray2<f64>> {
+    fn inv<'py>(
+        py: Python<'py>,
+        x: PyReadonlyArray2<'py, f64>,
+    ) -> PyResult<Bound<'py, PyArray2<f64>>> {
         let x = x.as_array();
         let y = x
             .inv()
             .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
-        Ok(y.into_pyarray(py))
+        Ok(y.into_pyarray_bound(py))
     }
     Ok(())
 }

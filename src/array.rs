@@ -803,6 +803,18 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         self.as_borrowed().to_vec()
     }
 
+    /// Deprecated form of [`PyArray<T, D>::from_array_bound`]
+    #[deprecated(
+        since = "0.21.0",
+        note = "will be replaced by PyArray::from_array_bound in the future"
+    )]
+    pub fn from_array<'py, S>(py: Python<'py>, arr: &ArrayBase<S, D>) -> &'py Self
+    where
+        S: Data<Elem = T>,
+    {
+        Self::from_array_bound(py, arr).into_gil_ref()
+    }
+
     /// Construct a NumPy array from a [`ndarray::ArrayBase`].
     ///
     /// This method allocates memory in Python's heap via the NumPy API,
@@ -811,21 +823,21 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyArrayMethods};
     /// use ndarray::array;
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let pyarray = PyArray::from_array(py, &array![[1, 2], [3, 4]]);
+    ///     let pyarray = PyArray::from_array_bound(py, &array![[1, 2], [3, 4]]);
     ///
     ///     assert_eq!(pyarray.readonly().as_array(), array![[1, 2], [3, 4]]);
     /// });
     /// ```
-    pub fn from_array<'py, S>(py: Python<'py>, arr: &ArrayBase<S, D>) -> &'py Self
+    pub fn from_array_bound<'py, S>(py: Python<'py>, arr: &ArrayBase<S, D>) -> Bound<'py, Self>
     where
         S: Data<Elem = T>,
     {
-        ToPyArray::to_pyarray(arr, py)
+        ToPyArray::to_pyarray_bound(arr, py)
     }
 
     /// Get an immutable borrow of the NumPy array
@@ -1087,23 +1099,45 @@ impl<T: Element> PyArray<T, Ix1> {
         }
     }
 
+    /// Deprecated form of [`PyArray<T, Ix1>::from_vec_bound`]
+    #[deprecated(
+        since = "0.21.0",
+        note = "will be replaced by `PyArray::from_vec_bound` in the future"
+    )]
+    #[inline(always)]
+    pub fn from_vec<'py>(py: Python<'py>, vec: Vec<T>) -> &'py Self {
+        Self::from_vec_bound(py, vec).into_gil_ref()
+    }
+
     /// Construct a one-dimensional array from a [`Vec<T>`][Vec].
     ///
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
     ///     let vec = vec![1, 2, 3, 4, 5];
-    ///     let pyarray = PyArray::from_vec(py, vec);
+    ///     let pyarray = PyArray::from_vec_bound(py, vec);
     ///     assert_eq!(pyarray.readonly().as_slice().unwrap(), &[1, 2, 3, 4, 5]);
     /// });
     /// ```
     #[inline(always)]
-    pub fn from_vec<'py>(py: Python<'py>, vec: Vec<T>) -> &'py Self {
-        vec.into_pyarray(py)
+    pub fn from_vec_bound(py: Python<'_>, vec: Vec<T>) -> Bound<'_, Self> {
+        vec.into_pyarray_bound(py)
+    }
+
+    /// Deprecated form of [`PyArray<T, Ix1>::from_iter_bound`]
+    #[deprecated(
+        since = "0.21.0",
+        note = "will be replaced by PyArray::from_iter_bound in the future"
+    )]
+    pub fn from_iter<'py, I>(py: Python<'py>, iter: I) -> &'py Self
+    where
+        I: IntoIterator<Item = T>,
+    {
+        Self::from_iter_bound(py, iter).into_gil_ref()
     }
 
     /// Construct a one-dimensional array from an [`Iterator`].
@@ -1114,24 +1148,33 @@ impl<T: Element> PyArray<T, Ix1> {
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let pyarray = PyArray::from_iter(py, "abcde".chars().map(u32::from));
+    ///     let pyarray = PyArray::from_iter_bound(py, "abcde".chars().map(u32::from));
     ///     assert_eq!(pyarray.readonly().as_slice().unwrap(), &[97, 98, 99, 100, 101]);
     /// });
     /// ```
-    pub fn from_iter<'py, I>(py: Python<'py>, iter: I) -> &'py Self
+    pub fn from_iter_bound<I>(py: Python<'_>, iter: I) -> Bound<'_, Self>
     where
         I: IntoIterator<Item = T>,
     {
         let data = iter.into_iter().collect::<Vec<_>>();
-        data.into_pyarray(py)
+        data.into_pyarray_bound(py)
     }
 }
 
 impl<T: Element> PyArray<T, Ix2> {
+    /// Deprecated form of [`PyArray<T, Ix2>::from_vec2_bound`]
+    #[deprecated(
+        since = "0.21.0",
+        note = "will be replaced by `PyArray::from_vec2_bound` in the future"
+    )]
+    pub fn from_vec2<'py>(py: Python<'py>, v: &[Vec<T>]) -> Result<&'py Self, FromVecError> {
+        Self::from_vec2_bound(py, v).map(Bound::into_gil_ref)
+    }
+
     /// Construct a two-dimension array from a [`Vec<Vec<T>>`][Vec].
     ///
     /// This function checks all dimensions of the inner vectors and returns
@@ -1140,20 +1183,23 @@ impl<T: Element> PyArray<T, Ix2> {
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyArrayMethods};
     /// use pyo3::Python;
     /// use ndarray::array;
     ///
     /// Python::with_gil(|py| {
     ///     let vec2 = vec![vec![11, 12], vec![21, 22]];
-    ///     let pyarray = PyArray::from_vec2(py, &vec2).unwrap();
+    ///     let pyarray = PyArray::from_vec2_bound(py, &vec2).unwrap();
     ///     assert_eq!(pyarray.readonly().as_array(), array![[11, 12], [21, 22]]);
     ///
     ///     let ragged_vec2 = vec![vec![11, 12], vec![21]];
-    ///     assert!(PyArray::from_vec2(py, &ragged_vec2).is_err());
+    ///     assert!(PyArray::from_vec2_bound(py, &ragged_vec2).is_err());
     /// });
     /// ```
-    pub fn from_vec2<'py>(py: Python<'py>, v: &[Vec<T>]) -> Result<&'py Self, FromVecError> {
+    pub fn from_vec2_bound<'py>(
+        py: Python<'py>,
+        v: &[Vec<T>],
+    ) -> Result<Bound<'py, Self>, FromVecError> {
         let len2 = v.first().map_or(0, |v| v.len());
         let dims = [v.len(), len2];
         // SAFETY: The result of `Self::new` is always safe to drop.
@@ -1167,12 +1213,21 @@ impl<T: Element> PyArray<T, Ix2> {
                 }
                 clone_elements(v, &mut data_ptr);
             }
-            Ok(array.into_gil_ref())
+            Ok(array)
         }
     }
 }
 
 impl<T: Element> PyArray<T, Ix3> {
+    /// Deprecated form of [`PyArray<T, Ix3>::from_vec3_bound`]
+    #[deprecated(
+        since = "0.21.0",
+        note = "will be replaced by `PyArray::from_vec3_bound` in the future"
+    )]
+    pub fn from_vec3<'py>(py: Python<'py>, v: &[Vec<Vec<T>>]) -> Result<&'py Self, FromVecError> {
+        Self::from_vec3_bound(py, v).map(Bound::into_gil_ref)
+    }
+
     /// Construct a three-dimensional array from a [`Vec<Vec<Vec<T>>>`][Vec].
     ///
     /// This function checks all dimensions of the inner vectors and returns
@@ -1181,7 +1236,7 @@ impl<T: Element> PyArray<T, Ix3> {
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyArrayMethods};
     /// use pyo3::Python;
     /// use ndarray::array;
     ///
@@ -1190,7 +1245,7 @@ impl<T: Element> PyArray<T, Ix3> {
     ///         vec![vec![111, 112], vec![121, 122]],
     ///         vec![vec![211, 212], vec![221, 222]],
     ///     ];
-    ///     let pyarray = PyArray::from_vec3(py, &vec3).unwrap();
+    ///     let pyarray = PyArray::from_vec3_bound(py, &vec3).unwrap();
     ///     assert_eq!(
     ///         pyarray.readonly().as_array(),
     ///         array![[[111, 112], [121, 122]], [[211, 212], [221, 222]]]
@@ -1200,10 +1255,13 @@ impl<T: Element> PyArray<T, Ix3> {
     ///         vec![vec![111, 112], vec![121, 122]],
     ///         vec![vec![211], vec![221, 222]],
     ///     ];
-    ///     assert!(PyArray::from_vec3(py, &ragged_vec3).is_err());
+    ///     assert!(PyArray::from_vec3_bound(py, &ragged_vec3).is_err());
     /// });
     /// ```
-    pub fn from_vec3<'py>(py: Python<'py>, v: &[Vec<Vec<T>>]) -> Result<&'py Self, FromVecError> {
+    pub fn from_vec3_bound<'py>(
+        py: Python<'py>,
+        v: &[Vec<Vec<T>>],
+    ) -> Result<Bound<'py, Self>, FromVecError> {
         let len2 = v.first().map_or(0, |v| v.len());
         let len3 = v.first().map_or(0, |v| v.first().map_or(0, |v| v.len()));
         let dims = [v.len(), len2, len3];
@@ -1224,7 +1282,7 @@ impl<T: Element> PyArray<T, Ix3> {
                     clone_elements(v, &mut data_ptr);
                 }
             }
-            Ok(array.into_gil_ref())
+            Ok(array)
         }
     }
 }
@@ -1288,13 +1346,14 @@ impl<T: Element, D> PyArray<T, D> {
     /// # Example
     ///
     /// ```
+    /// use numpy::prelude::*;
     /// use numpy::{npyffi::NPY_ORDER, PyArray};
     /// use pyo3::Python;
     /// use ndarray::array;
     ///
     /// Python::with_gil(|py| {
     ///     let array =
-    ///         PyArray::from_iter(py, 0..9).reshape_with_order([3, 3], NPY_ORDER::NPY_FORTRANORDER).unwrap();
+    ///         PyArray::from_iter_bound(py, 0..9).reshape_with_order([3, 3], NPY_ORDER::NPY_FORTRANORDER).unwrap();
     ///
     ///     assert_eq!(array.readonly().as_array(), array![[0, 3, 6], [1, 4, 7], [2, 5, 8]]);
     ///     assert!(array.is_fortran_contiguous());
@@ -1830,13 +1889,14 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> {
     /// # Example
     ///
     /// ```
+    /// use numpy::prelude::*;
     /// use numpy::{npyffi::NPY_ORDER, PyArray};
     /// use pyo3::Python;
     /// use ndarray::array;
     ///
     /// Python::with_gil(|py| {
     ///     let array =
-    ///         PyArray::from_iter(py, 0..9).reshape_with_order([3, 3], NPY_ORDER::NPY_FORTRANORDER).unwrap();
+    ///         PyArray::from_iter_bound(py, 0..9).reshape_with_order([3, 3], NPY_ORDER::NPY_FORTRANORDER).unwrap();
     ///
     ///     assert_eq!(array.readonly().as_array(), array![[0, 3, 6], [1, 4, 7], [2, 5, 8]]);
     ///     assert!(array.is_fortran_contiguous());
@@ -2293,7 +2353,7 @@ mod tests {
     #[test]
     fn test_dyn_to_owned_array() {
         Python::with_gil(|py| {
-            let array = PyArray::from_vec2(py, &[vec![1, 2], vec![3, 4]])
+            let array = PyArray::from_vec2_bound(py, &[vec![1, 2], vec![3, 4]])
                 .unwrap()
                 .to_dyn()
                 .to_owned_array();

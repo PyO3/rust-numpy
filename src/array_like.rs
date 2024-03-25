@@ -154,7 +154,7 @@ where
                 let array = Array1::from(vec)
                     .into_dimensionality()
                     .expect("D being compatible to Ix1")
-                    .into_pyarray(py)
+                    .into_pyarray_bound(py)
                     .readonly();
                 return Ok(Self(array, PhantomData));
             }

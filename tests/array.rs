@@ -195,7 +195,7 @@ fn is_instance() {
 #[test]
 fn from_vec2() {
     Python::with_gil(|py| {
-        let pyarray = PyArray::from_vec2(py, &[vec![1, 2, 3], vec![4, 5, 6]]).unwrap();
+        let pyarray = PyArray::from_vec2_bound(py, &[vec![1, 2, 3], vec![4, 5, 6]]).unwrap();
 
         assert_eq!(pyarray.readonly().as_array(), array![[1, 2, 3], [4, 5, 6]]);
     });
@@ -204,7 +204,7 @@ fn from_vec2() {
 #[test]
 fn from_vec2_ragged() {
     Python::with_gil(|py| {
-        let pyarray = PyArray::from_vec2(py, &[vec![1, 2, 3], vec![4, 5]]);
+        let pyarray = PyArray::from_vec2_bound(py, &[vec![1, 2, 3], vec![4, 5]]);
 
         let err = pyarray.unwrap_err();
         assert_eq!(err.to_string(), "invalid length: 2, but expected 3");
@@ -214,7 +214,7 @@ fn from_vec2_ragged() {
 #[test]
 fn from_vec3() {
     Python::with_gil(|py| {
-        let pyarray = PyArray::from_vec3(
+        let pyarray = PyArray::from_vec3_bound(
             py,
             &[
                 vec![vec![1, 2], vec![3, 4]],
@@ -234,7 +234,7 @@ fn from_vec3() {
 #[test]
 fn from_vec3_ragged() {
     Python::with_gil(|py| {
-        let pyarray = PyArray::from_vec3(
+        let pyarray = PyArray::from_vec3_bound(
             py,
             &[
                 vec![vec![1, 2], vec![3, 4]],
@@ -246,7 +246,7 @@ fn from_vec3_ragged() {
         let err = pyarray.unwrap_err();
         assert_eq!(err.to_string(), "invalid length: 1, but expected 2");
 
-        let pyarray = PyArray::from_vec3(
+        let pyarray = PyArray::from_vec3_bound(
             py,
             &[
                 vec![vec![1, 2], vec![3, 4]],
@@ -358,12 +358,16 @@ fn array_cast() {
 fn handle_negative_strides() {
     Python::with_gil(|py| {
         let arr = array![[2, 3], [4, 5u32]];
-        let pyarr = arr.to_pyarray(py);
+        let pyarr = arr.to_pyarray_bound(py);
 
-        let neg_str_pyarr: &PyArray2<u32> = py
-            .eval("a[::-1]", Some([("a", pyarr)].into_py_dict(py)), None)
+        let neg_str_pyarr = py
+            .eval_bound(
+                "a[::-1]",
+                Some(&[("a", pyarr)].into_py_dict_bound(py)),
+                None,
+            )
             .unwrap()
-            .downcast()
+            .downcast_into::<PyArray2<u32>>()
             .unwrap();
 
         assert_eq!(
@@ -377,7 +381,7 @@ fn handle_negative_strides() {
 fn dtype_via_python_attribute() {
     Python::with_gil(|py| {
         let arr = array![[2, 3], [4, 5u32]];
-        let pyarr = arr.to_pyarray(py);
+        let pyarr = arr.to_pyarray_bound(py);
 
         let dt = py
             .eval_bound(
@@ -519,7 +523,7 @@ fn get_works() {
 #[test]
 fn reshape() {
     Python::with_gil(|py| {
-        let array = PyArray::from_iter(py, 0..9)
+        let array = PyArray::from_iter_bound(py, 0..9)
             .reshape_with_order([3, 3], NPY_ORDER::NPY_FORTRANORDER)
             .unwrap();
 

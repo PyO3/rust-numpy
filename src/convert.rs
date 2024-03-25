@@ -3,7 +3,7 @@
 use std::{mem, os::raw::c_int, ptr};
 
 use ndarray::{ArrayBase, Data, Dim, Dimension, IntoDimension, Ix1, OwnedRepr};
-use pyo3::Python;
+use pyo3::{Bound, Python};
 
 use crate::array::{PyArray, PyArrayMethods};
 use crate::dtype::Element;
@@ -20,11 +20,11 @@ use crate::slice_container::PySliceContainer;
 /// # Example
 ///
 /// ```
-/// use numpy::{PyArray, IntoPyArray};
+/// use numpy::{PyArray, IntoPyArray, PyArrayMethods};
 /// use pyo3::Python;
 ///
 /// Python::with_gil(|py| {
-///     let py_array = vec![1, 2, 3].into_pyarray(py);
+///     let py_array = vec![1, 2, 3].into_pyarray_bound(py);
 ///
 ///     assert_eq!(py_array.readonly().as_slice().unwrap(), &[1, 2, 3]);
 ///
@@ -34,21 +34,34 @@ use crate::slice_container::PySliceContainer;
 ///     }
 /// });
 /// ```
-pub trait IntoPyArray {
+pub trait IntoPyArray: Sized {
     /// The element type of resulting array.
     type Item: Element;
     /// The dimension type of the resulting array.
     type Dim: Dimension;
 
+    /// Deprecated form of [`IntoPyArray::into_pyarray_bound`]
+    #[deprecated(
+        since = "0.21.0",
+        note = "will be replaced by `IntoPyArray::into_pyarray_bound` in the future"
+    )]
+    fn into_pyarray<'py>(self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
+        Self::into_pyarray_bound(self, py).into_gil_ref()
+    }
+
     /// Consumes `self` and moves its data into a NumPy array.
-    fn into_pyarray<'py>(self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim>;
+    fn into_pyarray_bound<'py>(self, py: Python<'py>)
+        -> Bound<'py, PyArray<Self::Item, Self::Dim>>;
 }
 
 impl<T: Element> IntoPyArray for Box<[T]> {
     type Item = T;
     type Dim = Ix1;
 
-    fn into_pyarray<'py>(self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
+    fn into_pyarray_bound<'py>(
+        self,
+        py: Python<'py>,
+    ) -> Bound<'py, PyArray<Self::Item, Self::Dim>> {
         let container = PySliceContainer::from(self);
         let dims = Dim([container.len]);
         let strides = [mem::size_of::<T>() as npy_intp];
@@ -56,9 +69,7 @@ impl<T: Element> IntoPyArray for Box<[T]> {
         // to avoid unsound aliasing of Box<[T]> which is currently noalias,
         // c.f. https://github.com/rust-lang/unsafe-code-guidelines/issues/326
         let data_ptr = container.ptr as *mut T;
-        unsafe {
-            PyArray::from_raw_parts(py, dims, strides.as_ptr(), data_ptr, container).into_gil_ref()
-        }
+        unsafe { PyArray::from_raw_parts(py, dims, strides.as_ptr(), data_ptr, container) }
     }
 }
 
@@ -66,7 +77,10 @@ impl<T: Element> IntoPyArray for Vec<T> {
     type Item = T;
     type Dim = Ix1;
 
-    fn into_pyarray<'py>(mut self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
+    fn into_pyarray_bound<'py>(
+        mut self,
+        py: Python<'py>,
+    ) -> Bound<'py, PyArray<Self::Item, Self::Dim>> {
         let dims = Dim([self.len()]);
         let strides = [mem::size_of::<T>() as npy_intp];
         let data_ptr = self.as_mut_ptr();
@@ -78,7 +92,6 @@ impl<T: Element> IntoPyArray for Vec<T> {
                 data_ptr,
                 PySliceContainer::from(self),
             )
-            .into_gil_ref()
         }
     }
 }
@@ -91,8 +104,11 @@ where
     type Item = A;
     type Dim = D;
 
-    fn into_pyarray<'py>(self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
-        PyArray::from_owned_array_bound(py, self).into_gil_ref()
+    fn into_pyarray_bound<'py>(
+        self,
+        py: Python<'py>,
+    ) -> Bound<'py, PyArray<Self::Item, Self::Dim>> {
+        PyArray::from_owned_array_bound(py, self)
     }
 }
 
@@ -103,11 +119,11 @@ where
 /// # Examples
 ///
 /// ```
-/// use numpy::{PyArray, ToPyArray};
+/// use numpy::{PyArray, ToPyArray, PyArrayMethods};
 /// use pyo3::Python;
 ///
 /// Python::with_gil(|py| {
-///     let py_array = vec![1, 2, 3].to_pyarray(py);
+///     let py_array = vec![1, 2, 3].to_pyarray_bound(py);
 ///
 ///     assert_eq!(py_array.readonly().as_slice().unwrap(), &[1, 2, 3]);
 /// });
@@ -116,13 +132,14 @@ where
 /// Due to copying the elments, this method converts non-contiguous arrays to C-order contiguous arrays.
 ///
 /// ```
+/// use numpy::prelude::*;
 /// use numpy::{PyArray, ToPyArray};
 /// use ndarray::{arr3, s};
 /// use pyo3::Python;
 ///
 /// Python::with_gil(|py| {
 ///     let array = arr3(&[[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]]);
-///     let py_array = array.slice(s![.., 0..1, ..]).to_pyarray(py);
+///     let py_array = array.slice(s![.., 0..1, ..]).to_pyarray_bound(py);
 ///
 ///     assert_eq!(py_array.readonly().as_array(), arr3(&[[[1, 2, 3]], [[7, 8, 9]]]));
 ///     assert!(py_array.is_c_contiguous());
@@ -134,16 +151,25 @@ pub trait ToPyArray {
     /// The dimension type of the resulting array.
     type Dim: Dimension;
 
+    /// Deprecated form of [`ToPyArray::to_pyarray_bound`]
+    #[deprecated(
+        since = "0.21.0",
+        note = "will be replaced by `ToPyArray::to_pyarray_bound` in the future"
+    )]
+    fn to_pyarray<'py>(&self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
+        Self::to_pyarray_bound(self, py).into_gil_ref()
+    }
+
     /// Copies the content pointed to by `&self` into a newly allocated NumPy array.
-    fn to_pyarray<'py>(&self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim>;
+    fn to_pyarray_bound<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray<Self::Item, Self::Dim>>;
 }
 
 impl<T: Element> ToPyArray for [T] {
     type Item = T;
     type Dim = Ix1;
 
-    fn to_pyarray<'py>(&self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
-        PyArray::from_slice_bound(py, self).into_gil_ref()
+    fn to_pyarray_bound<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray<Self::Item, Self::Dim>> {
+        PyArray::from_slice_bound(py, self)
     }
 }
 
@@ -156,7 +182,7 @@ where
     type Item = A;
     type Dim = D;
 
-    fn to_pyarray<'py>(&self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
+    fn to_pyarray_bound<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray<Self::Item, Self::Dim>> {
         let len = self.len();
         match self.order() {
             Some(flag) if A::IS_COPY => {
@@ -165,7 +191,7 @@ where
                 unsafe {
                     let array = PyArray::new_uninit(py, self.raw_dim(), strides.as_ptr(), flag);
                     ptr::copy_nonoverlapping(self.as_ptr(), array.data(), len);
-                    array.into_gil_ref()
+                    array
                 }
             }
             _ => {
@@ -178,7 +204,7 @@ where
                         data_ptr.write(item.clone());
                         data_ptr = data_ptr.add(1);
                     }
-                    array.into_gil_ref()
+                    array
                 }
             }
         }
@@ -200,7 +226,7 @@ where
     /// matching the [memory layout][memory-layout] used by [`nalgebra`].
     ///
     /// [memory-layout]: https://nalgebra.org/docs/faq/#what-is-the-memory-layout-of-matrices
-    fn to_pyarray<'py>(&self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
+    fn to_pyarray_bound<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray<Self::Item, Self::Dim>> {
         unsafe {
             let array = PyArray::<N, _>::new_bound(py, (self.nrows(), self.ncols()), true);
             let mut data_ptr = array.data();
@@ -212,7 +238,7 @@ where
                     data_ptr = data_ptr.add(1);
                 }
             }
-            array.into_gil_ref()
+            array
         }
     }
 }

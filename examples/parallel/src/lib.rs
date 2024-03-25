@@ -3,20 +3,20 @@ extern crate blas_src;
 
 use numpy::ndarray::Zip;
 use numpy::{IntoPyArray, PyArray1, PyReadonlyArray1, PyReadonlyArray2};
-use pyo3::{pymodule, types::PyModule, PyResult, Python};
+use pyo3::{pymodule, types::PyModule, Bound, PyResult, Python};
 
 #[pymodule]
-fn rust_parallel<'py>(_py: Python<'py>, m: &'py PyModule) -> PyResult<()> {
+fn rust_parallel<'py>(m: &Bound<'py, PyModule>) -> PyResult<()> {
     #[pyfn(m)]
     fn rows_dot<'py>(
         py: Python<'py>,
         x: PyReadonlyArray2<'py, f64>,
         y: PyReadonlyArray1<'py, f64>,
-    ) -> &'py PyArray1<f64> {
+    ) -> Bound<'py, PyArray1<f64>> {
         let x = x.as_array();
         let y = y.as_array();
         let z = Zip::from(x.rows()).par_map_collect(|row| row.dot(&y));
-        z.into_pyarray(py)
+        z.into_pyarray_bound(py)
     }
     Ok(())
 }
