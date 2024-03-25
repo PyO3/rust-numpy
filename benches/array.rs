@@ -6,15 +6,15 @@ use test::{black_box, Bencher};
 use std::ops::Range;
 
 use numpy::{PyArray1, PyArray2, PyArray3};
-use pyo3::{PyAny, Python, ToPyObject};
+use pyo3::{types::PyAnyMethods, Python, ToPyObject};
 
 #[bench]
 fn extract_success(bencher: &mut Bencher) {
     Python::with_gil(|py| {
-        let any: &PyAny = PyArray2::<f64>::zeros(py, (10, 10), false);
+        let any = PyArray2::<f64>::zeros_bound(py, (10, 10), false).into_any();
 
         bencher.iter(|| {
-            black_box(any).extract::<&PyArray2<f64>>().unwrap();
+            black_box(&any).extract::<&PyArray2<f64>>().unwrap();
         });
     });
 }
@@ -22,10 +22,10 @@ fn extract_success(bencher: &mut Bencher) {
 #[bench]
 fn extract_failure(bencher: &mut Bencher) {
     Python::with_gil(|py| {
-        let any: &PyAny = PyArray2::<i32>::zeros(py, (10, 10), false);
+        let any = PyArray2::<f64>::zeros_bound(py, (10, 10), false).into_any();
 
         bencher.iter(|| {
-            black_box(any).extract::<&PyArray2<f64>>().unwrap_err();
+            black_box(&any).extract::<&PyArray2<f64>>().unwrap_err();
         });
     });
 }
@@ -33,10 +33,10 @@ fn extract_failure(bencher: &mut Bencher) {
 #[bench]
 fn downcast_success(bencher: &mut Bencher) {
     Python::with_gil(|py| {
-        let any: &PyAny = PyArray2::<f64>::zeros(py, (10, 10), false);
+        let any = PyArray2::<f64>::zeros_bound(py, (10, 10), false).into_any();
 
         bencher.iter(|| {
-            black_box(any).downcast::<PyArray2<f64>>().unwrap();
+            black_box(&any).downcast::<PyArray2<f64>>().unwrap();
         });
     });
 }
@@ -44,10 +44,10 @@ fn downcast_success(bencher: &mut Bencher) {
 #[bench]
 fn downcast_failure(bencher: &mut Bencher) {
     Python::with_gil(|py| {
-        let any: &PyAny = PyArray2::<i32>::zeros(py, (10, 10), false);
+        let any = PyArray2::<f64>::zeros_bound(py, (10, 10), false).into_any();
 
         bencher.iter(|| {
-            black_box(any).downcast::<PyArray2<f64>>().unwrap_err();
+            black_box(&any).downcast::<PyArray2<f64>>().unwrap_err();
         });
     });
 }
