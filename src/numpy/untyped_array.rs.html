@@ -463,6 +463,7 @@
 <a href="#462" id="462">462</a>
 <a href="#463" id="463">463</a>
 <a href="#464" id="464">464</a>
+<a href="#465" id="465">465</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Safe, untyped interface for NumPy's [N-dimensional arrays][ndarray]
 //!
 //! [ndarray]: https://numpy.org/doc/stable/reference/arrays.ndarray.html
@@ -493,11 +494,12 @@
 /// ```
 /// # use pyo3::prelude::*;
 /// use pyo3::exceptions::PyTypeError;
-/// use numpy::{Element, PyUntypedArray, PyArray1, dtype};
+/// use numpy::{Element, PyUntypedArray, PyArray1, dtype_bound};
+/// use numpy::{PyUntypedArrayMethods, PyArrayMethods, PyArrayDescrMethods};
 ///
 /// #[pyfunction]
-/// fn entry_point(py: Python, array: &amp;PyUntypedArray) -&gt; PyResult&lt;()&gt; {
-///     fn implementation&lt;T: Element&gt;(array: &amp;PyArray1&lt;T&gt;) -&gt; PyResult&lt;()&gt; {
+/// fn entry_point(py: Python&lt;'_&gt;, array: &amp;Bound&lt;'_, PyUntypedArray&gt;) -&gt; PyResult&lt;()&gt; {
+///     fn implementation&lt;T: Element&gt;(array: &amp;Bound&lt;'_, PyArray1&lt;T&gt;&gt;) -&gt; PyResult&lt;()&gt; {
 ///         /* .. */
 ///
 ///         Ok(())
@@ -505,12 +507,12 @@
 ///
 ///     let element_type = array.dtype();
 ///
-///     if element_type.is_equiv_to(dtype::&lt;f32&gt;(py)) {
-///         let array: &amp;PyArray1&lt;f32&gt; = array.downcast()?;
+///     if element_type.is_equiv_to(&amp;dtype_bound::&lt;f32&gt;(py)) {
+///         let array = array.downcast::&lt;PyArray1&lt;f32&gt;&gt;()?;
 ///
 ///         implementation(array)
-///     } else if element_type.is_equiv_to(dtype::&lt;f64&gt;(py)) {
-///         let array: &amp;PyArray1&lt;f64&gt; = array.downcast()?;
+///     } else if element_type.is_equiv_to(&amp;dtype_bound::&lt;f64&gt;(py)) {
+///         let array = array.downcast::&lt;PyArray1&lt;f64&gt;&gt;()?;
 ///
 ///         implementation(array)
 ///     } else {
@@ -519,8 +521,8 @@
 /// }
 /// #
 /// # Python::with_gil(|py| {
-/// #   let array = PyArray1::&lt;f64&gt;::zeros(py, 42, false);
-/// #   entry_point(py, array)
+/// #   let array = PyArray1::&lt;f64&gt;::zeros_bound(py, 42, false);
+/// #   entry_point(py, array.as_untyped())
 /// # }).unwrap();
 /// ```
 </span><span class="attr">#[repr(transparent)]
@@ -625,11 +627,11 @@
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray3;
+    /// use numpy::{PyArray3, PyUntypedArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let arr = PyArray3::&lt;f64&gt;::zeros(py, [4, 5, 6], false);
+    ///     let arr = PyArray3::&lt;f64&gt;::zeros_bound(py, [4, 5, 6], false);
     ///
     ///     assert_eq!(arr.ndim(), 3);
     /// });
@@ -649,11 +651,11 @@
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray3;
+    /// use numpy::{PyArray3, PyUntypedArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let arr = PyArray3::&lt;f64&gt;::zeros(py, [4, 5, 6], false);
+    ///     let arr = PyArray3::&lt;f64&gt;::zeros_bound(py, [4, 5, 6], false);
     ///
     ///     assert_eq!(arr.strides(), &amp;[240, 48, 8]);
     /// });
@@ -681,11 +683,11 @@
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray3;
+    /// use numpy::{PyArray3, PyUntypedArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let arr = PyArray3::&lt;f64&gt;::zeros(py, [4, 5, 6], false);
+    ///     let arr = PyArray3::&lt;f64&gt;::zeros_bound(py, [4, 5, 6], false);
     ///
     ///     assert_eq!(arr.shape(), &amp;[4, 5, 6]);
     /// });
@@ -794,11 +796,11 @@
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray3;
+    /// use numpy::{PyArray3, PyUntypedArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let arr = PyArray3::&lt;f64&gt;::zeros(py, [4, 5, 6], false);
+    ///     let arr = PyArray3::&lt;f64&gt;::zeros_bound(py, [4, 5, 6], false);
     ///
     ///     assert_eq!(arr.ndim(), 3);
     /// });
@@ -818,11 +820,11 @@
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray3;
+    /// use numpy::{PyArray3, PyUntypedArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let arr = PyArray3::&lt;f64&gt;::zeros(py, [4, 5, 6], false);
+    ///     let arr = PyArray3::&lt;f64&gt;::zeros_bound(py, [4, 5, 6], false);
     ///
     ///     assert_eq!(arr.strides(), &amp;[240, 48, 8]);
     /// });
@@ -850,11 +852,11 @@
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray3;
+    /// use numpy::{PyArray3, PyUntypedArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let arr = PyArray3::&lt;f64&gt;::zeros(py, [4, 5, 6], false);
+    ///     let arr = PyArray3::&lt;f64&gt;::zeros_bound(py, [4, 5, 6], false);
     ///
     ///     assert_eq!(arr.shape(), &amp;[4, 5, 6]);
     /// });

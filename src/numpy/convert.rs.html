@@ -323,6 +323,9 @@
 <a href="#322" id="322">322</a>
 <a href="#323" id="323">323</a>
 <a href="#324" id="324">324</a>
+<a href="#325" id="325">325</a>
+<a href="#326" id="326">326</a>
+<a href="#327" id="327">327</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Defines conversion traits between Rust types and NumPy data types.
 
 </span><span class="kw">use </span>std::{mem, os::raw::c_int, ptr};
@@ -330,7 +333,7 @@
 <span class="kw">use </span>ndarray::{ArrayBase, Data, Dim, Dimension, IntoDimension, Ix1, OwnedRepr};
 <span class="kw">use </span>pyo3::Python;
 
-<span class="kw">use </span><span class="kw">crate</span>::array::PyArray;
+<span class="kw">use </span><span class="kw">crate</span>::array::{PyArray, PyArrayMethods};
 <span class="kw">use </span><span class="kw">crate</span>::dtype::Element;
 <span class="kw">use </span><span class="kw">crate</span>::error::MAX_DIMENSIONALITY_ERR;
 <span class="kw">use </span><span class="kw">crate</span>::npyffi::{<span class="self">self</span>, npy_intp};
@@ -382,7 +385,9 @@
         // to avoid unsound aliasing of Box&lt;[T]&gt; which is currently noalias,
         // c.f. https://github.com/rust-lang/unsafe-code-guidelines/issues/326
         </span><span class="kw">let </span>data_ptr = container.ptr <span class="kw">as </span><span class="kw-2">*mut </span>T;
-        <span class="kw">unsafe </span>{ PyArray::from_raw_parts(py, dims, strides.as_ptr(), data_ptr, container) }
+        <span class="kw">unsafe </span>{
+            PyArray::from_raw_parts(py, dims, strides.as_ptr(), data_ptr, container).into_gil_ref()
+        }
     }
 }
 
@@ -402,6 +407,7 @@
                 data_ptr,
                 PySliceContainer::from(<span class="self">self</span>),
             )
+            .into_gil_ref()
         }
     }
 }
@@ -415,7 +421,7 @@
     <span class="kw">type </span>Dim = D;
 
     <span class="kw">fn </span>into_pyarray&lt;<span class="lifetime">'py</span>&gt;(<span class="self">self</span>, py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span>PyArray&lt;<span class="self">Self</span>::Item, <span class="self">Self</span>::Dim&gt; {
-        PyArray::from_owned_array(py, <span class="self">self</span>)
+        PyArray::from_owned_array_bound(py, <span class="self">self</span>).into_gil_ref()
     }
 }
 
@@ -488,20 +494,20 @@
                 <span class="kw">unsafe </span>{
                     <span class="kw">let </span>array = PyArray::new_uninit(py, <span class="self">self</span>.raw_dim(), strides.as_ptr(), flag);
                     ptr::copy_nonoverlapping(<span class="self">self</span>.as_ptr(), array.data(), len);
-                    array
+                    array.into_gil_ref()
                 }
             }
             <span class="kw">_ </span>=&gt; {
                 <span class="comment">// if the array is not contiguous, copy all elements by `ArrayBase::iter`.
                 </span><span class="kw">let </span>dim = <span class="self">self</span>.raw_dim();
                 <span class="kw">unsafe </span>{
-                    <span class="kw">let </span>array = PyArray::&lt;A, <span class="kw">_</span>&gt;::new(py, dim, <span class="bool-val">false</span>);
+                    <span class="kw">let </span>array = PyArray::&lt;A, <span class="kw">_</span>&gt;::new_bound(py, dim, <span class="bool-val">false</span>);
                     <span class="kw">let </span><span class="kw-2">mut </span>data_ptr = array.data();
                     <span class="kw">for </span>item <span class="kw">in </span><span class="self">self</span>.iter() {
                         data_ptr.write(item.clone());
                         data_ptr = data_ptr.add(<span class="number">1</span>);
                     }
-                    array
+                    array.into_gil_ref()
                 }
             }
         }
@@ -525,7 +531,7 @@
     /// [memory-layout]: https://nalgebra.org/docs/faq/#what-is-the-memory-layout-of-matrices
     </span><span class="kw">fn </span>to_pyarray&lt;<span class="lifetime">'py</span>&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span>PyArray&lt;<span class="self">Self</span>::Item, <span class="self">Self</span>::Dim&gt; {
         <span class="kw">unsafe </span>{
-            <span class="kw">let </span>array = PyArray::&lt;N, <span class="kw">_</span>&gt;::new(py, (<span class="self">self</span>.nrows(), <span class="self">self</span>.ncols()), <span class="bool-val">true</span>);
+            <span class="kw">let </span>array = PyArray::&lt;N, <span class="kw">_</span>&gt;::new_bound(py, (<span class="self">self</span>.nrows(), <span class="self">self</span>.ncols()), <span class="bool-val">true</span>);
             <span class="kw">let </span><span class="kw-2">mut </span>data_ptr = array.data();
             <span class="kw">if </span><span class="self">self</span>.data.is_contiguous() {
                 ptr::copy_nonoverlapping(<span class="self">self</span>.data.ptr(), data_ptr, <span class="self">self</span>.len());
@@ -535,7 +541,7 @@
                     data_ptr = data_ptr.add(<span class="number">1</span>);
                 }
             }
-            array
+            array.into_gil_ref()
         }
     }
 }

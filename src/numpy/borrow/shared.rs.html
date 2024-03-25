@@ -983,6 +983,7 @@
 <a href="#982" id="982">982</a>
 <a href="#983" id="983">983</a>
 <a href="#984" id="984">984</a>
+<a href="#985" id="985">985</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::collections::hash_map::Entry;
 <span class="kw">use </span>std::ffi::{c_void, CString};
 <span class="kw">use </span>std::mem::forget;
@@ -1432,8 +1433,9 @@
     <span class="kw">use </span>ndarray::Array;
     <span class="kw">use </span>pyo3::types::IntoPyDict;
 
-    <span class="kw">use </span><span class="kw">crate</span>::array::{PyArray, PyArray1, PyArray2, PyArray3};
+    <span class="kw">use </span><span class="kw">crate</span>::array::{PyArray, PyArray1, PyArray2, PyArray3, PyArrayMethods};
     <span class="kw">use </span><span class="kw">crate</span>::convert::IntoPyArray;
+    <span class="kw">use </span><span class="kw">crate</span>::untyped_array::PyUntypedArrayMethods;
 
     <span class="kw">fn </span>get_borrow_flags&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span>BorrowFlagsInner {
         <span class="kw">let </span>shared = get_or_insert_shared(py).unwrap();
@@ -1444,13 +1446,13 @@
     <span class="attr">#[test]
     </span><span class="kw">fn </span>without_base_object() {
         Python::with_gil(|py| {
-            <span class="kw">let </span>array = PyArray::&lt;f64, <span class="kw">_</span>&gt;::zeros(py, (<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>), <span class="bool-val">false</span>);
+            <span class="kw">let </span>array = PyArray::&lt;f64, <span class="kw">_</span>&gt;::zeros_bound(py, (<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>), <span class="bool-val">false</span>);
 
             <span class="kw">let </span>base = <span class="kw">unsafe </span>{ (<span class="kw-2">*</span>array.as_array_ptr()).base };
             <span class="macro">assert!</span>(base.is_null());
 
             <span class="kw">let </span>base_address = base_address(py, array.as_array_ptr());
-            <span class="macro">assert_eq!</span>(base_address, array <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">_ as </span><span class="kw-2">*mut </span>c_void);
+            <span class="macro">assert_eq!</span>(base_address, array.as_ptr().cast());
 
             <span class="kw">let </span>data_range = data_range(array.as_array_ptr());
             <span class="macro">assert_eq!</span>(data_range.<span class="number">0</span>, array.data() <span class="kw">as </span><span class="kw-2">*mut </span>c_char);
@@ -1479,25 +1481,25 @@
     <span class="attr">#[test]
     </span><span class="kw">fn </span>view_without_base_object() {
         Python::with_gil(|py| {
-            <span class="kw">let </span>array = PyArray::&lt;f64, <span class="kw">_</span>&gt;::zeros(py, (<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>), <span class="bool-val">false</span>);
+            <span class="kw">let </span>array = PyArray::&lt;f64, <span class="kw">_</span>&gt;::zeros_bound(py, (<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>), <span class="bool-val">false</span>);
 
-            <span class="kw">let </span>locals = [(<span class="string">"array"</span>, array)].into_py_dict(py);
+            <span class="kw">let </span>locals = [(<span class="string">"array"</span>, <span class="kw-2">&amp;</span>array)].into_py_dict_bound(py);
             <span class="kw">let </span>view = py
-                .eval(<span class="string">"array[:,:,0]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
+                .eval_bound(<span class="string">"array[:,:,0]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>locals))
                 .unwrap()
-                .downcast::&lt;PyArray2&lt;f64&gt;&gt;()
+                .downcast_into::&lt;PyArray2&lt;f64&gt;&gt;()
                 .unwrap();
             <span class="macro">assert_ne!</span>(
-                view <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">_ as </span><span class="kw-2">*mut </span>c_void,
-                array <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">_ as </span><span class="kw-2">*mut </span>c_void
+                view.as_ptr().cast::&lt;c_void&gt;(),
+                array.as_ptr().cast::&lt;c_void&gt;()
             );
 
             <span class="kw">let </span>base = <span class="kw">unsafe </span>{ (<span class="kw-2">*</span>view.as_array_ptr()).base };
-            <span class="macro">assert_eq!</span>(base <span class="kw">as </span><span class="kw-2">*mut </span>c_void, array <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">_ as </span><span class="kw-2">*mut </span>c_void);
+            <span class="macro">assert_eq!</span>(base <span class="kw">as </span><span class="kw-2">*mut </span>c_void, array.as_ptr().cast::&lt;c_void&gt;());
 
             <span class="kw">let </span>base_address = base_address(py, view.as_array_ptr());
-            <span class="macro">assert_ne!</span>(base_address, view <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">_ as </span><span class="kw-2">*mut </span>c_void);
-            <span class="macro">assert_eq!</span>(base_address, base <span class="kw">as </span><span class="kw-2">*mut </span>c_void);
+            <span class="macro">assert_ne!</span>(base_address, view.as_ptr().cast::&lt;c_void&gt;());
+            <span class="macro">assert_eq!</span>(base_address, base.cast::&lt;c_void&gt;());
 
             <span class="kw">let </span>data_range = data_range(view.as_array_ptr());
             <span class="macro">assert_eq!</span>(data_range.<span class="number">0</span>, array.data() <span class="kw">as </span><span class="kw-2">*mut </span>c_char);
@@ -1541,43 +1543,43 @@
     <span class="attr">#[test]
     </span><span class="kw">fn </span>view_of_view_without_base_object() {
         Python::with_gil(|py| {
-            <span class="kw">let </span>array = PyArray::&lt;f64, <span class="kw">_</span>&gt;::zeros(py, (<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>), <span class="bool-val">false</span>);
+            <span class="kw">let </span>array = PyArray::&lt;f64, <span class="kw">_</span>&gt;::zeros_bound(py, (<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>), <span class="bool-val">false</span>);
 
-            <span class="kw">let </span>locals = [(<span class="string">"array"</span>, array)].into_py_dict(py);
+            <span class="kw">let </span>locals = [(<span class="string">"array"</span>, <span class="kw-2">&amp;</span>array)].into_py_dict_bound(py);
             <span class="kw">let </span>view1 = py
-                .eval(<span class="string">"array[:,:,0]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
+                .eval_bound(<span class="string">"array[:,:,0]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>locals))
                 .unwrap()
-                .downcast::&lt;PyArray2&lt;f64&gt;&gt;()
+                .downcast_into::&lt;PyArray2&lt;f64&gt;&gt;()
                 .unwrap();
             <span class="macro">assert_ne!</span>(
-                view1 <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">_ as </span><span class="kw-2">*mut </span>c_void,
-                array <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">_ as </span><span class="kw-2">*mut </span>c_void
+                view1.as_ptr().cast::&lt;c_void&gt;(),
+                array.as_ptr().cast::&lt;c_void&gt;()
             );
 
-            <span class="kw">let </span>locals = [(<span class="string">"view1"</span>, view1)].into_py_dict(py);
+            <span class="kw">let </span>locals = [(<span class="string">"view1"</span>, <span class="kw-2">&amp;</span>view1)].into_py_dict(py);
             <span class="kw">let </span>view2 = py
                 .eval(<span class="string">"view1[:,0]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
                 .unwrap()
                 .downcast::&lt;PyArray1&lt;f64&gt;&gt;()
                 .unwrap();
             <span class="macro">assert_ne!</span>(
-                view2 <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">_ as </span><span class="kw-2">*mut </span>c_void,
-                array <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">_ as </span><span class="kw-2">*mut </span>c_void
+                view2.as_ptr().cast::&lt;c_void&gt;(),
+                array.as_ptr().cast::&lt;c_void&gt;()
             );
             <span class="macro">assert_ne!</span>(
-                view2 <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">_ as </span><span class="kw-2">*mut </span>c_void,
-                view1 <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">_ as </span><span class="kw-2">*mut </span>c_void
+                view2.as_ptr().cast::&lt;c_void&gt;(),
+                view1.as_ptr().cast::&lt;c_void&gt;()
             );
 
             <span class="kw">let </span>base = <span class="kw">unsafe </span>{ (<span class="kw-2">*</span>view2.as_array_ptr()).base };
-            <span class="macro">assert_eq!</span>(base <span class="kw">as </span><span class="kw-2">*mut </span>c_void, array <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">_ as </span><span class="kw-2">*mut </span>c_void);
+            <span class="macro">assert_eq!</span>(base <span class="kw">as </span><span class="kw-2">*mut </span>c_void, array.as_ptr().cast::&lt;c_void&gt;());
 
             <span class="kw">let </span>base = <span class="kw">unsafe </span>{ (<span class="kw-2">*</span>view1.as_array_ptr()).base };
-            <span class="macro">assert_eq!</span>(base <span class="kw">as </span><span class="kw-2">*mut </span>c_void, array <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">_ as </span><span class="kw-2">*mut </span>c_void);
+            <span class="macro">assert_eq!</span>(base <span class="kw">as </span><span class="kw-2">*mut </span>c_void, array.as_ptr().cast::&lt;c_void&gt;());
 
             <span class="kw">let </span>base_address = base_address(py, view2.as_array_ptr());
-            <span class="macro">assert_ne!</span>(base_address, view2 <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">_ as </span><span class="kw-2">*mut </span>c_void);
-            <span class="macro">assert_ne!</span>(base_address, view1 <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">_ as </span><span class="kw-2">*mut </span>c_void);
+            <span class="macro">assert_ne!</span>(base_address, view2.as_ptr().cast::&lt;c_void&gt;());
+            <span class="macro">assert_ne!</span>(base_address, view1.as_ptr().cast::&lt;c_void&gt;());
             <span class="macro">assert_eq!</span>(base_address, base <span class="kw">as </span><span class="kw-2">*mut </span>c_void);
 
             <span class="kw">let </span>data_range = data_range(view2.as_array_ptr());
@@ -1641,25 +1643,25 @@
     <span class="attr">#[test]
     </span><span class="kw">fn </span>view_with_negative_strides() {
         Python::with_gil(|py| {
-            <span class="kw">let </span>array = PyArray::&lt;f64, <span class="kw">_</span>&gt;::zeros(py, (<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>), <span class="bool-val">false</span>);
+            <span class="kw">let </span>array = PyArray::&lt;f64, <span class="kw">_</span>&gt;::zeros_bound(py, (<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>), <span class="bool-val">false</span>);
 
-            <span class="kw">let </span>locals = [(<span class="string">"array"</span>, array)].into_py_dict(py);
+            <span class="kw">let </span>locals = [(<span class="string">"array"</span>, <span class="kw-2">&amp;</span>array)].into_py_dict_bound(py);
             <span class="kw">let </span>view = py
-                .eval(<span class="string">"array[::-1,:,::-1]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
+                .eval_bound(<span class="string">"array[::-1,:,::-1]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>locals))
                 .unwrap()
-                .downcast::&lt;PyArray3&lt;f64&gt;&gt;()
+                .downcast_into::&lt;PyArray3&lt;f64&gt;&gt;()
                 .unwrap();
             <span class="macro">assert_ne!</span>(
-                view <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">_ as </span><span class="kw-2">*mut </span>c_void,
-                array <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">_ as </span><span class="kw-2">*mut </span>c_void
+                view.as_ptr().cast::&lt;c_void&gt;(),
+                array.as_ptr().cast::&lt;c_void&gt;()
             );
 
             <span class="kw">let </span>base = <span class="kw">unsafe </span>{ (<span class="kw-2">*</span>view.as_array_ptr()).base };
-            <span class="macro">assert_eq!</span>(base <span class="kw">as </span><span class="kw-2">*mut </span>c_void, array <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">_ as </span><span class="kw-2">*mut </span>c_void);
+            <span class="macro">assert_eq!</span>(base.cast::&lt;c_void&gt;(), array.as_ptr().cast::&lt;c_void&gt;());
 
             <span class="kw">let </span>base_address = base_address(py, view.as_array_ptr());
-            <span class="macro">assert_ne!</span>(base_address, view <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">_ as </span><span class="kw-2">*mut </span>c_void);
-            <span class="macro">assert_eq!</span>(base_address, base <span class="kw">as </span><span class="kw-2">*mut </span>c_void);
+            <span class="macro">assert_ne!</span>(base_address, view.as_ptr().cast::&lt;c_void&gt;());
+            <span class="macro">assert_eq!</span>(base_address, base.cast::&lt;c_void&gt;());
 
             <span class="kw">let </span>data_range = data_range(view.as_array_ptr());
             <span class="macro">assert_eq!</span>(view.data(), <span class="kw">unsafe </span>{ array.data().offset(<span class="number">2</span>) });
@@ -1673,13 +1675,13 @@
     <span class="attr">#[test]
     </span><span class="kw">fn </span>array_with_zero_dimensions() {
         Python::with_gil(|py| {
-            <span class="kw">let </span>array = PyArray::&lt;f64, <span class="kw">_</span>&gt;::zeros(py, (<span class="number">1</span>, <span class="number">0</span>, <span class="number">3</span>), <span class="bool-val">false</span>);
+            <span class="kw">let </span>array = PyArray::&lt;f64, <span class="kw">_</span>&gt;::zeros_bound(py, (<span class="number">1</span>, <span class="number">0</span>, <span class="number">3</span>), <span class="bool-val">false</span>);
 
             <span class="kw">let </span>base = <span class="kw">unsafe </span>{ (<span class="kw-2">*</span>array.as_array_ptr()).base };
             <span class="macro">assert!</span>(base.is_null());
 
             <span class="kw">let </span>base_address = base_address(py, array.as_array_ptr());
-            <span class="macro">assert_eq!</span>(base_address, array <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">_ as </span><span class="kw-2">*mut </span>c_void);
+            <span class="macro">assert_eq!</span>(base_address, array.as_ptr().cast::&lt;c_void&gt;());
 
             <span class="kw">let </span>data_range = data_range(array.as_array_ptr());
             <span class="macro">assert_eq!</span>(data_range.<span class="number">0</span>, array.data() <span class="kw">as </span><span class="kw-2">*mut </span>c_char);
@@ -1690,13 +1692,13 @@
     <span class="attr">#[test]
     </span><span class="kw">fn </span>view_with_non_dividing_strides() {
         Python::with_gil(|py| {
-            <span class="kw">let </span>array = PyArray::&lt;f64, <span class="kw">_</span>&gt;::zeros(py, (<span class="number">10</span>, <span class="number">10</span>), <span class="bool-val">false</span>);
-            <span class="kw">let </span>locals = [(<span class="string">"array"</span>, array)].into_py_dict(py);
+            <span class="kw">let </span>array = PyArray::&lt;f64, <span class="kw">_</span>&gt;::zeros_bound(py, (<span class="number">10</span>, <span class="number">10</span>), <span class="bool-val">false</span>);
+            <span class="kw">let </span>locals = [(<span class="string">"array"</span>, array)].into_py_dict_bound(py);
 
             <span class="kw">let </span>view1 = py
-                .eval(<span class="string">"array[:,::3]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
+                .eval_bound(<span class="string">"array[:,::3]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>locals))
                 .unwrap()
-                .downcast::&lt;PyArray2&lt;f64&gt;&gt;()
+                .downcast_into::&lt;PyArray2&lt;f64&gt;&gt;()
                 .unwrap();
 
             <span class="kw">let </span>key1 = borrow_key(view1.as_array_ptr());
@@ -1705,9 +1707,9 @@
             <span class="macro">assert_eq!</span>(key1.gcd_strides, <span class="number">8</span>);
 
             <span class="kw">let </span>view2 = py
-                .eval(<span class="string">"array[:,1::3]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
+                .eval_bound(<span class="string">"array[:,1::3]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>locals))
                 .unwrap()
-                .downcast::&lt;PyArray2&lt;f64&gt;&gt;()
+                .downcast_into::&lt;PyArray2&lt;f64&gt;&gt;()
                 .unwrap();
 
             <span class="kw">let </span>key2 = borrow_key(view2.as_array_ptr());
@@ -1716,9 +1718,9 @@
             <span class="macro">assert_eq!</span>(key2.gcd_strides, <span class="number">8</span>);
 
             <span class="kw">let </span>view3 = py
-                .eval(<span class="string">"array[:,::2]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
+                .eval_bound(<span class="string">"array[:,::2]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>locals))
                 .unwrap()
-                .downcast::&lt;PyArray2&lt;f64&gt;&gt;()
+                .downcast_into::&lt;PyArray2&lt;f64&gt;&gt;()
                 .unwrap();
 
             <span class="kw">let </span>key3 = borrow_key(view3.as_array_ptr());
@@ -1727,9 +1729,9 @@
             <span class="macro">assert_eq!</span>(key3.gcd_strides, <span class="number">16</span>);
 
             <span class="kw">let </span>view4 = py
-                .eval(<span class="string">"array[:,1::2]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
+                .eval_bound(<span class="string">"array[:,1::2]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>locals))
                 .unwrap()
-                .downcast::&lt;PyArray2&lt;f64&gt;&gt;()
+                .downcast_into::&lt;PyArray2&lt;f64&gt;&gt;()
                 .unwrap();
 
             <span class="kw">let </span>key4 = borrow_key(view4.as_array_ptr());
@@ -1749,8 +1751,8 @@
     <span class="attr">#[test]
     </span><span class="kw">fn </span>borrow_multiple_arrays() {
         Python::with_gil(|py| {
-            <span class="kw">let </span>array1 = PyArray::&lt;f64, <span class="kw">_</span>&gt;::zeros(py, <span class="number">10</span>, <span class="bool-val">false</span>);
-            <span class="kw">let </span>array2 = PyArray::&lt;f64, <span class="kw">_</span>&gt;::zeros(py, <span class="number">10</span>, <span class="bool-val">false</span>);
+            <span class="kw">let </span>array1 = PyArray::&lt;f64, <span class="kw">_</span>&gt;::zeros_bound(py, <span class="number">10</span>, <span class="bool-val">false</span>);
+            <span class="kw">let </span>array2 = PyArray::&lt;f64, <span class="kw">_</span>&gt;::zeros_bound(py, <span class="number">10</span>, <span class="bool-val">false</span>);
 
             <span class="kw">let </span>base1 = base_address(py, array1.as_array_ptr());
             <span class="kw">let </span>base2 = base_address(py, array2.as_array_ptr());
@@ -1794,7 +1796,7 @@
     <span class="attr">#[test]
     </span><span class="kw">fn </span>borrow_multiple_views() {
         Python::with_gil(|py| {
-            <span class="kw">let </span>array = PyArray::&lt;f64, <span class="kw">_</span>&gt;::zeros(py, <span class="number">10</span>, <span class="bool-val">false</span>);
+            <span class="kw">let </span>array = PyArray::&lt;f64, <span class="kw">_</span>&gt;::zeros_bound(py, <span class="number">10</span>, <span class="bool-val">false</span>);
             <span class="kw">let </span>base = base_address(py, array.as_array_ptr());
 
             <span class="kw">let </span>locals = [(<span class="string">"array"</span>, array)].into_py_dict(py);

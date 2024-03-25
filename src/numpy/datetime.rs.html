@@ -598,7 +598,7 @@
         types::{PyDict, PyModule},
     };
 
-    <span class="kw">use </span><span class="kw">crate</span>::array::PyArray1;
+    <span class="kw">use </span><span class="kw">crate</span>::array::{PyArray1, PyArrayMethods};
 
     <span class="attr">#[test]
     </span><span class="kw">fn </span>from_python_to_rust() {
@@ -627,7 +627,7 @@
     <span class="attr">#[test]
     </span><span class="kw">fn </span>from_rust_to_python() {
         Python::with_gil(|py| {
-            <span class="kw">let </span>array = PyArray1::&lt;Timedelta&lt;units::Minutes&gt;&gt;::zeros(py, <span class="number">1</span>, <span class="bool-val">false</span>);
+            <span class="kw">let </span>array = PyArray1::&lt;Timedelta&lt;units::Minutes&gt;&gt;::zeros_bound(py, <span class="number">1</span>, <span class="bool-val">false</span>);
 
             <span class="kw-2">*</span>array.readwrite().get_mut(<span class="number">0</span>).unwrap() = Timedelta::&lt;units::Minutes&gt;::from(<span class="number">5</span>);
 

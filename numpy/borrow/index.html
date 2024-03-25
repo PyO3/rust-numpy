@@ -9,11 +9,11 @@ can be created safely. These are then the starting point for algorithms iteraing
 <p>The first example shows that dynamic borrow checking works to constrain
 both what safe Rust code can invoke and how it is invoked.</p>
 
-<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>numpy::PyArray1;
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>numpy::{PyArray1, PyArrayMethods};
 <span class="kw">use </span>ndarray::Zip;
-<span class="kw">use </span>pyo3::Python;
+<span class="kw">use </span>pyo3::{Python, Bound};
 
-<span class="kw">fn </span>add(x: <span class="kw-2">&amp;</span>PyArray1&lt;f64&gt;, y: <span class="kw-2">&amp;</span>PyArray1&lt;f64&gt;, z: <span class="kw-2">&amp;</span>PyArray1&lt;f64&gt;) {
+<span class="kw">fn </span>add(x: <span class="kw-2">&amp;</span>Bound&lt;<span class="lifetime">'_</span>, PyArray1&lt;f64&gt;&gt;, y: <span class="kw-2">&amp;</span>Bound&lt;<span class="lifetime">'_</span>, PyArray1&lt;f64&gt;&gt;, z: <span class="kw-2">&amp;</span>Bound&lt;<span class="lifetime">'_</span>, PyArray1&lt;f64&gt;&gt;) {
     <span class="kw">let </span>x1 = x.readonly();
     <span class="kw">let </span>y1 = y.readonly();
     <span class="kw">let </span><span class="kw-2">mut </span>z1 = z.readwrite();
@@ -35,19 +35,19 @@ both what safe Rust code can invoke and how it is invoked.</p>
 }
 
 Python::with_gil(|py| {
-    <span class="kw">let </span>x = PyArray1::&lt;f64&gt;::zeros(py, <span class="number">42</span>, <span class="bool-val">false</span>);
-    <span class="kw">let </span>y = PyArray1::&lt;f64&gt;::zeros(py, <span class="number">42</span>, <span class="bool-val">false</span>);
-    <span class="kw">let </span>z = PyArray1::&lt;f64&gt;::zeros(py, <span class="number">42</span>, <span class="bool-val">false</span>);
+    <span class="kw">let </span>x = PyArray1::&lt;f64&gt;::zeros_bound(py, <span class="number">42</span>, <span class="bool-val">false</span>);
+    <span class="kw">let </span>y = PyArray1::&lt;f64&gt;::zeros_bound(py, <span class="number">42</span>, <span class="bool-val">false</span>);
+    <span class="kw">let </span>z = PyArray1::&lt;f64&gt;::zeros_bound(py, <span class="number">42</span>, <span class="bool-val">false</span>);
 
     <span class="comment">// Will work as the three arrays are distinct.
-    </span>add(x, y, z);
+    </span>add(<span class="kw-2">&amp;</span>x, <span class="kw-2">&amp;</span>y, <span class="kw-2">&amp;</span>z);
 
     <span class="comment">// Will work as `x1` and `y1` are compatible borrows.
-    </span>add(x, x, z);
+    </span>add(<span class="kw-2">&amp;</span>x, <span class="kw-2">&amp;</span>x, <span class="kw-2">&amp;</span>z);
 
     <span class="comment">// Will fail at runtime due to conflict between `y1` and `z1`.
     </span><span class="kw">let </span>res = catch_unwind(AssertUnwindSafe(|| {
-        add(x, y, y);
+        add(<span class="kw-2">&amp;</span>x, <span class="kw-2">&amp;</span>y, <span class="kw-2">&amp;</span>y);
     }));
     <span class="macro">assert!</span>(res.is_err());
 });</code></pre></div>
@@ -77,15 +77,15 @@ Python::with_gil(|py| {
 });</code></pre></div>
 <p>The third example shows that some views are incorrectly rejected since the borrows are over-approximated.</p>
 
-<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>numpy::PyArray2;
-<span class="kw">use </span>pyo3::{types::IntoPyDict, Python};
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>numpy::{PyArray2, PyArrayMethods};
+<span class="kw">use </span>pyo3::{types::{IntoPyDict, PyAnyMethods}, Python};
 
 Python::with_gil(|py| {
-    <span class="kw">let </span>array = PyArray2::&lt;f64&gt;::zeros(py, (<span class="number">10</span>, <span class="number">10</span>), <span class="bool-val">false</span>);
-    <span class="kw">let </span>locals = [(<span class="string">"array"</span>, array)].into_py_dict(py);
+    <span class="kw">let </span>array = PyArray2::&lt;f64&gt;::zeros_bound(py, (<span class="number">10</span>, <span class="number">10</span>), <span class="bool-val">false</span>);
+    <span class="kw">let </span>locals = [(<span class="string">"array"</span>, array)].into_py_dict_bound(py);
 
-    <span class="kw">let </span>view1 = py.eval(<span class="string">"array[:, ::3]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals)).unwrap().downcast::&lt;PyArray2&lt;f64&gt;&gt;().unwrap();
-    <span class="kw">let </span>view2 = py.eval(<span class="string">"array[:, 1::3]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals)).unwrap().downcast::&lt;PyArray2&lt;f64&gt;&gt;().unwrap();
+    <span class="kw">let </span>view1 = py.eval_bound(<span class="string">"array[:, ::3]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>locals)).unwrap().downcast_into::&lt;PyArray2&lt;f64&gt;&gt;().unwrap();
+    <span class="kw">let </span>view2 = py.eval_bound(<span class="string">"array[:, 1::3]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>locals)).unwrap().downcast_into::&lt;PyArray2&lt;f64&gt;&gt;().unwrap();
 
     <span class="comment">// A false conflict as the views do not actually share any elements.
     </span><span class="kw">let </span>res = catch_unwind(AssertUnwindSafe(|| {
