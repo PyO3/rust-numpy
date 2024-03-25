@@ -10,12 +10,17 @@ use pyo3::{
 };
 
 use crate::array::PyArrayMethods;
-use crate::sealed::Sealed;
 use crate::{get_array_module, Element, IntoPyArray, PyArray, PyReadonlyArray};
 
 pub trait Coerce: Sealed {
     const VAL: bool;
 }
+
+mod sealed {
+    pub trait Sealed {}
+}
+
+use sealed::Sealed;
 
 /// Marker type to indicate that the element type received via [`PyArrayLike`] must match the specified type exactly.
 #[derive(Debug)]

@@ -9,7 +9,6 @@ use crate::array::{PyArray, PyArrayMethods};
 use crate::dtype::Element;
 use crate::error::MAX_DIMENSIONALITY_ERR;
 use crate::npyffi::{self, npy_intp};
-use crate::sealed::Sealed;
 use crate::slice_container::PySliceContainer;
 
 /// Conversion trait from owning Rust types into [`PyArray`].
@@ -272,6 +271,12 @@ pub trait ToNpyDims: Dimension + Sealed {
         }
     }
 }
+
+mod sealed {
+    pub trait Sealed {}
+}
+
+use sealed::Sealed;
 
 impl<D> ToNpyDims for D where D: Dimension {}
 

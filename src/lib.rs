@@ -130,10 +130,6 @@ mod doctest {
     doc_comment!(include_str!("../README.md"), readme);
 }
 
-mod sealed {
-    pub trait Sealed {}
-}
-
 #[cold]
 #[inline(always)]
 fn cold() {}

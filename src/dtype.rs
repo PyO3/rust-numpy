@@ -364,7 +364,7 @@ impl PyArrayDescr {
 
 /// Implementation of functionality for [`PyArrayDescr`].
 #[doc(alias = "PyArrayDescr")]
-pub trait PyArrayDescrMethods<'py>: sealed::Sealed {
+pub trait PyArrayDescrMethods<'py>: Sealed {
     /// Returns `self` as `*mut PyArray_Descr`.
     fn as_dtype_ptr(&self) -> *mut PyArray_Descr;
 
@@ -553,6 +553,12 @@ pub trait PyArrayDescrMethods<'py>: sealed::Sealed {
     fn get_field(&self, name: &str) -> PyResult<(Bound<'py, PyArrayDescr>, usize)>;
 }
 
+mod sealed {
+    pub trait Sealed {}
+}
+
+use sealed::Sealed;
+
 impl<'py> PyArrayDescrMethods<'py> for Bound<'py, PyArrayDescr> {
     fn as_dtype_ptr(&self) -> *mut PyArray_Descr {
         self.as_ptr() as _
@@ -632,13 +638,7 @@ impl<'py> PyArrayDescrMethods<'py> for Bound<'py, PyArrayDescr> {
     }
 }
 
-mod sealed {
-    use super::PyArrayDescr;
-
-    pub trait Sealed {}
-
-    impl Sealed for pyo3::Bound<'_, PyArrayDescr> {}
-}
+impl Sealed for Bound<'_, PyArrayDescr> {}
 
 /// Represents that a type can be an element of `PyArray`.
 ///
