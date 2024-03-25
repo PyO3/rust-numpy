@@ -326,7 +326,8 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     /// # Example
     ///
     /// ```
-    /// use numpy::{PyArray3, PyArrayMethods, PyUntypedArrayMethods};
+    /// use numpy::prelude::*;
+    /// use numpy::PyArray3;
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
@@ -1329,7 +1330,8 @@ impl<T: Element, D> PyArray<T, D> {
     /// # Example
     ///
     /// ```
-    /// use numpy::{PyArray, PyArrayMethods, PyUntypedArrayMethods};
+    /// use numpy::prelude::*;
+    /// use numpy::PyArray;
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
@@ -1846,8 +1848,8 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> {
 
     /// Extends or truncates the dimensions of an array.
     ///
-    /// This method works only on [contiguous][PyUntypedArray::is_contiguous] arrays.
-    /// Missing elements will be initialized as if calling [`zeros`][Self::zeros].
+    /// This method works only on [contiguous][PyUntypedArrayMethods::is_contiguous] arrays.
+    /// Missing elements will be initialized as if calling [`zeros`][PyArray::zeros_bound].
     ///
     /// See also [`ndarray.resize`][ndarray-resize] and [`PyArray_Resize`][PyArray_Resize].
     ///
@@ -1859,7 +1861,8 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> {
     /// # Example
     ///
     /// ```
-    /// use numpy::{PyArray, PyArrayMethods, PyUntypedArrayMethods};
+    /// use numpy::prelude::*;
+    /// use numpy::PyArray;
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
