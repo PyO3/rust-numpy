@@ -258,7 +258,7 @@ impl PyUntypedArray {
 
 /// Implementation of functionality for [`PyUntypedArray`].
 #[doc(alias = "PyUntypedArray")]
-pub trait PyUntypedArrayMethods<'py>: sealed::Sealed {
+pub trait PyUntypedArrayMethods<'py>: Sealed {
     /// Returns a raw pointer to the underlying [`PyArrayObject`][npyffi::PyArrayObject].
     fn as_array_ptr(&self) -> *mut npyffi::PyArrayObject;
 
@@ -423,6 +423,12 @@ pub trait PyUntypedArrayMethods<'py>: sealed::Sealed {
     }
 }
 
+mod sealed {
+    pub trait Sealed {}
+}
+
+use sealed::Sealed;
+
 fn check_flags(obj: &npyffi::PyArrayObject, flags: i32) -> bool {
     obj.flags & flags != 0
 }
@@ -441,6 +447,8 @@ impl<'py> PyUntypedArrayMethods<'py> for Bound<'py, PyUntypedArray> {
     }
 }
 
+impl Sealed for Bound<'_, PyUntypedArray> {}
+
 // We won't be able to provide a `Deref` impl from `Bound<'_, PyArray<T, D>>` to
 // `Bound<'_, PyUntypedArray>`, so this seems to be the next best thing to do
 impl<'py, T, D> PyUntypedArrayMethods<'py> for Bound<'py, PyArray<T, D>> {
@@ -455,11 +463,4 @@ impl<'py, T, D> PyUntypedArrayMethods<'py> for Bound<'py, PyArray<T, D>> {
     }
 }
 
-mod sealed {
-    use super::{PyArray, PyUntypedArray};
-
-    pub trait Sealed {}
-
-    impl Sealed for pyo3::Bound<'_, PyUntypedArray> {}
-    impl<T, D> Sealed for pyo3::Bound<'_, PyArray<T, D>> {}
-}
+impl<T, D> Sealed for Bound<'_, PyArray<T, D>> {}
