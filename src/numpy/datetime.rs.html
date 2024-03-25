@@ -659,7 +659,7 @@
     </span><span class="kw">fn </span>unit_conversion() {
         <span class="attr">#[track_caller]
         </span><span class="kw">fn </span>convert&lt;<span class="lifetime">'py</span>, S: Unit, D: Unit&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, expected_value: i64) {
-            <span class="kw">let </span>array = PyArray1::&lt;Timedelta&lt;S&gt;&gt;::from_slice(py, <span class="kw-2">&amp;</span>[Timedelta::&lt;S&gt;::from(<span class="number">1</span>)]);
+            <span class="kw">let </span>array = PyArray1::&lt;Timedelta&lt;S&gt;&gt;::from_slice_bound(py, <span class="kw-2">&amp;</span>[Timedelta::&lt;S&gt;::from(<span class="number">1</span>)]);
             <span class="kw">let </span>array = array.cast::&lt;Timedelta&lt;D&gt;&gt;(<span class="bool-val">false</span>).unwrap();
 
             <span class="kw">let </span>value: i64 = array.get_owned(<span class="number">0</span>).unwrap().into();

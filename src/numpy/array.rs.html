@@ -2295,6 +2295,24 @@
 <a href="#2294" id="2294">2294</a>
 <a href="#2295" id="2295">2295</a>
 <a href="#2296" id="2296">2296</a>
+<a href="#2297" id="2297">2297</a>
+<a href="#2298" id="2298">2298</a>
+<a href="#2299" id="2299">2299</a>
+<a href="#2300" id="2300">2300</a>
+<a href="#2301" id="2301">2301</a>
+<a href="#2302" id="2302">2302</a>
+<a href="#2303" id="2303">2303</a>
+<a href="#2304" id="2304">2304</a>
+<a href="#2305" id="2305">2305</a>
+<a href="#2306" id="2306">2306</a>
+<a href="#2307" id="2307">2307</a>
+<a href="#2308" id="2308">2308</a>
+<a href="#2309" id="2309">2309</a>
+<a href="#2310" id="2310">2310</a>
+<a href="#2311" id="2311">2311</a>
+<a href="#2312" id="2312">2312</a>
+<a href="#2313" id="2313">2313</a>
+<a href="#2314" id="2314">2314</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Safe interface for NumPy's [N-dimensional arrays][ndarray]
 //!
 //! [ndarray]: https://numpy.org/doc/stable/reference/arrays.ndarray.html
@@ -2378,12 +2396,12 @@
 /// # Example
 ///
 /// ```
-/// use numpy::PyArray;
-/// use ndarray::array;
+/// use numpy::{PyArray, PyArrayMethods};
+/// use ndarray::{array, Array};
 /// use pyo3::Python;
 ///
 /// Python::with_gil(|py| {
-///     let pyarray = PyArray::arange(py, 0., 4., 1.).reshape([2, 2]).unwrap();
+///     let pyarray = PyArray::arange_bound(py, 0., 4., 1.).reshape([2, 2]).unwrap();
 ///     let array = array![[3., 4.], [5., 6.]];
 ///
 ///     assert_eq!(
@@ -2938,11 +2956,11 @@
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let pyarray = PyArray::arange(py, 0, 16, 1).reshape([2, 2, 4]).unwrap();
+    ///     let pyarray = PyArray::arange_bound(py, 0, 16, 1).reshape([2, 2, 4]).unwrap();
     ///
     ///     assert_eq!(unsafe { *pyarray.get([1, 0, 3]).unwrap() }, 11);
     /// });
@@ -2966,11 +2984,11 @@
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let pyarray = PyArray::arange(py, 0, 16, 1).reshape([2, 2, 4]).unwrap();
+    ///     let pyarray = PyArray::arange_bound(py, 0, 16, 1).reshape([2, 2, 4]).unwrap();
     ///
     ///     unsafe {
     ///         *pyarray.get_mut([1, 0, 3]).unwrap() = 42;
@@ -3001,11 +3019,11 @@
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let pyarray = PyArray::arange(py, 0, 16, 1).reshape([2, 2, 4]).unwrap();
+    ///     let pyarray = PyArray::arange_bound(py, 0, 16, 1).reshape([2, 2, 4]).unwrap();
     ///
     ///     assert_eq!(unsafe { *pyarray.uget([1, 0, 3]) }, 11);
     /// });
@@ -3055,11 +3073,11 @@
     ///
     /// # Example
     /// ```
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let pyarray = PyArray::arange(py, 0, 16, 1).reshape([2, 2, 4]).unwrap();
+    ///     let pyarray = PyArray::arange_bound(py, 0, 16, 1).reshape([2, 2, 4]).unwrap();
     ///
     ///     assert_eq!(pyarray.get_owned([1, 0, 3]), Some(11));
     /// });
@@ -3207,12 +3225,12 @@
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyArrayMethods};
     /// use ndarray::array;
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let pyarray = PyArray::arange(py, 0, 4, 1).reshape([2, 2]).unwrap();
+    ///     let pyarray = PyArray::arange_bound(py, 0, 4, 1).reshape([2, 2]).unwrap();
     ///
     ///     assert_eq!(
     ///         pyarray.to_owned_array(),
@@ -3352,26 +3370,35 @@
 }
 
 <span class="kw">impl</span>&lt;T: Element&gt; PyArray&lt;T, Ix1&gt; {
+    <span class="doccomment">/// Deprecated form of [`PyArray&lt;T, Ix1&gt;::from_slice_bound`]
+    </span><span class="attr">#[deprecated(
+        since = <span class="string">"0.21.0"</span>,
+        note = <span class="string">"will be replaced by `PyArray::from_slice_bound` in the future"
+    </span>)]
+    </span><span class="kw">pub fn </span>from_slice&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, slice: <span class="kw-2">&amp;</span>[T]) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span><span class="self">Self </span>{
+        <span class="self">Self</span>::from_slice_bound(py, slice).into_gil_ref()
+    }
+
     <span class="doccomment">/// Construct a one-dimensional array from a [mod@slice].
     ///
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
     ///     let slice = &amp;[1, 2, 3, 4, 5];
-    ///     let pyarray = PyArray::from_slice(py, slice);
+    ///     let pyarray = PyArray::from_slice_bound(py, slice);
     ///     assert_eq!(pyarray.readonly().as_slice().unwrap(), &amp;[1, 2, 3, 4, 5]);
     /// });
     /// ```
-    </span><span class="kw">pub fn </span>from_slice&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, slice: <span class="kw-2">&amp;</span>[T]) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span><span class="self">Self </span>{
+    </span><span class="kw">pub fn </span>from_slice_bound&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, slice: <span class="kw-2">&amp;</span>[T]) -&gt; Bound&lt;<span class="lifetime">'py</span>, <span class="self">Self</span>&gt; {
         <span class="kw">unsafe </span>{
             <span class="kw">let </span>array = PyArray::new_bound(py, [slice.len()], <span class="bool-val">false</span>);
             <span class="kw">let </span><span class="kw-2">mut </span>data_ptr = array.data();
             clone_elements(slice, <span class="kw-2">&amp;mut </span>data_ptr);
-            array.into_gil_ref()
+            array
         }
     }
 
@@ -3529,10 +3556,10 @@
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let pyarray_f = PyArray::arange(py, 2.0, 5.0, 1.0);
+    ///     let pyarray_f = PyArray::arange_bound(py, 2.0, 5.0, 1.0);
     ///     let pyarray_i = unsafe { PyArray::&lt;i64, _&gt;::new_bound(py, [3], false) };
     ///
-    ///     assert!(pyarray_f.copy_to(pyarray_i.as_gil_ref()).is_ok());
+    ///     assert!(pyarray_f.copy_to(&amp;pyarray_i).is_ok());
     ///
     ///     assert_eq!(pyarray_i.readonly().as_slice().unwrap(), &amp;[2, 3, 4]);
     /// });
@@ -3550,11 +3577,11 @@
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let pyarray_f = PyArray::arange(py, 2.0, 5.0, 1.0);
+    ///     let pyarray_f = PyArray::arange_bound(py, 2.0, 5.0, 1.0);
     ///
     ///     let pyarray_i = pyarray_f.cast::&lt;i32&gt;(false).unwrap();
     ///
@@ -3650,6 +3677,15 @@
 }
 
 <span class="kw">impl</span>&lt;T: Element + AsPrimitive&lt;f64&gt;&gt; PyArray&lt;T, Ix1&gt; {
+    <span class="doccomment">/// Deprecated form of [`PyArray&lt;T, Ix1&gt;::arange_bound`]
+    </span><span class="attr">#[deprecated(
+        since = <span class="string">"0.21.0"</span>,
+        note = <span class="string">"will be replaced by PyArray::arange_bound in the future"
+    </span>)]
+    </span><span class="kw">pub fn </span>arange&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, start: T, stop: T, step: T) -&gt; <span class="kw-2">&amp;</span><span class="self">Self </span>{
+        <span class="self">Self</span>::arange_bound(py, start, stop, step).into_gil_ref()
+    }
+
     <span class="doccomment">/// Return evenly spaced values within a given interval.
     ///
     /// See [numpy.arange][numpy.arange] for the Python API and [PyArray_Arange][PyArray_Arange] for the C API.
@@ -3657,21 +3693,21 @@
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let pyarray = PyArray::arange(py, 2.0, 4.0, 0.5);
+    ///     let pyarray = PyArray::arange_bound(py, 2.0, 4.0, 0.5);
     ///     assert_eq!(pyarray.readonly().as_slice().unwrap(), &amp;[2.0, 2.5, 3.0, 3.5]);
     ///
-    ///     let pyarray = PyArray::arange(py, -2, 4, 3);
+    ///     let pyarray = PyArray::arange_bound(py, -2, 4, 3);
     ///     assert_eq!(pyarray.readonly().as_slice().unwrap(), &amp;[-2, 1]);
     /// });
     /// ```
     ///
     /// [numpy.arange]: https://numpy.org/doc/stable/reference/generated/numpy.arange.html
     /// [PyArray_Arange]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_Arange
-    </span><span class="kw">pub fn </span>arange&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, start: T, stop: T, step: T) -&gt; <span class="kw-2">&amp;</span><span class="self">Self </span>{
+    </span><span class="kw">pub fn </span>arange_bound&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, start: T, stop: T, step: T) -&gt; Bound&lt;<span class="lifetime">'py</span>, <span class="self">Self</span>&gt; {
         <span class="kw">unsafe </span>{
             <span class="kw">let </span>ptr = PY_ARRAY_API.PyArray_Arange(
                 py,
@@ -3680,7 +3716,7 @@
                 step.as_(),
                 T::get_dtype_bound(py).num(),
             );
-            <span class="self">Self</span>::from_owned_ptr(py, ptr)
+            Bound::from_owned_ptr(py, ptr).downcast_into_unchecked()
         }
     }
 }
@@ -3770,11 +3806,11 @@
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let pyarray = PyArray::arange(py, 0, 16, 1).reshape([2, 2, 4]).unwrap();
+    ///     let pyarray = PyArray::arange_bound(py, 0, 16, 1).reshape([2, 2, 4]).unwrap();
     ///
     ///     assert_eq!(unsafe { *pyarray.get([1, 0, 3]).unwrap() }, 11);
     /// });
@@ -3797,11 +3833,11 @@
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let pyarray = PyArray::arange(py, 0, 16, 1).reshape([2, 2, 4]).unwrap();
+    ///     let pyarray = PyArray::arange_bound(py, 0, 16, 1).reshape([2, 2, 4]).unwrap();
     ///
     ///     unsafe {
     ///         *pyarray.get_mut([1, 0, 3]).unwrap() = 42;
@@ -3831,11 +3867,11 @@
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let pyarray = PyArray::arange(py, 0, 16, 1).reshape([2, 2, 4]).unwrap();
+    ///     let pyarray = PyArray::arange_bound(py, 0, 16, 1).reshape([2, 2, 4]).unwrap();
     ///
     ///     assert_eq!(unsafe { *pyarray.uget([1, 0, 3]) }, 11);
     /// });
@@ -3892,11 +3928,11 @@
     ///
     /// # Example
     /// ```
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let pyarray = PyArray::arange(py, 0, 16, 1).reshape([2, 2, 4]).unwrap();
+    ///     let pyarray = PyArray::arange_bound(py, 0, 16, 1).reshape([2, 2, 4]).unwrap();
     ///
     ///     assert_eq!(pyarray.get_owned([1, 0, 3]), Some(11));
     /// });
@@ -4030,12 +4066,12 @@
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyArrayMethods};
     /// use ndarray::array;
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let pyarray = PyArray::arange(py, 0, 4, 1).reshape([2, 2]).unwrap();
+    ///     let pyarray = PyArray::arange_bound(py, 0, 4, 1).reshape([2, 2]).unwrap();
     ///
     ///     assert_eq!(
     ///         pyarray.to_owned_array(),
@@ -4062,10 +4098,10 @@
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let pyarray_f = PyArray::arange(py, 2.0, 5.0, 1.0);
+    ///     let pyarray_f = PyArray::arange_bound(py, 2.0, 5.0, 1.0);
     ///     let pyarray_i = unsafe { PyArray::&lt;i64, _&gt;::new_bound(py, [3], false) };
     ///
-    ///     assert!(pyarray_f.copy_to(pyarray_i.as_gil_ref()).is_ok());
+    ///     assert!(pyarray_f.copy_to(&amp;pyarray_i).is_ok());
     ///
     ///     assert_eq!(pyarray_i.readonly().as_slice().unwrap(), &amp;[2, 3, 4]);
     /// });
@@ -4083,11 +4119,11 @@
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray;
+    /// use numpy::{PyArray, PyArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let pyarray_f = PyArray::arange(py, 2.0, 5.0, 1.0);
+    ///     let pyarray_f = PyArray::arange_bound(py, 2.0, 5.0, 1.0);
     ///
     ///     let pyarray_i = pyarray_f.cast::&lt;i32&gt;(false).unwrap();
     ///
@@ -4584,8 +4620,8 @@
     <span class="attr">#[test]
     </span><span class="kw">fn </span>test_hasobject_flag() {
         Python::with_gil(|py| {
-            <span class="kw">let </span>array: <span class="kw-2">&amp;</span>PyArray&lt;PyObject, <span class="kw">_</span>&gt; =
-                PyArray1::from_slice(py, <span class="kw-2">&amp;</span>[PyList::empty(py).into()]);
+            <span class="kw">let </span>array: Bound&lt;<span class="lifetime">'_</span>, PyArray&lt;PyObject, <span class="kw">_</span>&gt;&gt; =
+                PyArray1::from_slice_bound(py, <span class="kw-2">&amp;</span>[PyList::empty_bound(py).into()]);
 
             <span class="macro">py_run!</span>(py, array, <span class="string">"assert array.dtype.hasobject"</span>);
         });

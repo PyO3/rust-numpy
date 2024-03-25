@@ -404,6 +404,7 @@
 <a href="#403" id="403">403</a>
 <a href="#404" id="404">404</a>
 <a href="#405" id="405">405</a>
+<a href="#406" id="406">406</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Low-Level binding for [Array API](https://numpy.org/doc/stable/reference/c-api/array.html)
 //!
 //! Note that NumPy's low-level allocation functions `PyArray_{malloc,realloc,free}` are not part of this module.
@@ -432,9 +433,10 @@
 ///
 /// # Example
 /// ```
+/// use numpy::prelude::*;
 /// use numpy::{PyArray, npyffi::types::NPY_SORTKIND, PY_ARRAY_API};
 /// pyo3::Python::with_gil(|py| {
-///     let array = PyArray::from_slice(py, &amp;[3, 2, 4]);
+///     let array = PyArray::from_slice_bound(py, &amp;[3, 2, 4]);
 ///     unsafe {
 ///         PY_ARRAY_API.PyArray_Sort(py, array.as_array_ptr(), 0, NPY_SORTKIND::NPY_QUICKSORT);
 ///     }

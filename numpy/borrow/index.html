@@ -53,17 +53,17 @@ Python::with_gil(|py| {
 });</code></pre></div>
 <p>The second example shows that non-overlapping and interleaved views are also supported.</p>
 
-<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>numpy::PyArray1;
-<span class="kw">use </span>pyo3::{types::IntoPyDict, Python};
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>numpy::{PyArray1, PyArrayMethods};
+<span class="kw">use </span>pyo3::{types::{IntoPyDict, PyAnyMethods}, Python};
 
 Python::with_gil(|py| {
-    <span class="kw">let </span>array = PyArray1::arange(py, <span class="number">0.0</span>, <span class="number">10.0</span>, <span class="number">1.0</span>);
-    <span class="kw">let </span>locals = [(<span class="string">"array"</span>, array)].into_py_dict(py);
+    <span class="kw">let </span>array = PyArray1::arange_bound(py, <span class="number">0.0</span>, <span class="number">10.0</span>, <span class="number">1.0</span>);
+    <span class="kw">let </span>locals = [(<span class="string">"array"</span>, array)].into_py_dict_bound(py);
 
-    <span class="kw">let </span>view1 = py.eval(<span class="string">"array[:5]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals)).unwrap().downcast::&lt;PyArray1&lt;f64&gt;&gt;().unwrap();
-    <span class="kw">let </span>view2 = py.eval(<span class="string">"array[5:]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals)).unwrap().downcast::&lt;PyArray1&lt;f64&gt;&gt;().unwrap();
-    <span class="kw">let </span>view3 = py.eval(<span class="string">"array[::2]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals)).unwrap().downcast::&lt;PyArray1&lt;f64&gt;&gt;().unwrap();
-    <span class="kw">let </span>view4 = py.eval(<span class="string">"array[1::2]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals)).unwrap().downcast::&lt;PyArray1&lt;f64&gt;&gt;().unwrap();
+    <span class="kw">let </span>view1 = py.eval_bound(<span class="string">"array[:5]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>locals)).unwrap().downcast_into::&lt;PyArray1&lt;f64&gt;&gt;().unwrap();
+    <span class="kw">let </span>view2 = py.eval_bound(<span class="string">"array[5:]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>locals)).unwrap().downcast_into::&lt;PyArray1&lt;f64&gt;&gt;().unwrap();
+    <span class="kw">let </span>view3 = py.eval_bound(<span class="string">"array[::2]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>locals)).unwrap().downcast_into::&lt;PyArray1&lt;f64&gt;&gt;().unwrap();
+    <span class="kw">let </span>view4 = py.eval_bound(<span class="string">"array[1::2]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>locals)).unwrap().downcast_into::&lt;PyArray1&lt;f64&gt;&gt;().unwrap();
 
     {
         <span class="kw">let </span>_view1 = view1.readwrite();

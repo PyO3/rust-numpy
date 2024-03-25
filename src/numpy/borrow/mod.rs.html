@@ -754,17 +754,17 @@
 //! The second example shows that non-overlapping and interleaved views are also supported.
 //!
 //! ```rust
-//! use numpy::PyArray1;
-//! use pyo3::{types::IntoPyDict, Python};
+//! use numpy::{PyArray1, PyArrayMethods};
+//! use pyo3::{types::{IntoPyDict, PyAnyMethods}, Python};
 //!
 //! Python::with_gil(|py| {
-//!     let array = PyArray1::arange(py, 0.0, 10.0, 1.0);
-//!     let locals = [("array", array)].into_py_dict(py);
+//!     let array = PyArray1::arange_bound(py, 0.0, 10.0, 1.0);
+//!     let locals = [("array", array)].into_py_dict_bound(py);
 //!
-//!     let view1 = py.eval("array[:5]", None, Some(locals)).unwrap().downcast::&lt;PyArray1&lt;f64&gt;&gt;().unwrap();
-//!     let view2 = py.eval("array[5:]", None, Some(locals)).unwrap().downcast::&lt;PyArray1&lt;f64&gt;&gt;().unwrap();
-//!     let view3 = py.eval("array[::2]", None, Some(locals)).unwrap().downcast::&lt;PyArray1&lt;f64&gt;&gt;().unwrap();
-//!     let view4 = py.eval("array[1::2]", None, Some(locals)).unwrap().downcast::&lt;PyArray1&lt;f64&gt;&gt;().unwrap();
+//!     let view1 = py.eval_bound("array[:5]", None, Some(&amp;locals)).unwrap().downcast_into::&lt;PyArray1&lt;f64&gt;&gt;().unwrap();
+//!     let view2 = py.eval_bound("array[5:]", None, Some(&amp;locals)).unwrap().downcast_into::&lt;PyArray1&lt;f64&gt;&gt;().unwrap();
+//!     let view3 = py.eval_bound("array[::2]", None, Some(&amp;locals)).unwrap().downcast_into::&lt;PyArray1&lt;f64&gt;&gt;().unwrap();
+//!     let view4 = py.eval_bound("array[1::2]", None, Some(&amp;locals)).unwrap().downcast_into::&lt;PyArray1&lt;f64&gt;&gt;().unwrap();
 //!
 //!     {
 //!         let _view1 = view1.readwrite();
@@ -1254,11 +1254,11 @@
     /// # Example
     ///
     /// ```
-    /// use numpy::{PyArray, PyUntypedArrayMethods};
+    /// use numpy::{PyArray, PyArrayMethods, PyUntypedArrayMethods};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let pyarray = PyArray::arange(py, 0, 10, 1);
+    ///     let pyarray = PyArray::arange_bound(py, 0, 10, 1);
     ///     assert_eq!(pyarray.len(), 10);
     ///
     ///     let pyarray = pyarray.readwrite();

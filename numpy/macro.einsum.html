@@ -7,10 +7,10 @@
 <h2 id="example"><a href="#example">Example</a></h2>
 <div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>pyo3::Python;
 <span class="kw">use </span>ndarray::array;
-<span class="kw">use </span>numpy::{einsum, pyarray, PyArray, PyArray2};
+<span class="kw">use </span>numpy::{einsum, pyarray, PyArray, PyArray2, PyArrayMethods};
 
 Python::with_gil(|py| {
-    <span class="kw">let </span>tensor = PyArray::arange(py, <span class="number">0</span>, <span class="number">2 </span>* <span class="number">3 </span>* <span class="number">4</span>, <span class="number">1</span>).reshape([<span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>]).unwrap();
+    <span class="kw">let </span>tensor = PyArray::arange_bound(py, <span class="number">0</span>, <span class="number">2 </span>* <span class="number">3 </span>* <span class="number">4</span>, <span class="number">1</span>).reshape([<span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>]).unwrap().into_gil_ref();
     <span class="kw">let </span>another_tensor = <span class="macro">pyarray!</span>[py, [<span class="number">20</span>, <span class="number">30</span>], [<span class="number">40</span>, <span class="number">50</span>], [<span class="number">60</span>, <span class="number">70</span>]];
 
     <span class="kw">let </span>result: <span class="kw-2">&amp;</span>PyArray2&lt;<span class="kw">_</span>&gt; = <span class="macro">einsum!</span>(<span class="string">"ijk,ji-&gt;ik"</span>, tensor, another_tensor).unwrap();

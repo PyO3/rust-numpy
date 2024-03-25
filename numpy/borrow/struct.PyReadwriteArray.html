@@ -33,11 +33,11 @@ i.e. that only a single exclusive reference into the interior of the array can b
     T: <a class="trait" href="../trait.Element.html" title="trait numpy::Element">Element</a>,</div></h3></section></summary><div class="impl-items"><details class="toggle method-toggle" open><summary><section id="method.resize" class="method"><a class="src rightside" href="../../src/numpy/borrow/mod.rs.html#577-591">source</a><h4 class="code-header">pub fn <a href="#method.resize" class="fn">resize</a>&lt;ID: <a class="trait" href="https://docs.rs/ndarray/0.15/ndarray/dimension/conversion/trait.IntoDimension.html" title="trait ndarray::dimension::conversion::IntoDimension">IntoDimension</a>&gt;(self, dims: ID) -&gt; PyResult&lt;Self&gt;</h4></section></summary><div class="docblock"><p>Extends or truncates the dimensions of an array.</p>
 <p>Safe wrapper for <a href="../array/struct.PyArray.html#method.resize" title="method numpy::array::PyArray::resize"><code>PyArray::resize</code></a>.</p>
 <h5 id="example"><a href="#example">Example</a></h5>
-<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>numpy::{PyArray, PyUntypedArrayMethods};
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>numpy::{PyArray, PyArrayMethods, PyUntypedArrayMethods};
 <span class="kw">use </span>pyo3::Python;
 
 Python::with_gil(|py| {
-    <span class="kw">let </span>pyarray = PyArray::arange(py, <span class="number">0</span>, <span class="number">10</span>, <span class="number">1</span>);
+    <span class="kw">let </span>pyarray = PyArray::arange_bound(py, <span class="number">0</span>, <span class="number">10</span>, <span class="number">1</span>);
     <span class="macro">assert_eq!</span>(pyarray.len(), <span class="number">10</span>);
 
     <span class="kw">let </span>pyarray = pyarray.readwrite();
