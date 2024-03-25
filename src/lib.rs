@@ -119,6 +119,21 @@ pub use crate::untyped_array::{PyUntypedArray, PyUntypedArrayMethods};
 
 pub use ndarray::{array, Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};
 
+/// A prelude
+///
+/// The purpose of this module is to avoid direct imports of
+/// the method traits defined by this crate via a glob import:
+///
+/// ```
+/// # #![allow(unused_imports)]
+/// use numpy::prelude::*;
+/// ```
+pub mod prelude {
+    pub use crate::array::{PyArray0Methods, PyArrayMethods};
+    pub use crate::dtype::PyArrayDescrMethods;
+    pub use crate::untyped_array::PyUntypedArrayMethods;
+}
+
 #[cfg(doctest)]
 mod doctest {
     macro_rules! doc_comment {
