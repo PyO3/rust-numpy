@@ -2220,6 +2220,10 @@
 <a href="#2219" id="2219">2219</a>
 <a href="#2220" id="2220">2220</a>
 <a href="#2221" id="2221">2221</a>
+<a href="#2222" id="2222">2222</a>
+<a href="#2223" id="2223">2223</a>
+<a href="#2224" id="2224">2224</a>
+<a href="#2225" id="2225">2225</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Safe interface for NumPy's [N-dimensional arrays][ndarray]
 //!
 //! [ndarray]: https://numpy.org/doc/stable/reference/arrays.ndarray.html
@@ -3101,6 +3105,8 @@
 {
     <span class="doccomment">/// Try to convert this array into a [`nalgebra::MatrixView`] using the given shape and strides.
     ///
+    /// See [`PyReadonlyArray::try_as_matrix`] for a discussion of the memory layout requirements.
+    ///
     /// # Safety
     ///
     /// Calling this method invalidates all exclusive references to the internal data, e.g. `ArrayViewMut` or `MatrixSliceMut`.
@@ -3122,6 +3128,8 @@
     }
 
     <span class="doccomment">/// Try to convert this array into a [`nalgebra::MatrixViewMut`] using the given shape and strides.
+    ///
+    /// See [`PyReadonlyArray::try_as_matrix`] for a discussion of the memory layout requirements.
     ///
     /// # Safety
     ///
