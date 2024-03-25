@@ -200,6 +200,11 @@
 <a href="#199" id="199">199</a>
 <a href="#200" id="200">200</a>
 <a href="#201" id="201">201</a>
+<a href="#202" id="202">202</a>
+<a href="#203" id="203">203</a>
+<a href="#204" id="204">204</a>
+<a href="#205" id="205">205</a>
+<a href="#206" id="206">206</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
 <span class="kw">use </span>std::ops::Deref;
 
@@ -212,12 +217,17 @@
 };
 
 <span class="kw">use </span><span class="kw">crate</span>::array::PyArrayMethods;
-<span class="kw">use </span><span class="kw">crate</span>::sealed::Sealed;
 <span class="kw">use crate</span>::{get_array_module, Element, IntoPyArray, PyArray, PyReadonlyArray};
 
 <span class="kw">pub trait </span>Coerce: Sealed {
     <span class="kw">const </span>VAL: bool;
 }
+
+<span class="kw">mod </span>sealed {
+    <span class="kw">pub trait </span>Sealed {}
+}
+
+<span class="kw">use </span>sealed::Sealed;
 
 <span class="doccomment">/// Marker type to indicate that the element type received via [`PyArrayLike`] must match the specified type exactly.
 </span><span class="attr">#[derive(Debug)]

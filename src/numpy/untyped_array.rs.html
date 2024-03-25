@@ -464,6 +464,7 @@
 <a href="#463" id="463">463</a>
 <a href="#464" id="464">464</a>
 <a href="#465" id="465">465</a>
+<a href="#466" id="466">466</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Safe, untyped interface for NumPy's [N-dimensional arrays][ndarray]
 //!
 //! [ndarray]: https://numpy.org/doc/stable/reference/arrays.ndarray.html
@@ -724,7 +725,7 @@
 
 <span class="doccomment">/// Implementation of functionality for [`PyUntypedArray`].
 </span><span class="attr">#[doc(alias = <span class="string">"PyUntypedArray"</span>)]
-</span><span class="kw">pub trait </span>PyUntypedArrayMethods&lt;<span class="lifetime">'py</span>&gt;: sealed::Sealed {
+</span><span class="kw">pub trait </span>PyUntypedArrayMethods&lt;<span class="lifetime">'py</span>&gt;: Sealed {
     <span class="doccomment">/// Returns a raw pointer to the underlying [`PyArrayObject`][npyffi::PyArrayObject].
     </span><span class="kw">fn </span>as_array_ptr(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">*mut </span>npyffi::PyArrayObject;
 
@@ -889,6 +890,12 @@
     }
 }
 
+<span class="kw">mod </span>sealed {
+    <span class="kw">pub trait </span>Sealed {}
+}
+
+<span class="kw">use </span>sealed::Sealed;
+
 <span class="kw">fn </span>check_flags(obj: <span class="kw-2">&amp;</span>npyffi::PyArrayObject, flags: i32) -&gt; bool {
     obj.flags &amp; flags != <span class="number">0
 </span>}
@@ -907,6 +914,8 @@
     }
 }
 
+<span class="kw">impl </span>Sealed <span class="kw">for </span>Bound&lt;<span class="lifetime">'_</span>, PyUntypedArray&gt; {}
+
 <span class="comment">// We won't be able to provide a `Deref` impl from `Bound&lt;'_, PyArray&lt;T, D&gt;&gt;` to
 // `Bound&lt;'_, PyUntypedArray&gt;`, so this seems to be the next best thing to do
 </span><span class="kw">impl</span>&lt;<span class="lifetime">'py</span>, T, D&gt; PyUntypedArrayMethods&lt;<span class="lifetime">'py</span>&gt; <span class="kw">for </span>Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;T, D&gt;&gt; {
@@ -921,12 +930,5 @@
     }
 }
 
-<span class="kw">mod </span>sealed {
-    <span class="kw">use super</span>::{PyArray, PyUntypedArray};
-
-    <span class="kw">pub trait </span>Sealed {}
-
-    <span class="kw">impl </span>Sealed <span class="kw">for </span>pyo3::Bound&lt;<span class="lifetime">'_</span>, PyUntypedArray&gt; {}
-    <span class="kw">impl</span>&lt;T, D&gt; Sealed <span class="kw">for </span>pyo3::Bound&lt;<span class="lifetime">'_</span>, PyArray&lt;T, D&gt;&gt; {}
-}
+<span class="kw">impl</span>&lt;T, D&gt; Sealed <span class="kw">for </span>Bound&lt;<span class="lifetime">'_</span>, PyArray&lt;T, D&gt;&gt; {}
 </code></pre></div></section></main></body></html>

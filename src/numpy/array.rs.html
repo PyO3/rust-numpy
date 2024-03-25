@@ -2292,6 +2292,9 @@
 <a href="#2291" id="2291">2291</a>
 <a href="#2292" id="2292">2292</a>
 <a href="#2293" id="2293">2293</a>
+<a href="#2294" id="2294">2294</a>
+<a href="#2295" id="2295">2295</a>
+<a href="#2296" id="2296">2296</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Safe interface for NumPy's [N-dimensional arrays][ndarray]
 //!
 //! [ndarray]: https://numpy.org/doc/stable/reference/arrays.ndarray.html
@@ -2620,7 +2623,8 @@
     /// # Example
     ///
     /// ```
-    /// use numpy::{PyArray3, PyArrayMethods, PyUntypedArrayMethods};
+    /// use numpy::prelude::*;
+    /// use numpy::PyArray3;
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
@@ -3623,7 +3627,8 @@
     /// # Example
     ///
     /// ```
-    /// use numpy::{PyArray, PyArrayMethods, PyUntypedArrayMethods};
+    /// use numpy::prelude::*;
+    /// use numpy::PyArray;
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
@@ -4140,8 +4145,8 @@
 
     <span class="doccomment">/// Extends or truncates the dimensions of an array.
     ///
-    /// This method works only on [contiguous][PyUntypedArray::is_contiguous] arrays.
-    /// Missing elements will be initialized as if calling [`zeros`][Self::zeros].
+    /// This method works only on [contiguous][PyUntypedArrayMethods::is_contiguous] arrays.
+    /// Missing elements will be initialized as if calling [`zeros`][PyArray::zeros_bound].
     ///
     /// See also [`ndarray.resize`][ndarray-resize] and [`PyArray_Resize`][PyArray_Resize].
     ///
@@ -4153,7 +4158,8 @@
     /// # Example
     ///
     /// ```
-    /// use numpy::{PyArray, PyArrayMethods, PyUntypedArrayMethods};
+    /// use numpy::prelude::*;
+    /// use numpy::PyArray;
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {

@@ -326,6 +326,11 @@
 <a href="#325" id="325">325</a>
 <a href="#326" id="326">326</a>
 <a href="#327" id="327">327</a>
+<a href="#328" id="328">328</a>
+<a href="#329" id="329">329</a>
+<a href="#330" id="330">330</a>
+<a href="#331" id="331">331</a>
+<a href="#332" id="332">332</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Defines conversion traits between Rust types and NumPy data types.
 
 </span><span class="kw">use </span>std::{mem, os::raw::c_int, ptr};
@@ -337,7 +342,6 @@
 <span class="kw">use </span><span class="kw">crate</span>::dtype::Element;
 <span class="kw">use </span><span class="kw">crate</span>::error::MAX_DIMENSIONALITY_ERR;
 <span class="kw">use </span><span class="kw">crate</span>::npyffi::{<span class="self">self</span>, npy_intp};
-<span class="kw">use </span><span class="kw">crate</span>::sealed::Sealed;
 <span class="kw">use </span><span class="kw">crate</span>::slice_container::PySliceContainer;
 
 <span class="doccomment">/// Conversion trait from owning Rust types into [`PyArray`].
@@ -600,6 +604,12 @@
         }
     }
 }
+
+<span class="kw">mod </span>sealed {
+    <span class="kw">pub trait </span>Sealed {}
+}
+
+<span class="kw">use </span>sealed::Sealed;
 
 <span class="kw">impl</span>&lt;D&gt; ToNpyDims <span class="kw">for </span>D <span class="kw">where </span>D: Dimension {}
 

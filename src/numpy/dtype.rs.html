@@ -1347,7 +1347,7 @@
 
 <span class="doccomment">/// Implementation of functionality for [`PyArrayDescr`].
 </span><span class="attr">#[doc(alias = <span class="string">"PyArrayDescr"</span>)]
-</span><span class="kw">pub trait </span>PyArrayDescrMethods&lt;<span class="lifetime">'py</span>&gt;: sealed::Sealed {
+</span><span class="kw">pub trait </span>PyArrayDescrMethods&lt;<span class="lifetime">'py</span>&gt;: Sealed {
     <span class="doccomment">/// Returns `self` as `*mut PyArray_Descr`.
     </span><span class="kw">fn </span>as_dtype_ptr(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">*mut </span>PyArray_Descr;
 
@@ -1536,6 +1536,12 @@
     </span><span class="kw">fn </span>get_field(<span class="kw-2">&amp;</span><span class="self">self</span>, name: <span class="kw-2">&amp;</span>str) -&gt; PyResult&lt;(Bound&lt;<span class="lifetime">'py</span>, PyArrayDescr&gt;, usize)&gt;;
 }
 
+<span class="kw">mod </span>sealed {
+    <span class="kw">pub trait </span>Sealed {}
+}
+
+<span class="kw">use </span>sealed::Sealed;
+
 <span class="kw">impl</span>&lt;<span class="lifetime">'py</span>&gt; PyArrayDescrMethods&lt;<span class="lifetime">'py</span>&gt; <span class="kw">for </span>Bound&lt;<span class="lifetime">'py</span>, PyArrayDescr&gt; {
     <span class="kw">fn </span>as_dtype_ptr(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">*mut </span>PyArray_Descr {
         <span class="self">self</span>.as_ptr() <span class="kw">as _
@@ -1615,13 +1621,7 @@
     }
 }
 
-<span class="kw">mod </span>sealed {
-    <span class="kw">use </span><span class="kw">super</span>::PyArrayDescr;
-
-    <span class="kw">pub trait </span>Sealed {}
-
-    <span class="kw">impl </span>Sealed <span class="kw">for </span>pyo3::Bound&lt;<span class="lifetime">'_</span>, PyArrayDescr&gt; {}
-}
+<span class="kw">impl </span>Sealed <span class="kw">for </span>Bound&lt;<span class="lifetime">'_</span>, PyArrayDescr&gt; {}
 
 <span class="doccomment">/// Represents that a type can be an element of `PyArray`.
 ///
