@@ -2373,7 +2373,6 @@
 <a href="#2371" id="2371">2371</a>
 <a href="#2372" id="2372">2372</a>
 <a href="#2373" id="2373">2373</a>
-<a href="#2374" id="2374">2374</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Safe interface for NumPy's [N-dimensional arrays][ndarray]
 //!
 //! [ndarray]: https://numpy.org/doc/stable/reference/arrays.ndarray.html
@@ -2611,8 +2610,10 @@
     /// # Safety
     ///
     /// This is a wrapper around [`pyo3::FromPyPointer::from_owned_ptr_or_opt`] and inherits its safety contract.
+    </span><span class="attr">#[deprecated(since = <span class="string">"0.21.0"</span>, note = <span class="string">"use Bound::from_owned_ptr() instead"</span>)]
     </span><span class="kw">pub unsafe fn </span>from_owned_ptr&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, ptr: <span class="kw-2">*mut </span>ffi::PyObject) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span><span class="self">Self </span>{
-        py.from_owned_ptr(ptr)
+        <span class="attr">#[allow(deprecated)]
+        </span>py.from_owned_ptr(ptr)
     }
 
     <span class="doccomment">/// Constructs a reference to a `PyArray` from a raw point to a Python object.
@@ -2620,8 +2621,10 @@
     /// # Safety
     ///
     /// This is a wrapper around [`pyo3::FromPyPointer::from_borrowed_ptr_or_opt`] and inherits its safety contract.
+    </span><span class="attr">#[deprecated(since = <span class="string">"0.21.0"</span>, note = <span class="string">"use Bound::from_borrowed_ptr() instead"</span>)]
     </span><span class="kw">pub unsafe fn </span>from_borrowed_ptr&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, ptr: <span class="kw-2">*mut </span>ffi::PyObject) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span><span class="self">Self </span>{
-        py.from_borrowed_ptr(ptr)
+        <span class="attr">#[allow(deprecated)]
+        </span>py.from_borrowed_ptr(ptr)
     }
 
     <span class="doccomment">/// Returns a pointer to the first element of the array.
@@ -2634,7 +2637,7 @@
 <span class="kw">impl</span>&lt;T: Element, D: Dimension&gt; PyArray&lt;T, D&gt; {
     <span class="kw">fn </span>extract&lt;<span class="lifetime">'a</span>, <span class="lifetime">'py</span>, E&gt;(ob: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>Bound&lt;<span class="lifetime">'py</span>, PyAny&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>Bound&lt;<span class="lifetime">'py</span>, <span class="self">Self</span>&gt;, E&gt;
     <span class="kw">where
-        </span>E: From&lt;DowncastError&lt;<span class="lifetime">'a</span>, <span class="lifetime">'py</span>&gt;&gt; + From&lt;DimensionalityError&gt; + From&lt;TypeError&lt;<span class="lifetime">'a</span>&gt;&gt;,
+        </span>E: From&lt;DowncastError&lt;<span class="lifetime">'a</span>, <span class="lifetime">'py</span>&gt;&gt; + From&lt;DimensionalityError&gt; + From&lt;TypeError&lt;<span class="lifetime">'py</span>&gt;&gt;,
     {
         <span class="comment">// Check if the object is an array.
         </span><span class="kw">let </span>array = <span class="kw">unsafe </span>{
@@ -3162,14 +3165,14 @@
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray2;
-    /// use pyo3::Python;
+    /// use numpy::{PyArray2, PyArrayMethods};
+    /// use pyo3::{Python, types::PyAnyMethods};
     ///
     /// Python::with_gil(|py| {
     ///     let pyarray= py
-    ///         .eval("__import__('numpy').array([[0, 1], [2, 3]], dtype='int64')", None, None)
+    ///         .eval_bound("__import__('numpy').array([[0, 1], [2, 3]], dtype='int64')", None, None)
     ///         .unwrap()
-    ///         .downcast::&lt;PyArray2&lt;i64&gt;&gt;()
+    ///         .downcast_into::&lt;PyArray2&lt;i64&gt;&gt;()
     ///         .unwrap();
     ///
     ///     assert_eq!(pyarray.to_vec().unwrap(), vec![0, 1, 2, 3]);
@@ -3218,10 +3221,7 @@
 
     <span class="doccomment">/// Get an immutable borrow of the NumPy array
     </span><span class="kw">pub fn </span>try_readonly(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;PyReadonlyArray&lt;<span class="lifetime">'_</span>, T, D&gt;, BorrowError&gt; {
-        <span class="comment">// TODO: replace with `Borrowed::to_owned` once
-        // pyo3#3963 makes it into a release
-        </span><span class="kw">let </span>bound = <span class="kw-2">&amp;*</span><span class="self">self</span>.as_borrowed();
-        PyReadonlyArray::try_new(bound.clone())
+        PyReadonlyArray::try_new(<span class="self">self</span>.as_borrowed().to_owned())
     }
 
     <span class="doccomment">/// Get an immutable borrow of the NumPy array
@@ -3237,10 +3237,7 @@
 
     <span class="doccomment">/// Get a mutable borrow of the NumPy array
     </span><span class="kw">pub fn </span>try_readwrite(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;PyReadwriteArray&lt;<span class="lifetime">'_</span>, T, D&gt;, BorrowError&gt; {
-        <span class="comment">// TODO: replace with `Borrowed::to_owned` once
-        // pyo3#3963 makes it into a release
-        </span><span class="kw">let </span>bound = <span class="kw-2">&amp;*</span><span class="self">self</span>.as_borrowed();
-        PyReadwriteArray::try_new(bound.clone())
+        PyReadwriteArray::try_new(<span class="self">self</span>.as_borrowed().to_owned())
     }
 
     <span class="doccomment">/// Get a mutable borrow of the NumPy array
@@ -3389,10 +3386,11 @@
     ///
     /// ```
     /// use ndarray::array;
-    /// use pyo3::{pyclass, Py, Python};
+    /// use pyo3::{pyclass, Py, Python, types::PyAnyMethods};
     /// use numpy::{PyArray, PyArrayMethods};
     ///
     /// #[pyclass]
+    /// # #[allow(dead_code)]
     /// struct CustomElement {
     ///     foo: i32,
     ///     bar: f64,
@@ -3412,7 +3410,7 @@
     ///
     ///     let pyarray = PyArray::from_owned_object_array_bound(py, array);
     ///
-    ///     assert!(pyarray.readonly().as_array().get(0).unwrap().as_ref(py).is_instance_of::&lt;CustomElement&gt;());
+    ///     assert!(pyarray.readonly().as_array().get(0).unwrap().bind(py).is_instance_of::&lt;CustomElement&gt;());
     /// });
     /// ```
     </span><span class="kw">pub fn </span>from_owned_object_array_bound&lt;T&gt;(
@@ -4079,14 +4077,14 @@
     /// # Example
     ///
     /// ```
-    /// use numpy::PyArray2;
-    /// use pyo3::Python;
+    /// use numpy::{PyArray2, PyArrayMethods};
+    /// use pyo3::{Python, types::PyAnyMethods};
     ///
     /// Python::with_gil(|py| {
     ///     let pyarray= py
-    ///         .eval("__import__('numpy').array([[0, 1], [2, 3]], dtype='int64')", None, None)
+    ///         .eval_bound("__import__('numpy').array([[0, 1], [2, 3]], dtype='int64')", None, None)
     ///         .unwrap()
-    ///         .downcast::&lt;PyArray2&lt;i64&gt;&gt;()
+    ///         .downcast_into::&lt;PyArray2&lt;i64&gt;&gt;()
     ///         .unwrap();
     ///
     ///     assert_eq!(pyarray.to_vec().unwrap(), vec![0, 1, 2, 3]);

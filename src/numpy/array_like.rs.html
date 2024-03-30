@@ -374,17 +374,17 @@
             .get_or_try_init(py, || {
                 get_array_module(py)<span class="question-mark">?</span>.getattr(<span class="string">"asarray"</span>).map(Into::into)
             })<span class="question-mark">?
-            </span>.as_ref(py);
+            </span>.bind(py);
 
         <span class="kw">let </span>kwargs = <span class="kw">if </span>C::VAL {
-            <span class="kw">let </span>kwargs = PyDict::new(py);
+            <span class="kw">let </span>kwargs = PyDict::new_bound(py);
             kwargs.set_item(<span class="macro">intern!</span>(py, <span class="string">"dtype"</span>), T::get_dtype_bound(py))<span class="question-mark">?</span>;
             <span class="prelude-val">Some</span>(kwargs)
         } <span class="kw">else </span>{
             <span class="prelude-val">None
         </span>};
 
-        <span class="kw">let </span>array = as_array.call((ob,), kwargs)<span class="question-mark">?</span>.extract()<span class="question-mark">?</span>;
+        <span class="kw">let </span>array = as_array.call((ob,), kwargs.as_ref())<span class="question-mark">?</span>.extract()<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="self">Self</span>(array, PhantomData))
     }
 }

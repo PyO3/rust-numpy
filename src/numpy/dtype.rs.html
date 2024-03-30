@@ -978,10 +978,6 @@
 <a href="#976" id="976">976</a>
 <a href="#977" id="977">977</a>
 <a href="#978" id="978">978</a>
-<a href="#979" id="979">979</a>
-<a href="#980" id="980">980</a>
-<a href="#981" id="981">981</a>
-<a href="#982" id="982">982</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::mem::size_of;
 <span class="kw">use </span>std::os::raw::{
     c_char, c_int, c_long, c_longlong, c_short, c_uint, c_ulong, c_ulonglong, c_ushort,
@@ -1014,19 +1010,19 @@
 /// # Example
 ///
 /// ```
-/// use numpy::{dtype, get_array_module, PyArrayDescr};
-/// use numpy::pyo3::{types::IntoPyDict, Python};
+/// use numpy::{dtype_bound, get_array_module, PyArrayDescr, PyArrayDescrMethods};
+/// use numpy::pyo3::{types::{IntoPyDict, PyAnyMethods}, Python};
 ///
 /// Python::with_gil(|py| {
-///     let locals = [("np", get_array_module(py).unwrap())].into_py_dict(py);
+///     let locals = [("np", get_array_module(py).unwrap())].into_py_dict_bound(py);
 ///
-///     let dt: &amp;PyArrayDescr = py
-///         .eval("np.array([1, 2, 3.0]).dtype", Some(locals), None)
+///     let dt = py
+///         .eval_bound("np.array([1, 2, 3.0]).dtype", Some(&amp;locals), None)
 ///         .unwrap()
-///         .downcast()
+///         .downcast_into::&lt;PyArrayDescr&gt;()
 ///         .unwrap();
 ///
-///     assert!(dt.is_equiv_to(dtype::&lt;f64&gt;(py)));
+///     assert!(dt.is_equiv_to(&amp;dtype_bound::&lt;f64&gt;(py)));
 /// });
 /// ```
 ///
@@ -1111,10 +1107,7 @@
     ///
     /// Useful in cases where the descriptor is stolen by the API.
     </span><span class="kw">pub fn </span>into_dtype_ptr(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">*mut </span>PyArray_Descr {
-        <span class="comment">// TODO: replace with `Borrowed::to_owned` once
-        // pyo3#3963 makes it into a release
-        </span><span class="kw">let </span>bound = <span class="kw-2">&amp;*</span><span class="self">self</span>.as_borrowed();
-        bound.clone().into_dtype_ptr()
+        <span class="self">self</span>.as_borrowed().to_owned().into_dtype_ptr()
     }
 
     <span class="doccomment">/// Shortcut for creating a type descriptor of `object` type.
@@ -1321,12 +1314,8 @@
     /// Equivalent to [`numpy.dtype.names`][dtype-names].
     ///
     /// [dtype-names]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.names.html
-    </span><span class="kw">pub fn </span>names(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;<span class="kw-2">&amp;</span>str&gt;&gt; {
-        <span class="kw">if </span>!<span class="self">self</span>.has_fields() {
-            <span class="kw">return </span><span class="prelude-val">None</span>;
-        }
-        <span class="kw">let </span>names = <span class="kw">unsafe </span>{ Borrowed::from_ptr(<span class="self">self</span>.py(), (<span class="kw-2">*</span><span class="self">self</span>.as_dtype_ptr()).names) };
-        names.extract().ok()
+    </span><span class="kw">pub fn </span>names(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;String&gt;&gt; {
+        <span class="self">self</span>.as_borrowed().names()
     }
 
     <span class="doccomment">/// Returns the type descriptor and offset of the field with the given name.
@@ -1522,7 +1511,7 @@
     /// Equivalent to [`numpy.dtype.names`][dtype-names].
     ///
     /// [dtype-names]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.names.html
-    </span><span class="kw">fn </span>names(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;<span class="kw-2">&amp;</span>str&gt;&gt;;
+    </span><span class="kw">fn </span>names(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;String&gt;&gt;;
 
     <span class="doccomment">/// Returns the type descriptor and offset of the field with the given name.
     ///
@@ -1589,7 +1578,7 @@
         }
     }
 
-    <span class="kw">fn </span>names(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;<span class="kw-2">&amp;</span>str&gt;&gt; {
+    <span class="kw">fn </span>names(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;String&gt;&gt; {
         <span class="kw">if </span>!<span class="self">self</span>.has_fields() {
             <span class="kw">return </span><span class="prelude-val">None</span>;
         }
@@ -1807,7 +1796,7 @@
                 .is(<span class="kw-2">&amp;</span>dtype_bound::&lt;f64&gt;(py)));
 
             <span class="kw">let </span>dt = PyArrayDescr::new_bound(py, [(<span class="string">"a"</span>, <span class="string">"O"</span>), (<span class="string">"b"</span>, <span class="string">"?"</span>)].as_ref()).unwrap();
-            <span class="macro">assert_eq!</span>(dt.names(), <span class="prelude-val">Some</span>(<span class="macro">vec!</span>[<span class="string">"a"</span>, <span class="string">"b"</span>]));
+            <span class="macro">assert_eq!</span>(dt.names(), <span class="prelude-val">Some</span>(<span class="macro">vec!</span>[<span class="string">"a"</span>.to_owned(), <span class="string">"b"</span>.to_owned()]));
             <span class="macro">assert!</span>(dt.has_object());
             <span class="macro">assert!</span>(dt
                 .get_field(<span class="string">"a"</span>)
@@ -1871,7 +1860,7 @@
             <span class="macro">assert_eq!</span>(dt.itemsize(), <span class="number">8</span>);
             <span class="macro">assert_eq!</span>(dt.alignment(), <span class="number">8</span>);
             <span class="macro">assert!</span>(!dt.has_object());
-            <span class="macro">assert_eq!</span>(dt.names(), <span class="prelude-val">None</span>);
+            <span class="macro">assert!</span>(dt.names().is_none());
             <span class="macro">assert!</span>(!dt.has_fields());
             <span class="macro">assert!</span>(!dt.is_aligned_struct());
             <span class="macro">assert!</span>(!dt.has_subarray());
@@ -1907,7 +1896,7 @@
             <span class="macro">assert_eq!</span>(dt.itemsize(), <span class="number">48</span>);
             <span class="macro">assert_eq!</span>(dt.alignment(), <span class="number">8</span>);
             <span class="macro">assert!</span>(!dt.has_object());
-            <span class="macro">assert_eq!</span>(dt.names(), <span class="prelude-val">None</span>);
+            <span class="macro">assert!</span>(dt.names().is_none());
             <span class="macro">assert!</span>(!dt.has_fields());
             <span class="macro">assert!</span>(!dt.is_aligned_struct());
             <span class="macro">assert!</span>(dt.has_subarray());
@@ -1945,7 +1934,10 @@
             <span class="macro">assert_eq!</span>(dt.itemsize(), <span class="number">24</span>);
             <span class="macro">assert_eq!</span>(dt.alignment(), <span class="number">8</span>);
             <span class="macro">assert!</span>(dt.has_object());
-            <span class="macro">assert_eq!</span>(dt.names(), <span class="prelude-val">Some</span>(<span class="macro">vec!</span>[<span class="string">"x"</span>, <span class="string">"y"</span>, <span class="string">"z"</span>]));
+            <span class="macro">assert_eq!</span>(
+                dt.names(),
+                <span class="prelude-val">Some</span>(<span class="macro">vec!</span>[<span class="string">"x"</span>.to_owned(), <span class="string">"y"</span>.to_owned(), <span class="string">"z"</span>.to_owned()])
+            );
             <span class="macro">assert!</span>(dt.has_fields());
             <span class="macro">assert!</span>(dt.is_aligned_struct());
             <span class="macro">assert!</span>(!dt.has_subarray());

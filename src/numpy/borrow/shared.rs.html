@@ -1567,11 +1567,11 @@
                 array.as_ptr().cast::&lt;c_void&gt;()
             );
 
-            <span class="kw">let </span>locals = [(<span class="string">"view1"</span>, <span class="kw-2">&amp;</span>view1)].into_py_dict(py);
+            <span class="kw">let </span>locals = [(<span class="string">"view1"</span>, <span class="kw-2">&amp;</span>view1)].into_py_dict_bound(py);
             <span class="kw">let </span>view2 = py
-                .eval(<span class="string">"view1[:,0]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
+                .eval_bound(<span class="string">"view1[:,0]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>locals))
                 .unwrap()
-                .downcast::&lt;PyArray1&lt;f64&gt;&gt;()
+                .downcast_into::&lt;PyArray1&lt;f64&gt;&gt;()
                 .unwrap();
             <span class="macro">assert_ne!</span>(
                 view2.as_ptr().cast::&lt;c_void&gt;(),
@@ -1812,12 +1812,12 @@
             <span class="kw">let </span>array = PyArray::&lt;f64, <span class="kw">_</span>&gt;::zeros_bound(py, <span class="number">10</span>, <span class="bool-val">false</span>);
             <span class="kw">let </span>base = base_address(py, array.as_array_ptr());
 
-            <span class="kw">let </span>locals = [(<span class="string">"array"</span>, array)].into_py_dict(py);
+            <span class="kw">let </span>locals = [(<span class="string">"array"</span>, array)].into_py_dict_bound(py);
 
             <span class="kw">let </span>view1 = py
-                .eval(<span class="string">"array[:5]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
+                .eval_bound(<span class="string">"array[:5]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>locals))
                 .unwrap()
-                .downcast::&lt;PyArray1&lt;f64&gt;&gt;()
+                .downcast_into::&lt;PyArray1&lt;f64&gt;&gt;()
                 .unwrap();
 
             <span class="kw">let </span>key1 = borrow_key(view1.as_array_ptr());
@@ -1835,9 +1835,9 @@
             }
 
             <span class="kw">let </span>view2 = py
-                .eval(<span class="string">"array[5:]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
+                .eval_bound(<span class="string">"array[5:]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>locals))
                 .unwrap()
-                .downcast::&lt;PyArray1&lt;f64&gt;&gt;()
+                .downcast_into::&lt;PyArray1&lt;f64&gt;&gt;()
                 .unwrap();
 
             <span class="kw">let </span>key2 = borrow_key(view2.as_array_ptr());
@@ -1858,9 +1858,9 @@
             }
 
             <span class="kw">let </span>view3 = py
-                .eval(<span class="string">"array[5:]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
+                .eval_bound(<span class="string">"array[5:]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>locals))
                 .unwrap()
-                .downcast::&lt;PyArray1&lt;f64&gt;&gt;()
+                .downcast_into::&lt;PyArray1&lt;f64&gt;&gt;()
                 .unwrap();
 
             <span class="kw">let </span>key3 = borrow_key(view3.as_array_ptr());
@@ -1884,9 +1884,9 @@
             }
 
             <span class="kw">let </span>view4 = py
-                .eval(<span class="string">"array[7:]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(locals))
+                .eval_bound(<span class="string">"array[7:]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>locals))
                 .unwrap()
-                .downcast::&lt;PyArray1&lt;f64&gt;&gt;()
+                .downcast_into::&lt;PyArray1&lt;f64&gt;&gt;()
                 .unwrap();
 
             <span class="kw">let </span>key4 = borrow_key(view4.as_array_ptr());

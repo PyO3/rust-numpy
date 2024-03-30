@@ -6,18 +6,18 @@ This means that while these types differentiate absolute and relative quantities
 On the other hand, their flexible units enable them to support either a large range (up to 2<sup>64</sup> years) or high precision (down to 10<sup>-18</sup> seconds).</p>
 <p><a href="https://numpy.org/doc/stable/reference/arrays.datetime.html">The corresponding section</a> of the NumPy documentation contains more information.</p>
 <h2 id="example"><a class="doc-anchor" href="#example">§</a>Example</h2>
-<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>numpy::{datetime::{units, Datetime, Timedelta}, PyArray1};
-<span class="kw">use </span>pyo3::Python;
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>numpy::{datetime::{units, Datetime, Timedelta}, PyArray1, PyArrayMethods};
+<span class="kw">use </span>pyo3::{Python, types::PyAnyMethods};
 
 Python::with_gil(|py| {
     <span class="kw">let </span>array = py
-        .eval(
+        .eval_bound(
             <span class="string">"np.array([np.datetime64('2017-04-21')])"</span>,
             <span class="prelude-val">None</span>,
-            <span class="prelude-val">Some</span>(locals),
+            <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>locals),
         )
         .unwrap()
-        .downcast::&lt;PyArray1&lt;Datetime&lt;units::Days&gt;&gt;&gt;()
+        .downcast_into::&lt;PyArray1&lt;Datetime&lt;units::Days&gt;&gt;&gt;()
         .unwrap();
 
     <span class="macro">assert_eq!</span>(
@@ -26,13 +26,13 @@ Python::with_gil(|py| {
     );
 
     <span class="kw">let </span>array = py
-        .eval(
+        .eval_bound(
             <span class="string">"np.array([np.datetime64('2022-03-29')]) - np.array([np.datetime64('2017-04-21')])"</span>,
             <span class="prelude-val">None</span>,
-            <span class="prelude-val">Some</span>(locals),
+            <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>locals),
         )
         .unwrap()
-        .downcast::&lt;PyArray1&lt;Timedelta&lt;units::Days&gt;&gt;&gt;()
+        .downcast_into::&lt;PyArray1&lt;Timedelta&lt;units::Days&gt;&gt;&gt;()
         .unwrap();
 
     <span class="macro">assert_eq!</span>(

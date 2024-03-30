@@ -355,25 +355,25 @@
 //! # Example
 //!
 //! ```
-//! use numpy::{datetime::{units, Datetime, Timedelta}, PyArray1};
-//! use pyo3::Python;
+//! use numpy::{datetime::{units, Datetime, Timedelta}, PyArray1, PyArrayMethods};
+//! use pyo3::{Python, types::PyAnyMethods};
 //! # use pyo3::types::PyDict;
 //!
 //! Python::with_gil(|py| {
 //! #    let locals = py
-//! #        .eval("{ 'np': __import__('numpy') }", None, None)
+//! #        .eval_bound("{ 'np': __import__('numpy') }", None, None)
 //! #        .unwrap()
-//! #        .downcast::&lt;PyDict&gt;()
+//! #        .downcast_into::&lt;PyDict&gt;()
 //! #        .unwrap();
 //! #
 //!     let array = py
-//!         .eval(
+//!         .eval_bound(
 //!             "np.array([np.datetime64('2017-04-21')])",
 //!             None,
-//!             Some(locals),
+//!             Some(&amp;locals),
 //!         )
 //!         .unwrap()
-//!         .downcast::&lt;PyArray1&lt;Datetime&lt;units::Days&gt;&gt;&gt;()
+//!         .downcast_into::&lt;PyArray1&lt;Datetime&lt;units::Days&gt;&gt;&gt;()
 //!         .unwrap();
 //!
 //!     assert_eq!(
@@ -382,13 +382,13 @@
 //!     );
 //!
 //!     let array = py
-//!         .eval(
+//!         .eval_bound(
 //!             "np.array([np.datetime64('2022-03-29')]) - np.array([np.datetime64('2017-04-21')])",
 //!             None,
-//!             Some(locals),
+//!             Some(&amp;locals),
 //!         )
 //!         .unwrap()
-//!         .downcast::&lt;PyArray1&lt;Timedelta&lt;units::Days&gt;&gt;&gt;()
+//!         .downcast_into::&lt;PyArray1&lt;Timedelta&lt;units::Days&gt;&gt;&gt;()
 //!         .unwrap();
 //!
 //!     assert_eq!(
@@ -596,7 +596,7 @@
 
     <span class="kw">use </span>pyo3::{
         py_run,
-        types::{PyDict, PyModule},
+        types::{PyAnyMethods, PyDict, PyModule},
     };
 
     <span class="kw">use </span><span class="kw">crate</span>::array::{PyArray1, PyArrayMethods};
@@ -605,19 +605,19 @@
     </span><span class="kw">fn </span>from_python_to_rust() {
         Python::with_gil(|py| {
             <span class="kw">let </span>locals = py
-                .eval(<span class="string">"{ 'np': __import__('numpy') }"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>)
+                .eval_bound(<span class="string">"{ 'np': __import__('numpy') }"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>)
                 .unwrap()
-                .downcast::&lt;PyDict&gt;()
+                .downcast_into::&lt;PyDict&gt;()
                 .unwrap();
 
             <span class="kw">let </span>array = py
-                .eval(
+                .eval_bound(
                     <span class="string">"np.array([np.datetime64('1970-01-01')])"</span>,
                     <span class="prelude-val">None</span>,
-                    <span class="prelude-val">Some</span>(locals),
+                    <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>locals),
                 )
                 .unwrap()
-                .downcast::&lt;PyArray1&lt;Datetime&lt;units::Days&gt;&gt;&gt;()
+                .downcast_into::&lt;PyArray1&lt;Datetime&lt;units::Days&gt;&gt;&gt;()
                 .unwrap();
 
             <span class="kw">let </span>value: i64 = array.get_owned(<span class="number">0</span>).unwrap().into();
@@ -633,9 +633,9 @@
             <span class="kw-2">*</span>array.readwrite().get_mut(<span class="number">0</span>).unwrap() = Timedelta::&lt;units::Minutes&gt;::from(<span class="number">5</span>);
 
             <span class="kw">let </span>np = py
-                .eval(<span class="string">"__import__('numpy')"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>)
+                .eval_bound(<span class="string">"__import__('numpy')"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>)
                 .unwrap()
-                .downcast::&lt;PyModule&gt;()
+                .downcast_into::&lt;PyModule&gt;()
                 .unwrap();
 
             <span class="macro">py_run!</span>(py, array np, <span class="string">"assert array.dtype == np.dtype('timedelta64[m]')"</span>);
