@@ -1,6 +1,6 @@
 [package]
 name = "numpy"
-version = "0.20.0"
+version = "0.21.0"
 authors = [
     "The rust-numpy Project Developers",
     "PyO3 Project and Contributors <https://github.com/PyO3>"
