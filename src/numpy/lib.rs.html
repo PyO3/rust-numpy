@@ -188,6 +188,24 @@
 <a href="#186" id="186">186</a>
 <a href="#187" id="187">187</a>
 <a href="#188" id="188">188</a>
+<a href="#189" id="189">189</a>
+<a href="#190" id="190">190</a>
+<a href="#191" id="191">191</a>
+<a href="#192" id="192">192</a>
+<a href="#193" id="193">193</a>
+<a href="#194" id="194">194</a>
+<a href="#195" id="195">195</a>
+<a href="#196" id="196">196</a>
+<a href="#197" id="197">197</a>
+<a href="#198" id="198">198</a>
+<a href="#199" id="199">199</a>
+<a href="#200" id="200">200</a>
+<a href="#201" id="201">201</a>
+<a href="#202" id="202">202</a>
+<a href="#203" id="203">203</a>
+<a href="#204" id="204">204</a>
+<a href="#205" id="205">205</a>
+<a href="#206" id="206">206</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! This crate provides Rust interfaces for [NumPy C APIs][c-api],
 //! especially for the [ndarray][ndarray] class.
 //!
@@ -342,26 +360,12 @@ as well as the [`PyReadonlyArray::try_as_matrix`] and [`PyReadwriteArray::try_as
 #[inline(always)]
 </span><span class="kw">fn </span>cold() {}
 
-<span class="doccomment">/// Create a [`PyArray`] with one, two or three dimensions.
-///
-/// This macro is backed by [`ndarray::array`].
-///
-/// # Example
-///
-/// ```
-/// use numpy::pyo3::Python;
-/// use numpy::ndarray::array;
-/// use numpy::pyarray;
-///
-/// Python::with_gil(|py| {
-///     let array = pyarray![py, [1, 2], [3, 4]];
-///
-///     assert_eq!(
-///         array.readonly().as_array(),
-///         array![[1, 2], [3, 4]]
-///     );
-/// });
-</span><span class="attr">#[macro_export]
+<span class="doccomment">/// Deprecated form of [`pyarray_bound`]
+</span><span class="attr">#[deprecated(
+    since = <span class="string">"0.21.0"</span>,
+    note = <span class="string">"will be replace by `pyarray_bound` in the future"
+</span>)]
+#[macro_export]
 </span><span class="macro">macro_rules! </span>pyarray {
     (<span class="macro-nonterminal">$py</span>: ident, $([$([$(<span class="macro-nonterminal">$x</span>:expr),* $(,)<span class="kw-2">*</span>]),+ $(,)<span class="kw-2">*</span>]),+ $(,)<span class="kw-2">*</span>) =&gt; {{
         <span class="attr">#[allow(deprecated)]
@@ -374,6 +378,38 @@ as well as the [`PyReadonlyArray::try_as_matrix`] and [`PyReadwriteArray::try_as
     (<span class="macro-nonterminal">$py</span>: ident, $(<span class="macro-nonterminal">$x</span>:expr),* $(,)<span class="kw-2">*</span>) =&gt; {{
         <span class="attr">#[allow(deprecated)]
         </span><span class="macro-nonterminal">$crate::IntoPyArray::into_pyarray</span>(<span class="macro-nonterminal">$</span><span class="macro">crate::array!</span>[$(<span class="macro-nonterminal">$x</span>,)<span class="kw-2">*</span>], <span class="macro-nonterminal">$py</span>)
+    }};
+}
+
+<span class="doccomment">/// Create a [`PyArray`] with one, two or three dimensions.
+///
+/// This macro is backed by [`ndarray::array`].
+///
+/// # Example
+///
+/// ```
+/// use numpy::pyo3::Python;
+/// use numpy::ndarray::array;
+/// use numpy::{pyarray_bound, PyArrayMethods};
+///
+/// Python::with_gil(|py| {
+///     let array = pyarray_bound![py, [1, 2], [3, 4]];
+///
+///     assert_eq!(
+///         array.readonly().as_array(),
+///         array![[1, 2], [3, 4]]
+///     );
+/// });
+</span><span class="attr">#[macro_export]
+</span><span class="macro">macro_rules! </span>pyarray_bound {
+    (<span class="macro-nonterminal">$py</span>: ident, $([$([$(<span class="macro-nonterminal">$x</span>:expr),* $(,)<span class="kw-2">*</span>]),+ $(,)<span class="kw-2">*</span>]),+ $(,)<span class="kw-2">*</span>) =&gt; {{
+        <span class="macro-nonterminal">$crate::IntoPyArray::into_pyarray_bound</span>(<span class="macro-nonterminal">$</span><span class="macro">crate::array!</span>[$([$([$(<span class="macro-nonterminal">$x</span>,)<span class="kw-2">*</span>],)<span class="kw-2">*</span>],)<span class="kw-2">*</span>], <span class="macro-nonterminal">$py</span>)
+    }};
+    (<span class="macro-nonterminal">$py</span>: ident, $([$(<span class="macro-nonterminal">$x</span>:expr),* $(,)<span class="kw-2">*</span>]),+ $(,)<span class="kw-2">*</span>) =&gt; {{
+        <span class="macro-nonterminal">$crate::IntoPyArray::into_pyarray_bound</span>(<span class="macro-nonterminal">$</span><span class="macro">crate::array!</span>[$([$(<span class="macro-nonterminal">$x</span>,)<span class="kw-2">*</span>],)<span class="kw-2">*</span>], <span class="macro-nonterminal">$py</span>)
+    }};
+    (<span class="macro-nonterminal">$py</span>: ident, $(<span class="macro-nonterminal">$x</span>:expr),* $(,)<span class="kw-2">*</span>) =&gt; {{
+        <span class="macro-nonterminal">$crate::IntoPyArray::into_pyarray_bound</span>(<span class="macro-nonterminal">$</span><span class="macro">crate::array!</span>[$(<span class="macro-nonterminal">$x</span>,)<span class="kw-2">*</span>], <span class="macro-nonterminal">$py</span>)
     }};
 }
 </code></pre></div></section></main></body></html>
