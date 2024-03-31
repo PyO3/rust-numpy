@@ -225,7 +225,7 @@ where
     obj.extract()
 }
 
-/// Deprecated form of [`einsum_bound!`]
+/// Deprecated form of [`einsum_bound!`][crate::einsum_bound!]
 #[deprecated(
     since = "0.21.0",
     note = "will be replaced by `einsum_bound!` in the future"
