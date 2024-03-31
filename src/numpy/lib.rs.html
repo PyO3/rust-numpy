@@ -186,6 +186,8 @@
 <a href="#184" id="184">184</a>
 <a href="#185" id="185">185</a>
 <a href="#186" id="186">186</a>
+<a href="#187" id="187">187</a>
+<a href="#188" id="188">188</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! This crate provides Rust interfaces for [NumPy C APIs][c-api],
 //! especially for the [ndarray][ndarray] class.
 //!
@@ -302,7 +304,9 @@ as well as the [`PyReadonlyArray::try_as_matrix`] and [`PyReadwriteArray::try_as
 <span class="kw">pub use </span><span class="kw">crate</span>::error::{BorrowError, FromVecError, NotContiguousError};
 <span class="kw">pub use </span><span class="kw">crate</span>::npyffi::{PY_ARRAY_API, PY_UFUNC_API};
 <span class="kw">pub use </span><span class="kw">crate</span>::strings::{PyFixedString, PyFixedUnicode};
-<span class="kw">pub use </span><span class="kw">crate</span>::sum_products::{dot, einsum, inner};
+<span class="attr">#[allow(deprecated)]
+</span><span class="kw">pub use </span><span class="kw">crate</span>::sum_products::{dot, einsum, inner};
+<span class="kw">pub use </span><span class="kw">crate</span>::sum_products::{dot_bound, einsum_bound, inner_bound};
 <span class="kw">pub use </span><span class="kw">crate</span>::untyped_array::{PyUntypedArray, PyUntypedArrayMethods};
 
 <span class="kw">pub use </span>ndarray::{array, Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};
