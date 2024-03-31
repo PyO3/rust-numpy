@@ -6,7 +6,7 @@ use test::{black_box, Bencher};
 use std::ops::Range;
 
 use numpy::{PyArray1, PyArray2, PyArray3};
-use pyo3::{types::PyAnyMethods, Python, ToPyObject};
+use pyo3::{types::PyAnyMethods, Bound, Python, ToPyObject};
 
 #[bench]
 fn extract_success(bencher: &mut Bencher) {
@@ -14,7 +14,9 @@ fn extract_success(bencher: &mut Bencher) {
         let any = PyArray2::<f64>::zeros_bound(py, (10, 10), false).into_any();
 
         bencher.iter(|| {
-            black_box(&any).extract::<&PyArray2<f64>>().unwrap();
+            black_box(&any)
+                .extract::<Bound<'_, PyArray2<f64>>>()
+                .unwrap()
         });
     });
 }
@@ -25,7 +27,9 @@ fn extract_failure(bencher: &mut Bencher) {
         let any = PyArray2::<f64>::zeros_bound(py, (10, 10), false).into_any();
 
         bencher.iter(|| {
-            black_box(&any).extract::<&PyArray2<f64>>().unwrap_err();
+            black_box(&any)
+                .extract::<Bound<'_, PyArray2<f64>>>()
+                .unwrap_err()
         });
     });
 }
@@ -35,9 +39,7 @@ fn downcast_success(bencher: &mut Bencher) {
     Python::with_gil(|py| {
         let any = PyArray2::<f64>::zeros_bound(py, (10, 10), false).into_any();
 
-        bencher.iter(|| {
-            black_box(&any).downcast::<PyArray2<f64>>().unwrap();
-        });
+        bencher.iter(|| black_box(&any).downcast::<PyArray2<f64>>().unwrap());
     });
 }
 
@@ -46,9 +48,7 @@ fn downcast_failure(bencher: &mut Bencher) {
     Python::with_gil(|py| {
         let any = PyArray2::<f64>::zeros_bound(py, (10, 10), false).into_any();
 
-        bencher.iter(|| {
-            black_box(&any).downcast::<PyArray2<f64>>().unwrap_err();
-        });
+        bencher.iter(|| black_box(&any).downcast::<PyArray2<f64>>().unwrap_err());
     });
 }
 
@@ -63,10 +63,12 @@ impl Iterator for Iter {
 }
 
 fn from_iter(bencher: &mut Bencher, size: usize) {
-    iter_with_gil(bencher, |py| {
-        let iter = black_box(Iter(0..size));
+    Python::with_gil(|py| {
+        bencher.iter(|| {
+            let iter = black_box(Iter(0..size));
 
-        PyArray1::from_iter_bound(py, iter);
+            PyArray1::from_iter_bound(py, iter)
+        });
     });
 }
 
@@ -88,10 +90,12 @@ fn from_iter_large(bencher: &mut Bencher) {
 fn from_slice(bencher: &mut Bencher, size: usize) {
     let vec = (0..size).collect::<Vec<_>>();
 
-    iter_with_gil(bencher, |py| {
-        let slice = black_box(&vec);
+    Python::with_gil(|py| {
+        bencher.iter(|| {
+            let slice = black_box(&vec);
 
-        PyArray1::from_slice_bound(py, slice);
+            PyArray1::from_slice_bound(py, slice)
+        });
     });
 }
 
@@ -113,10 +117,12 @@ fn from_slice_large(bencher: &mut Bencher) {
 fn from_object_slice(bencher: &mut Bencher, size: usize) {
     let vec = Python::with_gil(|py| (0..size).map(|val| val.to_object(py)).collect::<Vec<_>>());
 
-    iter_with_gil(bencher, |py| {
-        let slice = black_box(&vec);
+    Python::with_gil(|py| {
+        bencher.iter(|| {
+            let slice = black_box(&vec);
 
-        PyArray1::from_slice_bound(py, slice);
+            PyArray1::from_slice_bound(py, slice)
+        });
     });
 }
 
@@ -138,10 +144,12 @@ fn from_object_slice_large(bencher: &mut Bencher) {
 fn from_vec2(bencher: &mut Bencher, size: usize) {
     let vec2 = vec![vec![0; size]; size];
 
-    iter_with_gil(bencher, |py| {
-        let vec2 = black_box(&vec2);
+    Python::with_gil(|py| {
+        bencher.iter(|| {
+            let vec2 = black_box(&vec2);
 
-        PyArray2::from_vec2_bound(py, vec2).unwrap();
+            PyArray2::from_vec2_bound(py, vec2).unwrap()
+        });
     });
 }
 
@@ -163,10 +171,12 @@ fn from_vec2_large(bencher: &mut Bencher) {
 fn from_vec3(bencher: &mut Bencher, size: usize) {
     let vec3 = vec![vec![vec![0; size]; size]; size];
 
-    iter_with_gil(bencher, |py| {
-        let vec3 = black_box(&vec3);
+    Python::with_gil(|py| {
+        bencher.iter(|| {
+            let vec3 = black_box(&vec3);
 
-        PyArray3::from_vec3_bound(py, vec3).unwrap();
+            PyArray3::from_vec3_bound(py, vec3).unwrap()
+        });
     });
 }
 
@@ -183,14 +193,4 @@ fn from_vec3_medium(bencher: &mut Bencher) {
 #[bench]
 fn from_vec3_large(bencher: &mut Bencher) {
     from_vec3(bencher, 2_usize.pow(5));
-}
-
-fn iter_with_gil(bencher: &mut Bencher, mut f: impl FnMut(Python<'_>)) {
-    Python::with_gil(|py| {
-        bencher.iter(|| {
-            let pool = unsafe { py.new_pool() };
-
-            f(pool.python());
-        });
-    });
 }
