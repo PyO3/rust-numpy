@@ -79,12 +79,12 @@ fn from_small_array() {
         ($($t:ty)+) => {
             $({
                 Python::with_gil(|py| {
-                    let array: [$t; 2] = [<$t>::min_value(), <$t>::max_value()];
+                    let array: [$t; 2] = [<$t>::MIN, <$t>::MAX];
                     let pyarray = array.to_pyarray_bound(py);
 
                     assert_eq!(
                         pyarray.readonly().as_slice().unwrap(),
-                        &[<$t>::min_value(), <$t>::max_value()]
+                        &[<$t>::MIN, <$t>::MAX]
                     );
                 });
             })+
