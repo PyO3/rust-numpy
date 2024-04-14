@@ -85,19 +85,19 @@ fn exclusive_borrow_requires_writeable() {
     });
 }
 
+#[pyclass]
+struct Borrower;
+
+#[pymethods]
+impl Borrower {
+    fn shared(&self, _array: PyReadonlyArray3<'_, f64>) {}
+
+    fn exclusive(&self, _array: PyReadwriteArray3<'_, f64>) {}
+}
+
 #[test]
 #[should_panic(expected = "AlreadyBorrowed")]
 fn borrows_span_frames() {
-    #[pyclass]
-    struct Borrower;
-
-    #[pymethods]
-    impl Borrower {
-        fn shared(&self, _array: PyReadonlyArray3<'_, f64>) {}
-
-        fn exclusive(&self, _array: PyReadwriteArray3<'_, f64>) {}
-    }
-
     Python::with_gil(|py| {
         let borrower = Py::new(py, Borrower).unwrap();
 

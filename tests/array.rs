@@ -399,23 +399,23 @@ fn dtype_via_python_attribute() {
     });
 }
 
+#[pyclass]
+struct Owner {
+    array: Array1<f64>,
+}
+
+#[pymethods]
+impl Owner {
+    #[getter]
+    fn array(this: Bound<'_, Self>) -> Bound<'_, PyArray1<f64>> {
+        let array = &this.borrow().array;
+
+        unsafe { PyArray1::borrow_from_array_bound(array, this.into_any()) }
+    }
+}
+
 #[test]
 fn borrow_from_array_works() {
-    #[pyclass]
-    struct Owner {
-        array: Array1<f64>,
-    }
-
-    #[pymethods]
-    impl Owner {
-        #[getter]
-        fn array(this: Bound<'_, Self>) -> Bound<'_, PyArray1<f64>> {
-            let array = &this.borrow().array;
-
-            unsafe { PyArray1::borrow_from_array_bound(array, this.into_any()) }
-        }
-    }
-
     let array = Python::with_gil(|py| {
         let owner = Py::new(
             py,
