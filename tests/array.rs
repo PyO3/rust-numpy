@@ -3,12 +3,10 @@ use std::mem::size_of;
 #[cfg(feature = "half")]
 use half::{bf16, f16};
 use ndarray::{array, s, Array1, Dim};
+use numpy::prelude::*;
 use numpy::{
-    array::{PyArray0Methods, PyArrayMethods},
-    dtype_bound, get_array_module,
-    npyffi::NPY_ORDER,
-    pyarray_bound, PyArray, PyArray1, PyArray2, PyArrayDescr, PyArrayDescrMethods, PyArrayDyn,
-    PyFixedString, PyFixedUnicode, PyUntypedArrayMethods, ToPyArray,
+    dtype_bound, get_array_module, npyffi::NPY_ORDER, pyarray_bound, PyArray, PyArray1, PyArray2,
+    PyArrayDescr, PyArrayDyn, PyFixedString, PyFixedUnicode,
 };
 use pyo3::{
     py_run, pyclass, pymethods,
@@ -519,6 +517,39 @@ fn get_works() {
             assert_eq!(*array.uget_mut([0, 1, 0]), 3);
             assert_eq!(*array.uget_raw([0, 0, 1]), 2);
         }
+    });
+}
+
+#[test]
+fn permute_and_transpose() {
+    Python::with_gil(|py| {
+        let array = array![[0, 1, 2], [3, 4, 5]].into_pyarray_bound(py);
+
+        let permuted = array.permute(Some([1, 0])).unwrap();
+        assert_eq!(
+            permuted.readonly().as_array(),
+            array![[0, 3], [1, 4], [2, 5]]
+        );
+
+        let permuted = array.permute::<()>(None).unwrap();
+        assert_eq!(
+            permuted.readonly().as_array(),
+            array![[0, 3], [1, 4], [2, 5]]
+        );
+
+        let transposed = array.transpose().unwrap();
+        assert_eq!(
+            transposed.readonly().as_array(),
+            array![[0, 3], [1, 4], [2, 5]]
+        );
+
+        let array = pyarray_bound![py, [[1, 2], [3, 4]], [[5, 6], [7, 8]], [[9, 10], [11, 12]]];
+
+        let permuted = array.permute(Some([0, 2, 1])).unwrap();
+        assert_eq!(
+            permuted.readonly().as_array(),
+            array![[[1, 3], [2, 4]], [[5, 7], [6, 8]], [[9, 11], [10, 12]]]
+        );
     });
 }
 
