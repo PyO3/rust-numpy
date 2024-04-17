@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/array.rs`."><title>array.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="numpy" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.1 (7cf61ebde 2024-03-27)" data-channel="1.77.1" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/array.rs`."><title>array.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="numpy" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.2 (25ef9e3d8 2024-04-09)" data-channel="1.77.2" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
             <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
     <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../numpy/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
@@ -2373,6 +2373,91 @@
 <a href="#2371" id="2371">2371</a>
 <a href="#2372" id="2372">2372</a>
 <a href="#2373" id="2373">2373</a>
+<a href="#2374" id="2374">2374</a>
+<a href="#2375" id="2375">2375</a>
+<a href="#2376" id="2376">2376</a>
+<a href="#2377" id="2377">2377</a>
+<a href="#2378" id="2378">2378</a>
+<a href="#2379" id="2379">2379</a>
+<a href="#2380" id="2380">2380</a>
+<a href="#2381" id="2381">2381</a>
+<a href="#2382" id="2382">2382</a>
+<a href="#2383" id="2383">2383</a>
+<a href="#2384" id="2384">2384</a>
+<a href="#2385" id="2385">2385</a>
+<a href="#2386" id="2386">2386</a>
+<a href="#2387" id="2387">2387</a>
+<a href="#2388" id="2388">2388</a>
+<a href="#2389" id="2389">2389</a>
+<a href="#2390" id="2390">2390</a>
+<a href="#2391" id="2391">2391</a>
+<a href="#2392" id="2392">2392</a>
+<a href="#2393" id="2393">2393</a>
+<a href="#2394" id="2394">2394</a>
+<a href="#2395" id="2395">2395</a>
+<a href="#2396" id="2396">2396</a>
+<a href="#2397" id="2397">2397</a>
+<a href="#2398" id="2398">2398</a>
+<a href="#2399" id="2399">2399</a>
+<a href="#2400" id="2400">2400</a>
+<a href="#2401" id="2401">2401</a>
+<a href="#2402" id="2402">2402</a>
+<a href="#2403" id="2403">2403</a>
+<a href="#2404" id="2404">2404</a>
+<a href="#2405" id="2405">2405</a>
+<a href="#2406" id="2406">2406</a>
+<a href="#2407" id="2407">2407</a>
+<a href="#2408" id="2408">2408</a>
+<a href="#2409" id="2409">2409</a>
+<a href="#2410" id="2410">2410</a>
+<a href="#2411" id="2411">2411</a>
+<a href="#2412" id="2412">2412</a>
+<a href="#2413" id="2413">2413</a>
+<a href="#2414" id="2414">2414</a>
+<a href="#2415" id="2415">2415</a>
+<a href="#2416" id="2416">2416</a>
+<a href="#2417" id="2417">2417</a>
+<a href="#2418" id="2418">2418</a>
+<a href="#2419" id="2419">2419</a>
+<a href="#2420" id="2420">2420</a>
+<a href="#2421" id="2421">2421</a>
+<a href="#2422" id="2422">2422</a>
+<a href="#2423" id="2423">2423</a>
+<a href="#2424" id="2424">2424</a>
+<a href="#2425" id="2425">2425</a>
+<a href="#2426" id="2426">2426</a>
+<a href="#2427" id="2427">2427</a>
+<a href="#2428" id="2428">2428</a>
+<a href="#2429" id="2429">2429</a>
+<a href="#2430" id="2430">2430</a>
+<a href="#2431" id="2431">2431</a>
+<a href="#2432" id="2432">2432</a>
+<a href="#2433" id="2433">2433</a>
+<a href="#2434" id="2434">2434</a>
+<a href="#2435" id="2435">2435</a>
+<a href="#2436" id="2436">2436</a>
+<a href="#2437" id="2437">2437</a>
+<a href="#2438" id="2438">2438</a>
+<a href="#2439" id="2439">2439</a>
+<a href="#2440" id="2440">2440</a>
+<a href="#2441" id="2441">2441</a>
+<a href="#2442" id="2442">2442</a>
+<a href="#2443" id="2443">2443</a>
+<a href="#2444" id="2444">2444</a>
+<a href="#2445" id="2445">2445</a>
+<a href="#2446" id="2446">2446</a>
+<a href="#2447" id="2447">2447</a>
+<a href="#2448" id="2448">2448</a>
+<a href="#2449" id="2449">2449</a>
+<a href="#2450" id="2450">2450</a>
+<a href="#2451" id="2451">2451</a>
+<a href="#2452" id="2452">2452</a>
+<a href="#2453" id="2453">2453</a>
+<a href="#2454" id="2454">2454</a>
+<a href="#2455" id="2455">2455</a>
+<a href="#2456" id="2456">2456</a>
+<a href="#2457" id="2457">2457</a>
+<a href="#2458" id="2458">2458</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Safe interface for NumPy's [N-dimensional arrays][ndarray]
 //!
 //! [ndarray]: https://numpy.org/doc/stable/reference/arrays.ndarray.html
@@ -3711,8 +3796,45 @@
         <span class="self">self</span>.as_borrowed().cast(is_fortran).map(Bound::into_gil_ref)
     }
 
+    <span class="doccomment">/// A view of `self` with a different order of axes determined by `axes`.
+    ///
+    /// If `axes` is `None`, the order of axes is reversed which corresponds to the standard matrix transpose.
+    ///
+    /// See also [`numpy.transpose`][numpy-transpose] and [`PyArray_Transpose`][PyArray_Transpose].
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use numpy::prelude::*;
+    /// use numpy::PyArray;
+    /// use pyo3::Python;
+    /// use ndarray::array;
+    ///
+    /// Python::with_gil(|py| {
+    ///     let array = array![[0, 1, 2], [3, 4, 5]].into_pyarray(py);
+    ///
+    ///     let array = array.permute(Some([1, 0])).unwrap();
+    ///
+    ///     assert_eq!(array.readonly().as_array(), array![[0, 3], [1, 4], [2, 5]]);
+    /// });
+    /// ```
+    ///
+    /// [numpy-transpose]: https://numpy.org/doc/stable/reference/generated/numpy.transpose.html
+    /// [PyArray_Transpose]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_Transpose
+    </span><span class="kw">pub fn </span>permute&lt;<span class="lifetime">'py</span>, ID: IntoDimension&gt;(
+        <span class="kw-2">&amp;</span><span class="lifetime">'py </span><span class="self">self</span>,
+        axes: <span class="prelude-ty">Option</span>&lt;ID&gt;,
+    ) -&gt; PyResult&lt;<span class="kw-2">&amp;</span><span class="lifetime">'py </span>PyArray&lt;T, D&gt;&gt; {
+        <span class="self">self</span>.as_borrowed().permute(axes).map(Bound::into_gil_ref)
+    }
+
+    <span class="doccomment">/// Special case of [`permute`][Self::permute] which reverses the order the axes.
+    </span><span class="kw">pub fn </span>transpose&lt;<span class="lifetime">'py</span>&gt;(<span class="kw-2">&amp;</span><span class="lifetime">'py </span><span class="self">self</span>) -&gt; PyResult&lt;<span class="kw-2">&amp;</span><span class="lifetime">'py </span>PyArray&lt;T, D&gt;&gt; {
+        <span class="self">self</span>.as_borrowed().transpose().map(Bound::into_gil_ref)
+    }
+
     <span class="doccomment">/// Construct a new array which has same values as self,
-    /// but has different dimensions specified by `dims`
+    /// but has different dimensions specified by `shape`
     /// and a possibly different memory order specified by `order`.
     ///
     /// See also [`numpy.reshape`][numpy-reshape] and [`PyArray_Newshape`][PyArray_Newshape].
@@ -3740,11 +3862,11 @@
     /// [PyArray_Newshape]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_Newshape
     </span><span class="kw">pub fn </span>reshape_with_order&lt;<span class="lifetime">'py</span>, ID: IntoDimension&gt;(
         <span class="kw-2">&amp;</span><span class="lifetime">'py </span><span class="self">self</span>,
-        dims: ID,
+        shape: ID,
         order: NPY_ORDER,
     ) -&gt; PyResult&lt;<span class="kw-2">&amp;</span><span class="lifetime">'py </span>PyArray&lt;T, ID::Dim&gt;&gt; {
         <span class="self">self</span>.as_borrowed()
-            .reshape_with_order(dims, order)
+            .reshape_with_order(shape, order)
             .map(Bound::into_gil_ref)
     }
 
@@ -3752,9 +3874,9 @@
     </span><span class="attr">#[inline(always)]
     </span><span class="kw">pub fn </span>reshape&lt;<span class="lifetime">'py</span>, ID: IntoDimension&gt;(
         <span class="kw-2">&amp;</span><span class="lifetime">'py </span><span class="self">self</span>,
-        dims: ID,
+        shape: ID,
     ) -&gt; PyResult&lt;<span class="kw-2">&amp;</span><span class="lifetime">'py </span>PyArray&lt;T, ID::Dim&gt;&gt; {
-        <span class="self">self</span>.as_borrowed().reshape(dims).map(Bound::into_gil_ref)
+        <span class="self">self</span>.as_borrowed().reshape(shape).map(Bound::into_gil_ref)
     }
 
     <span class="doccomment">/// Extends or truncates the dimensions of an array.
@@ -3789,8 +3911,8 @@
     ///
     /// [ndarray-resize]: https://numpy.org/doc/stable/reference/generated/numpy.ndarray.resize.html
     /// [PyArray_Resize]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_Resize
-    </span><span class="kw">pub unsafe fn </span>resize&lt;ID: IntoDimension&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, dims: ID) -&gt; PyResult&lt;()&gt; {
-        <span class="self">self</span>.as_borrowed().resize(dims)
+    </span><span class="kw">pub unsafe fn </span>resize&lt;ID: IntoDimension&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, newshape: ID) -&gt; PyResult&lt;()&gt; {
+        <span class="self">self</span>.as_borrowed().resize(newshape)
     }
 }
 
@@ -4254,8 +4376,45 @@
     <span class="kw">where
         </span>T: Element;
 
-    <span class="doccomment">/// Construct a new array which has same values as self,
-    /// but has different dimensions specified by `dims`
+    <span class="doccomment">/// A view of `self` with a different order of axes determined by `axes`.
+    ///
+    /// If `axes` is `None`, the order of axes is reversed which corresponds to the standard matrix transpose.
+    ///
+    /// See also [`numpy.transpose`][numpy-transpose] and [`PyArray_Transpose`][PyArray_Transpose].
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use numpy::prelude::*;
+    /// use numpy::PyArray;
+    /// use pyo3::Python;
+    /// use ndarray::array;
+    ///
+    /// Python::with_gil(|py| {
+    ///     let array = array![[0, 1, 2], [3, 4, 5]].into_pyarray_bound(py);
+    ///
+    ///     let array = array.permute(Some([1, 0])).unwrap();
+    ///
+    ///     assert_eq!(array.readonly().as_array(), array![[0, 3], [1, 4], [2, 5]]);
+    /// });
+    /// ```
+    ///
+    /// [numpy-transpose]: https://numpy.org/doc/stable/reference/generated/numpy.transpose.html
+    /// [PyArray_Transpose]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_Transpose
+    </span><span class="kw">fn </span>permute&lt;ID: IntoDimension&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, axes: <span class="prelude-ty">Option</span>&lt;ID&gt;) -&gt; PyResult&lt;Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;T, D&gt;&gt;&gt;
+    <span class="kw">where
+        </span>T: Element;
+
+    <span class="doccomment">/// Special case of [`permute`][Self::permute] which reverses the order the axes.
+    </span><span class="kw">fn </span>transpose(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PyResult&lt;Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;T, D&gt;&gt;&gt;
+    <span class="kw">where
+        </span>T: Element,
+    {
+        <span class="self">self</span>.permute::&lt;()&gt;(<span class="prelude-val">None</span>)
+    }
+
+    <span class="doccomment">/// Construct a new array which has same values as `self`,
+    /// but has different dimensions specified by `shape`
     /// and a possibly different memory order specified by `order`.
     ///
     /// See also [`numpy.reshape`][numpy-reshape] and [`PyArray_Newshape`][PyArray_Newshape].
@@ -4283,7 +4442,7 @@
     /// [PyArray_Newshape]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_Newshape
     </span><span class="kw">fn </span>reshape_with_order&lt;ID: IntoDimension&gt;(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        dims: ID,
+        shape: ID,
         order: NPY_ORDER,
     ) -&gt; PyResult&lt;Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;T, ID::Dim&gt;&gt;&gt;
     <span class="kw">where
@@ -4291,11 +4450,11 @@
 
     <span class="doccomment">/// Special case of [`reshape_with_order`][Self::reshape_with_order] which keeps the memory order the same.
     </span><span class="attr">#[inline(always)]
-    </span><span class="kw">fn </span>reshape&lt;ID: IntoDimension&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, dims: ID) -&gt; PyResult&lt;Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;T, ID::Dim&gt;&gt;&gt;
+    </span><span class="kw">fn </span>reshape&lt;ID: IntoDimension&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, shape: ID) -&gt; PyResult&lt;Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;T, ID::Dim&gt;&gt;&gt;
     <span class="kw">where
         </span>T: Element,
     {
-        <span class="self">self</span>.reshape_with_order(dims, NPY_ORDER::NPY_ANYORDER)
+        <span class="self">self</span>.reshape_with_order(shape, NPY_ORDER::NPY_ANYORDER)
     }
 
     <span class="doccomment">/// Extends or truncates the dimensions of an array.
@@ -4330,7 +4489,7 @@
     ///
     /// [ndarray-resize]: https://numpy.org/doc/stable/reference/generated/numpy.ndarray.resize.html
     /// [PyArray_Resize]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_Resize
-    </span><span class="kw">unsafe fn </span>resize&lt;ID: IntoDimension&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, dims: ID) -&gt; PyResult&lt;()&gt;
+    </span><span class="kw">unsafe fn </span>resize&lt;ID: IntoDimension&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, newshape: ID) -&gt; PyResult&lt;()&gt;
     <span class="kw">where
         </span>T: Element;
 
@@ -4624,55 +4783,66 @@
                 <span class="kw">if </span>is_fortran { -<span class="number">1 </span>} <span class="kw">else </span>{ <span class="number">0 </span>},
             )
         };
-        <span class="kw">if </span>!ptr.is_null() {
-            <span class="prelude-val">Ok</span>(<span class="kw">unsafe </span>{ Bound::from_owned_ptr(<span class="self">self</span>.py(), ptr).downcast_into_unchecked() })
-        } <span class="kw">else </span>{
-            <span class="prelude-val">Err</span>(PyErr::fetch(<span class="self">self</span>.py()))
+        <span class="kw">unsafe </span>{
+            Bound::from_owned_ptr_or_err(<span class="self">self</span>.py(), ptr).map(|ob| ob.downcast_into_unchecked())
         }
+    }
+
+    <span class="kw">fn </span>permute&lt;ID: IntoDimension&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, axes: <span class="prelude-ty">Option</span>&lt;ID&gt;) -&gt; PyResult&lt;Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;T, D&gt;&gt;&gt; {
+        <span class="kw">let </span><span class="kw-2">mut </span>axes = axes.map(|axes| axes.into_dimension());
+        <span class="kw">let </span><span class="kw-2">mut </span>axes = axes.as_mut().map(|axes| axes.to_npy_dims());
+        <span class="kw">let </span>axes = axes
+            .as_mut()
+            .map_or_else(ptr::null_mut, |axes| axes <span class="kw">as </span><span class="kw-2">*mut </span>npyffi::PyArray_Dims);
+
+        <span class="kw">let </span>py = <span class="self">self</span>.py();
+        <span class="kw">let </span>ptr = <span class="kw">unsafe </span>{ PY_ARRAY_API.PyArray_Transpose(py, <span class="self">self</span>.as_array_ptr(), axes) };
+        <span class="kw">unsafe </span>{ Bound::from_owned_ptr_or_err(py, ptr).map(|ob| ob.downcast_into_unchecked()) }
     }
 
     <span class="kw">fn </span>reshape_with_order&lt;ID: IntoDimension&gt;(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        dims: ID,
+        shape: ID,
         order: NPY_ORDER,
     ) -&gt; PyResult&lt;Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;T, ID::Dim&gt;&gt;&gt;
     <span class="kw">where
         </span>T: Element,
     {
-        <span class="kw">let </span><span class="kw-2">mut </span>dims = dims.into_dimension();
-        <span class="kw">let </span><span class="kw-2">mut </span>dims = dims.to_npy_dims();
+        <span class="kw">let </span><span class="kw-2">mut </span>shape = shape.into_dimension();
+        <span class="kw">let </span><span class="kw-2">mut </span>shape = shape.to_npy_dims();
+
+        <span class="kw">let </span>py = <span class="self">self</span>.py();
         <span class="kw">let </span>ptr = <span class="kw">unsafe </span>{
             PY_ARRAY_API.PyArray_Newshape(
-                <span class="self">self</span>.py(),
+                py,
                 <span class="self">self</span>.as_array_ptr(),
-                <span class="kw-2">&amp;mut </span>dims <span class="kw">as </span><span class="kw-2">*mut </span>npyffi::PyArray_Dims,
+                <span class="kw-2">&amp;mut </span>shape <span class="kw">as </span><span class="kw-2">*mut </span>npyffi::PyArray_Dims,
                 order,
             )
         };
-        <span class="kw">if </span>!ptr.is_null() {
-            <span class="prelude-val">Ok</span>(<span class="kw">unsafe </span>{ Bound::from_owned_ptr(<span class="self">self</span>.py(), ptr).downcast_into_unchecked() })
-        } <span class="kw">else </span>{
-            <span class="prelude-val">Err</span>(PyErr::fetch(<span class="self">self</span>.py()))
-        }
+        <span class="kw">unsafe </span>{ Bound::from_owned_ptr_or_err(py, ptr).map(|ob| ob.downcast_into_unchecked()) }
     }
 
-    <span class="kw">unsafe fn </span>resize&lt;ID: IntoDimension&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, dims: ID) -&gt; PyResult&lt;()&gt;
+    <span class="kw">unsafe fn </span>resize&lt;ID: IntoDimension&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, newshape: ID) -&gt; PyResult&lt;()&gt;
     <span class="kw">where
         </span>T: Element,
     {
-        <span class="kw">let </span><span class="kw-2">mut </span>dims = dims.into_dimension();
-        <span class="kw">let </span><span class="kw-2">mut </span>dims = dims.to_npy_dims();
+        <span class="kw">let </span><span class="kw-2">mut </span>newshape = newshape.into_dimension();
+        <span class="kw">let </span><span class="kw-2">mut </span>newshape = newshape.to_npy_dims();
+
+        <span class="kw">let </span>py = <span class="self">self</span>.py();
         <span class="kw">let </span>res = PY_ARRAY_API.PyArray_Resize(
-            <span class="self">self</span>.py(),
+            py,
             <span class="self">self</span>.as_array_ptr(),
-            <span class="kw-2">&amp;mut </span>dims <span class="kw">as </span><span class="kw-2">*mut </span>npyffi::PyArray_Dims,
+            <span class="kw-2">&amp;mut </span>newshape <span class="kw">as </span><span class="kw-2">*mut </span>npyffi::PyArray_Dims,
             <span class="number">1</span>,
             NPY_ORDER::NPY_ANYORDER,
         );
+
         <span class="kw">if </span>!res.is_null() {
             <span class="prelude-val">Ok</span>(())
         } <span class="kw">else </span>{
-            <span class="prelude-val">Err</span>(PyErr::fetch(<span class="self">self</span>.py()))
+            <span class="prelude-val">Err</span>(PyErr::fetch(py))
         }
     }
 
