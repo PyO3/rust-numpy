@@ -12,7 +12,7 @@ use rustc_hash::FxHashMap;
 use crate::array::get_array_module;
 use crate::cold;
 use crate::error::BorrowError;
-use crate::npyffi::{PyArrayObject, PyArray_Check, NPY_ARRAY_WRITEABLE};
+use crate::npyffi::{PyArrayObject, PyArray_Check, PyDataType_ELSIZE, NPY_ARRAY_WRITEABLE};
 
 /// Defines the shared C API used for borrow checking
 ///
@@ -403,7 +403,7 @@ fn data_range(array: *mut PyArrayObject) -> (*mut c_char, *mut c_char) {
     let shape = unsafe { from_raw_parts((*array).dimensions as *mut usize, nd) };
     let strides = unsafe { from_raw_parts((*array).strides, nd) };
 
-    let itemsize = unsafe { (*(*array).descr).elsize } as isize;
+    let itemsize = unsafe { PyDataType_ELSIZE((*array).descr) } as isize;
 
     let mut start = 0;
     let mut end = 0;

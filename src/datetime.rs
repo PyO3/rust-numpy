@@ -67,7 +67,9 @@ use pyo3::{sync::GILProtected, Bound, Py, Python};
 use rustc_hash::FxHashMap;
 
 use crate::dtype::{Element, PyArrayDescr, PyArrayDescrMethods};
-use crate::npyffi::{PyArray_DatetimeDTypeMetaData, NPY_DATETIMEUNIT, NPY_TYPES};
+use crate::npyffi::{
+    PyArray_DatetimeDTypeMetaData, PyDataType_C_METADATA, NPY_DATETIMEUNIT, NPY_TYPES,
+};
 
 /// Represents the [datetime units][datetime-units] supported by NumPy
 ///
@@ -230,7 +232,7 @@ impl TypeDescriptors {
 
                 // SAFETY: `self.npy_type` is either `NPY_DATETIME` or `NPY_TIMEDELTA` which implies the type of `c_metadata`.
                 unsafe {
-                    let metadata = &mut *((*dtype.as_dtype_ptr()).c_metadata
+                    let metadata = &mut *(PyDataType_C_METADATA(dtype.as_dtype_ptr())
                         as *mut PyArray_DatetimeDTypeMetaData);
 
                     metadata.meta.base = unit;
