@@ -18,6 +18,7 @@ use pyo3::{
 use rustc_hash::FxHashMap;
 
 use crate::dtype::{Element, PyArrayDescr, PyArrayDescrMethods};
+use crate::npyffi::PyDataType_SET_ELSIZE;
 use crate::npyffi::NPY_TYPES;
 
 /// A newtype wrapper around [`[u8; N]`][Py_UCS1] to handle [`byte` scalars][numpy-bytes] while satisfying coherence.
@@ -183,7 +184,7 @@ impl TypeDescriptors {
                 let dtype = PyArrayDescr::new_from_npy_type(py, npy_type);
 
                 let descr = &mut *dtype.as_dtype_ptr();
-                descr.elsize = size.try_into().unwrap();
+                PyDataType_SET_ELSIZE(descr, size.try_into().unwrap());
                 descr.byteorder = byteorder;
 
                 entry.insert(dtype.into())

@@ -1,7 +1,5 @@
 use std::mem::size_of;
-use std::os::raw::{
-    c_char, c_int, c_long, c_longlong, c_short, c_uint, c_ulong, c_ulonglong, c_ushort,
-};
+use std::os::raw::{c_int, c_long, c_longlong, c_short, c_uint, c_ulong, c_ulonglong, c_ushort};
 use std::ptr;
 
 #[cfg(feature = "half")]
@@ -19,8 +17,9 @@ use pyo3::{
 use pyo3::{sync::GILOnceCell, Py};
 
 use crate::npyffi::{
-    NpyTypes, PyArray_Descr, NPY_ALIGNED_STRUCT, NPY_BYTEORDER_CHAR, NPY_ITEM_HASOBJECT, NPY_TYPES,
-    PY_ARRAY_API,
+    FlagType, NpyTypes, PyArray_Descr, PyDataType_ALIGNMENT, PyDataType_ELSIZE, PyDataType_FIELDS,
+    PyDataType_FLAGS, PyDataType_NAMES, PyDataType_SUBARRAY, NPY_ALIGNED_STRUCT,
+    NPY_BYTEORDER_CHAR, NPY_ITEM_HASOBJECT, NPY_TYPES, PY_ARRAY_API,
 };
 
 pub use num_complex::{Complex32, Complex64};
@@ -256,7 +255,7 @@ impl PyArrayDescr {
     /// Equivalent to [`numpy.dtype.flags`][dtype-flags].
     ///
     /// [dtype-flags]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.flags.html
-    pub fn flags(&self) -> c_char {
+    pub fn flags(&self) -> FlagType {
         self.as_borrowed().flags()
     }
 
@@ -397,7 +396,7 @@ pub trait PyArrayDescrMethods<'py>: Sealed {
     /// [dtype-itemsiize]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.itemsize.html
 
     fn itemsize(&self) -> usize {
-        unsafe { *self.as_dtype_ptr() }.elsize.max(0) as _
+        PyDataType_ELSIZE(self.as_dtype_ptr()).max(0) as _
     }
 
     /// Returns the required alignment (bytes) of this type descriptor according to the compiler.
@@ -406,7 +405,7 @@ pub trait PyArrayDescrMethods<'py>: Sealed {
     ///
     /// [dtype-alignment]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.alignment.html
     fn alignment(&self) -> usize {
-        unsafe { *self.as_dtype_ptr() }.alignment.max(0) as _
+        PyDataType_ALIGNMENT(self.as_dtype_ptr()).max(0) as _
     }
 
     /// Returns an ASCII character indicating the byte-order of this type descriptor object.
@@ -447,8 +446,8 @@ pub trait PyArrayDescrMethods<'py>: Sealed {
     /// Equivalent to [`numpy.dtype.flags`][dtype-flags].
     ///
     /// [dtype-flags]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.flags.html
-    fn flags(&self) -> c_char {
-        unsafe { *self.as_dtype_ptr() }.flags
+    fn flags(&self) -> FlagType {
+        PyDataType_FLAGS(self.as_dtype_ptr())
     }
 
     /// Returns the number of dimensions if this type descriptor represents a sub-array, and zero otherwise.
@@ -460,7 +459,7 @@ pub trait PyArrayDescrMethods<'py>: Sealed {
         if !self.has_subarray() {
             return 0;
         }
-        unsafe { PyTuple_Size((*((*self.as_dtype_ptr()).subarray)).shape).max(0) as _ }
+        unsafe { PyTuple_Size((*PyDataType_SUBARRAY(self.as_dtype_ptr())).shape).max(0) as _ }
     }
 
     /// Returns the type descriptor for the base element of subarrays, regardless of their dimension or shape.
@@ -505,13 +504,13 @@ pub trait PyArrayDescrMethods<'py>: Sealed {
     /// Returns true if the type descriptor is a sub-array.
     fn has_subarray(&self) -> bool {
         // equivalent to PyDataType_HASSUBARRAY(self)
-        unsafe { !(*self.as_dtype_ptr()).subarray.is_null() }
+        !PyDataType_SUBARRAY(self.as_dtype_ptr()).is_null()
     }
 
     /// Returns true if the type descriptor is a structured type.
     fn has_fields(&self) -> bool {
         // equivalent to PyDataType_HASFIELDS(self)
-        unsafe { !(*self.as_dtype_ptr()).names.is_null() }
+        !PyDataType_NAMES(self.as_dtype_ptr()).is_null()
     }
 
     /// Returns true if type descriptor byteorder is native, or `None` if not applicable.
@@ -581,8 +580,11 @@ impl<'py> PyArrayDescrMethods<'py> for Bound<'py, PyArrayDescr> {
             self.clone()
         } else {
             unsafe {
-                Bound::from_borrowed_ptr(self.py(), (*(*self.as_dtype_ptr()).subarray).base.cast())
-                    .downcast_into_unchecked()
+                Bound::from_borrowed_ptr(
+                    self.py(),
+                    (*PyDataType_SUBARRAY(self.as_dtype_ptr())).base.cast(),
+                )
+                .downcast_into_unchecked()
             }
         }
     }
@@ -592,9 +594,11 @@ impl<'py> PyArrayDescrMethods<'py> for Bound<'py, PyArrayDescr> {
             Vec::new()
         } else {
             // NumPy guarantees that shape is a tuple of non-negative integers so this should never panic.
-            unsafe { Borrowed::from_ptr(self.py(), (*(*self.as_dtype_ptr()).subarray).shape) }
-                .extract()
-                .unwrap()
+            unsafe {
+                Borrowed::from_ptr(self.py(), (*PyDataType_SUBARRAY(self.as_dtype_ptr())).shape)
+            }
+            .extract()
+            .unwrap()
         }
     }
 
@@ -602,7 +606,7 @@ impl<'py> PyArrayDescrMethods<'py> for Bound<'py, PyArrayDescr> {
         if !self.has_fields() {
             return None;
         }
-        let names = unsafe { Borrowed::from_ptr(self.py(), (*self.as_dtype_ptr()).names) };
+        let names = unsafe { Borrowed::from_ptr(self.py(), PyDataType_NAMES(self.as_dtype_ptr())) };
         names.extract().ok()
     }
 
@@ -612,7 +616,7 @@ impl<'py> PyArrayDescrMethods<'py> for Bound<'py, PyArrayDescr> {
                 "cannot get field information: type descriptor has no fields",
             ));
         }
-        let dict = unsafe { Borrowed::from_ptr(self.py(), (*self.as_dtype_ptr()).fields) };
+        let dict = unsafe { Borrowed::from_ptr(self.py(), PyDataType_FIELDS(self.as_dtype_ptr())) };
         let dict = unsafe { dict.downcast_unchecked::<PyDict>() };
         // NumPy guarantees that fields are tuples of proper size and type, so this should never panic.
         let tuple = dict
