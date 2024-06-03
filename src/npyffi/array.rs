@@ -68,8 +68,14 @@ impl PyArrayAPI {
     impl_api![47; PyArray_Zero(arr: *mut PyArrayObject) -> *mut c_char];
     impl_api![48; PyArray_One(arr: *mut PyArrayObject) -> *mut c_char];
     impl_api![49; PyArray_CastToType(arr: *mut PyArrayObject, dtype: *mut PyArray_Descr, is_f_order: c_int) -> *mut PyObject];
+    #[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
     impl_api![50; PyArray_CastTo(out: *mut PyArrayObject, mp: *mut PyArrayObject) -> c_int];
+    #[cfg(all(not(feature = "numpy-1"), feature = "numpy-2"))]
+    impl_api![50; PyArray_CopyInto(dst: *mut PyArrayObject, src: *mut PyArrayObject) -> c_int];
+    #[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
     impl_api![51; PyArray_CastAnyTo(out: *mut PyArrayObject, mp: *mut PyArrayObject) -> c_int];
+    #[cfg(all(not(feature = "numpy-1"), feature = "numpy-2"))]
+    impl_api![51; PyArray_CopyAnyInto(dst: *mut PyArrayObject, src: *mut PyArrayObject) -> c_int];
     impl_api![52; PyArray_CanCastSafely(fromtype: c_int, totype: c_int) -> c_int];
     impl_api![53; PyArray_CanCastTo(from: *mut PyArray_Descr, to: *mut PyArray_Descr) -> npy_bool];
     impl_api![54; PyArray_ObjectType(op: *mut PyObject, minimum_type: c_int) -> c_int];
@@ -83,9 +89,15 @@ impl PyArrayAPI {
     impl_api![62; PyArray_ScalarAsCtype(scalar: *mut PyObject, ctypeptr: *mut c_void)];
     impl_api![63; PyArray_CastScalarToCtype(scalar: *mut PyObject, ctypeptr: *mut c_void, outcode: *mut PyArray_Descr) -> c_int];
     impl_api![64; PyArray_CastScalarDirect(scalar: *mut PyObject, indescr: *mut PyArray_Descr, ctypeptr: *mut c_void, outtype: c_int) -> c_int];
+    #[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
     impl_api![65; PyArray_ScalarFromObject(object: *mut PyObject) -> *mut PyObject];
+    #[cfg(all(not(feature = "numpy-1"), feature = "numpy-2"))]
+    impl_api![65; PyArray_Pack(descr: *mut PyArray_Descr, item: *mut c_void, value: *const PyObject) -> *mut PyObject];
+    #[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
     impl_api![66; PyArray_GetCastFunc(descr: *mut PyArray_Descr, type_num: c_int) -> PyArray_VectorUnaryFunc];
+    #[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
     impl_api![67; PyArray_FromDims(nd: c_int, d: *mut c_int, type_: c_int) -> *mut PyObject];
+    #[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
     impl_api![68; PyArray_FromDimsAndDataAndDescr(nd: c_int, d: *mut c_int, descr: *mut PyArray_Descr, data: *mut c_char) -> *mut PyObject];
     impl_api![69; PyArray_FromAny(op: *mut PyObject, newtype: *mut PyArray_Descr, min_depth: c_int, max_depth: c_int, flags: c_int, context: *mut PyObject) -> *mut PyObject];
     impl_api![70; PyArray_EnsureArray(op: *mut PyObject) -> *mut PyObject];
@@ -99,8 +111,11 @@ impl PyArrayAPI {
     impl_api![78; PyArray_SetField(self_: *mut PyArrayObject, dtype: *mut PyArray_Descr, offset: c_int, val: *mut PyObject) -> c_int];
     impl_api![79; PyArray_Byteswap(self_: *mut PyArrayObject, inplace: npy_bool) -> *mut PyObject];
     impl_api![80; PyArray_Resize(self_: *mut PyArrayObject, newshape: *mut PyArray_Dims, refcheck: c_int, order: NPY_ORDER) -> *mut PyObject];
+    #[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
     impl_api![81; PyArray_MoveInto(dst: *mut PyArrayObject, src: *mut PyArrayObject) -> c_int];
+    #[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
     impl_api![82; PyArray_CopyInto(dst: *mut PyArrayObject, src: *mut PyArrayObject) -> c_int];
+    #[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
     impl_api![83; PyArray_CopyAnyInto(dst: *mut PyArrayObject, src: *mut PyArrayObject) -> c_int];
     impl_api![84; PyArray_CopyObject(dest: *mut PyArrayObject, src_object: *mut PyObject) -> c_int];
     impl_api![85; PyArray_NewCopy(obj: *mut PyArrayObject, order: NPY_ORDER) -> *mut PyObject];
@@ -121,6 +136,7 @@ impl PyArrayAPI {
     impl_api![100; PyArray_PyIntAsInt(o: *mut PyObject) -> c_int];
     impl_api![101; PyArray_PyIntAsIntp(o: *mut PyObject) -> npy_intp];
     impl_api![102; PyArray_Broadcast(mit: *mut PyArrayMultiIterObject) -> c_int];
+    #[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
     impl_api![103; PyArray_FillObjectArray(arr: *mut PyArrayObject, obj: *mut PyObject)];
     impl_api![104; PyArray_FillWithScalar(arr: *mut PyArrayObject, obj: *mut PyObject) -> c_int];
     impl_api![105; PyArray_CheckStrides(elsize: c_int, nd: c_int, numbytes: npy_intp, offset: npy_intp, dims: *mut npy_intp, newstrides: *mut npy_intp) -> npy_bool];
@@ -133,13 +149,16 @@ impl PyArrayAPI {
     impl_api![112; PyArray_FromArrayAttr(op: *mut PyObject, typecode: *mut PyArray_Descr, context: *mut PyObject) -> *mut PyObject];
     impl_api![113; PyArray_ScalarKind(typenum: c_int, arr: *mut *mut PyArrayObject) -> NPY_SCALARKIND];
     impl_api![114; PyArray_CanCoerceScalar(thistype: c_int, neededtype: c_int, scalar: NPY_SCALARKIND) -> c_int];
+    #[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
     impl_api![115; PyArray_NewFlagsObject(obj: *mut PyObject) -> *mut PyObject];
     impl_api![116; PyArray_CanCastScalar(from: *mut PyTypeObject, to: *mut PyTypeObject) -> npy_bool];
+    #[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
     impl_api![117; PyArray_CompareUCS4(s1: *mut npy_ucs4, s2: *mut npy_ucs4, len: usize) -> c_int];
     impl_api![118; PyArray_RemoveSmallest(multi: *mut PyArrayMultiIterObject) -> c_int];
     impl_api![119; PyArray_ElementStrides(obj: *mut PyObject) -> c_int];
     impl_api![120; PyArray_Item_INCREF(data: *mut c_char, descr: *mut PyArray_Descr)];
     impl_api![121; PyArray_Item_XDECREF(data: *mut c_char, descr: *mut PyArray_Descr)];
+    #[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
     impl_api![122; PyArray_FieldNames(fields: *mut PyObject) -> *mut PyObject];
     impl_api![123; PyArray_Transpose(ap: *mut PyArrayObject, permute: *mut PyArray_Dims) -> *mut PyObject];
     impl_api![124; PyArray_TakeFrom(self0: *mut PyArrayObject, indices0: *mut PyObject, axis: c_int, out: *mut PyArrayObject, clipmode: NPY_CLIPMODE) -> *mut PyObject];
@@ -181,7 +200,9 @@ impl PyArrayAPI {
     impl_api![160; PyArray_GetPtr(obj: *mut PyArrayObject, ind: *mut npy_intp) -> *mut c_void];
     impl_api![161; PyArray_CompareLists(l1: *mut npy_intp, l2: *mut npy_intp, n: c_int) -> c_int];
     impl_api![162; PyArray_AsCArray(op: *mut *mut PyObject, ptr: *mut c_void, dims: *mut npy_intp, nd: c_int, typedescr: *mut PyArray_Descr) -> c_int];
+    #[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
     impl_api![163; PyArray_As1D(op: *mut *mut PyObject, ptr: *mut *mut c_char, d1: *mut c_int, typecode: c_int) -> c_int];
+    #[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
     impl_api![164; PyArray_As2D(op: *mut *mut PyObject, ptr: *mut *mut *mut c_char, d1: *mut c_int, d2: *mut c_int, typecode: c_int) -> c_int];
     impl_api![165; PyArray_Free(op: *mut PyObject, ptr: *mut c_void) -> c_int];
     impl_api![166; PyArray_Converter(object: *mut PyObject, address: *mut *mut PyObject) -> c_int];
@@ -189,8 +210,10 @@ impl PyArrayAPI {
     impl_api![168; PyArray_Concatenate(op: *mut PyObject, axis: c_int) -> *mut PyObject];
     impl_api![169; PyArray_InnerProduct(op1: *mut PyObject, op2: *mut PyObject) -> *mut PyObject];
     impl_api![170; PyArray_MatrixProduct(op1: *mut PyObject, op2: *mut PyObject) -> *mut PyObject];
+    #[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
     impl_api![171; PyArray_CopyAndTranspose(op: *mut PyObject) -> *mut PyObject];
     impl_api![172; PyArray_Correlate(op1: *mut PyObject, op2: *mut PyObject, mode: c_int) -> *mut PyObject];
+    #[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
     impl_api![173; PyArray_TypestrConvert(itemsize: c_int, gentype: c_int) -> c_int];
     impl_api![174; PyArray_DescrConverter(obj: *mut PyObject, at: *mut *mut PyArray_Descr) -> c_int];
     impl_api![175; PyArray_DescrConverter2(obj: *mut PyObject, at: *mut *mut PyArray_Descr) -> c_int];
@@ -210,32 +233,41 @@ impl PyArrayAPI {
     impl_api![189; PyArray_LexSort(sort_keys: *mut PyObject, axis: c_int) -> *mut PyObject];
     impl_api![190; PyArray_Round(a: *mut PyArrayObject, decimals: c_int, out: *mut PyArrayObject) -> *mut PyObject];
     impl_api![191; PyArray_EquivTypenums(typenum1: c_int, typenum2: c_int) -> c_uchar];
-    impl_api![192; PyArray_RegisterDataType(descr: *mut PyArray_Descr) -> c_int];
+    impl_api![192; PyArray_RegisterDataType(descr: *mut PyArray_DescrProto) -> c_int];
     impl_api![193; PyArray_RegisterCastFunc(descr: *mut PyArray_Descr, totype: c_int, castfunc: PyArray_VectorUnaryFunc) -> c_int];
     impl_api![194; PyArray_RegisterCanCast(descr: *mut PyArray_Descr, totype: c_int, scalar: NPY_SCALARKIND) -> c_int];
     impl_api![195; PyArray_InitArrFuncs(f: *mut PyArray_ArrFuncs)];
     impl_api![196; PyArray_IntTupleFromIntp(len: c_int, vals: *mut npy_intp) -> *mut PyObject];
+    #[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
     impl_api![197; PyArray_ElementFromName(str: *mut c_char) -> c_int];
     impl_api![198; PyArray_ClipmodeConverter(object: *mut PyObject, val: *mut NPY_CLIPMODE) -> c_int];
     impl_api![199; PyArray_OutputConverter(object: *mut PyObject, address: *mut *mut PyArrayObject) -> c_int];
     impl_api![200; PyArray_BroadcastToShape(obj: *mut PyObject, dims: *mut npy_intp, nd: c_int) -> *mut PyObject];
+    #[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
     impl_api![201; _PyArray_SigintHandler(signum: c_int)];
+    #[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
     impl_api![202; _PyArray_GetSigintBuf() -> *mut c_void];
     impl_api![203; PyArray_DescrAlignConverter(obj: *mut PyObject, at: *mut *mut PyArray_Descr) -> c_int];
     impl_api![204; PyArray_DescrAlignConverter2(obj: *mut PyObject, at: *mut *mut PyArray_Descr) -> c_int];
     impl_api![205; PyArray_SearchsideConverter(obj: *mut PyObject, addr: *mut c_void) -> c_int];
     impl_api![206; PyArray_CheckAxis(arr: *mut PyArrayObject, axis: *mut c_int, flags: c_int) -> *mut PyObject];
     impl_api![207; PyArray_OverflowMultiplyList(l1: *mut npy_intp, n: c_int) -> npy_intp];
+    #[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
     impl_api![208; PyArray_CompareString(s1: *mut c_char, s2: *mut c_char, len: usize) -> c_int];
     // impl_api![209; PyArray_MultiIterFromObjects(mps: *mut *mut PyObject, n: c_int, nadd: c_int, ...) -> *mut PyObject];
     impl_api![210; PyArray_GetEndianness() -> c_int];
     impl_api![211; PyArray_GetNDArrayCFeatureVersion() -> c_uint];
     impl_api![212; PyArray_Correlate2(op1: *mut PyObject, op2: *mut PyObject, mode: c_int) -> *mut PyObject];
     impl_api![213; PyArray_NeighborhoodIterNew(x: *mut PyArrayIterObject, bounds: *mut npy_intp, mode: c_int, fill: *mut PyArrayObject) -> *mut PyObject];
+    #[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
     impl_api![219; PyArray_SetDatetimeParseFunction(op: *mut PyObject)];
+    #[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
     impl_api![220; PyArray_DatetimeToDatetimeStruct(val: npy_datetime, fr: NPY_DATETIMEUNIT, result: *mut npy_datetimestruct)];
+    #[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
     impl_api![221; PyArray_TimedeltaToTimedeltaStruct(val: npy_timedelta, fr: NPY_DATETIMEUNIT, result: *mut npy_timedeltastruct)];
+    #[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
     impl_api![222; PyArray_DatetimeStructToDatetime(fr: NPY_DATETIMEUNIT, d: *mut npy_datetimestruct) -> npy_datetime];
+    #[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
     impl_api![223; PyArray_TimedeltaStructToTimedelta(fr: NPY_DATETIMEUNIT, d: *mut npy_timedeltastruct) -> npy_datetime];
     impl_api![224; NpyIter_New(op: *mut PyArrayObject, flags: npy_uint32, order: NPY_ORDER, casting: NPY_CASTING, dtype: *mut PyArray_Descr) -> *mut NpyIter];
     impl_api![225; NpyIter_MultiNew(nop: c_int, op_in: *mut *mut PyArrayObject, flags: npy_uint32, order: NPY_ORDER, casting: NPY_CASTING, op_flags: *mut npy_uint32, op_request_dtypes: *mut *mut PyArray_Descr) -> *mut NpyIter];
@@ -291,6 +323,7 @@ impl PyArrayAPI {
     impl_api![275; PyArray_CanCastTypeTo(from: *mut PyArray_Descr, to: *mut PyArray_Descr, casting: NPY_CASTING) -> npy_bool];
     impl_api![276; PyArray_EinsteinSum(subscripts: *mut c_char, nop: npy_intp, op_in: *mut *mut PyArrayObject, dtype: *mut PyArray_Descr, order: NPY_ORDER, casting: NPY_CASTING, out: *mut PyArrayObject) -> *mut PyObject];
     impl_api![277; PyArray_NewLikeArray(prototype: *mut PyArrayObject, order: NPY_ORDER, dtype: *mut PyArray_Descr, subok: c_int) -> *mut PyObject];
+    #[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
     impl_api![278; PyArray_GetArrayParamsFromObject(op: *mut PyObject, requested_dtype: *mut PyArray_Descr, writeable: npy_bool, out_dtype: *mut *mut PyArray_Descr, out_ndim: *mut c_int, out_dims: *mut npy_intp, out_arr: *mut *mut PyArrayObject, context: *mut PyObject) -> c_int];
     impl_api![279; PyArray_ConvertClipmodeSequence(object: *mut PyObject, modes: *mut NPY_CLIPMODE, n: c_int) -> c_int];
     impl_api![280; PyArray_MatrixProduct2(op1: *mut PyObject, op2: *mut PyObject, out: *mut PyArrayObject) -> *mut PyObject];
@@ -304,18 +337,103 @@ impl PyArrayAPI {
     impl_api![288; PyDataMem_NEW(size: usize) -> *mut c_void];
     impl_api![289; PyDataMem_FREE(ptr: *mut c_void)];
     impl_api![290; PyDataMem_RENEW(ptr: *mut c_void, size: usize) -> *mut c_void];
+    #[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
     impl_api![291; PyDataMem_SetEventHook(newhook: PyDataMem_EventHookFunc, user_data: *mut c_void, old_data: *mut *mut c_void) -> PyDataMem_EventHookFunc];
+    #[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
     impl_api![293; PyArray_MapIterSwapAxes(mit: *mut PyArrayMapIterObject, ret: *mut *mut PyArrayObject, getmap: c_int)];
+    #[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
     impl_api![294; PyArray_MapIterArray(a: *mut PyArrayObject, index: *mut PyObject) -> *mut PyObject];
+    #[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
     impl_api![295; PyArray_MapIterNext(mit: *mut PyArrayMapIterObject)];
     impl_api![296; PyArray_Partition(op: *mut PyArrayObject, ktharray: *mut PyArrayObject, axis: c_int, which: NPY_SELECTKIND) -> c_int];
     impl_api![297; PyArray_ArgPartition(op: *mut PyArrayObject, ktharray: *mut PyArrayObject, axis: c_int, which: NPY_SELECTKIND) -> *mut PyObject];
     impl_api![298; PyArray_SelectkindConverter(obj: *mut PyObject, selectkind: *mut NPY_SELECTKIND) -> c_int];
     impl_api![299; PyDataMem_NEW_ZEROED(size: usize, elsize: usize) -> *mut c_void];
     impl_api![300; PyArray_CheckAnyScalarExact(obj: *mut PyObject) -> c_int];
+    #[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
     impl_api![301; PyArray_MapIterArrayCopyIfOverlap(a: *mut PyArrayObject, index: *mut PyObject, copy_if_overlap: c_int, extra_op: *mut PyArrayObject) -> *mut PyObject];
     impl_api![302; PyArray_ResolveWritebackIfCopy(self_: *mut PyArrayObject) -> c_int];
     impl_api![303; PyArray_SetWritebackIfCopyBase(arr: *mut PyArrayObject, base: *mut PyArrayObject) -> c_int];
+    impl_api![304; PyDataMem_SetHandler(handler: *mut PyObject) -> *mut PyObject];
+    impl_api![305; PyDataMem_GetHandler() -> *mut PyObject];
+    #[cfg(all(not(feature = "numpy-1"), feature = "numpy-2"))]
+    impl_api![307; NpyDatetime_ConvertDatetime64ToDatetimeStruct(meta: *mut PyArray_DatetimeMetaData, dt: npy_datetime, out: *mut npy_datetimestruct) -> c_int];
+    #[cfg(all(not(feature = "numpy-1"), feature = "numpy-2"))]
+    impl_api![308; NpyDatetime_ConvertDatetimeStructToDatetime64(meta: *mut PyArray_DatetimeMetaData, dts: *const npy_datetimestruct, out: *mut npy_datetime) -> c_int];
+    #[cfg(all(not(feature = "numpy-1"), feature = "numpy-2"))]
+    impl_api![309; NpyDatetime_ConvertPyDateTimeToDatetimeStruct(obj: *mut PyObject, out: *mut npy_datetimestruct, out_bestunit: *mut NPY_DATETIMEUNIT,  apply_tzinfo: c_int) -> c_int];
+    #[cfg(all(not(feature = "numpy-1"), feature = "numpy-2"))]
+    impl_api![310; NpyDatetime_GetDatetimeISO8601StrLen(local: c_int, base: NPY_DATETIMEUNIT) -> c_int];
+    #[cfg(all(not(feature = "numpy-1"), feature = "numpy-2"))]
+    impl_api![311; NpyDatetime_MakeISO8601Datetime(dts: *mut npy_datetimestruct, outstr: *mut c_char, outlen: npy_intp, local: c_int, utc: c_int, base: NPY_DATETIMEUNIT, tzoffset: c_int, casting: NPY_CASTING) -> c_int];
+    #[cfg(all(not(feature = "numpy-1"), feature = "numpy-2"))]
+    impl_api![312; NpyDatetime_ParseISO8601Datetime(str: *const c_char, len: pyo3::ffi::Py_ssize_t, unit: NPY_DATETIMEUNIT, casting: NPY_CASTING, out: *mut npy_datetimestruct, out_bestunit: *mut NPY_DATETIMEUNIT, out_special: *mut npy_bool) -> c_int];
+    #[cfg(all(not(feature = "numpy-1"), feature = "numpy-2"))]
+    impl_api![313; NpyString_load(allocator: *mut npy_string_allocator, packed_string: *const npy_packed_static_string, unpacked_string: *mut npy_static_string) -> c_int];
+    #[cfg(all(not(feature = "numpy-1"), feature = "numpy-2"))]
+    impl_api![314; NpyString_pack(out: *mut npy_packed_static_string) -> c_int];
+    #[cfg(all(not(feature = "numpy-1"), feature = "numpy-2"))]
+    impl_api![315; NpyString_pack_null(allocator: *mut npy_string_allocator, packed_string: *mut npy_packed_static_string) -> c_int];
+    #[cfg(all(not(feature = "numpy-1"), feature = "numpy-2"))]
+    impl_api![316; NpyString_acquire_allocator(descr: *const PyArray_StringDTypeObject) -> *mut npy_string_allocator];
+    #[cfg(all(not(feature = "numpy-1"), feature = "numpy-2"))]
+    impl_api![317; NpyString_acquire_allocators(n_descriptors: usize, descrs: *const *mut PyArray_Descr, allocators: *mut *mut npy_string_allocator)];
+    #[cfg(all(not(feature = "numpy-1"), feature = "numpy-2"))]
+    impl_api![318; NpyString_release_allocator(allocator: *mut npy_string_allocator)];
+    #[cfg(all(not(feature = "numpy-1"), feature = "numpy-2"))]
+    impl_api![319; NpyString_release_allocators(length: usize, allocators: *mut *mut npy_string_allocator)];
+    #[cfg(all(not(feature = "numpy-1"), feature = "numpy-2"))]
+    impl_api![361; PyArray_GetDefaultDescr(DType: *mut PyArray_DTypeMeta) -> *mut PyArray_Descr];
+    #[cfg(all(not(feature = "numpy-1"), feature = "numpy-2"))]
+    impl_api![362; PyArrayInitDTypeMeta_FromSpec(DType: *mut PyArray_DTypeMeta, spec: *mut PyArrayDTypeMeta_Spec) -> c_int];
+    #[cfg(all(not(feature = "numpy-1"), feature = "numpy-2"))]
+    impl_api![363; PyArray_CommonDType(dtype1: *mut PyArray_DTypeMeta, dtype2: *mut PyArray_DTypeMeta) -> PyArray_DTypeMeta];
+    #[cfg(all(not(feature = "numpy-1"), feature = "numpy-2"))]
+    impl_api![364; PyArray_PromoteDTypeSequence(length: npy_intp, dtypes_in: *mut *mut PyArray_DTypeMeta) -> *mut PyArray_DTypeMeta];
+    #[cfg(all(not(feature = "numpy-1"), feature = "numpy-2"))]
+    impl_api![365; _PyDataType_GetArrFuncs(descr: *const PyArray_Descr) -> *mut PyArray_ArrFuncs];
+
+    #[cfg(all(feature = "numpy-1", feature = "numpy-2"))]
+    #[allow(non_snake_case)]
+    pub unsafe fn PyArray_CopyInto<'py>(
+        &self,
+        py: Python<'py>,
+        dst: *mut PyArrayObject,
+        src: *mut PyArrayObject,
+    ) -> c_int {
+        let (_, api_version) = *ABI_API_VERSIONS
+            .get()
+            .expect("ABI_API_VERSIONS is initialized");
+        let offset = if api_version < NPY_2_0_API_VERSION {
+            82
+        } else {
+            50
+        };
+        let fptr = self.get(py, offset)
+            as *const extern "C" fn(dst: *mut PyArrayObject, src: *mut PyArrayObject) -> c_int;
+        (*fptr)(dst, src)
+    }
+
+    #[cfg(all(feature = "numpy-1", feature = "numpy-2"))]
+    #[allow(non_snake_case)]
+    pub unsafe fn PyArray_CastAnyTo<'py>(
+        &self,
+        py: Python<'py>,
+        out: *mut PyArrayObject,
+        mp: *mut PyArrayObject,
+    ) -> c_int {
+        let (_, api_version) = *ABI_API_VERSIONS
+            .get()
+            .expect("ABI_API_VERSIONS is initialized");
+        let offset = if api_version < NPY_2_0_API_VERSION {
+            83
+        } else {
+            51
+        };
+        let fptr = self.get(py, offset)
+            as *const extern "C" fn(out: *mut PyArrayObject, mp: *mut PyArrayObject) -> c_int;
+        (*fptr)(out, mp)
+    }
 }
 
 // Define type objects associated with the NumPy API

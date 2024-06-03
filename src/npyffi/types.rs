@@ -141,10 +141,16 @@ pub enum NPY_TYPES {
     NPY_DATETIME = 21,
     NPY_TIMEDELTA = 22,
     NPY_HALF = 23,
+    #[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
     NPY_NTYPES = 24,
+    #[cfg(all(not(feature = "numpy-1"), feature = "numpy-2"))]
+    NPY_NTYPES_LEGACY = 24,
     NPY_NOTYPE = 25,
+    #[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
     NPY_CHAR = 26,
     NPY_USERDEF = 256,
+    #[cfg(feature = "numpy-2")]
+    NPY_VSTRING = 2056,
 }
 
 #[repr(u32)]
@@ -269,4 +275,15 @@ impl NPY_BYTEORDER_CHAR {
     pub const NPY_NATBYTE: Self = Self::NPY_BIG;
     #[cfg(target_endian = "big")]
     pub const NPY_OPPBYTE: Self = Self::NPY_LITTLE;
+}
+
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum NPY_ARRAYMETHOD_FLAGS {
+    NPY_METH_REQUIRES_PYAPI = 1 << 0,
+    NPY_METH_NO_FLOATINGPOINT_ERRORS = 1 << 1,
+    NPY_METH_SUPPORTS_UNALIGNED = 1 << 2,
+    NPY_METH_IS_REORDERABLE = 1 << 3,
+    _NPY_METH_FORCE_CAST_INPUTS = 1 << 17,
+    NPY_METH_RUNTIME_FLAGS = (1 << 0) | (1 << 1), // NPY_METH_REQUIRES_PYAPI | NPY_METH_NO_FLOATINGPOINT_ERRORS
 }
