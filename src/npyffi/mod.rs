@@ -51,7 +51,7 @@ fn get_numpy_api<'py>(
             (*PyArray_GetNDArrayCFeatureVersion)()
         };
         #[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
-        if api_version < NPY_2_0_API_VERSION {
+        if api_version >= NPY_2_0_API_VERSION {
             panic!(
                 "the extension was compiled for numpy 1.x but the runtime version is 2.x (ABI {:08x}.{:08x})",
                 abi_version,
@@ -59,7 +59,7 @@ fn get_numpy_api<'py>(
             );
         }
         #[cfg(all(not(feature = "numpy-1"), feature = "numpy-2"))]
-        if api_version >= NPY_2_0_API_VERSION {
+        if api_version < NPY_2_0_API_VERSION {
             panic!(
                 "the extension was compiled for numpy 2.x but the runtime version is 1.x (ABI {:08x}.{:08x})",
                 abi_version,
