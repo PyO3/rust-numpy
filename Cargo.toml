@@ -31,8 +31,3 @@ nalgebra = { version = "0.32", default-features = false, features = ["std"] }
 
 [package.metadata.docs.rs]
 all-features = true
-
-[features]
-default = ["numpy-1", "numpy-2"]
-numpy-1 = []
-numpy-2 = []

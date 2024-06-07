@@ -48,7 +48,7 @@ unsafe extern "C" fn acquire_shared(flags: *mut c_void, array: *mut PyArrayObjec
     let flags = &mut *(flags as *mut BorrowFlags);
 
     let address = base_address(py, array);
-    let key = borrow_key(array);
+    let key = borrow_key(py, array);
 
     match flags.acquire(address, key) {
         Ok(()) => 0,
@@ -66,7 +66,7 @@ unsafe extern "C" fn acquire_mut_shared(flags: *mut c_void, array: *mut PyArrayO
     let flags = &mut *(flags as *mut BorrowFlags);
 
     let address = base_address(py, array);
-    let key = borrow_key(array);
+    let key = borrow_key(py, array);
 
     match flags.acquire_mut(address, key) {
         Ok(()) => 0,
@@ -80,7 +80,7 @@ unsafe extern "C" fn release_shared(flags: *mut c_void, array: *mut PyArrayObjec
     let flags = &mut *(flags as *mut BorrowFlags);
 
     let address = base_address(py, array);
-    let key = borrow_key(array);
+    let key = borrow_key(py, array);
 
     flags.release(address, key);
 }
@@ -91,7 +91,7 @@ unsafe extern "C" fn release_mut_shared(flags: *mut c_void, array: *mut PyArrayO
     let flags = &mut *(flags as *mut BorrowFlags);
 
     let address = base_address(py, array);
-    let key = borrow_key(array);
+    let key = borrow_key(py, array);
 
     flags.release_mut(address, key);
 }
@@ -379,8 +379,8 @@ fn base_address<'py>(py: Python<'py>, mut array: *mut PyArrayObject) -> *mut c_v
     }
 }
 
-fn borrow_key(array: *mut PyArrayObject) -> BorrowKey {
-    let range = data_range(array);
+fn borrow_key<'py>(py: Python<'py>, array: *mut PyArrayObject) -> BorrowKey {
+    let range = data_range(py, array);
 
     let data_ptr = unsafe { (*array).data };
     let gcd_strides = gcd_strides(array);
@@ -392,7 +392,7 @@ fn borrow_key(array: *mut PyArrayObject) -> BorrowKey {
     }
 }
 
-fn data_range(array: *mut PyArrayObject) -> (*mut c_char, *mut c_char) {
+fn data_range<'py>(py: Python<'py>, array: *mut PyArrayObject) -> (*mut c_char, *mut c_char) {
     let nd = unsafe { (*array).nd } as usize;
     let data = unsafe { (*array).data };
 
@@ -403,7 +403,7 @@ fn data_range(array: *mut PyArrayObject) -> (*mut c_char, *mut c_char) {
     let shape = unsafe { from_raw_parts((*array).dimensions as *mut usize, nd) };
     let strides = unsafe { from_raw_parts((*array).strides, nd) };
 
-    let itemsize = unsafe { PyDataType_ELSIZE((*array).descr) } as isize;
+    let itemsize = unsafe { PyDataType_ELSIZE(py, (*array).descr) } as isize;
 
     let mut start = 0;
     let mut end = 0;
@@ -468,7 +468,7 @@ mod tests {
             let base_address = base_address(py, array.as_array_ptr());
             assert_eq!(base_address, array.as_ptr().cast());
 
-            let data_range = data_range(array.as_array_ptr());
+            let data_range = data_range(py, array.as_array_ptr());
             assert_eq!(data_range.0, array.data() as *mut c_char);
             assert_eq!(data_range.1, unsafe { array.data().add(6) } as *mut c_char);
         });
@@ -486,7 +486,7 @@ mod tests {
             assert_ne!(base_address, array.as_ptr().cast());
             assert_eq!(base_address, base.cast::<c_void>());
 
-            let data_range = data_range(array.as_array_ptr());
+            let data_range = data_range(py, array.as_array_ptr());
             assert_eq!(data_range.0, array.data().cast::<c_char>());
             assert_eq!(data_range.1, unsafe {
                 array.data().add(6).cast::<c_char>()
@@ -517,7 +517,7 @@ mod tests {
             assert_ne!(base_address, view.as_ptr().cast::<c_void>());
             assert_eq!(base_address, base.cast::<c_void>());
 
-            let data_range = data_range(view.as_array_ptr());
+            let data_range = data_range(py, view.as_array_ptr());
             assert_eq!(data_range.0, array.data() as *mut c_char);
             assert_eq!(data_range.1, unsafe { array.data().add(4) } as *mut c_char);
         });
@@ -550,7 +550,7 @@ mod tests {
             assert_ne!(base_address, array.as_ptr().cast::<c_void>());
             assert_eq!(base_address, base.cast::<c_void>());
 
-            let data_range = data_range(view.as_array_ptr());
+            let data_range = data_range(py, view.as_array_ptr());
             assert_eq!(data_range.0, array.data().cast::<c_char>());
             assert_eq!(data_range.1, unsafe {
                 array.data().add(4).cast::<c_char>()
@@ -600,7 +600,7 @@ mod tests {
             assert_ne!(base_address, view1.as_ptr().cast::<c_void>());
             assert_eq!(base_address, base as *mut c_void);
 
-            let data_range = data_range(view2.as_array_ptr());
+            let data_range = data_range(py, view2.as_array_ptr());
             assert_eq!(data_range.0, array.data() as *mut c_char);
             assert_eq!(data_range.1, unsafe { array.data().add(1) } as *mut c_char);
         });
@@ -652,7 +652,7 @@ mod tests {
             assert_ne!(base_address, array.as_ptr().cast::<c_void>());
             assert_eq!(base_address, base.cast::<c_void>());
 
-            let data_range = data_range(view2.as_array_ptr());
+            let data_range = data_range(py, view2.as_array_ptr());
             assert_eq!(data_range.0, array.data().cast::<c_char>());
             assert_eq!(data_range.1, unsafe {
                 array.data().add(1).cast::<c_char>()
@@ -683,7 +683,7 @@ mod tests {
             assert_ne!(base_address, view.as_ptr().cast::<c_void>());
             assert_eq!(base_address, base.cast::<c_void>());
 
-            let data_range = data_range(view.as_array_ptr());
+            let data_range = data_range(py, view.as_array_ptr());
             assert_eq!(view.data(), unsafe { array.data().offset(2) });
             assert_eq!(data_range.0, unsafe { view.data().offset(-2) }
                 as *mut c_char);
@@ -703,7 +703,7 @@ mod tests {
             let base_address = base_address(py, array.as_array_ptr());
             assert_eq!(base_address, array.as_ptr().cast::<c_void>());
 
-            let data_range = data_range(array.as_array_ptr());
+            let data_range = data_range(py, array.as_array_ptr());
             assert_eq!(data_range.0, array.data() as *mut c_char);
             assert_eq!(data_range.1, array.data() as *mut c_char);
         });
@@ -721,7 +721,7 @@ mod tests {
                 .downcast_into::<PyArray2<f64>>()
                 .unwrap();
 
-            let key1 = borrow_key(view1.as_array_ptr());
+            let key1 = borrow_key(py, view1.as_array_ptr());
 
             assert_eq!(view1.strides(), &[80, 24]);
             assert_eq!(key1.gcd_strides, 8);
@@ -732,7 +732,7 @@ mod tests {
                 .downcast_into::<PyArray2<f64>>()
                 .unwrap();
 
-            let key2 = borrow_key(view2.as_array_ptr());
+            let key2 = borrow_key(py, view2.as_array_ptr());
 
             assert_eq!(view2.strides(), &[80, 24]);
             assert_eq!(key2.gcd_strides, 8);
@@ -743,7 +743,7 @@ mod tests {
                 .downcast_into::<PyArray2<f64>>()
                 .unwrap();
 
-            let key3 = borrow_key(view3.as_array_ptr());
+            let key3 = borrow_key(py, view3.as_array_ptr());
 
             assert_eq!(view3.strides(), &[80, 16]);
             assert_eq!(key3.gcd_strides, 16);
@@ -754,7 +754,7 @@ mod tests {
                 .downcast_into::<PyArray2<f64>>()
                 .unwrap();
 
-            let key4 = borrow_key(view4.as_array_ptr());
+            let key4 = borrow_key(py, view4.as_array_ptr());
 
             assert_eq!(view4.strides(), &[80, 16]);
             assert_eq!(key4.gcd_strides, 16);
@@ -777,7 +777,7 @@ mod tests {
             let base1 = base_address(py, array1.as_array_ptr());
             let base2 = base_address(py, array2.as_array_ptr());
 
-            let key1 = borrow_key(array1.as_array_ptr());
+            let key1 = borrow_key(py, array1.as_array_ptr());
             let _exclusive1 = array1.readwrite();
 
             {
@@ -791,7 +791,7 @@ mod tests {
                 assert_eq!(flag, -1);
             }
 
-            let key2 = borrow_key(array2.as_array_ptr());
+            let key2 = borrow_key(py, array2.as_array_ptr());
             let _shared2 = array2.readonly();
 
             {
@@ -827,7 +827,7 @@ mod tests {
                 .downcast_into::<PyArray1<f64>>()
                 .unwrap();
 
-            let key1 = borrow_key(view1.as_array_ptr());
+            let key1 = borrow_key(py, view1.as_array_ptr());
             let exclusive1 = view1.readwrite();
 
             {
@@ -847,7 +847,7 @@ mod tests {
                 .downcast_into::<PyArray1<f64>>()
                 .unwrap();
 
-            let key2 = borrow_key(view2.as_array_ptr());
+            let key2 = borrow_key(py, view2.as_array_ptr());
             let shared2 = view2.readonly();
 
             {
@@ -870,7 +870,7 @@ mod tests {
                 .downcast_into::<PyArray1<f64>>()
                 .unwrap();
 
-            let key3 = borrow_key(view3.as_array_ptr());
+            let key3 = borrow_key(py, view3.as_array_ptr());
             let shared3 = view3.readonly();
 
             {
@@ -896,7 +896,7 @@ mod tests {
                 .downcast_into::<PyArray1<f64>>()
                 .unwrap();
 
-            let key4 = borrow_key(view4.as_array_ptr());
+            let key4 = borrow_key(py, view4.as_array_ptr());
             let shared4 = view4.readonly();
 
             {
