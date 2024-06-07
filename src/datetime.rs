@@ -232,7 +232,7 @@ impl TypeDescriptors {
 
                 // SAFETY: `self.npy_type` is either `NPY_DATETIME` or `NPY_TIMEDELTA` which implies the type of `c_metadata`.
                 unsafe {
-                    let metadata = &mut *(PyDataType_C_METADATA(dtype.as_dtype_ptr())
+                    let metadata = &mut *(PyDataType_C_METADATA(py, dtype.as_dtype_ptr())
                         as *mut PyArray_DatetimeDTypeMetaData);
 
                     metadata.meta.base = unit;

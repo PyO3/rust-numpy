@@ -17,7 +17,7 @@ use pyo3::{
 use pyo3::{sync::GILOnceCell, Py};
 
 use crate::npyffi::{
-    FlagType, NpyTypes, PyArray_Descr, PyDataType_ALIGNMENT, PyDataType_ELSIZE, PyDataType_FIELDS,
+    NpyTypes, PyArray_Descr, PyDataType_ALIGNMENT, PyDataType_ELSIZE, PyDataType_FIELDS,
     PyDataType_FLAGS, PyDataType_NAMES, PyDataType_SUBARRAY, NPY_ALIGNED_STRUCT,
     NPY_BYTEORDER_CHAR, NPY_ITEM_HASOBJECT, NPY_TYPES, PY_ARRAY_API,
 };
@@ -204,8 +204,8 @@ impl PyArrayDescr {
     /// Equivalent to [`numpy.dtype.itemsize`][dtype-itemsize].
     ///
     /// [dtype-itemsiize]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.itemsize.html
-    pub fn itemsize(&self) -> usize {
-        self.as_borrowed().itemsize()
+    pub fn itemsize<'py>(&self, py: Python<'py>) -> usize {
+        self.as_borrowed().itemsize(py)
     }
 
     /// Returns the required alignment (bytes) of this type descriptor according to the compiler.
@@ -213,8 +213,8 @@ impl PyArrayDescr {
     /// Equivalent to [`numpy.dtype.alignment`][dtype-alignment].
     ///
     /// [dtype-alignment]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.alignment.html
-    pub fn alignment(&self) -> usize {
-        self.as_borrowed().alignment()
+    pub fn alignment<'py>(&self, py: Python<'py>) -> usize {
+        self.as_borrowed().alignment(py)
     }
 
     /// Returns an ASCII character indicating the byte-order of this type descriptor object.
@@ -255,8 +255,8 @@ impl PyArrayDescr {
     /// Equivalent to [`numpy.dtype.flags`][dtype-flags].
     ///
     /// [dtype-flags]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.flags.html
-    pub fn flags(&self) -> FlagType {
-        self.as_borrowed().flags()
+    pub fn flags<'py>(&self, py: Python<'py>) -> u64 {
+        self.as_borrowed().flags(py)
     }
 
     /// Returns the number of dimensions if this type descriptor represents a sub-array, and zero otherwise.
@@ -264,8 +264,8 @@ impl PyArrayDescr {
     /// Equivalent to [`numpy.dtype.ndim`][dtype-ndim].
     ///
     /// [dtype-ndim]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.ndim.html
-    pub fn ndim(&self) -> usize {
-        self.as_borrowed().ndim()
+    pub fn ndim<'py>(&self, py: Python<'py>) -> usize {
+        self.as_borrowed().ndim(py)
     }
 
     /// Returns the type descriptor for the base element of subarrays, regardless of their dimension or shape.
@@ -295,8 +295,8 @@ impl PyArrayDescr {
     /// Equivalent to [`numpy.dtype.hasobject`][dtype-hasobject].
     ///
     /// [dtype-hasobject]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.hasobject.html
-    pub fn has_object(&self) -> bool {
-        self.as_borrowed().has_object()
+    pub fn has_object<'py>(&self, py: Python<'py>) -> bool {
+        self.as_borrowed().has_object(py)
     }
 
     /// Returns true if the type descriptor is a struct which maintains field alignment.
@@ -307,18 +307,18 @@ impl PyArrayDescr {
     /// Equivalent to [`numpy.dtype.isalignedstruct`][dtype-isalignedstruct].
     ///
     /// [dtype-isalignedstruct]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.isalignedstruct.html
-    pub fn is_aligned_struct(&self) -> bool {
-        self.as_borrowed().is_aligned_struct()
+    pub fn is_aligned_struct<'py>(&self, py: Python<'py>) -> bool {
+        self.as_borrowed().is_aligned_struct(py)
     }
 
     /// Returns true if the type descriptor is a sub-array.
-    pub fn has_subarray(&self) -> bool {
-        self.as_borrowed().has_subarray()
+    pub fn has_subarray<'py>(&self, py: Python<'py>) -> bool {
+        self.as_borrowed().has_subarray(py)
     }
 
     /// Returns true if the type descriptor is a structured type.
-    pub fn has_fields(&self) -> bool {
-        self.as_borrowed().has_fields()
+    pub fn has_fields<'py>(&self, py: Python<'py>) -> bool {
+        self.as_borrowed().has_fields(py)
     }
 
     /// Returns true if type descriptor byteorder is native, or `None` if not applicable.
@@ -395,8 +395,8 @@ pub trait PyArrayDescrMethods<'py>: Sealed {
     ///
     /// [dtype-itemsiize]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.itemsize.html
 
-    fn itemsize(&self) -> usize {
-        PyDataType_ELSIZE(self.as_dtype_ptr()).max(0) as _
+    fn itemsize(&self, py: Python<'py>) -> usize {
+        unsafe { PyDataType_ELSIZE(py, self.as_dtype_ptr()).max(0) as _ }
     }
 
     /// Returns the required alignment (bytes) of this type descriptor according to the compiler.
@@ -404,8 +404,8 @@ pub trait PyArrayDescrMethods<'py>: Sealed {
     /// Equivalent to [`numpy.dtype.alignment`][dtype-alignment].
     ///
     /// [dtype-alignment]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.alignment.html
-    fn alignment(&self) -> usize {
-        PyDataType_ALIGNMENT(self.as_dtype_ptr()).max(0) as _
+    fn alignment(&self, py: Python<'py>) -> usize {
+        unsafe { PyDataType_ALIGNMENT(py, self.as_dtype_ptr()).max(0) as _ }
     }
 
     /// Returns an ASCII character indicating the byte-order of this type descriptor object.
@@ -446,8 +446,8 @@ pub trait PyArrayDescrMethods<'py>: Sealed {
     /// Equivalent to [`numpy.dtype.flags`][dtype-flags].
     ///
     /// [dtype-flags]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.flags.html
-    fn flags(&self) -> FlagType {
-        PyDataType_FLAGS(self.as_dtype_ptr())
+    fn flags(&self, py: Python<'py>) -> u64 {
+        unsafe { PyDataType_FLAGS(py, self.as_dtype_ptr()) }
     }
 
     /// Returns the number of dimensions if this type descriptor represents a sub-array, and zero otherwise.
@@ -455,11 +455,11 @@ pub trait PyArrayDescrMethods<'py>: Sealed {
     /// Equivalent to [`numpy.dtype.ndim`][dtype-ndim].
     ///
     /// [dtype-ndim]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.ndim.html
-    fn ndim(&self) -> usize {
-        if !self.has_subarray() {
+    fn ndim(&self, py: Python<'py>) -> usize {
+        if !self.has_subarray(py) {
             return 0;
         }
-        unsafe { PyTuple_Size((*PyDataType_SUBARRAY(self.as_dtype_ptr())).shape).max(0) as _ }
+        unsafe { PyTuple_Size((*PyDataType_SUBARRAY(py, self.as_dtype_ptr())).shape).max(0) as _ }
     }
 
     /// Returns the type descriptor for the base element of subarrays, regardless of their dimension or shape.
@@ -485,8 +485,8 @@ pub trait PyArrayDescrMethods<'py>: Sealed {
     /// Equivalent to [`numpy.dtype.hasobject`][dtype-hasobject].
     ///
     /// [dtype-hasobject]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.hasobject.html
-    fn has_object(&self) -> bool {
-        self.flags() & NPY_ITEM_HASOBJECT != 0
+    fn has_object(&self, py: Python<'py>) -> bool {
+        self.flags(py) & NPY_ITEM_HASOBJECT != 0
     }
 
     /// Returns true if the type descriptor is a struct which maintains field alignment.
@@ -497,20 +497,20 @@ pub trait PyArrayDescrMethods<'py>: Sealed {
     /// Equivalent to [`numpy.dtype.isalignedstruct`][dtype-isalignedstruct].
     ///
     /// [dtype-isalignedstruct]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.isalignedstruct.html
-    fn is_aligned_struct(&self) -> bool {
-        self.flags() & NPY_ALIGNED_STRUCT != 0
+    fn is_aligned_struct(&self, py: Python<'py>) -> bool {
+        self.flags(py) & NPY_ALIGNED_STRUCT != 0
     }
 
     /// Returns true if the type descriptor is a sub-array.
-    fn has_subarray(&self) -> bool {
+    fn has_subarray(&self, py: Python<'py>) -> bool {
         // equivalent to PyDataType_HASSUBARRAY(self)
-        !PyDataType_SUBARRAY(self.as_dtype_ptr()).is_null()
+        unsafe { !PyDataType_SUBARRAY(py, self.as_dtype_ptr()).is_null() }
     }
 
     /// Returns true if the type descriptor is a structured type.
-    fn has_fields(&self) -> bool {
+    fn has_fields(&self, py: Python<'py>) -> bool {
         // equivalent to PyDataType_HASFIELDS(self)
-        !PyDataType_NAMES(self.as_dtype_ptr()).is_null()
+        unsafe { !PyDataType_NAMES(py, self.as_dtype_ptr()).is_null() }
     }
 
     /// Returns true if type descriptor byteorder is native, or `None` if not applicable.
@@ -576,13 +576,15 @@ impl<'py> PyArrayDescrMethods<'py> for Bound<'py, PyArrayDescr> {
     }
 
     fn base(&self) -> Bound<'py, PyArrayDescr> {
-        if !self.has_subarray() {
+        if !self.has_subarray(self.py()) {
             self.clone()
         } else {
             unsafe {
                 Bound::from_borrowed_ptr(
                     self.py(),
-                    (*PyDataType_SUBARRAY(self.as_dtype_ptr())).base.cast(),
+                    (*PyDataType_SUBARRAY(self.py(), self.as_dtype_ptr()))
+                        .base
+                        .cast(),
                 )
                 .downcast_into_unchecked()
             }
@@ -590,12 +592,15 @@ impl<'py> PyArrayDescrMethods<'py> for Bound<'py, PyArrayDescr> {
     }
 
     fn shape(&self) -> Vec<usize> {
-        if !self.has_subarray() {
+        if !self.has_subarray(self.py()) {
             Vec::new()
         } else {
             // NumPy guarantees that shape is a tuple of non-negative integers so this should never panic.
             unsafe {
-                Borrowed::from_ptr(self.py(), (*PyDataType_SUBARRAY(self.as_dtype_ptr())).shape)
+                Borrowed::from_ptr(
+                    self.py(),
+                    (*PyDataType_SUBARRAY(self.py(), self.as_dtype_ptr())).shape,
+                )
             }
             .extract()
             .unwrap()
@@ -603,20 +608,24 @@ impl<'py> PyArrayDescrMethods<'py> for Bound<'py, PyArrayDescr> {
     }
 
     fn names(&self) -> Option<Vec<String>> {
-        if !self.has_fields() {
+        if !self.has_fields(self.py()) {
             return None;
         }
-        let names = unsafe { Borrowed::from_ptr(self.py(), PyDataType_NAMES(self.as_dtype_ptr())) };
+        let names = unsafe {
+            Borrowed::from_ptr(self.py(), PyDataType_NAMES(self.py(), self.as_dtype_ptr()))
+        };
         names.extract().ok()
     }
 
     fn get_field(&self, name: &str) -> PyResult<(Bound<'py, PyArrayDescr>, usize)> {
-        if !self.has_fields() {
+        if !self.has_fields(self.py()) {
             return Err(PyValueError::new_err(
                 "cannot get field information: type descriptor has no fields",
             ));
         }
-        let dict = unsafe { Borrowed::from_ptr(self.py(), PyDataType_FIELDS(self.as_dtype_ptr())) };
+        let dict = unsafe {
+            Borrowed::from_ptr(self.py(), PyDataType_FIELDS(self.py(), self.as_dtype_ptr()))
+        };
         let dict = unsafe { dict.downcast_unchecked::<PyDict>() };
         // NumPy guarantees that fields are tuples of proper size and type, so this should never panic.
         let tuple = dict
@@ -821,7 +830,7 @@ mod tests {
 
             let dt = PyArrayDescr::new_bound(py, [("a", "O"), ("b", "?")].as_ref()).unwrap();
             assert_eq!(dt.names(), Some(vec!["a".to_owned(), "b".to_owned()]));
-            assert!(dt.has_object());
+            assert!(dt.has_object(py));
             assert!(dt
                 .get_field("a")
                 .unwrap()
@@ -875,21 +884,21 @@ mod tests {
             let dt = dtype_bound::<f64>(py);
 
             assert_eq!(dt.num(), NPY_TYPES::NPY_DOUBLE as c_int);
-            assert_eq!(dt.flags(), 0);
+            assert_eq!(dt.flags(py), 0);
             assert_eq!(dt.typeobj().qualname().unwrap(), "float64");
             assert_eq!(dt.char(), b'd');
             assert_eq!(dt.kind(), b'f');
             assert_eq!(dt.byteorder(), b'=');
             assert_eq!(dt.is_native_byteorder(), Some(true));
-            assert_eq!(dt.itemsize(), 8);
-            assert_eq!(dt.alignment(), 8);
-            assert!(!dt.has_object());
+            assert_eq!(dt.itemsize(py), 8);
+            assert_eq!(dt.alignment(py), 8);
+            assert!(!dt.has_object(py));
             assert!(dt.names().is_none());
-            assert!(!dt.has_fields());
-            assert!(!dt.is_aligned_struct());
-            assert!(!dt.has_subarray());
+            assert!(!dt.has_fields(py));
+            assert!(!dt.is_aligned_struct(py));
+            assert!(!dt.has_subarray(py));
             assert!(dt.base().is_equiv_to(&dt));
-            assert_eq!(dt.ndim(), 0);
+            assert_eq!(dt.ndim(py), 0);
             assert_eq!(dt.shape(), vec![]);
         });
     }
@@ -911,20 +920,20 @@ mod tests {
                 .unwrap();
 
             assert_eq!(dt.num(), NPY_TYPES::NPY_VOID as c_int);
-            assert_eq!(dt.flags(), 0);
+            assert_eq!(dt.flags(py), 0);
             assert_eq!(dt.typeobj().qualname().unwrap(), "void");
             assert_eq!(dt.char(), b'V');
             assert_eq!(dt.kind(), b'V');
             assert_eq!(dt.byteorder(), b'|');
             assert_eq!(dt.is_native_byteorder(), None);
-            assert_eq!(dt.itemsize(), 48);
-            assert_eq!(dt.alignment(), 8);
-            assert!(!dt.has_object());
+            assert_eq!(dt.itemsize(py), 48);
+            assert_eq!(dt.alignment(py), 8);
+            assert!(!dt.has_object(py));
             assert!(dt.names().is_none());
-            assert!(!dt.has_fields());
-            assert!(!dt.is_aligned_struct());
-            assert!(dt.has_subarray());
-            assert_eq!(dt.ndim(), 2);
+            assert!(!dt.has_fields(py));
+            assert!(!dt.is_aligned_struct(py));
+            assert!(dt.has_subarray(py));
+            assert_eq!(dt.ndim(py), 2);
             assert_eq!(dt.shape(), vec![2, 3]);
             assert!(dt.base().is_equiv_to(&dtype_bound::<f64>(py)));
         });
@@ -947,25 +956,25 @@ mod tests {
                 .unwrap();
 
             assert_eq!(dt.num(), NPY_TYPES::NPY_VOID as c_int);
-            assert_ne!(dt.flags() & NPY_ITEM_HASOBJECT, 0);
-            assert_ne!(dt.flags() & NPY_NEEDS_PYAPI, 0);
-            assert_ne!(dt.flags() & NPY_ALIGNED_STRUCT, 0);
+            assert_ne!(dt.flags(py) & NPY_ITEM_HASOBJECT, 0);
+            assert_ne!(dt.flags(py) & NPY_NEEDS_PYAPI, 0);
+            assert_ne!(dt.flags(py) & NPY_ALIGNED_STRUCT, 0);
             assert_eq!(dt.typeobj().qualname().unwrap(), "void");
             assert_eq!(dt.char(), b'V');
             assert_eq!(dt.kind(), b'V');
             assert_eq!(dt.byteorder(), b'|');
             assert_eq!(dt.is_native_byteorder(), None);
-            assert_eq!(dt.itemsize(), 24);
-            assert_eq!(dt.alignment(), 8);
-            assert!(dt.has_object());
+            assert_eq!(dt.itemsize(py), 24);
+            assert_eq!(dt.alignment(py), 8);
+            assert!(dt.has_object(py));
             assert_eq!(
                 dt.names(),
                 Some(vec!["x".to_owned(), "y".to_owned(), "z".to_owned()])
             );
-            assert!(dt.has_fields());
-            assert!(dt.is_aligned_struct());
-            assert!(!dt.has_subarray());
-            assert_eq!(dt.ndim(), 0);
+            assert!(dt.has_fields(py));
+            assert!(dt.is_aligned_struct(py));
+            assert!(!dt.has_subarray(py));
+            assert_eq!(dt.ndim(py), 0);
             assert_eq!(dt.shape(), vec![]);
             assert!(dt.base().is_equiv_to(&dt));
             let x = dt.get_field("x").unwrap();
