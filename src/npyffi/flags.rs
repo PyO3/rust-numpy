@@ -63,24 +63,19 @@ pub const NPY_ITER_OVERLAP_ASSUME_ELEMENTWISE: npy_uint32 = 0x40000000;
 pub const NPY_ITER_GLOBAL_FLAGS: npy_uint32 = 0x0000ffff;
 pub const NPY_ITER_PER_OP_FLAGS: npy_uint32 = 0xffff0000;
 
-#[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
-pub use super::npy_char as FlagType;
-#[cfg(feature = "numpy-2")]
-pub use u64 as FlagType;
-
-pub const NPY_ITEM_REFCOUNT: FlagType = 0x01;
-pub const NPY_ITEM_HASOBJECT: FlagType = 0x01;
-pub const NPY_LIST_PICKLE: FlagType = 0x02;
-pub const NPY_ITEM_IS_POINTER: FlagType = 0x04;
-pub const NPY_NEEDS_INIT: FlagType = 0x08;
-pub const NPY_NEEDS_PYAPI: FlagType = 0x10;
-pub const NPY_USE_GETITEM: FlagType = 0x20;
-pub const NPY_USE_SETITEM: FlagType = 0x40;
+pub const NPY_ITEM_REFCOUNT: u64 = 0x01;
+pub const NPY_ITEM_HASOBJECT: u64 = 0x01;
+pub const NPY_LIST_PICKLE: u64 = 0x02;
+pub const NPY_ITEM_IS_POINTER: u64 = 0x04;
+pub const NPY_NEEDS_INIT: u64 = 0x08;
+pub const NPY_NEEDS_PYAPI: u64 = 0x10;
+pub const NPY_USE_GETITEM: u64 = 0x20;
+pub const NPY_USE_SETITEM: u64 = 0x40;
 #[allow(overflowing_literals)]
-pub const NPY_ALIGNED_STRUCT: FlagType = 0x80;
-pub const NPY_FROM_FIELDS: FlagType =
+pub const NPY_ALIGNED_STRUCT: u64 = 0x80;
+pub const NPY_FROM_FIELDS: u64 =
     NPY_NEEDS_INIT | NPY_LIST_PICKLE | NPY_ITEM_REFCOUNT | NPY_NEEDS_PYAPI;
-pub const NPY_OBJECT_DTYPE_FLAGS: FlagType = NPY_LIST_PICKLE
+pub const NPY_OBJECT_DTYPE_FLAGS: u64 = NPY_LIST_PICKLE
     | NPY_USE_GETITEM
     | NPY_ITEM_IS_POINTER
     | NPY_ITEM_REFCOUNT

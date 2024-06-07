@@ -184,7 +184,7 @@ impl TypeDescriptors {
                 let dtype = PyArrayDescr::new_from_npy_type(py, npy_type);
 
                 let descr = &mut *dtype.as_dtype_ptr();
-                PyDataType_SET_ELSIZE(descr, size.try_into().unwrap());
+                PyDataType_SET_ELSIZE(py, descr, size.try_into().unwrap());
                 descr.byteorder = byteorder;
 
                 entry.insert(dtype.into())

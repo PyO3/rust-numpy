@@ -141,15 +141,10 @@ pub enum NPY_TYPES {
     NPY_DATETIME = 21,
     NPY_TIMEDELTA = 22,
     NPY_HALF = 23,
-    #[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
-    NPY_NTYPES = 24,
-    #[cfg(all(not(feature = "numpy-1"), feature = "numpy-2"))]
     NPY_NTYPES_LEGACY = 24,
     NPY_NOTYPE = 25,
-    #[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
     NPY_CHAR = 26,
     NPY_USERDEF = 256,
-    #[cfg(feature = "numpy-2")]
     NPY_VSTRING = 2056,
 }
 

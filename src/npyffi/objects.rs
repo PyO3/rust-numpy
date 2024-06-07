@@ -8,8 +8,6 @@ use pyo3::ffi::*;
 use std::os::raw::*;
 
 use super::types::*;
-
-#[cfg(all(feature = "numpy-1", feature = "numpy-2"))]
 use crate::npyffi::*;
 
 #[repr(C)]
@@ -26,7 +24,6 @@ pub struct PyArrayObject {
     pub weakreflist: *mut PyObject,
 }
 
-#[cfg(all(feature = "numpy-1", feature = "numpy-2"))]
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct PyArray_Descr {
@@ -100,52 +97,21 @@ struct _PyArray_LegacyDescr {
     pub c_metadata: *mut NpyAuxData,
 }
 
-#[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
-pub use PyArray_DescrProto as PyArray_Descr;
-
-#[cfg(all(not(feature = "numpy-1"), feature = "numpy-2"))]
-pub use _PyArray_DescrNumPy2 as PyArray_Descr;
-
-#[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
 #[allow(non_snake_case)]
 #[inline(always)]
-pub fn PyDataType_ISLEGACY(_dtype: *const PyArray_Descr) -> bool {
-    true
+pub unsafe fn PyDataType_ISLEGACY(dtype: *const PyArray_Descr) -> bool {
+    (*dtype).type_num < NPY_TYPES::NPY_VSTRING as i32 && (*dtype).type_num >= 0
 }
 
-#[cfg(feature = "numpy-2")]
 #[allow(non_snake_case)]
 #[inline(always)]
-pub fn PyDataType_ISLEGACY(dtype: *const PyArray_Descr) -> bool {
-    unsafe { (*dtype).type_num < NPY_TYPES::NPY_VSTRING as i32 && (*dtype).type_num >= 0 }
-}
-
-#[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
-#[allow(non_snake_case)]
-#[inline(always)]
-pub fn PyDataType_SET_ELSIZE(dtype: *mut PyArray_Descr, size: npy_intp) {
-    unsafe {
-        (*dtype).elsize = size as c_int;
-    }
-}
-
-#[cfg(all(not(feature = "numpy-1"), feature = "numpy-2"))]
-#[allow(non_snake_case)]
-#[inline(always)]
-pub fn PyDataType_SET_ELSIZE(dtype: *mut PyArray_Descr, size: npy_intp) {
-    unsafe {
-        (*dtype).elsize = size;
-    }
-}
-
-#[cfg(all(feature = "numpy-1", feature = "numpy-2"))]
-#[allow(non_snake_case)]
-#[inline(always)]
-pub fn PyDataType_SET_ELSIZE(dtype: *mut PyArray_Descr, size: npy_intp) {
-    let (_, api_version) = *ABI_API_VERSIONS
-        .get()
-        .expect("ABI_API_VERSIONS is initialized");
-    if api_version < NPY_2_0_API_VERSION {
+pub unsafe fn PyDataType_SET_ELSIZE<'py>(
+    py: Python<'py>,
+    dtype: *mut PyArray_Descr,
+    size: npy_intp,
+) {
+    let api_version = *API_VERSION.get(py).expect("API_VERSION is initialized");
+    if api_version < API_VERSION_2_0 {
         unsafe {
             (*(dtype as *mut PyArray_DescrProto)).elsize = size as c_int;
         }
@@ -156,73 +122,27 @@ pub fn PyDataType_SET_ELSIZE(dtype: *mut PyArray_Descr, size: npy_intp) {
     }
 }
 
-#[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
 #[allow(non_snake_case)]
 #[inline(always)]
-pub fn PyDataType_FLAGS(dtype: *const PyArray_Descr) -> npy_uint64 {
-    unsafe { (*dtype).flags as c_uchar as npy_uint64 }
-}
-
-#[cfg(all(not(feature = "numpy-1"), feature = "numpy-2"))]
-#[allow(non_snake_case)]
-#[inline(always)]
-pub fn PyDataType_FLAGS(dtype: *const PyArray_Descr) -> npy_uint64 {
-    unsafe { (*dtype).flags }
-}
-
-#[cfg(all(feature = "numpy-1", feature = "numpy-2"))]
-#[allow(non_snake_case)]
-#[inline(always)]
-pub fn PyDataType_FLAGS(dtype: *const PyArray_Descr) -> npy_uint64 {
-    let (_, api_version) = *ABI_API_VERSIONS
-        .get()
-        .expect("ABI_API_VERSIONS is initialized");
-    if api_version < NPY_2_0_API_VERSION {
+pub unsafe fn PyDataType_FLAGS<'py>(py: Python<'py>, dtype: *const PyArray_Descr) -> npy_uint64 {
+    let api_version = *API_VERSION.get(py).expect("API_VERSION is initialized");
+    if api_version < API_VERSION_2_0 {
         unsafe { (*(dtype as *mut PyArray_DescrProto)).flags as c_uchar as npy_uint64 }
     } else {
         unsafe { (*(dtype as *mut _PyArray_DescrNumPy2)).flags }
     }
 }
 
-#[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
-macro_rules! DESCR_ACCESSOR {
+macro_rules! define_descr_accessor {
     ($name:ident, $property:ident, $type:ty, $legacy_only:literal, $zero:expr) => {
         #[allow(non_snake_case)]
         #[inline(always)]
-        pub fn $name(dtype: *const PyArray_Descr) -> $type {
-            unsafe { (*dtype).$property as $type }
-        }
-    };
-}
-
-#[cfg(all(not(feature = "numpy-1"), feature = "numpy-2"))]
-macro_rules! DESCR_ACCESSOR {
-    ($name:ident, $property:ident, $type:ty, $legacy_only:literal, $zero:expr) => {
-        #[allow(non_snake_case)]
-        #[inline(always)]
-        pub fn $name(dtype: *const PyArray_Descr) -> $type {
+        pub unsafe fn $name<'py>(py: Python<'py>, dtype: *const PyArray_Descr) -> $type {
             if $legacy_only && !PyDataType_ISLEGACY(dtype) {
                 $zero
             } else {
-                unsafe { (*(dtype as *const _PyArray_LegacyDescr)).$property }
-            }
-        }
-    };
-}
-
-#[cfg(all(feature = "numpy-1", feature = "numpy-2"))]
-macro_rules! DESCR_ACCESSOR {
-    ($name:ident, $property:ident, $type:ty, $legacy_only:literal, $zero:expr) => {
-        #[allow(non_snake_case)]
-        #[inline(always)]
-        pub fn $name(dtype: *const PyArray_Descr) -> $type {
-            if $legacy_only && !PyDataType_ISLEGACY(dtype) {
-                $zero
-            } else {
-                let (_, api_version) = *ABI_API_VERSIONS
-                    .get()
-                    .expect("ABI_API_VERSIONS is initialized");
-                if api_version < NPY_2_0_API_VERSION {
+                let api_version = *API_VERSION.get(py).expect("API_VERSION is initialized");
+                if api_version < API_VERSION_2_0 {
                     unsafe { (*(dtype as *mut PyArray_DescrProto)).$property as $type }
                 } else {
                     unsafe { (*(dtype as *const _PyArray_LegacyDescr)).$property }
@@ -232,37 +152,37 @@ macro_rules! DESCR_ACCESSOR {
     };
 }
 
-DESCR_ACCESSOR!(PyDataType_ELSIZE, elsize, npy_intp, false, 0);
-DESCR_ACCESSOR!(PyDataType_ALIGNMENT, alignment, npy_intp, false, 0);
-DESCR_ACCESSOR!(
+define_descr_accessor!(PyDataType_ELSIZE, elsize, npy_intp, false, 0);
+define_descr_accessor!(PyDataType_ALIGNMENT, alignment, npy_intp, false, 0);
+define_descr_accessor!(
     PyDataType_METADATA,
     metadata,
     *mut PyObject,
     true,
     std::ptr::null_mut()
 );
-DESCR_ACCESSOR!(
+define_descr_accessor!(
     PyDataType_SUBARRAY,
     subarray,
     *mut PyArray_ArrayDescr,
     true,
     std::ptr::null_mut()
 );
-DESCR_ACCESSOR!(
+define_descr_accessor!(
     PyDataType_NAMES,
     names,
     *mut PyObject,
     true,
     std::ptr::null_mut()
 );
-DESCR_ACCESSOR!(
+define_descr_accessor!(
     PyDataType_FIELDS,
     fields,
     *mut PyObject,
     true,
     std::ptr::null_mut()
 );
-DESCR_ACCESSOR!(
+define_descr_accessor!(
     PyDataType_C_METADATA,
     c_metadata,
     *mut NpyAuxData,
@@ -645,15 +565,10 @@ pub struct PyArray_DatetimeDTypeMetaData {
 // npy_packed_static_string and npy_string_allocator are opaque pointers
 // consider extern types when they are stabilized
 // https://github.com/rust-lang/rust/issues/43467
-#[cfg(all(not(feature = "numpy-1"), feature = "numpy-2"))]
 pub type npy_packed_static_string = c_void;
-#[cfg(all(not(feature = "numpy-1"), feature = "numpy-2"))]
 pub type npy_string_allocator = c_void;
-
-#[cfg(all(not(feature = "numpy-1"), feature = "numpy-2"))]
 pub type PyArray_DTypeMeta = PyTypeObject;
 
-#[cfg(all(not(feature = "numpy-1"), feature = "numpy-2"))]
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct npy_static_string {
@@ -661,7 +576,6 @@ pub struct npy_static_string {
     buf: *const c_char,
 }
 
-#[cfg(all(not(feature = "numpy-1"), feature = "numpy-2"))]
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct PyArray_StringDTypeObject {
@@ -676,7 +590,6 @@ pub struct PyArray_StringDTypeObject {
     pub allocator: *mut npy_string_allocator,
 }
 
-#[cfg(all(not(feature = "numpy-1"), feature = "numpy-2"))]
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct PyArrayMethod_Spec {
@@ -689,7 +602,6 @@ pub struct PyArrayMethod_Spec {
     pub slots: *mut PyType_Slot,
 }
 
-#[cfg(all(not(feature = "numpy-1"), feature = "numpy-2"))]
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct PyArrayDTypeMeta_Spec {
