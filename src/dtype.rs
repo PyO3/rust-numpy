@@ -255,7 +255,7 @@ impl PyArrayDescr {
     /// Equivalent to [`numpy.dtype.flags`][dtype-flags].
     ///
     /// [dtype-flags]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.flags.html
-    pub fn flags<'py>(&self) -> u64 {
+    pub fn flags(&self) -> u64 {
         self.as_borrowed().flags()
     }
 
@@ -264,7 +264,7 @@ impl PyArrayDescr {
     /// Equivalent to [`numpy.dtype.ndim`][dtype-ndim].
     ///
     /// [dtype-ndim]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.ndim.html
-    pub fn ndim<'py>(&self) -> usize {
+    pub fn ndim(&self) -> usize {
         self.as_borrowed().ndim()
     }
 
