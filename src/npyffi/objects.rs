@@ -8,6 +8,7 @@ use pyo3::ffi::*;
 use std::os::raw::*;
 
 use super::types::*;
+use crate::npyffi::*;
 
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -31,6 +32,18 @@ pub struct PyArray_Descr {
     pub kind: c_char,
     pub type_: c_char,
     pub byteorder: c_char,
+    pub _former_flags: c_char,
+    pub type_num: c_int,
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct PyArray_DescrProto {
+    pub ob_base: PyObject,
+    pub typeobj: *mut PyTypeObject,
+    pub kind: c_char,
+    pub type_: c_char,
+    pub byteorder: c_char,
     pub flags: c_char,
     pub type_num: c_int,
     pub elsize: c_int,
@@ -43,6 +56,139 @@ pub struct PyArray_Descr {
     pub c_metadata: *mut NpyAuxData,
     pub hash: npy_hash_t,
 }
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct _PyArray_DescrNumPy2 {
+    pub ob_base: PyObject,
+    pub typeobj: *mut PyTypeObject,
+    pub kind: c_char,
+    pub type_: c_char,
+    pub byteorder: c_char,
+    pub _former_flags: c_char,
+    pub type_num: c_int,
+    pub flags: npy_uint64,
+    pub elsize: npy_intp,
+    pub alignment: npy_intp,
+    pub metadata: *mut PyObject,
+    pub hash: npy_hash_t,
+    pub reserved_null: [*mut std::ffi::c_void; 2],
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+struct _PyArray_LegacyDescr {
+    pub ob_base: PyObject,
+    pub typeobj: *mut PyTypeObject,
+    pub kind: c_char,
+    pub type_: c_char,
+    pub byteorder: c_char,
+    pub _former_flags: c_char,
+    pub type_num: c_int,
+    pub flags: npy_uint64,
+    pub elsize: npy_intp,
+    pub alignment: npy_intp,
+    pub metadata: *mut PyObject,
+    pub hash: npy_hash_t,
+    pub reserved_null: [*mut std::ffi::c_void; 2],
+    pub subarray: *mut PyArray_ArrayDescr,
+    pub fields: *mut PyObject,
+    pub names: *mut PyObject,
+    pub c_metadata: *mut NpyAuxData,
+}
+
+#[allow(non_snake_case)]
+#[inline(always)]
+pub unsafe fn PyDataType_ISLEGACY(dtype: *const PyArray_Descr) -> bool {
+    (*dtype).type_num < NPY_TYPES::NPY_VSTRING as i32 && (*dtype).type_num >= 0
+}
+
+#[allow(non_snake_case)]
+#[inline(always)]
+pub unsafe fn PyDataType_SET_ELSIZE<'py>(
+    py: Python<'py>,
+    dtype: *mut PyArray_Descr,
+    size: npy_intp,
+) {
+    let api_version = *API_VERSION.get(py).expect("API_VERSION is initialized");
+    if api_version < API_VERSION_2_0 {
+        unsafe {
+            (*(dtype as *mut PyArray_DescrProto)).elsize = size as c_int;
+        }
+    } else {
+        unsafe {
+            (*(dtype as *mut _PyArray_DescrNumPy2)).elsize = size;
+        }
+    }
+}
+
+#[allow(non_snake_case)]
+#[inline(always)]
+pub unsafe fn PyDataType_FLAGS<'py>(py: Python<'py>, dtype: *const PyArray_Descr) -> npy_uint64 {
+    let api_version = *API_VERSION.get(py).expect("API_VERSION is initialized");
+    if api_version < API_VERSION_2_0 {
+        unsafe { (*(dtype as *mut PyArray_DescrProto)).flags as c_uchar as npy_uint64 }
+    } else {
+        unsafe { (*(dtype as *mut _PyArray_DescrNumPy2)).flags }
+    }
+}
+
+macro_rules! define_descr_accessor {
+    ($name:ident, $property:ident, $type:ty, $legacy_only:literal, $zero:expr) => {
+        #[allow(non_snake_case)]
+        #[inline(always)]
+        pub unsafe fn $name<'py>(py: Python<'py>, dtype: *const PyArray_Descr) -> $type {
+            if $legacy_only && !PyDataType_ISLEGACY(dtype) {
+                $zero
+            } else {
+                let api_version = *API_VERSION.get(py).expect("API_VERSION is initialized");
+                if api_version < API_VERSION_2_0 {
+                    unsafe { (*(dtype as *mut PyArray_DescrProto)).$property as $type }
+                } else {
+                    unsafe { (*(dtype as *const _PyArray_LegacyDescr)).$property }
+                }
+            }
+        }
+    };
+}
+
+define_descr_accessor!(PyDataType_ELSIZE, elsize, npy_intp, false, 0);
+define_descr_accessor!(PyDataType_ALIGNMENT, alignment, npy_intp, false, 0);
+define_descr_accessor!(
+    PyDataType_METADATA,
+    metadata,
+    *mut PyObject,
+    true,
+    std::ptr::null_mut()
+);
+define_descr_accessor!(
+    PyDataType_SUBARRAY,
+    subarray,
+    *mut PyArray_ArrayDescr,
+    true,
+    std::ptr::null_mut()
+);
+define_descr_accessor!(
+    PyDataType_NAMES,
+    names,
+    *mut PyObject,
+    true,
+    std::ptr::null_mut()
+);
+define_descr_accessor!(
+    PyDataType_FIELDS,
+    fields,
+    *mut PyObject,
+    true,
+    std::ptr::null_mut()
+);
+define_descr_accessor!(
+    PyDataType_C_METADATA,
+    c_metadata,
+    *mut NpyAuxData,
+    true,
+    std::ptr::null_mut()
+);
 
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -232,7 +378,10 @@ pub struct PyUFuncObject {
     pub type_resolver: PyUFunc_TypeResolutionFunc,
     pub legacy_inner_loop_selector: PyUFunc_LegacyInnerLoopSelectionFunc,
     pub reserved2: *mut c_void,
+    #[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
     pub masked_inner_loop_selector: PyUFunc_MaskedInnerLoopSelectionFunc,
+    #[cfg(all(not(feature = "numpy-2"), feature = "numpy-2"))]
+    pub reserved3: *mut c_void,
     pub op_flags: *mut npy_uint32,
     pub iter_flags: npy_uint32,
 }
@@ -411,4 +560,54 @@ pub struct PyArray_DatetimeMetaData {
 pub struct PyArray_DatetimeDTypeMetaData {
     pub base: NpyAuxData,
     pub meta: PyArray_DatetimeMetaData,
+}
+
+// npy_packed_static_string and npy_string_allocator are opaque pointers
+// consider extern types when they are stabilized
+// https://github.com/rust-lang/rust/issues/43467
+pub type npy_packed_static_string = c_void;
+pub type npy_string_allocator = c_void;
+pub type PyArray_DTypeMeta = PyTypeObject;
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct npy_static_string {
+    size: usize,
+    buf: *const c_char,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct PyArray_StringDTypeObject {
+    pub base: PyArray_Descr,
+    pub na_object: *mut PyObject,
+    pub coerce: c_char,
+    pub has_nan_na: c_char,
+    pub has_string_na: c_char,
+    pub array_owned: c_char,
+    pub default_string: npy_static_string,
+    pub na_name: npy_static_string,
+    pub allocator: *mut npy_string_allocator,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct PyArrayMethod_Spec {
+    pub name: *const c_char,
+    pub nin: c_int,
+    pub nout: c_int,
+    pub casting: NPY_CASTING,
+    pub flags: NPY_ARRAYMETHOD_FLAGS,
+    pub dtypes: *mut *mut PyArray_DTypeMeta,
+    pub slots: *mut PyType_Slot,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct PyArrayDTypeMeta_Spec {
+    pub typeobj: *mut PyTypeObject,
+    pub flags: c_int,
+    pub casts: *mut *mut PyArrayMethod_Spec,
+    pub slots: *mut PyType_Slot,
+    pub baseclass: *mut PyTypeObject,
 }
