@@ -26,7 +26,7 @@ pyo3 = { version = "0.22.0", default-features = false, features = ["macros"] }
 rustc-hash = "1.1"
 
 [dev-dependencies]
-pyo3 = { version = "0.21.0", default-features = false, features = ["auto-initialize"] }
+pyo3 = { version = "0.22.0", default-features = false, features = ["auto-initialize"] }
 nalgebra = { version = "0.32", default-features = false, features = ["std"] }
 
 [package.metadata.docs.rs]
