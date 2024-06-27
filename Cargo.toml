@@ -33,5 +33,4 @@ nalgebra = { version = "0.32", default-features = false, features = ["std"] }
 all-features = true
 
 [features]
-default = ["gil-refs"]
-"gil-refs" = ["pyo3/gil-refs"]
+gil-refs = ["pyo3/gil-refs"]
