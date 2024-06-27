@@ -190,7 +190,7 @@ impl TypeDescriptors {
             }
         };
 
-        dtype.clone().into_bound(py)
+        dtype.bind(py).to_owned()
     }
 }
 

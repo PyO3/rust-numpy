@@ -19,9 +19,11 @@ use num_traits::AsPrimitive;
 use pyo3::{
     ffi, pyobject_native_type_base,
     types::{DerefToPyAny, PyAnyMethods, PyModule},
-    AsPyPointer, Bound, DowncastError, FromPyObject, IntoPy, Py, PyAny, PyErr, PyNativeType,
-    PyObject, PyResult, PyTypeInfo, Python,
+    AsPyPointer, Bound, DowncastError, IntoPy, Py, PyAny, PyErr, PyObject, PyResult, PyTypeInfo,
+    Python,
 };
+#[cfg(feature = "gil-refs")]
+use pyo3::{FromPyObject, PyNativeType};
 
 use crate::borrow::{PyReadonlyArray, PyReadwriteArray};
 use crate::cold;
@@ -170,6 +172,7 @@ impl<T, D> IntoPy<Py<PyArray<T, D>>> for &'_ PyArray<T, D> {
     }
 }
 
+#[cfg(feature = "gil-refs")]
 impl<T, D> From<&'_ PyArray<T, D>> for Py<PyArray<T, D>> {
     #[inline]
     fn from(other: &PyArray<T, D>) -> Self {
@@ -189,6 +192,7 @@ impl<T, D> IntoPy<PyObject> for PyArray<T, D> {
     }
 }
 
+#[cfg(feature = "gil-refs")]
 impl<'py, T: Element, D: Dimension> FromPyObject<'py> for &'py PyArray<T, D> {
     fn extract_bound(ob: &Bound<'py, PyAny>) -> PyResult<Self> {
         #[allow(clippy::map_clone)] // due to MSRV
@@ -204,7 +208,10 @@ impl<T, D> PyArray<T, D> {
     pub fn as_untyped(&self) -> &PyUntypedArray {
         unsafe { &*(self as *const Self as *const PyUntypedArray) }
     }
+}
 
+#[cfg(feature = "gil-refs")]
+impl<T, D> PyArray<T, D> {
     /// Turn `&PyArray<T,D>` into `Py<PyArray<T,D>>`,
     /// i.e. a pointer into Python's heap which is independent of the GIL lifetime.
     ///
@@ -225,7 +232,6 @@ impl<T, D> PyArray<T, D> {
     ///     assert_eq!(array.bind(py).readonly().as_slice().unwrap(), [0.0; 5]);
     /// });
     /// ```
-    #[deprecated(since = "0.21.0", note = "use Bound::unbind() instead")]
     pub fn to_owned(&self) -> Py<Self> {
         unsafe { Py::from_borrowed_ptr(self.py(), self.as_ptr()) }
     }
@@ -235,7 +241,6 @@ impl<T, D> PyArray<T, D> {
     /// # Safety
     ///
     /// This is a wrapper around [`pyo3::FromPyPointer::from_owned_ptr_or_opt`] and inherits its safety contract.
-    #[deprecated(since = "0.21.0", note = "use Bound::from_owned_ptr() instead")]
     pub unsafe fn from_owned_ptr<'py>(py: Python<'py>, ptr: *mut ffi::PyObject) -> &'py Self {
         #[allow(deprecated)]
         py.from_owned_ptr(ptr)
@@ -246,7 +251,6 @@ impl<T, D> PyArray<T, D> {
     /// # Safety
     ///
     /// This is a wrapper around [`pyo3::FromPyPointer::from_borrowed_ptr_or_opt`] and inherits its safety contract.
-    #[deprecated(since = "0.21.0", note = "use Bound::from_borrowed_ptr() instead")]
     pub unsafe fn from_borrowed_ptr<'py>(py: Python<'py>, ptr: *mut ffi::PyObject) -> &'py Self {
         #[allow(deprecated)]
         py.from_borrowed_ptr(ptr)
@@ -288,27 +292,6 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         }
 
         Ok(array)
-    }
-
-    /// Same as [`shape`][PyUntypedArray::shape], but returns `D` instead of `&[usize]`.
-    #[inline(always)]
-    pub fn dims(&self) -> D {
-        D::from_dimension(&Dim(self.shape())).expect(DIMENSIONALITY_MISMATCH_ERR)
-    }
-
-    /// Deprecated form of [`PyArray<T, D>::new_bound`]
-    ///
-    /// # Safety
-    /// Same as [`PyArray<T, D>::new_bound`]
-    #[deprecated(
-        since = "0.21.0",
-        note = "will be replaced by `PyArray::new_bound` in the future"
-    )]
-    pub unsafe fn new<'py, ID>(py: Python<'py>, dims: ID, is_fortran: bool) -> &Self
-    where
-        ID: IntoDimension<Dim = D>,
-    {
-        Self::new_bound(py, dims, is_fortran).into_gil_ref()
     }
 
     /// Creates a new uninitialized NumPy array.
@@ -435,24 +418,6 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         Self::new_with_data(py, dims, strides, data_ptr, container.cast())
     }
 
-    /// Deprecated form of [`PyArray<T, D>::borrow_from_array_bound`]
-    ///
-    /// # Safety
-    /// Same as [`PyArray<T, D>::borrow_from_array_bound`]
-    #[deprecated(
-        since = "0.21.0",
-        note = "will be replaced by `PyArray::borrow_from_array_bound` in the future"
-    )]
-    pub unsafe fn borrow_from_array<'py, S>(
-        array: &ArrayBase<S, D>,
-        container: &'py PyAny,
-    ) -> &'py Self
-    where
-        S: Data<Elem = T>,
-    {
-        Self::borrow_from_array_bound(array, (*container.as_borrowed()).clone()).into_gil_ref()
-    }
-
     /// Creates a NumPy array backed by `array` and ties its ownership to the Python object `container`.
     ///
     /// # Safety
@@ -504,18 +469,6 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         )
     }
 
-    /// Deprecated form of [`PyArray<T, D>::zeros_bound`]
-    #[deprecated(
-        since = "0.21.0",
-        note = "will be replaced by `PyArray::zeros_bound` in the future"
-    )]
-    pub fn zeros<'py, ID>(py: Python<'py>, dims: ID, is_fortran: bool) -> &Self
-    where
-        ID: IntoDimension<Dim = D>,
-    {
-        Self::zeros_bound(py, dims, is_fortran).into_gil_ref()
-    }
-
     /// Construct a new NumPy array filled with zeros.
     ///
     /// If `is_fortran` is true, then it has Fortran/column-major order,
@@ -558,6 +511,104 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         }
     }
 
+    /// Constructs a NumPy from an [`ndarray::Array`]
+    ///
+    /// This method uses the internal [`Vec`] of the [`ndarray::Array`] as the base object of the NumPy array.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use numpy::{PyArray, PyArrayMethods};
+    /// use ndarray::array;
+    /// use pyo3::Python;
+    ///
+    /// Python::with_gil(|py| {
+    ///     let pyarray = PyArray::from_owned_array_bound(py, array![[1, 2], [3, 4]]);
+    ///
+    ///     assert_eq!(pyarray.readonly().as_array(), array![[1, 2], [3, 4]]);
+    /// });
+    /// ```
+    pub fn from_owned_array_bound(py: Python<'_>, mut arr: Array<T, D>) -> Bound<'_, Self> {
+        let (strides, dims) = (arr.npy_strides(), arr.raw_dim());
+        let data_ptr = arr.as_mut_ptr();
+        unsafe {
+            Self::from_raw_parts(
+                py,
+                dims,
+                strides.as_ptr(),
+                data_ptr,
+                PySliceContainer::from(arr),
+            )
+        }
+    }
+
+    /// Construct a NumPy array from a [`ndarray::ArrayBase`].
+    ///
+    /// This method allocates memory in Python's heap via the NumPy API,
+    /// and then copies all elements of the array there.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use numpy::{PyArray, PyArrayMethods};
+    /// use ndarray::array;
+    /// use pyo3::Python;
+    ///
+    /// Python::with_gil(|py| {
+    ///     let pyarray = PyArray::from_array_bound(py, &array![[1, 2], [3, 4]]);
+    ///
+    ///     assert_eq!(pyarray.readonly().as_array(), array![[1, 2], [3, 4]]);
+    /// });
+    /// ```
+    pub fn from_array_bound<'py, S>(py: Python<'py>, arr: &ArrayBase<S, D>) -> Bound<'py, Self>
+    where
+        S: Data<Elem = T>,
+    {
+        ToPyArray::to_pyarray_bound(arr, py)
+    }
+}
+
+#[cfg(feature = "gil-refs")]
+impl<T: Element, D: Dimension> PyArray<T, D> {
+    /// Same as [`shape`][PyUntypedArray::shape], but returns `D` instead of `&[usize]`.
+    #[inline(always)]
+    pub fn dims(&self) -> D {
+        D::from_dimension(&Dim(self.shape())).expect(DIMENSIONALITY_MISMATCH_ERR)
+    }
+
+    /// Deprecated form of [`PyArray<T, D>::new_bound`]
+    ///
+    /// # Safety
+    /// Same as [`PyArray<T, D>::new_bound`]
+    pub unsafe fn new<'py, ID>(py: Python<'py>, dims: ID, is_fortran: bool) -> &Self
+    where
+        ID: IntoDimension<Dim = D>,
+    {
+        Self::new_bound(py, dims, is_fortran).into_gil_ref()
+    }
+
+    /// Deprecated form of [`PyArray<T, D>::borrow_from_array_bound`]
+    ///
+    /// # Safety
+    /// Same as [`PyArray<T, D>::borrow_from_array_bound`]
+    pub unsafe fn borrow_from_array<'py, S>(
+        array: &ArrayBase<S, D>,
+        container: &'py PyAny,
+    ) -> &'py Self
+    where
+        S: Data<Elem = T>,
+    {
+        Self::borrow_from_array_bound(array, (*container.as_borrowed()).clone()).into_gil_ref()
+    }
+
+    /// Deprecated form of [`PyArray<T, D>::zeros_bound`]
+    pub fn zeros<'py, ID>(py: Python<'py>, dims: ID, is_fortran: bool) -> &Self
+    where
+        ID: IntoDimension<Dim = D>,
+    {
+        Self::zeros_bound(py, dims, is_fortran).into_gil_ref()
+    }
+
     /// Returns an immutable view of the internal data as a slice.
     ///
     /// # Safety
@@ -593,43 +644,8 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     }
 
     /// Deprecated form of [`PyArray<T, D>::from_owned_array_bound`]
-    #[deprecated(
-        since = "0.21.0",
-        note = "will be replaced by PyArray::from_owned_array_bound in the future"
-    )]
     pub fn from_owned_array<'py>(py: Python<'py>, arr: Array<T, D>) -> &'py Self {
         Self::from_owned_array_bound(py, arr).into_gil_ref()
-    }
-
-    /// Constructs a NumPy from an [`ndarray::Array`]
-    ///
-    /// This method uses the internal [`Vec`] of the [`ndarray::Array`] as the base object of the NumPy array.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use numpy::{PyArray, PyArrayMethods};
-    /// use ndarray::array;
-    /// use pyo3::Python;
-    ///
-    /// Python::with_gil(|py| {
-    ///     let pyarray = PyArray::from_owned_array_bound(py, array![[1, 2], [3, 4]]);
-    ///
-    ///     assert_eq!(pyarray.readonly().as_array(), array![[1, 2], [3, 4]]);
-    /// });
-    /// ```
-    pub fn from_owned_array_bound(py: Python<'_>, mut arr: Array<T, D>) -> Bound<'_, Self> {
-        let (strides, dims) = (arr.npy_strides(), arr.raw_dim());
-        let data_ptr = arr.as_mut_ptr();
-        unsafe {
-            Self::from_raw_parts(
-                py,
-                dims,
-                strides.as_ptr(),
-                data_ptr,
-                PySliceContainer::from(arr),
-            )
-        }
     }
 
     /// Get a reference of the specified element if the given index is valid.
@@ -808,40 +824,11 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     }
 
     /// Deprecated form of [`PyArray<T, D>::from_array_bound`]
-    #[deprecated(
-        since = "0.21.0",
-        note = "will be replaced by PyArray::from_array_bound in the future"
-    )]
     pub fn from_array<'py, S>(py: Python<'py>, arr: &ArrayBase<S, D>) -> &'py Self
     where
         S: Data<Elem = T>,
     {
         Self::from_array_bound(py, arr).into_gil_ref()
-    }
-
-    /// Construct a NumPy array from a [`ndarray::ArrayBase`].
-    ///
-    /// This method allocates memory in Python's heap via the NumPy API,
-    /// and then copies all elements of the array there.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use numpy::{PyArray, PyArrayMethods};
-    /// use ndarray::array;
-    /// use pyo3::Python;
-    ///
-    /// Python::with_gil(|py| {
-    ///     let pyarray = PyArray::from_array_bound(py, &array![[1, 2], [3, 4]]);
-    ///
-    ///     assert_eq!(pyarray.readonly().as_array(), array![[1, 2], [3, 4]]);
-    /// });
-    /// ```
-    pub fn from_array_bound<'py, S>(py: Python<'py>, arr: &ArrayBase<S, D>) -> Bound<'py, Self>
-    where
-        S: Data<Elem = T>,
-    {
-        ToPyArray::to_pyarray_bound(arr, py)
     }
 
     /// Get an immutable borrow of the NumPy array
@@ -995,10 +982,7 @@ where
 
 impl<D: Dimension> PyArray<PyObject, D> {
     /// Deprecated form of [`PyArray<T, D>::from_owned_object_array_bound`]
-    #[deprecated(
-        since = "0.21.0",
-        note = "will be replaced by PyArray::from_owned_object_array_bound in the future"
-    )]
+    #[cfg(feature = "gil-refs")]
     pub fn from_owned_object_array<'py, T>(py: Python<'py>, arr: Array<Py<T>, D>) -> &'py Self {
         Self::from_owned_object_array_bound(py, arr).into_gil_ref()
     }
@@ -1056,6 +1040,7 @@ impl<D: Dimension> PyArray<PyObject, D> {
     }
 }
 
+#[cfg(feature = "gil-refs")]
 impl<T: Copy + Element> PyArray<T, Ix0> {
     /// Get the single element of a zero-dimensional array.
     ///
@@ -1066,15 +1051,6 @@ impl<T: Copy + Element> PyArray<T, Ix0> {
 }
 
 impl<T: Element> PyArray<T, Ix1> {
-    /// Deprecated form of [`PyArray<T, Ix1>::from_slice_bound`]
-    #[deprecated(
-        since = "0.21.0",
-        note = "will be replaced by `PyArray::from_slice_bound` in the future"
-    )]
-    pub fn from_slice<'py>(py: Python<'py>, slice: &[T]) -> &'py Self {
-        Self::from_slice_bound(py, slice).into_gil_ref()
-    }
-
     /// Construct a one-dimensional array from a [mod@slice].
     ///
     /// # Example
@@ -1098,16 +1074,6 @@ impl<T: Element> PyArray<T, Ix1> {
         }
     }
 
-    /// Deprecated form of [`PyArray<T, Ix1>::from_vec_bound`]
-    #[deprecated(
-        since = "0.21.0",
-        note = "will be replaced by `PyArray::from_vec_bound` in the future"
-    )]
-    #[inline(always)]
-    pub fn from_vec<'py>(py: Python<'py>, vec: Vec<T>) -> &'py Self {
-        Self::from_vec_bound(py, vec).into_gil_ref()
-    }
-
     /// Construct a one-dimensional array from a [`Vec<T>`][Vec].
     ///
     /// # Example
@@ -1125,18 +1091,6 @@ impl<T: Element> PyArray<T, Ix1> {
     #[inline(always)]
     pub fn from_vec_bound<'py>(py: Python<'py>, vec: Vec<T>) -> Bound<'py, Self> {
         vec.into_pyarray_bound(py)
-    }
-
-    /// Deprecated form of [`PyArray<T, Ix1>::from_iter_bound`]
-    #[deprecated(
-        since = "0.21.0",
-        note = "will be replaced by PyArray::from_iter_bound in the future"
-    )]
-    pub fn from_iter<'py, I>(py: Python<'py>, iter: I) -> &'py Self
-    where
-        I: IntoIterator<Item = T>,
-    {
-        Self::from_iter_bound(py, iter).into_gil_ref()
     }
 
     /// Construct a one-dimensional array from an [`Iterator`].
@@ -1164,12 +1118,31 @@ impl<T: Element> PyArray<T, Ix1> {
     }
 }
 
+#[cfg(feature = "gil-refs")]
+impl<T: Element> PyArray<T, Ix1> {
+    /// Deprecated form of [`PyArray<T, Ix1>::from_slice_bound`]
+    pub fn from_slice<'py>(py: Python<'py>, slice: &[T]) -> &'py Self {
+        Self::from_slice_bound(py, slice).into_gil_ref()
+    }
+
+    /// Deprecated form of [`PyArray<T, Ix1>::from_vec_bound`]
+    #[inline(always)]
+    pub fn from_vec<'py>(py: Python<'py>, vec: Vec<T>) -> &'py Self {
+        Self::from_vec_bound(py, vec).into_gil_ref()
+    }
+
+    /// Deprecated form of [`PyArray<T, Ix1>::from_iter_bound`]
+    pub fn from_iter<'py, I>(py: Python<'py>, iter: I) -> &'py Self
+    where
+        I: IntoIterator<Item = T>,
+    {
+        Self::from_iter_bound(py, iter).into_gil_ref()
+    }
+}
+
 impl<T: Element> PyArray<T, Ix2> {
     /// Deprecated form of [`PyArray<T, Ix2>::from_vec2_bound`]
-    #[deprecated(
-        since = "0.21.0",
-        note = "will be replaced by `PyArray::from_vec2_bound` in the future"
-    )]
+    #[cfg(feature = "gil-refs")]
     pub fn from_vec2<'py>(py: Python<'py>, v: &[Vec<T>]) -> Result<&'py Self, FromVecError> {
         Self::from_vec2_bound(py, v).map(Bound::into_gil_ref)
     }
@@ -1219,10 +1192,7 @@ impl<T: Element> PyArray<T, Ix2> {
 
 impl<T: Element> PyArray<T, Ix3> {
     /// Deprecated form of [`PyArray<T, Ix3>::from_vec3_bound`]
-    #[deprecated(
-        since = "0.21.0",
-        note = "will be replaced by `PyArray::from_vec3_bound` in the future"
-    )]
+    #[cfg(feature = "gil-refs")]
     pub fn from_vec3<'py>(py: Python<'py>, v: &[Vec<Vec<T>>]) -> Result<&'py Self, FromVecError> {
         Self::from_vec3_bound(py, v).map(Bound::into_gil_ref)
     }
@@ -1286,6 +1256,7 @@ impl<T: Element> PyArray<T, Ix3> {
     }
 }
 
+#[cfg(feature = "gil-refs")]
 impl<T: Element, D> PyArray<T, D> {
     /// Copies `self` into `other`, performing a data type conversion if necessary.
     ///
@@ -1458,10 +1429,7 @@ impl<T: Element, D> PyArray<T, D> {
 
 impl<T: Element + AsPrimitive<f64>> PyArray<T, Ix1> {
     /// Deprecated form of [`PyArray<T, Ix1>::arange_bound`]
-    #[deprecated(
-        since = "0.21.0",
-        note = "will be replaced by PyArray::arange_bound in the future"
-    )]
+    #[cfg(feature = "gil-refs")]
     pub fn arange<'py>(py: Python<'py>, start: T, stop: T, step: T) -> &Self {
         Self::arange_bound(py, start, stop, step).into_gil_ref()
     }

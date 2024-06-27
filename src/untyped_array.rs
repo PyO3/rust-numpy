@@ -3,9 +3,11 @@
 //! [ndarray]: https://numpy.org/doc/stable/reference/arrays.ndarray.html
 use std::slice;
 
+#[cfg(feature = "gil-refs")]
+use pyo3::PyNativeType;
 use pyo3::{
     ffi, pyobject_native_type_extract, pyobject_native_type_named, types::PyAnyMethods,
-    AsPyPointer, Bound, IntoPy, PyAny, PyNativeType, PyObject, PyTypeInfo, Python,
+    AsPyPointer, Bound, IntoPy, PyAny, PyObject, PyTypeInfo, Python,
 };
 
 use crate::array::{PyArray, PyArrayMethods};
@@ -85,6 +87,7 @@ impl IntoPy<PyObject> for PyUntypedArray {
 
 pyobject_native_type_extract!(PyUntypedArray);
 
+#[cfg(feature = "gil-refs")]
 impl PyUntypedArray {
     /// Returns a raw pointer to the underlying [`PyArrayObject`][npyffi::PyArrayObject].
     #[inline]
