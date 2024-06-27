@@ -805,6 +805,7 @@ mod tests {
     use super::*;
 
     use pyo3::{py_run, types::PyTypeMethods};
+    use pyo3::types::PyString;
 
     use crate::npyffi::NPY_NEEDS_PYAPI;
 
@@ -831,7 +832,7 @@ mod tests {
 
     #[test]
     fn test_dtype_names() {
-        fn type_name<'py, T: Element>(py: Python<'py>) -> String {
+        fn type_name<T: Element>(py: Python) -> Bound<PyString> {
             dtype_bound::<T>(py).typeobj().qualname().unwrap()
         }
         Python::with_gil(|py| {
