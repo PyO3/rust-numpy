@@ -259,6 +259,7 @@ fn from_vec3_ragged() {
 }
 
 #[test]
+#[cfg(feature = "gil-refs")]
 fn extract_as_fixed() {
     Python::with_gil(|py| {
         let locals = get_np_locals(py);
@@ -273,6 +274,7 @@ fn extract_as_fixed() {
 }
 
 #[test]
+#[cfg(feature = "gil-refs")]
 fn extract_as_dyn() {
     Python::with_gil(|py| {
         let locals = get_np_locals(py);
@@ -294,6 +296,7 @@ fn extract_as_dyn() {
 }
 
 #[test]
+#[cfg(feature = "gil-refs")]
 fn extract_fail_by_check() {
     Python::with_gil(|py| {
         let locals = get_np_locals(py);
@@ -311,6 +314,7 @@ fn extract_fail_by_check() {
 }
 
 #[test]
+#[cfg(feature = "gil-refs")]
 fn extract_fail_by_dim() {
     Python::with_gil(|py| {
         let locals = get_np_locals(py);
@@ -328,6 +332,7 @@ fn extract_fail_by_dim() {
 }
 
 #[test]
+#[cfg(feature = "gil-refs")]
 fn extract_fail_by_dtype() {
     Python::with_gil(|py| {
         let locals = get_np_locals(py);
@@ -474,6 +479,7 @@ fn unbind_works() {
 }
 
 #[test]
+#[cfg(feature = "gil-refs")]
 fn to_owned_works() {
     let arr: Py<PyArray1<_>> = Python::with_gil(|py| {
         let arr = PyArray::from_slice_bound(py, &[1_i32, 2, 3]);
