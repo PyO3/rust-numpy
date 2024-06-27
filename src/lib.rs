@@ -109,7 +109,7 @@ pub use crate::borrow::{
     PyReadwriteArray5, PyReadwriteArray6, PyReadwriteArrayDyn,
 };
 pub use crate::convert::{IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
-#[allow(deprecated)]
+#[cfg(feature = "gil-refs")]
 pub use crate::dtype::dtype;
 pub use crate::dtype::{
     dtype_bound, Complex32, Complex64, Element, PyArrayDescr, PyArrayDescrMethods,

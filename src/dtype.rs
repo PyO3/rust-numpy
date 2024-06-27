@@ -10,11 +10,12 @@ use pyo3::{
     ffi::{self, PyTuple_Size},
     pyobject_native_type_extract, pyobject_native_type_named,
     types::{PyAnyMethods, PyDict, PyDictMethods, PyTuple, PyType},
-    AsPyPointer, Borrowed, Bound, PyAny, PyNativeType, PyObject, PyResult, PyTypeInfo, Python,
-    ToPyObject,
+    Borrowed, Bound, PyAny, PyObject, PyResult, PyTypeInfo, Python, ToPyObject,
 };
 #[cfg(feature = "half")]
 use pyo3::{sync::GILOnceCell, Py};
+#[cfg(feature = "gil-refs")]
+use pyo3::{AsPyPointer, PyNativeType};
 
 use crate::npyffi::{
     NpyTypes, PyArray_Descr, PyDataType_ALIGNMENT, PyDataType_ELSIZE, PyDataType_FIELDS,
@@ -60,6 +61,7 @@ unsafe impl PyTypeInfo for PyArrayDescr {
         unsafe { PY_ARRAY_API.get_type_object(py, NpyTypes::PyArrayDescr_Type) }
     }
 
+    #[cfg(feature = "gil-refs")]
     fn is_type_of(ob: &PyAny) -> bool {
         unsafe { ffi::PyObject_TypeCheck(ob.as_ptr(), Self::type_object_raw(ob.py())) > 0 }
     }
@@ -68,10 +70,7 @@ unsafe impl PyTypeInfo for PyArrayDescr {
 pyobject_native_type_extract!(PyArrayDescr);
 
 /// Returns the type descriptor ("dtype") for a registered type.
-#[deprecated(
-    since = "0.21.0",
-    note = "This will be replaced by `dtype_bound` in the future."
-)]
+#[cfg(feature = "gil-refs")]
 pub fn dtype<'py, T: Element>(py: Python<'py>) -> &'py PyArrayDescr {
     T::get_dtype_bound(py).into_gil_ref()
 }
@@ -82,18 +81,6 @@ pub fn dtype_bound<'py, T: Element>(py: Python<'py>) -> Bound<'py, PyArrayDescr>
 }
 
 impl PyArrayDescr {
-    /// Creates a new type descriptor ("dtype") object from an arbitrary object.
-    ///
-    /// Equivalent to invoking the constructor of [`numpy.dtype`][dtype].
-    ///
-    /// [dtype]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.html
-    #[deprecated(
-        since = "0.21.0",
-        note = "This will be replace by `new_bound` in the future."
-    )]
-    pub fn new<'py, T: ToPyObject + ?Sized>(py: Python<'py>, ob: &T) -> PyResult<&'py Self> {
-        Self::new_bound(py, ob).map(Bound::into_gil_ref)
-    }
     /// Creates a new type descriptor ("dtype") object from an arbitrary object.
     ///
     /// Equivalent to invoking the constructor of [`numpy.dtype`][dtype].
@@ -117,49 +104,14 @@ impl PyArrayDescr {
         inner(py, ob.to_object(py))
     }
 
-    /// Returns `self` as `*mut PyArray_Descr`.
-    pub fn as_dtype_ptr(&self) -> *mut PyArray_Descr {
-        self.as_borrowed().as_dtype_ptr()
-    }
-
-    /// Returns `self` as `*mut PyArray_Descr` while increasing the reference count.
-    ///
-    /// Useful in cases where the descriptor is stolen by the API.
-    pub fn into_dtype_ptr(&self) -> *mut PyArray_Descr {
-        self.as_borrowed().to_owned().into_dtype_ptr()
-    }
-
-    /// Shortcut for creating a type descriptor of `object` type.
-    #[deprecated(
-        since = "0.21.0",
-        note = "This will be replaced by `object_bound` in the future."
-    )]
-    pub fn object<'py>(py: Python<'py>) -> &'py Self {
-        Self::object_bound(py).into_gil_ref()
-    }
-
     /// Shortcut for creating a type descriptor of `object` type.
     pub fn object_bound(py: Python<'_>) -> Bound<'_, Self> {
         Self::from_npy_type(py, NPY_TYPES::NPY_OBJECT)
     }
 
     /// Returns the type descriptor for a registered type.
-    #[deprecated(
-        since = "0.21.0",
-        note = "This will be replaced by `of_bound` in the future."
-    )]
-    pub fn of<'py, T: Element>(py: Python<'py>) -> &'py Self {
-        Self::of_bound::<T>(py).into_gil_ref()
-    }
-
-    /// Returns the type descriptor for a registered type.
     pub fn of_bound<'py, T: Element>(py: Python<'py>) -> Bound<'py, Self> {
         T::get_dtype_bound(py)
-    }
-
-    /// Returns true if two type descriptors are equivalent.
-    pub fn is_equiv_to(&self, other: &Self) -> bool {
-        self.as_borrowed().is_equiv_to(&other.as_borrowed())
     }
 
     fn from_npy_type<'py>(py: Python<'py>, npy_type: NPY_TYPES) -> Bound<'py, Self> {
@@ -174,6 +126,45 @@ impl PyArrayDescr {
             let descr = PY_ARRAY_API.PyArray_DescrNewFromType(py, npy_type as _);
             Bound::from_owned_ptr(py, descr.cast()).downcast_into_unchecked()
         }
+    }
+}
+
+#[cfg(feature = "gil-refs")]
+impl PyArrayDescr {
+    /// Creates a new type descriptor ("dtype") object from an arbitrary object.
+    ///
+    /// Equivalent to invoking the constructor of [`numpy.dtype`][dtype].
+    ///
+    /// [dtype]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.html
+    pub fn new<'py, T: ToPyObject + ?Sized>(py: Python<'py>, ob: &T) -> PyResult<&'py Self> {
+        Self::new_bound(py, ob).map(Bound::into_gil_ref)
+    }
+
+    /// Returns `self` as `*mut PyArray_Descr`.
+    pub fn as_dtype_ptr(&self) -> *mut PyArray_Descr {
+        self.as_borrowed().as_dtype_ptr()
+    }
+
+    /// Returns `self` as `*mut PyArray_Descr` while increasing the reference count.
+    ///
+    /// Useful in cases where the descriptor is stolen by the API.
+    pub fn into_dtype_ptr(&self) -> *mut PyArray_Descr {
+        self.as_borrowed().to_owned().into_dtype_ptr()
+    }
+
+    /// Shortcut for creating a type descriptor of `object` type.
+    pub fn object<'py>(py: Python<'py>) -> &'py Self {
+        Self::object_bound(py).into_gil_ref()
+    }
+
+    /// Returns the type descriptor for a registered type.
+    pub fn of<'py, T: Element>(py: Python<'py>) -> &'py Self {
+        Self::of_bound::<T>(py).into_gil_ref()
+    }
+
+    /// Returns true if two type descriptors are equivalent.
+    pub fn is_equiv_to(&self, other: &Self) -> bool {
+        self.as_borrowed().is_equiv_to(&other.as_borrowed())
     }
 
     /// Returns the [array scalar][arrays-scalars] corresponding to this type descriptor.
@@ -701,10 +692,7 @@ pub unsafe trait Element: Clone + Send {
     const IS_COPY: bool;
 
     /// Returns the associated type descriptor ("dtype") for the given element type.
-    #[deprecated(
-        since = "0.21.0",
-        note = "This will be replaced by `get_dtype_bound` in the future."
-    )]
+    #[cfg(feature = "gil-refs")]
     fn get_dtype<'py>(py: Python<'py>) -> &'py PyArrayDescr {
         Self::get_dtype_bound(py).into_gil_ref()
     }
@@ -824,8 +812,8 @@ unsafe impl Element for PyObject {
 mod tests {
     use super::*;
 
-    use pyo3::{py_run, types::PyTypeMethods};
     use pyo3::types::PyString;
+    use pyo3::{py_run, types::PyTypeMethods};
 
     use crate::npyffi::{is_numpy_2, NPY_NEEDS_PYAPI};
 
