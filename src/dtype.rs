@@ -570,7 +570,7 @@ impl<'py> PyArrayDescrMethods<'py> for Bound<'py, PyArrayDescr> {
     }
 
     fn flags(&self) -> u64 {
-        unsafe { PyDataType_FLAGS(self.py(), self.as_dtype_ptr()) }
+        unsafe { PyDataType_FLAGS(self.py(), self.as_dtype_ptr()) as _ }
     }
 
     fn ndim(&self) -> usize {
