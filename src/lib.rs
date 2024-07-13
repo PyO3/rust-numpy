@@ -70,9 +70,8 @@ as well as the [`PyReadonlyArray::try_as_matrix`] and [`PyReadwriteArray::try_as
 //! [c-api]: https://numpy.org/doc/stable/reference/c-api
 //! [ndarray]: https://numpy.org/doc/stable/reference/arrays.ndarray.html
 #![deny(missing_docs)]
-// requiring `Debug` impls is not relevant without gil-refs since `&PyArray` and 
-// similar aren't constructible and the `pyo3::pyobject_native_type_base` macro 
-// does not provide a `Debug` impl
+// requiring `Debug` impls is not relevant without gil-refs since `&PyArray`
+// and similar aren't constructible
 #![cfg_attr(feature = "gil-refs", deny(missing_debug_implementations))]
 
 #[cfg(all(target_os = "windows", target_arch = "x86"))]

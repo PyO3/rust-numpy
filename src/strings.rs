@@ -87,7 +87,7 @@ unsafe impl<const N: usize> Element for PyFixedString<N> {
 impl<const N: usize> PyClone for PyFixedString<N> {
     #[inline]
     fn py_clone(&self, _py: Python<'_>) -> Self {
-        self.clone()
+        *self
     }
 
     #[inline]
@@ -98,10 +98,10 @@ impl<const N: usize> PyClone for PyFixedString<N> {
     #[inline]
     fn array_from_view<D>(
         _py: Python<'_>,
-        view: ::ndarray::ArrayView<'_, Self, D>
+        view: ::ndarray::ArrayView<'_, Self, D>,
     ) -> ::ndarray::Array<Self, D>
     where
-        D: ::ndarray::Dimension
+        D: ::ndarray::Dimension,
     {
         view.to_owned()
     }
@@ -171,7 +171,7 @@ impl<const N: usize> From<[Py_UCS4; N]> for PyFixedUnicode<N> {
 impl<const N: usize> PyClone for PyFixedUnicode<N> {
     #[inline]
     fn py_clone(&self, _py: Python<'_>) -> Self {
-        self.clone()
+        *self
     }
 
     #[inline]
@@ -182,10 +182,10 @@ impl<const N: usize> PyClone for PyFixedUnicode<N> {
     #[inline]
     fn array_from_view<D>(
         _py: Python<'_>,
-        view: ::ndarray::ArrayView<'_, Self, D>
+        view: ::ndarray::ArrayView<'_, Self, D>,
     ) -> ::ndarray::Array<Self, D>
     where
-        D: ::ndarray::Dimension
+        D: ::ndarray::Dimension,
     {
         view.to_owned()
     }
