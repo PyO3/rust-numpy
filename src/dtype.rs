@@ -1,6 +1,7 @@
 use std::mem::size_of;
 use std::os::raw::{c_int, c_long, c_longlong, c_short, c_uint, c_ulong, c_ulonglong, c_ushort};
 use std::ptr;
+use ndarray::{Array, ArrayView, Dimension};
 
 #[cfg(feature = "half")]
 use half::{bf16, f16};
@@ -643,6 +644,55 @@ impl<'py> PyArrayDescrMethods<'py> for Bound<'py, PyArrayDescr> {
 }
 
 impl Sealed for Bound<'_, PyArrayDescr> {}
+
+
+/// Weaker form of `Clone` for types that can be cloned while the GIL is held.
+/// 
+/// Any type that implements `Clone` can trivially implement `PyClone` by forwarding 
+/// to the `Clone::clone` method. However, some types (notably `PyObject`) can only 
+/// be safely cloned while the GIL is held, and therefore cannot implement `Clone`.
+/// This trait provides a mechanism for performing a clone while the GIL is held, as
+/// represented by the [`Python`] token provided as an argument to the [`py_clone`]
+/// method. All API's in the `numpy` crate require the GIL to be held, so this weaker 
+/// alternative to `Clone` is a sufficient prerequisite for implementing the
+/// [`Element`] trait.
+/// 
+/// # Implementing `PyClone`
+/// Implementing this trait is trivial for most types, and simply requires defining
+/// the `py_clone` method. The `vec_from_slice` and `array_from_view` methods have 
+/// default implementations that simply map the `py_clone` method to each item in 
+/// the collection, but types may want to override these implementations if there
+/// is a more efficient way to perform the conversion. In particular, `Clone` types 
+/// may instead defer to the `ToOwned::to_owned` and `ArrayBase::to_owned` methods 
+/// for increased performance.
+/// 
+/// [`py_clone`]: Self::py_clone
+pub trait PyClone: Sized {
+    /// Create a clone of the value while the GIL is guaranteed to be held.
+    fn py_clone(&self, py: Python<'_>) -> Self;
+    
+    /// Create an owned copy of the slice while the GIL is guaranteed to be held.
+    /// 
+    /// Some types may provide implementations of this method that are more efficient 
+    /// than simply mapping the `py_clone` method to each element in the slice.
+    #[inline]
+    fn vec_from_slice(py: Python<'_>, slc: &[Self]) -> Vec<Self> {
+        slc.iter().map(|elem| elem.py_clone(py)).collect()
+    }
+    
+    /// Create an owned copy of the array while the GIL is guaranteed to be held.
+    /// 
+    /// Some types may provide implementations of this method that are more efficient 
+    /// than simply mapping the `py_clone` method to each element in the view.
+    #[inline]
+    fn array_from_view<D>(py: Python<'_>, view: ArrayView<'_, Self, D>) -> Array<Self, D> 
+    where
+        D: Dimension
+    {
+        view.map(|elem| elem.py_clone(py))
+    }
+}
+
 
 /// Represents that a type can be an element of `PyArray`.
 ///
