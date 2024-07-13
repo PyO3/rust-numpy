@@ -867,7 +867,7 @@ unsafe impl Element for bf16 {
             .get_or_init(py, || {
                 PyArrayDescr::new_bound(py, "bfloat16").expect("A package which provides a `bfloat16` data type for NumPy is required to use the `half::bf16` element type.").unbind()
             })
-            .clone()
+            .clone_ref(py)
             .into_bound(py)
     }
 }
