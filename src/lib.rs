@@ -39,10 +39,10 @@ as well as the [`PyReadonlyArray::try_as_matrix`] and [`PyReadwriteArray::try_as
 #![cfg_attr(not(feature = "nalgebra"), doc = "```rust,ignore")]
 //! use numpy::pyo3::Python;
 //! use numpy::nalgebra::Matrix3;
-//! use numpy::{pyarray, ToPyArray};
+//! use numpy::{pyarray_bound, ToPyArray, PyArrayMethods};
 //!
 //! Python::with_gil(|py| {
-//!     let py_array = pyarray![py, [0, 1, 2], [3, 4, 5], [6, 7, 8]];
+//!     let py_array = pyarray_bound![py, [0, 1, 2], [3, 4, 5], [6, 7, 8]];
 //!
 //!     let py_array_square;
 //!
