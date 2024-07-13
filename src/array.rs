@@ -239,7 +239,7 @@ impl<T, D> PyArray<T, D> {
     ///
     /// This is a wrapper around [`pyo3::FromPyPointer::from_owned_ptr_or_opt`] and inherits its safety contract.
     pub unsafe fn from_owned_ptr<'py>(py: Python<'py>, ptr: *mut ffi::PyObject) -> &'py Self {
-        #[allow(deprecated)]
+        #![allow(deprecated)]
         py.from_owned_ptr(ptr)
     }
 
@@ -249,7 +249,7 @@ impl<T, D> PyArray<T, D> {
     ///
     /// This is a wrapper around [`pyo3::FromPyPointer::from_borrowed_ptr_or_opt`] and inherits its safety contract.
     pub unsafe fn from_borrowed_ptr<'py>(py: Python<'py>, ptr: *mut ffi::PyObject) -> &'py Self {
-        #[allow(deprecated)]
+        #![allow(deprecated)]
         py.from_borrowed_ptr(ptr)
     }
 

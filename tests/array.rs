@@ -6,13 +6,15 @@ use ndarray::{array, s, Array1, Dim};
 use numpy::prelude::*;
 use numpy::{
     dtype_bound, get_array_module, npyffi::NPY_ORDER, pyarray_bound, PyArray, PyArray1, PyArray2,
-    PyArrayDescr, PyArrayDyn, PyFixedString, PyFixedUnicode,
+    PyArrayDescr, PyFixedString, PyFixedUnicode,
 };
 use pyo3::{
     py_run, pyclass, pymethods,
     types::{IntoPyDict, PyAnyMethods, PyDict, PyList},
-    Bound, Py, PyResult, Python,
+    Bound, Py, Python,
 };
+#[cfg(feature = "gil-refs")]
+use {numpy::PyArrayDyn, pyo3::PyResult};
 
 fn get_np_locals(py: Python<'_>) -> Bound<'_, PyDict> {
     [("np", get_array_module(py).unwrap())].into_py_dict_bound(py)

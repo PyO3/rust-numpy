@@ -65,7 +65,7 @@ as well as the [`PyReadonlyArray::try_as_matrix`] and [`PyReadwriteArray::try_as
 //!         Matrix3::new(30, 36, 42, 66, 81, 96, 102, 126, 150)
 //!     );
 //! });
-//! ```
+#![doc = "```"]
 //!
 //! [c-api]: https://numpy.org/doc/stable/reference/c-api
 //! [ndarray]: https://numpy.org/doc/stable/reference/arrays.ndarray.html
