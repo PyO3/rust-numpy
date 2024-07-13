@@ -883,6 +883,13 @@ impl_element_scalar!(Complex64 => NPY_CDOUBLE,
 #[cfg(any(target_pointer_width = "32", target_pointer_width = "64"))]
 impl_element_scalar!(usize, isize);
 
+impl PyClone for PyObject {
+    #[inline]
+    fn py_clone(&self, py: Python<'_>) -> Self {
+        self.clone_ref(py)
+    }
+}
+
 unsafe impl Element for PyObject {
     const IS_COPY: bool = false;
 
