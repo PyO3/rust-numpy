@@ -195,7 +195,7 @@ where
                     let array = PyArray::<A, _>::new_bound(py, dim, false);
                     let mut data_ptr = array.data();
                     for item in self.iter() {
-                        data_ptr.write(item.clone());
+                        data_ptr.write(item.py_clone(py));
                         data_ptr = data_ptr.add(1);
                     }
                     array
@@ -228,7 +228,7 @@ where
                 ptr::copy_nonoverlapping(self.data.ptr(), data_ptr, self.len());
             } else {
                 for item in self.iter() {
-                    data_ptr.write(item.clone());
+                    data_ptr.write(item.py_clone(py));
                     data_ptr = data_ptr.add(1);
                 }
             }
