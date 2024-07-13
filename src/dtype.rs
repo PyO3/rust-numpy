@@ -796,6 +796,35 @@ fn npy_int_type<T: Bounded + Zero + Sized + PartialEq>() -> NPY_TYPES {
     }
 }
 
+// Implements `PyClone` for a type that implements `Clone`
+macro_rules! impl_py_clone {
+    ($ty:ty $(; [$param:ident $(: $bound:ident)?])?) => {
+        impl <$($param$(: $bound)*)?> $crate::dtype::PyClone for $ty {
+            #[inline]
+            fn py_clone(&self, _py: ::pyo3::Python<'_>) -> Self {
+                self.clone()
+            }
+            
+            #[inline]
+            fn vec_from_slice(_py: ::pyo3::Python<'_>, slc: &[Self]) -> Vec<Self> {
+                slc.to_owned()
+            }
+            
+            #[inline]
+            fn array_from_view<D>(
+                _py: ::pyo3::Python<'_>, 
+                view: ::ndarray::ArrayView<'_, Self, D>
+            ) -> ::ndarray::Array<Self, D> 
+            where
+                D: ::ndarray::Dimension
+            {
+                view.to_owned()
+            }
+        }
+    }
+}
+pub(crate) use impl_py_clone;
+
 macro_rules! impl_element_scalar {
     (@impl: $ty:ty, $npy_type:expr $(,#[$meta:meta])*) => {
         $(#[$meta])*
@@ -806,6 +835,7 @@ macro_rules! impl_element_scalar {
                 PyArrayDescr::from_npy_type(py, $npy_type)
             }
         }
+        impl_py_clone!($ty);
     };
     ($ty:ty => $npy_type:ident $(,#[$meta:meta])*) => {
         impl_element_scalar!(@impl: $ty, NPY_TYPES::$npy_type $(,#[$meta])*);
@@ -841,6 +871,9 @@ unsafe impl Element for bf16 {
             .into_bound(py)
     }
 }
+
+#[cfg(feature = "half")]
+impl_py_clone!(bf16);
 
 impl_element_scalar!(Complex32 => NPY_CFLOAT,
     #[doc = "Complex type with `f32` components which maps to `numpy.csingle` (`numpy.complex64`)."]);
