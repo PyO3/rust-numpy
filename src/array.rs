@@ -2271,7 +2271,7 @@ impl<'py, T, D> PyArrayMethods<'py, T, D> for Bound<'py, PyArray<T, D>> {
         as_view(self, |shape, ptr| unsafe {
             RawArrayViewMut::from_shape_ptr(shape, ptr)
         })
-    }    
+    }
 
     fn to_owned_array(&self) -> Array<T, D>
     where
