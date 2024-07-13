@@ -305,7 +305,7 @@ where
     /// }
     ///
     /// Python::with_gil(|py| {
-    ///     let np = py.eval("__import__('numpy')", None, None).unwrap();
+    ///     let np = py.eval_bound("__import__('numpy')", None, None).unwrap();
     ///     let sum_standard_layout = wrap_pyfunction!(sum_standard_layout)(py).unwrap();
     ///     let sum_dynamic_strides = wrap_pyfunction!(sum_dynamic_strides)(py).unwrap();
     ///
