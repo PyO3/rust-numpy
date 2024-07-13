@@ -1686,10 +1686,7 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> {
     where
         T: Element,
         D: Dimension,
-        Idx: NpyIndex<Dim = D>,
-    {
-        unsafe { self.get(index) }.cloned()
-    }
+        Idx: NpyIndex<Dim = D>;
 
     /// Turn an array with fixed dimensionality into one with dynamic dimensionality.
     fn to_dyn(&self) -> &Bound<'py, PyArray<T, IxDyn>>
@@ -1720,10 +1717,7 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> {
     fn to_vec(&self) -> Result<Vec<T>, NotContiguousError>
     where
         T: Element,
-        D: Dimension,
-    {
-        unsafe { self.as_slice() }.map(ToOwned::to_owned)
-    }
+        D: Dimension;
 
     /// Get an immutable borrow of the NumPy array
     fn try_readonly(&self) -> Result<PyReadonlyArray<'py, T, D>, BorrowError>
@@ -1827,10 +1821,7 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> {
     fn to_owned_array(&self) -> Array<T, D>
     where
         T: Element,
-        D: Dimension,
-    {
-        unsafe { self.as_array() }.to_owned()
-    }
+        D: Dimension;
 
     /// Copies `self` into `other`, performing a data type conversion if necessary.
     ///
@@ -2206,8 +2197,27 @@ impl<'py, T, D> PyArrayMethods<'py, T, D> for Bound<'py, PyArray<T, D>> {
         Some(&mut *ptr)
     }
 
+    fn get_owned<Idx>(&self, index: Idx) -> Option<T>
+    where
+        T: Element,
+        D: Dimension,
+        Idx: NpyIndex<Dim = D>,
+    {
+        let element = unsafe { self.get(index) };
+        element.map(|elem| elem.py_clone(self.py()))
+    }
+
     fn to_dyn(&self) -> &Bound<'py, PyArray<T, IxDyn>> {
         unsafe { self.downcast_unchecked() }
+    }
+
+    fn to_vec(&self) -> Result<Vec<T>, NotContiguousError>
+    where
+        T: Element,
+        D: Dimension,
+    {
+        let slice = unsafe { self.as_slice() };
+        slice.map(|slc| T::vec_from_slice(self.py(), slc))
     }
 
     fn try_readonly(&self) -> Result<PyReadonlyArray<'py, T, D>, BorrowError>
@@ -2260,6 +2270,15 @@ impl<'py, T, D> PyArrayMethods<'py, T, D> for Bound<'py, PyArray<T, D>> {
         as_view(self, |shape, ptr| unsafe {
             RawArrayViewMut::from_shape_ptr(shape, ptr)
         })
+    }    
+
+    fn to_owned_array(&self) -> Array<T, D>
+    where
+        T: Element,
+        D: Dimension,
+    {
+        let view = unsafe { self.as_array() };
+        T::array_from_view(self.py(), view)
     }
 
     fn copy_to<U: Element>(&self, other: &Bound<'py, PyArray<U, D>>) -> PyResult<()>
