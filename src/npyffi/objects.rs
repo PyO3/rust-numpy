@@ -378,10 +378,7 @@ pub struct PyUFuncObject {
     pub type_resolver: PyUFunc_TypeResolutionFunc,
     pub legacy_inner_loop_selector: PyUFunc_LegacyInnerLoopSelectionFunc,
     pub reserved2: *mut c_void,
-    #[cfg(all(feature = "numpy-1", not(feature = "numpy-2")))]
     pub masked_inner_loop_selector: PyUFunc_MaskedInnerLoopSelectionFunc,
-    #[cfg(all(not(feature = "numpy-2"), feature = "numpy-2"))]
-    pub reserved3: *mut c_void,
     pub op_flags: *mut npy_uint32,
     pub iter_flags: npy_uint32,
 }
