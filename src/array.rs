@@ -40,7 +40,7 @@ use crate::untyped_array::{PyUntypedArray, PyUntypedArrayMethods};
 /// # Memory location
 ///
 /// - Allocated by Rust: Constructed via [`IntoPyArray`] or
-/// [`from_vec`][Self::from_vec] or [`from_owned_array`][Self::from_owned_array].
+///   [`from_vec`][Self::from_vec] or [`from_owned_array`][Self::from_owned_array].
 ///
 /// These methods transfers ownership of the Rust allocation into a suitable Python object
 /// and uses the memory as the internal buffer backing the NumPy array.
@@ -49,7 +49,7 @@ use crate::untyped_array::{PyUntypedArray, PyUntypedArrayMethods};
 /// when used with this kind of array as NumPy cannot reallocate the internal buffer.
 ///
 /// - Allocated by NumPy: Constructed via other methods, like [`ToPyArray`] or
-/// [`from_slice`][Self::from_slice] or [`from_array`][Self::from_array].
+///   [`from_slice`][Self::from_slice] or [`from_array`][Self::from_array].
 ///
 /// These methods allocate memory in Python's private heap via NumPy's API.
 ///
