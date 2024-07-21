@@ -47,7 +47,7 @@ fn get_numpy_api<'py>(
 
 const fn api_version_to_numpy_version_range(api_version: c_uint) -> (&'static str, &'static str) {
     match api_version {
-        api_version if api_version <= 0x00000008 => ("?", "1.7"),
+        0..=0x00000008 => ("?", "1.7"),
         0x00000009 => ("1.8", "1.9"),
         0x0000000A => ("1.10", "1.12"),
         0x0000000B => ("1.13", "1.13"),
@@ -57,7 +57,7 @@ const fn api_version_to_numpy_version_range(api_version: c_uint) -> (&'static st
         0x0000000F => ("1.22", "1.22"),
         0x00000010 => ("1.23", "1.24"),
         0x00000011 => ("1.25", "1.26"),
-        api_version if api_version >= 0x00000012 => ("2.0", "?"),
+        0x00000012..=c_uint::MAX => ("2.0", "?"),
     }
 }
 
