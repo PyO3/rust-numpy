@@ -131,7 +131,7 @@ jobs:
         with:
           python-version: 3.8
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@1.56.0
+        uses: dtolnay/rust-toolchain@1.63.0
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: examples/simple

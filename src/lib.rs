@@ -39,10 +39,10 @@ as well as the [`PyReadonlyArray::try_as_matrix`] and [`PyReadwriteArray::try_as
 #![cfg_attr(not(feature = "nalgebra"), doc = "```rust,ignore")]
 //! use numpy::pyo3::Python;
 //! use numpy::nalgebra::Matrix3;
-//! use numpy::{pyarray, ToPyArray};
+//! use numpy::{pyarray_bound, ToPyArray, PyArrayMethods};
 //!
 //! Python::with_gil(|py| {
-//!     let py_array = pyarray![py, [0, 1, 2], [3, 4, 5], [6, 7, 8]];
+//!     let py_array = pyarray_bound![py, [0, 1, 2], [3, 4, 5], [6, 7, 8]];
 //!
 //!     let py_array_square;
 //!
@@ -65,12 +65,14 @@ as well as the [`PyReadonlyArray::try_as_matrix`] and [`PyReadwriteArray::try_as
 //!         Matrix3::new(30, 36, 42, 66, 81, 96, 102, 126, 150)
 //!     );
 //! });
-//! ```
+#![doc = "```"]
 //!
 //! [c-api]: https://numpy.org/doc/stable/reference/c-api
 //! [ndarray]: https://numpy.org/doc/stable/reference/arrays.ndarray.html
-
-#![deny(missing_docs, missing_debug_implementations)]
+#![deny(missing_docs)]
+// requiring `Debug` impls is not relevant without gil-refs since `&PyArray`
+// and similar aren't constructible
+#![cfg_attr(feature = "gil-refs", deny(missing_debug_implementations))]
 
 pub mod array;
 mod array_like;
@@ -106,15 +108,15 @@ pub use crate::borrow::{
     PyReadwriteArray5, PyReadwriteArray6, PyReadwriteArrayDyn,
 };
 pub use crate::convert::{IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
-#[allow(deprecated)]
+#[cfg(feature = "gil-refs")]
 pub use crate::dtype::dtype;
 pub use crate::dtype::{
-    dtype_bound, Complex32, Complex64, Element, PyArrayDescr, PyArrayDescrMethods,
+    dtype_bound, Complex32, Complex64, Element, PyArrayDescr, PyArrayDescrMethods, PyClone,
 };
 pub use crate::error::{BorrowError, FromVecError, NotContiguousError};
 pub use crate::npyffi::{PY_ARRAY_API, PY_UFUNC_API};
 pub use crate::strings::{PyFixedString, PyFixedUnicode};
-#[allow(deprecated)]
+#[cfg(feature = "gil-refs")]
 pub use crate::sum_products::{dot, einsum, inner};
 pub use crate::sum_products::{dot_bound, einsum_bound, inner_bound};
 pub use crate::untyped_array::{PyUntypedArray, PyUntypedArrayMethods};

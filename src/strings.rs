@@ -17,7 +17,7 @@ use pyo3::{
 };
 use rustc_hash::FxHashMap;
 
-use crate::dtype::{Element, PyArrayDescr, PyArrayDescrMethods};
+use crate::dtype::{Element, PyArrayDescr, PyArrayDescrMethods, PyClone};
 use crate::npyffi::NPY_TYPES;
 
 /// A newtype wrapper around [`[u8; N]`][Py_UCS1] to handle [`byte` scalars][numpy-bytes] while satisfying coherence.
@@ -83,6 +83,29 @@ unsafe impl<const N: usize> Element for PyFixedString<N> {
     }
 }
 
+impl<const N: usize> PyClone for PyFixedString<N> {
+    #[inline]
+    fn py_clone(&self, _py: Python<'_>) -> Self {
+        *self
+    }
+
+    #[inline]
+    fn vec_from_slice(_py: Python<'_>, slc: &[Self]) -> Vec<Self> {
+        slc.to_owned()
+    }
+
+    #[inline]
+    fn array_from_view<D>(
+        _py: Python<'_>,
+        view: ::ndarray::ArrayView<'_, Self, D>,
+    ) -> ::ndarray::Array<Self, D>
+    where
+        D: ::ndarray::Dimension,
+    {
+        view.to_owned()
+    }
+}
+
 /// A newtype wrapper around [`[PyUCS4; N]`][Py_UCS4] to handle [`str_` scalars][numpy-str] while satisfying coherence.
 ///
 /// Note that when creating arrays of Unicode strings without an explicit `dtype`,
@@ -144,6 +167,29 @@ impl<const N: usize> From<[Py_UCS4; N]> for PyFixedUnicode<N> {
     }
 }
 
+impl<const N: usize> PyClone for PyFixedUnicode<N> {
+    #[inline]
+    fn py_clone(&self, _py: Python<'_>) -> Self {
+        *self
+    }
+
+    #[inline]
+    fn vec_from_slice(_py: Python<'_>, slc: &[Self]) -> Vec<Self> {
+        slc.to_owned()
+    }
+
+    #[inline]
+    fn array_from_view<D>(
+        _py: Python<'_>,
+        view: ::ndarray::ArrayView<'_, Self, D>,
+    ) -> ::ndarray::Array<Self, D>
+    where
+        D: ::ndarray::Dimension,
+    {
+        view.to_owned()
+    }
+}
+
 unsafe impl<const N: usize> Element for PyFixedUnicode<N> {
     const IS_COPY: bool = true;
 
@@ -190,7 +236,7 @@ impl TypeDescriptors {
             }
         };
 
-        dtype.clone().into_bound(py)
+        dtype.bind(py).to_owned()
     }
 }
 

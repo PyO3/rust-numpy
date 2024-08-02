@@ -66,7 +66,7 @@ use std::marker::PhantomData;
 use pyo3::{sync::GILProtected, Bound, Py, Python};
 use rustc_hash::FxHashMap;
 
-use crate::dtype::{Element, PyArrayDescr, PyArrayDescrMethods};
+use crate::dtype::{impl_py_clone, Element, PyArrayDescr, PyArrayDescrMethods};
 use crate::npyffi::{PyArray_DatetimeDTypeMetaData, NPY_DATETIMEUNIT, NPY_TYPES};
 
 /// Represents the [datetime units][datetime-units] supported by NumPy
@@ -153,6 +153,8 @@ impl<U: Unit> From<Datetime<U>> for i64 {
     }
 }
 
+impl_py_clone!(Datetime<U>; [U: Unit]);
+
 unsafe impl<U: Unit> Element for Datetime<U> {
     const IS_COPY: bool = true;
 
@@ -187,6 +189,8 @@ impl<U: Unit> From<Timedelta<U>> for i64 {
         val.0
     }
 }
+
+impl_py_clone!(Timedelta<U>; [U: Unit]);
 
 unsafe impl<U: Unit> Element for Timedelta<U> {
     const IS_COPY: bool = true;
@@ -241,7 +245,7 @@ impl TypeDescriptors {
             }
         };
 
-        dtype.clone().into_bound(py)
+        dtype.bind(py).to_owned()
     }
 }
 

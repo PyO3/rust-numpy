@@ -16,9 +16,9 @@ use pyo3::{
 #[pymodule]
 fn rust_ext<'py>(m: &Bound<'py, PyModule>) -> PyResult<()> {
     // example using generic PyObject
-    fn head(x: ArrayViewD<'_, PyObject>) -> PyResult<PyObject> {
+    fn head(py: Python<'_>, x: ArrayViewD<'_, PyObject>) -> PyResult<PyObject> {
         x.get(0)
-            .cloned()
+            .map(|obj| obj.clone_ref(py))
             .ok_or_else(|| PyIndexError::new_err("array index out of range"))
     }
 
@@ -49,7 +49,7 @@ fn rust_ext<'py>(m: &Bound<'py, PyModule>) -> PyResult<()> {
     #[pyfn(m)]
     #[pyo3(name = "head")]
     fn head_py<'py>(x: PyReadonlyArrayDyn<'py, PyObject>) -> PyResult<PyObject> {
-        head(x.as_array())
+        head(x.py(), x.as_array())
     }
 
     // wrapper of `axpy`

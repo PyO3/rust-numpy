@@ -12,11 +12,12 @@ use pyo3::{
     ffi::{self, PyTuple_Size},
     pyobject_native_type_extract, pyobject_native_type_named,
     types::{PyAnyMethods, PyDict, PyDictMethods, PyTuple, PyType},
-    AsPyPointer, Borrowed, Bound, PyAny, PyNativeType, PyObject, PyResult, PyTypeInfo, Python,
-    ToPyObject,
+    Borrowed, Bound, PyAny, PyObject, PyResult, PyTypeInfo, Python, ToPyObject,
 };
 #[cfg(feature = "half")]
 use pyo3::{sync::GILOnceCell, Py};
+#[cfg(feature = "gil-refs")]
+use pyo3::{AsPyPointer, PyNativeType};
 
 use crate::npyffi::{
     NpyTypes, PyArray_Descr, NPY_ALIGNED_STRUCT, NPY_BYTEORDER_CHAR, NPY_ITEM_HASOBJECT, NPY_TYPES,
@@ -61,6 +62,7 @@ unsafe impl PyTypeInfo for PyArrayDescr {
         unsafe { PY_ARRAY_API.get_type_object(py, NpyTypes::PyArrayDescr_Type) }
     }
 
+    #[cfg(feature = "gil-refs")]
     fn is_type_of(ob: &PyAny) -> bool {
         unsafe { ffi::PyObject_TypeCheck(ob.as_ptr(), Self::type_object_raw(ob.py())) > 0 }
     }
@@ -69,10 +71,7 @@ unsafe impl PyTypeInfo for PyArrayDescr {
 pyobject_native_type_extract!(PyArrayDescr);
 
 /// Returns the type descriptor ("dtype") for a registered type.
-#[deprecated(
-    since = "0.21.0",
-    note = "This will be replaced by `dtype_bound` in the future."
-)]
+#[cfg(feature = "gil-refs")]
 pub fn dtype<'py, T: Element>(py: Python<'py>) -> &'py PyArrayDescr {
     T::get_dtype_bound(py).into_gil_ref()
 }
@@ -83,18 +82,6 @@ pub fn dtype_bound<'py, T: Element>(py: Python<'py>) -> Bound<'py, PyArrayDescr>
 }
 
 impl PyArrayDescr {
-    /// Creates a new type descriptor ("dtype") object from an arbitrary object.
-    ///
-    /// Equivalent to invoking the constructor of [`numpy.dtype`][dtype].
-    ///
-    /// [dtype]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.html
-    #[deprecated(
-        since = "0.21.0",
-        note = "This will be replace by `new_bound` in the future."
-    )]
-    pub fn new<'py, T: ToPyObject + ?Sized>(py: Python<'py>, ob: &T) -> PyResult<&'py Self> {
-        Self::new_bound(py, ob).map(Bound::into_gil_ref)
-    }
     /// Creates a new type descriptor ("dtype") object from an arbitrary object.
     ///
     /// Equivalent to invoking the constructor of [`numpy.dtype`][dtype].
@@ -118,49 +105,14 @@ impl PyArrayDescr {
         inner(py, ob.to_object(py))
     }
 
-    /// Returns `self` as `*mut PyArray_Descr`.
-    pub fn as_dtype_ptr(&self) -> *mut PyArray_Descr {
-        self.as_borrowed().as_dtype_ptr()
-    }
-
-    /// Returns `self` as `*mut PyArray_Descr` while increasing the reference count.
-    ///
-    /// Useful in cases where the descriptor is stolen by the API.
-    pub fn into_dtype_ptr(&self) -> *mut PyArray_Descr {
-        self.as_borrowed().to_owned().into_dtype_ptr()
-    }
-
-    /// Shortcut for creating a type descriptor of `object` type.
-    #[deprecated(
-        since = "0.21.0",
-        note = "This will be replaced by `object_bound` in the future."
-    )]
-    pub fn object<'py>(py: Python<'py>) -> &'py Self {
-        Self::object_bound(py).into_gil_ref()
-    }
-
     /// Shortcut for creating a type descriptor of `object` type.
     pub fn object_bound(py: Python<'_>) -> Bound<'_, Self> {
         Self::from_npy_type(py, NPY_TYPES::NPY_OBJECT)
     }
 
     /// Returns the type descriptor for a registered type.
-    #[deprecated(
-        since = "0.21.0",
-        note = "This will be replaced by `of_bound` in the future."
-    )]
-    pub fn of<'py, T: Element>(py: Python<'py>) -> &'py Self {
-        Self::of_bound::<T>(py).into_gil_ref()
-    }
-
-    /// Returns the type descriptor for a registered type.
     pub fn of_bound<'py, T: Element>(py: Python<'py>) -> Bound<'py, Self> {
         T::get_dtype_bound(py)
-    }
-
-    /// Returns true if two type descriptors are equivalent.
-    pub fn is_equiv_to(&self, other: &Self) -> bool {
-        self.as_borrowed().is_equiv_to(&other.as_borrowed())
     }
 
     fn from_npy_type<'py>(py: Python<'py>, npy_type: NPY_TYPES) -> Bound<'py, Self> {
@@ -175,6 +127,45 @@ impl PyArrayDescr {
             let descr = PY_ARRAY_API.PyArray_DescrNewFromType(py, npy_type as _);
             Bound::from_owned_ptr(py, descr.cast()).downcast_into_unchecked()
         }
+    }
+}
+
+#[cfg(feature = "gil-refs")]
+impl PyArrayDescr {
+    /// Creates a new type descriptor ("dtype") object from an arbitrary object.
+    ///
+    /// Equivalent to invoking the constructor of [`numpy.dtype`][dtype].
+    ///
+    /// [dtype]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.html
+    pub fn new<'py, T: ToPyObject + ?Sized>(py: Python<'py>, ob: &T) -> PyResult<&'py Self> {
+        Self::new_bound(py, ob).map(Bound::into_gil_ref)
+    }
+
+    /// Returns `self` as `*mut PyArray_Descr`.
+    pub fn as_dtype_ptr(&self) -> *mut PyArray_Descr {
+        self.as_borrowed().as_dtype_ptr()
+    }
+
+    /// Returns `self` as `*mut PyArray_Descr` while increasing the reference count.
+    ///
+    /// Useful in cases where the descriptor is stolen by the API.
+    pub fn into_dtype_ptr(&self) -> *mut PyArray_Descr {
+        self.as_borrowed().to_owned().into_dtype_ptr()
+    }
+
+    /// Shortcut for creating a type descriptor of `object` type.
+    pub fn object<'py>(py: Python<'py>) -> &'py Self {
+        Self::object_bound(py).into_gil_ref()
+    }
+
+    /// Returns the type descriptor for a registered type.
+    pub fn of<'py, T: Element>(py: Python<'py>) -> &'py Self {
+        Self::of_bound::<T>(py).into_gil_ref()
+    }
+
+    /// Returns true if two type descriptors are equivalent.
+    pub fn is_equiv_to(&self, other: &Self) -> bool {
+        self.as_borrowed().is_equiv_to(&other.as_borrowed())
     }
 
     /// Returns the [array scalar][arrays-scalars] corresponding to this type descriptor.
@@ -633,6 +624,56 @@ impl<'py> PyArrayDescrMethods<'py> for Bound<'py, PyArrayDescr> {
 
 impl Sealed for Bound<'_, PyArrayDescr> {}
 
+/// Weaker form of `Clone` for types that can be cloned while the GIL is held.
+///
+/// Any type that implements `Clone` can trivially implement `PyClone` by forwarding
+/// to the `Clone::clone` method. However, some types (notably `PyObject`) can only
+/// be safely cloned while the GIL is held, and therefore cannot implement `Clone`.
+/// This trait provides a mechanism for performing a clone while the GIL is held, as
+/// represented by the [`Python`] token provided as an argument to the [`py_clone`]
+/// method. All API's in the `numpy` crate require the GIL to be held, so this weaker
+/// alternative to `Clone` is a sufficient prerequisite for implementing the
+/// [`Element`] trait.
+///
+/// # Implementing `PyClone`
+/// Implementing this trait is trivial for most types, and simply requires defining
+/// the `py_clone` method. The `vec_from_slice` and `array_from_view` methods have
+/// default implementations that simply map the `py_clone` method to each item in
+/// the collection, but types may want to override these implementations if there
+/// is a more efficient way to perform the conversion. In particular, `Clone` types
+/// may instead defer to the `ToOwned::to_owned` and `ArrayBase::to_owned` methods
+/// for increased performance.
+///
+/// [`py_clone`]: Self::py_clone
+pub trait PyClone: Sized {
+    /// Create a clone of the value while the GIL is guaranteed to be held.
+    fn py_clone(&self, py: Python<'_>) -> Self;
+
+    /// Create an owned copy of the slice while the GIL is guaranteed to be held.
+    ///
+    /// Some types may provide implementations of this method that are more efficient
+    /// than simply mapping the `py_clone` method to each element in the slice.
+    #[inline]
+    fn vec_from_slice(py: Python<'_>, slc: &[Self]) -> Vec<Self> {
+        slc.iter().map(|elem| elem.py_clone(py)).collect()
+    }
+
+    /// Create an owned copy of the array while the GIL is guaranteed to be held.
+    ///
+    /// Some types may provide implementations of this method that are more efficient
+    /// than simply mapping the `py_clone` method to each element in the view.
+    #[inline]
+    fn array_from_view<D>(
+        py: Python<'_>,
+        view: ::ndarray::ArrayView<'_, Self, D>,
+    ) -> ::ndarray::Array<Self, D>
+    where
+        D: ::ndarray::Dimension,
+    {
+        view.map(|elem| elem.py_clone(py))
+    }
+}
+
 /// Represents that a type can be an element of `PyArray`.
 ///
 /// Currently, only integer/float/complex/object types are supported. The [NumPy documentation][enumerated-types]
@@ -670,7 +711,7 @@ impl Sealed for Bound<'_, PyArrayDescr> {}
 ///
 /// [enumerated-types]: https://numpy.org/doc/stable/reference/c-api/dtype.html#enumerated-types
 /// [data-models]: https://en.wikipedia.org/wiki/64-bit_computing#64-bit_data_models
-pub unsafe trait Element: Clone + Send {
+pub unsafe trait Element: PyClone + Send {
     /// Flag that indicates whether this type is trivially copyable.
     ///
     /// It should be set to true for all trivially copyable types (like scalar types
@@ -681,10 +722,7 @@ pub unsafe trait Element: Clone + Send {
     const IS_COPY: bool;
 
     /// Returns the associated type descriptor ("dtype") for the given element type.
-    #[deprecated(
-        since = "0.21.0",
-        note = "This will be replaced by `get_dtype_bound` in the future."
-    )]
+    #[cfg(feature = "gil-refs")]
     fn get_dtype<'py>(py: Python<'py>) -> &'py PyArrayDescr {
         Self::get_dtype_bound(py).into_gil_ref()
     }
@@ -738,6 +776,35 @@ fn npy_int_type<T: Bounded + Zero + Sized + PartialEq>() -> NPY_TYPES {
     }
 }
 
+// Implements `PyClone` for a type that implements `Clone`
+macro_rules! impl_py_clone {
+    ($ty:ty $(; [$param:ident $(: $bound:ident)?])?) => {
+        impl <$($param$(: $bound)*)?> $crate::dtype::PyClone for $ty {
+            #[inline]
+            fn py_clone(&self, _py: ::pyo3::Python<'_>) -> Self {
+                self.clone()
+            }
+
+            #[inline]
+            fn vec_from_slice(_py: ::pyo3::Python<'_>, slc: &[Self]) -> Vec<Self> {
+                slc.to_owned()
+            }
+
+            #[inline]
+            fn array_from_view<D>(
+                _py: ::pyo3::Python<'_>,
+                view: ::ndarray::ArrayView<'_, Self, D>
+            ) -> ::ndarray::Array<Self, D>
+            where
+                D: ::ndarray::Dimension
+            {
+                view.to_owned()
+            }
+        }
+    }
+}
+pub(crate) use impl_py_clone;
+
 macro_rules! impl_element_scalar {
     (@impl: $ty:ty, $npy_type:expr $(,#[$meta:meta])*) => {
         $(#[$meta])*
@@ -748,6 +815,7 @@ macro_rules! impl_element_scalar {
                 PyArrayDescr::from_npy_type(py, $npy_type)
             }
         }
+        impl_py_clone!($ty);
     };
     ($ty:ty => $npy_type:ident $(,#[$meta:meta])*) => {
         impl_element_scalar!(@impl: $ty, NPY_TYPES::$npy_type $(,#[$meta])*);
@@ -779,10 +847,13 @@ unsafe impl Element for bf16 {
             .get_or_init(py, || {
                 PyArrayDescr::new_bound(py, "bfloat16").expect("A package which provides a `bfloat16` data type for NumPy is required to use the `half::bf16` element type.").unbind()
             })
-            .clone()
+            .clone_ref(py)
             .into_bound(py)
     }
 }
+
+#[cfg(feature = "half")]
+impl_py_clone!(bf16);
 
 impl_element_scalar!(Complex32 => NPY_CFLOAT,
     #[doc = "Complex type with `f32` components which maps to `numpy.csingle` (`numpy.complex64`)."]);
@@ -791,6 +862,13 @@ impl_element_scalar!(Complex64 => NPY_CDOUBLE,
 
 #[cfg(any(target_pointer_width = "32", target_pointer_width = "64"))]
 impl_element_scalar!(usize, isize);
+
+impl PyClone for PyObject {
+    #[inline]
+    fn py_clone(&self, py: Python<'_>) -> Self {
+        self.clone_ref(py)
+    }
+}
 
 unsafe impl Element for PyObject {
     const IS_COPY: bool = false;
@@ -804,6 +882,7 @@ unsafe impl Element for PyObject {
 mod tests {
     use super::*;
 
+    use pyo3::types::PyString;
     use pyo3::{py_run, types::PyTypeMethods};
 
     use crate::npyffi::NPY_NEEDS_PYAPI;
@@ -831,7 +910,7 @@ mod tests {
 
     #[test]
     fn test_dtype_names() {
-        fn type_name<'py, T: Element>(py: Python<'py>) -> String {
+        fn type_name<T: Element>(py: Python<'_>) -> Bound<'_, PyString> {
             dtype_bound::<T>(py).typeobj().qualname().unwrap()
         }
         Python::with_gil(|py| {
