@@ -2,7 +2,7 @@ rust-numpy
 ===========
 [![Actions Status](https://github.com/PyO3/rust-numpy/workflows/CI/badge.svg)](https://github.com/PyO3/rust-numpy/actions)
 [![Crate](https://img.shields.io/crates/v/numpy.svg)](https://crates.io/crates/numpy)
-[![Minimum rustc 1.48](https://img.shields.io/badge/rustc-1.48+-blue.svg)](https://rust-lang.github.io/rfcs/2495-min-rust-version.html)
+[![Minimum rustc 1.63](https://img.shields.io/badge/rustc-1.63+-blue.svg)](https://rust-lang.github.io/rfcs/2495-min-rust-version.html)
 [![Documentation](https://docs.rs/numpy/badge.svg)](https://docs.rs/numpy)
 [![codecov](https://codecov.io/gh/PyO3/rust-numpy/branch/main/graph/badge.svg)](https://codecov.io/gh/PyO3/rust-numpy)
 
@@ -13,7 +13,7 @@ Rust bindings for the NumPy C-API.
 - [Current main](https://pyo3.github.io/rust-numpy)
 
 ## Requirements
-- Rust >= 1.48.0
+- Rust >= 1.63.0
   - Basically, our MSRV follows the one of [PyO3](https://github.com/PyO3/pyo3)
 - Python >= 3.7
   - Python 3.6 support was dropped from 0.16
@@ -38,7 +38,7 @@ name = "rust_ext"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { version = "0.21", features = ["extension-module"] }
+pyo3 = { version = "0.22", features = ["extension-module"] }
 numpy = "0.21"
 ```
 
@@ -93,7 +93,7 @@ fn rust_ext<'py>(_py: Python<'py>, m: &Bound<'py, PyModule>) -> PyResult<()> {
 name = "numpy-test"
 
 [dependencies]
-pyo3 = { version = "0.21", features = ["auto-initialize"] }
+pyo3 = { version = "0.22", features = ["auto-initialize"] }
 numpy = "0.21"
 ```
 
