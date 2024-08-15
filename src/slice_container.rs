@@ -69,7 +69,7 @@ where
     D: Dimension,
 {
     fn from(data: ArrayBase<OwnedRepr<A>, D>) -> Self {
-        Self::from(data.into_raw_vec())
+        Self::from(data.into_raw_vec_and_offset().0)
     }
 }
 
