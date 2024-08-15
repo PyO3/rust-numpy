@@ -107,7 +107,7 @@ fn rust_ext<'py>(m: &Bound<'py, PyModule>) -> PyResult<()> {
         #[allow(deprecated)]
         Zip::from(x.as_array_mut())
             .and(y.as_array())
-            .apply(|x, y| *x = (i64::from(*x) + 60 * i64::from(*y)).into());
+            .for_each(|x, y| *x = (i64::from(*x) + 60 * i64::from(*y)).into());
     }
 
     // This crate follows a strongly-typed approach to wrapping NumPy arrays
