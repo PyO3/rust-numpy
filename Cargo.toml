@@ -21,7 +21,7 @@ nalgebra = { version = "0.32", default-features = false, optional = true }
 num-complex = ">= 0.2, < 0.5"
 num-integer = "0.1"
 num-traits = "0.2"
-ndarray = ">= 0.13, < 0.17"
+ndarray = "0.16"
 pyo3 = { version = "0.21.0", default-features = false, features = ["macros"] }
 rustc-hash = "1.1"
 
