@@ -254,7 +254,10 @@ impl PyArrayDescr {
     ///
     /// Equivalent to [`numpy.dtype.flags`][dtype-flags].
     ///
+    /// In numpy 2 the flags field was widened to allow for more flags.
+    ///
     /// [dtype-flags]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.flags.html
+    /// [dtype-changes]: https://numpy.org/devdocs/numpy_2_0_migration_guide.html#the-pyarray-descr-struct-has-been-changed
     pub fn flags(&self) -> u64 {
         self.as_borrowed().flags()
     }
@@ -491,7 +494,7 @@ pub trait PyArrayDescrMethods<'py>: Sealed {
 
     /// Returns true if the type descriptor is a sub-array.
     ///
-    /// Equivalent to PyDataType_HASSUBARRAY(self)
+    /// Equivalent to PyDataType_HASSUBARRAY(self).
     fn has_subarray(&self) -> bool;
 
     /// Returns true if the type descriptor is a structured type.
@@ -574,43 +577,31 @@ impl<'py> PyArrayDescrMethods<'py> for Bound<'py, PyArrayDescr> {
     }
 
     fn ndim(&self) -> usize {
-        if !self.has_subarray() {
-            return 0;
-        }
-        unsafe {
-            PyTuple_Size((*PyDataType_SUBARRAY(self.py(), self.as_dtype_ptr())).shape).max(0) as _
+        let subarray = unsafe { PyDataType_SUBARRAY(self.py(), self.as_dtype_ptr()).as_ref() };
+        match subarray {
+            None => 0,
+            Some(subarray) => unsafe { PyTuple_Size(subarray.shape) }.max(0) as _
         }
     }
 
     fn base(&self) -> Bound<'py, PyArrayDescr> {
-        if !self.has_subarray() {
-            self.clone()
-        } else {
-            unsafe {
-                Bound::from_borrowed_ptr(
-                    self.py(),
-                    (*PyDataType_SUBARRAY(self.py(), self.as_dtype_ptr()))
-                        .base
-                        .cast(),
-                )
-                .downcast_into_unchecked()
+        let subarray = unsafe { PyDataType_SUBARRAY(self.py(), self.as_dtype_ptr()).as_ref() };
+        match subarray {
+            None => self.clone(),
+            Some(subarray) => unsafe {
+                Bound::from_borrowed_ptr(self.py(), subarray.base.cast()).downcast_into_unchecked()
             }
         }
     }
 
     fn shape(&self) -> Vec<usize> {
-        if !self.has_subarray() {
-            Vec::new()
-        } else {
-            // NumPy guarantees that shape is a tuple of non-negative integers so this should never panic.
-            unsafe {
-                Borrowed::from_ptr(
-                    self.py(),
-                    (*PyDataType_SUBARRAY(self.py(), self.as_dtype_ptr())).shape,
-                )
+        let subarray = unsafe { PyDataType_SUBARRAY(self.py(), self.as_dtype_ptr()).as_ref() };
+        match subarray {
+            None => Vec::new(),
+            Some(subarray) => {
+                // NumPy guarantees that shape is a tuple of non-negative integers so this should never panic.
+                unsafe { Borrowed::from_ptr(self.py(), subarray.shape) }.extract().unwrap()
             }
-            .extract()
-            .unwrap()
         }
     }
 
