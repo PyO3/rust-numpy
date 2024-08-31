@@ -569,8 +569,8 @@ pub type PyArray_DTypeMeta = PyTypeObject;
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct npy_static_string {
-    size: usize,
-    buf: *const c_char,
+    pub size: usize,
+    pub buf: *const c_char,
 }
 
 #[repr(C)]
