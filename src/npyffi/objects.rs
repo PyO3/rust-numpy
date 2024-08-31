@@ -59,7 +59,7 @@ pub struct PyArray_DescrProto {
 
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub struct _PyArray_DescrNumPy2 {
+pub struct _PyArray_Descr_NumPy2 {
     pub ob_base: PyObject,
     pub typeobj: *mut PyTypeObject,
     pub kind: c_char,
@@ -77,7 +77,7 @@ pub struct _PyArray_DescrNumPy2 {
 
 #[repr(C)]
 #[derive(Copy, Clone)]
-struct _PyArray_LegacyDescr {
+struct _PyArray_Descr_NumPy1 {
     pub ob_base: PyObject,
     pub typeobj: *mut PyTypeObject,
     pub kind: c_char,
@@ -100,7 +100,7 @@ struct _PyArray_LegacyDescr {
 #[allow(non_snake_case)]
 #[inline(always)]
 pub unsafe fn PyDataType_ISLEGACY(dtype: *const PyArray_Descr) -> bool {
-    (*dtype).type_num < NPY_TYPES::NPY_VSTRING as i32 && (*dtype).type_num >= 0
+    (*dtype).type_num < NPY_TYPES::NPY_VSTRING as _ && (*dtype).type_num >= 0
 }
 
 #[allow(non_snake_case)]
@@ -117,7 +117,7 @@ pub unsafe fn PyDataType_SET_ELSIZE<'py>(
         }
     } else {
         unsafe {
-            (*(dtype as *mut _PyArray_DescrNumPy2)).elsize = size;
+            (*(dtype as *mut _PyArray_Descr_NumPy2)).elsize = size;
         }
     }
 }
@@ -129,23 +129,23 @@ pub unsafe fn PyDataType_FLAGS<'py>(py: Python<'py>, dtype: *const PyArray_Descr
     if api_version < API_VERSION_2_0 {
         unsafe { (*(dtype as *mut PyArray_DescrProto)).flags as c_uchar as npy_uint64 }
     } else {
-        unsafe { (*(dtype as *mut _PyArray_DescrNumPy2)).flags }
+        unsafe { (*(dtype as *mut _PyArray_Descr_NumPy2)).flags }
     }
 }
 
 macro_rules! define_descr_accessor {
-    ($name:ident, $property:ident, $type:ty, $legacy_only:literal, $zero:expr) => {
+    ($name:ident, $property:ident, $type:ty, $legacy_only:literal, $default:expr) => {
         #[allow(non_snake_case)]
         #[inline(always)]
         pub unsafe fn $name<'py>(py: Python<'py>, dtype: *const PyArray_Descr) -> $type {
             if $legacy_only && !PyDataType_ISLEGACY(dtype) {
-                $zero
+                $default
             } else {
                 let api_version = *API_VERSION.get(py).expect("API_VERSION is initialized");
                 if api_version < API_VERSION_2_0 {
                     unsafe { (*(dtype as *mut PyArray_DescrProto)).$property as $type }
                 } else {
-                    unsafe { (*(dtype as *const _PyArray_LegacyDescr)).$property }
+                    unsafe { (*(dtype as *const _PyArray_Descr_NumPy1)).$property }
                 }
             }
         }
@@ -559,8 +559,8 @@ pub struct PyArray_DatetimeDTypeMetaData {
     pub meta: PyArray_DatetimeMetaData,
 }
 
-// npy_packed_static_string and npy_string_allocator are opaque pointers
-// consider extern types when they are stabilized
+// npy_packed_static_string and npy_string_allocator are opaque pointers.
+// FIXME(adamreichold): Consider extern types when they are stabilized.
 // https://github.com/rust-lang/rust/issues/43467
 pub type npy_packed_static_string = c_void;
 pub type npy_string_allocator = c_void;
