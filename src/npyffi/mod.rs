@@ -45,22 +45,6 @@ fn get_numpy_api<'py>(
     Ok(api)
 }
 
-const fn api_version_to_numpy_version_range(api_version: c_uint) -> (&'static str, &'static str) {
-    match api_version {
-        0..=0x00000008 => ("?", "1.7"),
-        0x00000009 => ("1.8", "1.9"),
-        0x0000000A => ("1.10", "1.12"),
-        0x0000000B => ("1.13", "1.13"),
-        0x0000000C => ("1.14", "1.15"),
-        0x0000000D => ("1.16", "1.19"),
-        0x0000000E => ("1.20", "1.21"),
-        0x0000000F => ("1.22", "1.22"),
-        0x00000010 => ("1.23", "1.24"),
-        0x00000011 => ("1.25", "1.26"),
-        0x00000012..=c_uint::MAX => ("2.0", "?"),
-    }
-}
-
 // Implements wrappers for NumPy's Array and UFunc API
 macro_rules! impl_api {
     // API available on all versions
@@ -73,36 +57,39 @@ macro_rules! impl_api {
     };
 
     // API with version constraints, checked at runtime
-    [$offset: expr; ..=1.26; $fname: ident ($($arg: ident: $t: ty),* $(,)?) $(-> $ret: ty)?] => {
-        impl_api![$offset; ..=0x00000011; $fname($($arg : $t), *) $(-> $ret)*];
-    };
-    [$offset: expr; 2.0..; $fname: ident ($($arg: ident: $t: ty),* $(,)?) $(-> $ret: ty)?] => {
-        impl_api![$offset; 0x00000012..; $fname($($arg : $t), *) $(-> $ret)*];
-    };
-    [$offset: expr; $($minimum: literal)?..=$($maximum: literal)?; $fname: ident ($($arg: ident: $t: ty),* $(,)?) $(-> $ret: ty)?] => {
+    [$offset: expr; NumPy1; $fname: ident ($($arg: ident: $t: ty),* $(,)?) $(-> $ret: ty)?] => {
         #[allow(non_snake_case)]
         pub unsafe fn $fname<'py>(&self, py: Python<'py>, $($arg : $t), *) $(-> $ret)* {
             let api_version = *API_VERSION.get(py).expect("API_VERSION is initialized");
-            $(if api_version < $minimum { panic!(
-                "{} requires API {:08X} or greater (NumPy {} or greater) but the runtime version is API {:08X}",
-                stringify!($fname),
-                $minimum,
-                api_version_to_numpy_version_range($minimum).0,
-                api_version,
-            ) } )?
-            $(if api_version > $maximum { panic!(
-                "{} requires API {:08X} or lower (NumPy {} or lower) but the runtime version is API {:08X}",
-                stringify!($fname),
-                $maximum,
-                api_version_to_numpy_version_range($maximum).1,
-                api_version,
-            ) } )?
+            if api_version >= API_VERSION_2_0 {
+                panic!(
+                    "{} requires API < {:08X} (NumPy 1) but the runtime version is API {:08X}",
+                    stringify!($fname),
+                    API_VERSION_2_0,
+                    api_version,
+                )
+            }
             let fptr = self.get(py, $offset) as *const extern fn ($($arg: $t), *) $(-> $ret)*;
             (*fptr)($($arg), *)
         }
+
     };
-    [$offset: expr; $($minimum: literal)?..; $fname: ident ($($arg: ident: $t: ty),* $(,)?) $(-> $ret: ty)?] => {
-        impl_api![$offset; $($minimum)?..=; $fname($($arg : $t), *) $(-> $ret)*];
+    [$offset: expr; NumPy2; $fname: ident ($($arg: ident: $t: ty),* $(,)?) $(-> $ret: ty)?] => {
+        #[allow(non_snake_case)]
+        pub unsafe fn $fname<'py>(&self, py: Python<'py>, $($arg : $t), *) $(-> $ret)* {
+            let api_version = *API_VERSION.get(py).expect("API_VERSION is initialized");
+            if api_version < API_VERSION_2_0 {
+                panic!(
+                    "{} requires API {:08X} or greater (NumPy 2) but the runtime version is API {:08X}",
+                    stringify!($fname),
+                    API_VERSION_2_0,
+                    api_version,
+                )
+            }
+            let fptr = self.get(py, $offset) as *const extern fn ($($arg: $t), *) $(-> $ret)*;
+            (*fptr)($($arg), *)
+        }
+
     };
 }
 
