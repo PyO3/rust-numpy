@@ -580,7 +580,7 @@ impl<'py> PyArrayDescrMethods<'py> for Bound<'py, PyArrayDescr> {
         let subarray = unsafe { PyDataType_SUBARRAY(self.py(), self.as_dtype_ptr()).as_ref() };
         match subarray {
             None => 0,
-            Some(subarray) => unsafe { PyTuple_Size(subarray.shape) }.max(0) as _
+            Some(subarray) => unsafe { PyTuple_Size(subarray.shape) }.max(0) as _,
         }
     }
 
@@ -590,7 +590,7 @@ impl<'py> PyArrayDescrMethods<'py> for Bound<'py, PyArrayDescr> {
             None => self.clone(),
             Some(subarray) => unsafe {
                 Bound::from_borrowed_ptr(self.py(), subarray.base.cast()).downcast_into_unchecked()
-            }
+            },
         }
     }
 
@@ -600,7 +600,8 @@ impl<'py> PyArrayDescrMethods<'py> for Bound<'py, PyArrayDescr> {
             None => Vec::new(),
             Some(subarray) => {
                 // NumPy guarantees that shape is a tuple of non-negative integers so this should never panic.
-                unsafe { Borrowed::from_ptr(self.py(), subarray.shape) }.extract().unwrap()
+                let shape = unsafe { Borrowed::from_ptr(self.py(), subarray.shape) };
+                shape.extract().unwrap()
             }
         }
     }
