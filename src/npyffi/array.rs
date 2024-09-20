@@ -342,12 +342,7 @@ impl PyArrayAPI {
         dst: *mut PyArrayObject,
         src: *mut PyArrayObject,
     ) -> c_int {
-        let api_version = *API_VERSION.get(py).expect("API_VERSION is initialized");
-        let offset = if api_version < API_VERSION_2_0 {
-            82
-        } else {
-            50
-        };
+        let offset = if is_numpy_2(py) { 50 } else { 82 };
         let fptr = self.get(py, offset)
             as *const extern "C" fn(dst: *mut PyArrayObject, src: *mut PyArrayObject) -> c_int;
         (*fptr)(dst, src)
@@ -360,12 +355,7 @@ impl PyArrayAPI {
         out: *mut PyArrayObject,
         mp: *mut PyArrayObject,
     ) -> c_int {
-        let api_version = *API_VERSION.get(py).expect("API_VERSION is initialized");
-        let offset = if api_version < API_VERSION_2_0 {
-            83
-        } else {
-            51
-        };
+        let offset = if is_numpy_2(py) { 51 } else { 83 };
         let fptr = self.get(py, offset)
             as *const extern "C" fn(out: *mut PyArrayObject, mp: *mut PyArrayObject) -> c_int;
         (*fptr)(out, mp)

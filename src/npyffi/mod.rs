@@ -20,7 +20,7 @@ use pyo3::{
 
 pub const API_VERSION_2_0: c_uint = 0x00000012;
 
-pub static API_VERSION: GILOnceCell<c_uint> = GILOnceCell::new();
+static API_VERSION: GILOnceCell<c_uint> = GILOnceCell::new();
 
 fn get_numpy_api<'py>(
     py: Python<'py>,
@@ -36,13 +36,14 @@ fn get_numpy_api<'py>(
     // so we can safely cache a pointer into its interior.
     forget(capsule);
 
-    API_VERSION.get_or_init(py, || unsafe {
-        #[allow(non_snake_case)]
-        let PyArray_GetNDArrayCFeatureVersion = api.offset(211) as *const extern "C" fn() -> c_uint;
-        (*PyArray_GetNDArrayCFeatureVersion)()
-    });
-
     Ok(api)
+}
+
+fn is_numpy_2<'py>(py: Python<'py>) -> bool {
+    let api_version = *API_VERSION.get_or_init(py, || unsafe {
+        PY_ARRAY_API.PyArray_GetNDArrayCFeatureVersion(py)
+    });
+    api_version >= API_VERSION_2_0
 }
 
 // Implements wrappers for NumPy's Array and UFunc API
@@ -60,15 +61,13 @@ macro_rules! impl_api {
     [$offset: expr; NumPy1; $fname: ident ($($arg: ident: $t: ty),* $(,)?) $(-> $ret: ty)?] => {
         #[allow(non_snake_case)]
         pub unsafe fn $fname<'py>(&self, py: Python<'py>, $($arg : $t), *) $(-> $ret)* {
-            let api_version = *API_VERSION.get(py).expect("API_VERSION is initialized");
-            if api_version >= API_VERSION_2_0 {
-                panic!(
-                    "{} requires API < {:08X} (NumPy 1) but the runtime version is API {:08X}",
-                    stringify!($fname),
-                    API_VERSION_2_0,
-                    api_version,
-                )
-            }
+            assert!(
+                !is_numpy_2(py),
+                "{} requires API < {:08X} (NumPy 1) but the runtime version is API {:08X}",
+                stringify!($fname),
+                API_VERSION_2_0,
+                *API_VERSION.get(py).expect("API_VERSION is initialized"),
+            );
             let fptr = self.get(py, $offset) as *const extern fn ($($arg: $t), *) $(-> $ret)*;
             (*fptr)($($arg), *)
         }
@@ -77,15 +76,13 @@ macro_rules! impl_api {
     [$offset: expr; NumPy2; $fname: ident ($($arg: ident: $t: ty),* $(,)?) $(-> $ret: ty)?] => {
         #[allow(non_snake_case)]
         pub unsafe fn $fname<'py>(&self, py: Python<'py>, $($arg : $t), *) $(-> $ret)* {
-            let api_version = *API_VERSION.get(py).expect("API_VERSION is initialized");
-            if api_version < API_VERSION_2_0 {
-                panic!(
-                    "{} requires API {:08X} or greater (NumPy 2) but the runtime version is API {:08X}",
-                    stringify!($fname),
-                    API_VERSION_2_0,
-                    api_version,
-                )
-            }
+            assert!(
+                is_numpy_2(py),
+                "{} requires API {:08X} or greater (NumPy 2) but the runtime version is API {:08X}",
+                stringify!($fname),
+                API_VERSION_2_0,
+                *API_VERSION.get(py).expect("API_VERSION is initialized"),
+            );
             let fptr = self.get(py, $offset) as *const extern fn ($($arg: $t), *) $(-> $ret)*;
             (*fptr)($($arg), *)
         }

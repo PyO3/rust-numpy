@@ -110,14 +110,13 @@ pub unsafe fn PyDataType_SET_ELSIZE<'py>(
     dtype: *mut PyArray_Descr,
     size: npy_intp,
 ) {
-    let api_version = *API_VERSION.get(py).expect("API_VERSION is initialized");
-    if api_version < API_VERSION_2_0 {
+    if is_numpy_2(py) {
         unsafe {
-            (*(dtype as *mut PyArray_DescrProto)).elsize = size as c_int;
+            (*(dtype as *mut _PyArray_Descr_NumPy2)).elsize = size;
         }
     } else {
         unsafe {
-            (*(dtype as *mut _PyArray_Descr_NumPy2)).elsize = size;
+            (*(dtype as *mut PyArray_DescrProto)).elsize = size as c_int;
         }
     }
 }
@@ -125,11 +124,10 @@ pub unsafe fn PyDataType_SET_ELSIZE<'py>(
 #[allow(non_snake_case)]
 #[inline(always)]
 pub unsafe fn PyDataType_FLAGS<'py>(py: Python<'py>, dtype: *const PyArray_Descr) -> npy_uint64 {
-    let api_version = *API_VERSION.get(py).expect("API_VERSION is initialized");
-    if api_version < API_VERSION_2_0 {
-        unsafe { (*(dtype as *mut PyArray_DescrProto)).flags as c_uchar as npy_uint64 }
-    } else {
+    if is_numpy_2(py) {
         unsafe { (*(dtype as *mut _PyArray_Descr_NumPy2)).flags }
+    } else {
+        unsafe { (*(dtype as *mut PyArray_DescrProto)).flags as c_uchar as npy_uint64 }
     }
 }
 
@@ -141,11 +139,10 @@ macro_rules! define_descr_accessor {
             if $legacy_only && !PyDataType_ISLEGACY(dtype) {
                 $default
             } else {
-                let api_version = *API_VERSION.get(py).expect("API_VERSION is initialized");
-                if api_version < API_VERSION_2_0 {
-                    unsafe { (*(dtype as *mut PyArray_DescrProto)).$property as $type }
-                } else {
+                if is_numpy_2(py) {
                     unsafe { (*(dtype as *const _PyArray_Descr_NumPy1)).$property }
+                } else {
+                    unsafe { (*(dtype as *mut PyArray_DescrProto)).$property as $type }
                 }
             }
         }
