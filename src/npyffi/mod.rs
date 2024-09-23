@@ -39,7 +39,8 @@ fn get_numpy_api<'py>(
     Ok(api)
 }
 
-fn is_numpy_2<'py>(py: Python<'py>) -> bool {
+/// Returns whether the runtime `numpy` version is 2.0 or greater.
+pub fn is_numpy_2<'py>(py: Python<'py>) -> bool {
     let api_version = *API_VERSION.get_or_init(py, || unsafe {
         PY_ARRAY_API.PyArray_GetNDArrayCFeatureVersion(py)
     });
