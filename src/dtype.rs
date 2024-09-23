@@ -826,7 +826,7 @@ mod tests {
 
     use pyo3::{py_run, types::PyTypeMethods};
 
-    use crate::npyffi::NPY_NEEDS_PYAPI;
+    use crate::npyffi::{is_numpy_2, NPY_NEEDS_PYAPI};
 
     #[test]
     fn test_dtype_new() {
@@ -855,7 +855,11 @@ mod tests {
             dtype_bound::<T>(py).typeobj().qualname().unwrap()
         }
         Python::with_gil(|py| {
-            assert_eq!(type_name::<bool>(py), "bool_");
+            if is_numpy_2(py) {
+                assert_eq!(type_name::<bool>(py), "bool");
+            } else {
+                assert_eq!(type_name::<bool>(py), "bool_");
+            }
 
             assert_eq!(type_name::<i8>(py), "int8");
             assert_eq!(type_name::<i16>(py), "int16");
