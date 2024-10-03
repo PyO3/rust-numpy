@@ -36,7 +36,6 @@ jobs:
           { os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" },
           { os: "macOS-13",   python-architecture: "x64", rust-target: "x86_64-apple-darwin" },
           { os: "windows-latest", python-architecture: "x64", rust-target: "x86_64-pc-windows-msvc" },
-          { os: "windows-latest", python-architecture: "x86", rust-target: "i686-pc-windows-msvc" },
         ]
         include:
           # Older versions of CPython are not available for AArch64.
@@ -84,21 +83,29 @@ jobs:
       RUST_BACKTRACE: 1
 
   test-numpy1:
-    name: python${{ matrix.python-version }} numpy1
-    runs-on: ubuntu-latest
+    name: python${{ matrix.python-version }}-${{ matrix.platform.python-architecture }} ${{ matrix.platform.os }} numpy1
+    runs-on: ${{ matrix.platform.os }}
     needs: [lint, check-msrv, examples]
     strategy:
       fail-fast: ${{ !contains(github.event.pull_request.labels.*.name, 'CI-no-fail-fast') }}
       matrix:
         python-version: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
+        platform: [
+          { os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" },
+          { os: "macOS-13",   python-architecture: "x64", rust-target: "x86_64-apple-darwin" },
+          { os: "windows-latest", python-architecture: "x64", rust-target: "x86_64-pc-windows-msvc" },
+        ]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          architecture: ${{ matrix.platform.python-architecture }}
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform.rust-target }}
       - name: Install toml
         run: pip install toml
       - name: Edit Cargo.toml and enable new resolver

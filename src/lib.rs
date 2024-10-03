@@ -72,6 +72,9 @@ as well as the [`PyReadonlyArray::try_as_matrix`] and [`PyReadwriteArray::try_as
 
 #![deny(missing_docs, missing_debug_implementations)]
 
+#[cfg(all(target_os = "windows", target_arch = "x86"))]
+compile_error!("Compilation for 32-bit windows is not currently supported. See https://github.com/PyO3/rust-numpy/issues/448");
+
 pub mod array;
 mod array_like;
 pub mod borrow;
