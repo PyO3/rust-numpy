@@ -59,7 +59,7 @@ pub struct PyArray_DescrProto {
 
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub struct _PyArray_Descr_NumPy2 {
+pub struct _PyArray_DescrNumPy2 {
     pub ob_base: PyObject,
     pub typeobj: *mut PyTypeObject,
     pub kind: c_char,
@@ -77,7 +77,7 @@ pub struct _PyArray_Descr_NumPy2 {
 
 #[repr(C)]
 #[derive(Copy, Clone)]
-struct _PyArray_Descr_NumPy1 {
+struct _PyArray_LegacyDescr {
     pub ob_base: PyObject,
     pub typeobj: *mut PyTypeObject,
     pub kind: c_char,
@@ -112,7 +112,7 @@ pub unsafe fn PyDataType_SET_ELSIZE<'py>(
 ) {
     if is_numpy_2(py) {
         unsafe {
-            (*(dtype as *mut _PyArray_Descr_NumPy2)).elsize = size;
+            (*(dtype as *mut _PyArray_DescrNumPy2)).elsize = size;
         }
     } else {
         unsafe {
@@ -125,7 +125,7 @@ pub unsafe fn PyDataType_SET_ELSIZE<'py>(
 #[inline(always)]
 pub unsafe fn PyDataType_FLAGS<'py>(py: Python<'py>, dtype: *const PyArray_Descr) -> npy_uint64 {
     if is_numpy_2(py) {
-        unsafe { (*(dtype as *mut _PyArray_Descr_NumPy2)).flags }
+        unsafe { (*(dtype as *mut _PyArray_DescrNumPy2)).flags }
     } else {
         unsafe { (*(dtype as *mut PyArray_DescrProto)).flags as c_uchar as npy_uint64 }
     }
@@ -140,7 +140,7 @@ macro_rules! define_descr_accessor {
                 $default
             } else {
                 if is_numpy_2(py) {
-                    unsafe { (*(dtype as *const _PyArray_Descr_NumPy1)).$property }
+                    unsafe { (*(dtype as *const _PyArray_LegacyDescr)).$property }
                 } else {
                     unsafe { (*(dtype as *mut PyArray_DescrProto)).$property as $type }
                 }
