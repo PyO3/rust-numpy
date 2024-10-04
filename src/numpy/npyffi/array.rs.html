@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/npyffi/array.rs`."><title>array.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-081576b923113409.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="numpy" data-themes="" data-resource-suffix="" data-rustdoc-version="1.79.0 (129f3b996 2024-06-10)" data-channel="1.79.0" data-search-js="search-bf21c90c8c1d92b1.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-e32f0c247825364d.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-09095024cf37855e.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../numpy/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Type ‘S’ or ‘/’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings">Settings</a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/npyffi/array.rs`."><title>array.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="numpy" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -404,6 +404,50 @@
 <a href="#404" id="404">404</a>
 <a href="#405" id="405">405</a>
 <a href="#406" id="406">406</a>
+<a href="#407" id="407">407</a>
+<a href="#408" id="408">408</a>
+<a href="#409" id="409">409</a>
+<a href="#410" id="410">410</a>
+<a href="#411" id="411">411</a>
+<a href="#412" id="412">412</a>
+<a href="#413" id="413">413</a>
+<a href="#414" id="414">414</a>
+<a href="#415" id="415">415</a>
+<a href="#416" id="416">416</a>
+<a href="#417" id="417">417</a>
+<a href="#418" id="418">418</a>
+<a href="#419" id="419">419</a>
+<a href="#420" id="420">420</a>
+<a href="#421" id="421">421</a>
+<a href="#422" id="422">422</a>
+<a href="#423" id="423">423</a>
+<a href="#424" id="424">424</a>
+<a href="#425" id="425">425</a>
+<a href="#426" id="426">426</a>
+<a href="#427" id="427">427</a>
+<a href="#428" id="428">428</a>
+<a href="#429" id="429">429</a>
+<a href="#430" id="430">430</a>
+<a href="#431" id="431">431</a>
+<a href="#432" id="432">432</a>
+<a href="#433" id="433">433</a>
+<a href="#434" id="434">434</a>
+<a href="#435" id="435">435</a>
+<a href="#436" id="436">436</a>
+<a href="#437" id="437">437</a>
+<a href="#438" id="438">438</a>
+<a href="#439" id="439">439</a>
+<a href="#440" id="440">440</a>
+<a href="#441" id="441">441</a>
+<a href="#442" id="442">442</a>
+<a href="#443" id="443">443</a>
+<a href="#444" id="444">444</a>
+<a href="#445" id="445">445</a>
+<a href="#446" id="446">446</a>
+<a href="#447" id="447">447</a>
+<a href="#448" id="448">448</a>
+<a href="#449" id="449">449</a>
+<a href="#450" id="450">450</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Low-Level binding for [Array API](https://numpy.org/doc/stable/reference/c-api/array.html)
 //!
 //! Note that NumPy's low-level allocation functions `PyArray_{malloc,realloc,free}` are not part of this module.
@@ -474,8 +518,7 @@
     <span class="macro">impl_api!</span>[<span class="number">47</span>; PyArray_Zero(arr: <span class="kw-2">*mut </span>PyArrayObject) -&gt; <span class="kw-2">*mut </span>c_char];
     <span class="macro">impl_api!</span>[<span class="number">48</span>; PyArray_One(arr: <span class="kw-2">*mut </span>PyArrayObject) -&gt; <span class="kw-2">*mut </span>c_char];
     <span class="macro">impl_api!</span>[<span class="number">49</span>; PyArray_CastToType(arr: <span class="kw-2">*mut </span>PyArrayObject, dtype: <span class="kw-2">*mut </span>PyArray_Descr, is_f_order: c_int) -&gt; <span class="kw-2">*mut </span>PyObject];
-    <span class="macro">impl_api!</span>[<span class="number">50</span>; PyArray_CastTo(out: <span class="kw-2">*mut </span>PyArrayObject, mp: <span class="kw-2">*mut </span>PyArrayObject) -&gt; c_int];
-    <span class="macro">impl_api!</span>[<span class="number">51</span>; PyArray_CastAnyTo(out: <span class="kw-2">*mut </span>PyArrayObject, mp: <span class="kw-2">*mut </span>PyArrayObject) -&gt; c_int];
+    <span class="macro">impl_api!</span>[<span class="number">50</span>; NumPy1; PyArray_CastTo(out: <span class="kw-2">*mut </span>PyArrayObject, mp: <span class="kw-2">*mut </span>PyArrayObject) -&gt; c_int];
     <span class="macro">impl_api!</span>[<span class="number">52</span>; PyArray_CanCastSafely(fromtype: c_int, totype: c_int) -&gt; c_int];
     <span class="macro">impl_api!</span>[<span class="number">53</span>; PyArray_CanCastTo(from: <span class="kw-2">*mut </span>PyArray_Descr, to: <span class="kw-2">*mut </span>PyArray_Descr) -&gt; npy_bool];
     <span class="macro">impl_api!</span>[<span class="number">54</span>; PyArray_ObjectType(op: <span class="kw-2">*mut </span>PyObject, minimum_type: c_int) -&gt; c_int];
@@ -489,10 +532,11 @@
     <span class="macro">impl_api!</span>[<span class="number">62</span>; PyArray_ScalarAsCtype(scalar: <span class="kw-2">*mut </span>PyObject, ctypeptr: <span class="kw-2">*mut </span>c_void)];
     <span class="macro">impl_api!</span>[<span class="number">63</span>; PyArray_CastScalarToCtype(scalar: <span class="kw-2">*mut </span>PyObject, ctypeptr: <span class="kw-2">*mut </span>c_void, outcode: <span class="kw-2">*mut </span>PyArray_Descr) -&gt; c_int];
     <span class="macro">impl_api!</span>[<span class="number">64</span>; PyArray_CastScalarDirect(scalar: <span class="kw-2">*mut </span>PyObject, indescr: <span class="kw-2">*mut </span>PyArray_Descr, ctypeptr: <span class="kw-2">*mut </span>c_void, outtype: c_int) -&gt; c_int];
-    <span class="macro">impl_api!</span>[<span class="number">65</span>; PyArray_ScalarFromObject(object: <span class="kw-2">*mut </span>PyObject) -&gt; <span class="kw-2">*mut </span>PyObject];
-    <span class="macro">impl_api!</span>[<span class="number">66</span>; PyArray_GetCastFunc(descr: <span class="kw-2">*mut </span>PyArray_Descr, type_num: c_int) -&gt; PyArray_VectorUnaryFunc];
-    <span class="macro">impl_api!</span>[<span class="number">67</span>; PyArray_FromDims(nd: c_int, d: <span class="kw-2">*mut </span>c_int, type_: c_int) -&gt; <span class="kw-2">*mut </span>PyObject];
-    <span class="macro">impl_api!</span>[<span class="number">68</span>; PyArray_FromDimsAndDataAndDescr(nd: c_int, d: <span class="kw-2">*mut </span>c_int, descr: <span class="kw-2">*mut </span>PyArray_Descr, data: <span class="kw-2">*mut </span>c_char) -&gt; <span class="kw-2">*mut </span>PyObject];
+    <span class="macro">impl_api!</span>[<span class="number">65</span>; NumPy1; PyArray_ScalarFromObject(object: <span class="kw-2">*mut </span>PyObject) -&gt; <span class="kw-2">*mut </span>PyObject];
+    <span class="macro">impl_api!</span>[<span class="number">65</span>; NumPy2; PyArray_Pack(descr: <span class="kw-2">*mut </span>PyArray_Descr, item: <span class="kw-2">*mut </span>c_void, value: <span class="kw-2">*const </span>PyObject) -&gt; <span class="kw-2">*mut </span>PyObject];
+    <span class="macro">impl_api!</span>[<span class="number">66</span>; NumPy1; PyArray_GetCastFunc(descr: <span class="kw-2">*mut </span>PyArray_Descr, type_num: c_int) -&gt; PyArray_VectorUnaryFunc];
+    <span class="macro">impl_api!</span>[<span class="number">67</span>; NumPy1; PyArray_FromDims(nd: c_int, d: <span class="kw-2">*mut </span>c_int, type_: c_int) -&gt; <span class="kw-2">*mut </span>PyObject];
+    <span class="macro">impl_api!</span>[<span class="number">68</span>; NumPy1; PyArray_FromDimsAndDataAndDescr(nd: c_int, d: <span class="kw-2">*mut </span>c_int, descr: <span class="kw-2">*mut </span>PyArray_Descr, data: <span class="kw-2">*mut </span>c_char) -&gt; <span class="kw-2">*mut </span>PyObject];
     <span class="macro">impl_api!</span>[<span class="number">69</span>; PyArray_FromAny(op: <span class="kw-2">*mut </span>PyObject, newtype: <span class="kw-2">*mut </span>PyArray_Descr, min_depth: c_int, max_depth: c_int, flags: c_int, context: <span class="kw-2">*mut </span>PyObject) -&gt; <span class="kw-2">*mut </span>PyObject];
     <span class="macro">impl_api!</span>[<span class="number">70</span>; PyArray_EnsureArray(op: <span class="kw-2">*mut </span>PyObject) -&gt; <span class="kw-2">*mut </span>PyObject];
     <span class="macro">impl_api!</span>[<span class="number">71</span>; PyArray_EnsureAnyArray(op: <span class="kw-2">*mut </span>PyObject) -&gt; <span class="kw-2">*mut </span>PyObject];
@@ -505,9 +549,7 @@
     <span class="macro">impl_api!</span>[<span class="number">78</span>; PyArray_SetField(self_: <span class="kw-2">*mut </span>PyArrayObject, dtype: <span class="kw-2">*mut </span>PyArray_Descr, offset: c_int, val: <span class="kw-2">*mut </span>PyObject) -&gt; c_int];
     <span class="macro">impl_api!</span>[<span class="number">79</span>; PyArray_Byteswap(self_: <span class="kw-2">*mut </span>PyArrayObject, inplace: npy_bool) -&gt; <span class="kw-2">*mut </span>PyObject];
     <span class="macro">impl_api!</span>[<span class="number">80</span>; PyArray_Resize(self_: <span class="kw-2">*mut </span>PyArrayObject, newshape: <span class="kw-2">*mut </span>PyArray_Dims, refcheck: c_int, order: NPY_ORDER) -&gt; <span class="kw-2">*mut </span>PyObject];
-    <span class="macro">impl_api!</span>[<span class="number">81</span>; PyArray_MoveInto(dst: <span class="kw-2">*mut </span>PyArrayObject, src: <span class="kw-2">*mut </span>PyArrayObject) -&gt; c_int];
-    <span class="macro">impl_api!</span>[<span class="number">82</span>; PyArray_CopyInto(dst: <span class="kw-2">*mut </span>PyArrayObject, src: <span class="kw-2">*mut </span>PyArrayObject) -&gt; c_int];
-    <span class="macro">impl_api!</span>[<span class="number">83</span>; PyArray_CopyAnyInto(dst: <span class="kw-2">*mut </span>PyArrayObject, src: <span class="kw-2">*mut </span>PyArrayObject) -&gt; c_int];
+    <span class="macro">impl_api!</span>[<span class="number">81</span>; NumPy1; PyArray_MoveInto(dst: <span class="kw-2">*mut </span>PyArrayObject, src: <span class="kw-2">*mut </span>PyArrayObject) -&gt; c_int];
     <span class="macro">impl_api!</span>[<span class="number">84</span>; PyArray_CopyObject(dest: <span class="kw-2">*mut </span>PyArrayObject, src_object: <span class="kw-2">*mut </span>PyObject) -&gt; c_int];
     <span class="macro">impl_api!</span>[<span class="number">85</span>; PyArray_NewCopy(obj: <span class="kw-2">*mut </span>PyArrayObject, order: NPY_ORDER) -&gt; <span class="kw-2">*mut </span>PyObject];
     <span class="macro">impl_api!</span>[<span class="number">86</span>; PyArray_ToList(self_: <span class="kw-2">*mut </span>PyArrayObject) -&gt; <span class="kw-2">*mut </span>PyObject];
@@ -527,7 +569,7 @@
     </span><span class="macro">impl_api!</span>[<span class="number">100</span>; PyArray_PyIntAsInt(o: <span class="kw-2">*mut </span>PyObject) -&gt; c_int];
     <span class="macro">impl_api!</span>[<span class="number">101</span>; PyArray_PyIntAsIntp(o: <span class="kw-2">*mut </span>PyObject) -&gt; npy_intp];
     <span class="macro">impl_api!</span>[<span class="number">102</span>; PyArray_Broadcast(mit: <span class="kw-2">*mut </span>PyArrayMultiIterObject) -&gt; c_int];
-    <span class="macro">impl_api!</span>[<span class="number">103</span>; PyArray_FillObjectArray(arr: <span class="kw-2">*mut </span>PyArrayObject, obj: <span class="kw-2">*mut </span>PyObject)];
+    <span class="macro">impl_api!</span>[<span class="number">103</span>; NumPy1; PyArray_FillObjectArray(arr: <span class="kw-2">*mut </span>PyArrayObject, obj: <span class="kw-2">*mut </span>PyObject)];
     <span class="macro">impl_api!</span>[<span class="number">104</span>; PyArray_FillWithScalar(arr: <span class="kw-2">*mut </span>PyArrayObject, obj: <span class="kw-2">*mut </span>PyObject) -&gt; c_int];
     <span class="macro">impl_api!</span>[<span class="number">105</span>; PyArray_CheckStrides(elsize: c_int, nd: c_int, numbytes: npy_intp, offset: npy_intp, dims: <span class="kw-2">*mut </span>npy_intp, newstrides: <span class="kw-2">*mut </span>npy_intp) -&gt; npy_bool];
     <span class="macro">impl_api!</span>[<span class="number">106</span>; PyArray_DescrNewByteorder(self_: <span class="kw-2">*mut </span>PyArray_Descr, newendian: c_char) -&gt; <span class="kw-2">*mut </span>PyArray_Descr];
@@ -539,14 +581,14 @@
     <span class="macro">impl_api!</span>[<span class="number">112</span>; PyArray_FromArrayAttr(op: <span class="kw-2">*mut </span>PyObject, typecode: <span class="kw-2">*mut </span>PyArray_Descr, context: <span class="kw-2">*mut </span>PyObject) -&gt; <span class="kw-2">*mut </span>PyObject];
     <span class="macro">impl_api!</span>[<span class="number">113</span>; PyArray_ScalarKind(typenum: c_int, arr: <span class="kw-2">*mut *mut </span>PyArrayObject) -&gt; NPY_SCALARKIND];
     <span class="macro">impl_api!</span>[<span class="number">114</span>; PyArray_CanCoerceScalar(thistype: c_int, neededtype: c_int, scalar: NPY_SCALARKIND) -&gt; c_int];
-    <span class="macro">impl_api!</span>[<span class="number">115</span>; PyArray_NewFlagsObject(obj: <span class="kw-2">*mut </span>PyObject) -&gt; <span class="kw-2">*mut </span>PyObject];
+    <span class="macro">impl_api!</span>[<span class="number">115</span>; NumPy1; PyArray_NewFlagsObject(obj: <span class="kw-2">*mut </span>PyObject) -&gt; <span class="kw-2">*mut </span>PyObject];
     <span class="macro">impl_api!</span>[<span class="number">116</span>; PyArray_CanCastScalar(from: <span class="kw-2">*mut </span>PyTypeObject, to: <span class="kw-2">*mut </span>PyTypeObject) -&gt; npy_bool];
-    <span class="macro">impl_api!</span>[<span class="number">117</span>; PyArray_CompareUCS4(s1: <span class="kw-2">*mut </span>npy_ucs4, s2: <span class="kw-2">*mut </span>npy_ucs4, len: usize) -&gt; c_int];
+    <span class="macro">impl_api!</span>[<span class="number">117</span>; NumPy1; PyArray_CompareUCS4(s1: <span class="kw-2">*mut </span>npy_ucs4, s2: <span class="kw-2">*mut </span>npy_ucs4, len: usize) -&gt; c_int];
     <span class="macro">impl_api!</span>[<span class="number">118</span>; PyArray_RemoveSmallest(multi: <span class="kw-2">*mut </span>PyArrayMultiIterObject) -&gt; c_int];
     <span class="macro">impl_api!</span>[<span class="number">119</span>; PyArray_ElementStrides(obj: <span class="kw-2">*mut </span>PyObject) -&gt; c_int];
     <span class="macro">impl_api!</span>[<span class="number">120</span>; PyArray_Item_INCREF(data: <span class="kw-2">*mut </span>c_char, descr: <span class="kw-2">*mut </span>PyArray_Descr)];
     <span class="macro">impl_api!</span>[<span class="number">121</span>; PyArray_Item_XDECREF(data: <span class="kw-2">*mut </span>c_char, descr: <span class="kw-2">*mut </span>PyArray_Descr)];
-    <span class="macro">impl_api!</span>[<span class="number">122</span>; PyArray_FieldNames(fields: <span class="kw-2">*mut </span>PyObject) -&gt; <span class="kw-2">*mut </span>PyObject];
+    <span class="macro">impl_api!</span>[<span class="number">122</span>; NumPy1; PyArray_FieldNames(fields: <span class="kw-2">*mut </span>PyObject) -&gt; <span class="kw-2">*mut </span>PyObject];
     <span class="macro">impl_api!</span>[<span class="number">123</span>; PyArray_Transpose(ap: <span class="kw-2">*mut </span>PyArrayObject, permute: <span class="kw-2">*mut </span>PyArray_Dims) -&gt; <span class="kw-2">*mut </span>PyObject];
     <span class="macro">impl_api!</span>[<span class="number">124</span>; PyArray_TakeFrom(self0: <span class="kw-2">*mut </span>PyArrayObject, indices0: <span class="kw-2">*mut </span>PyObject, axis: c_int, out: <span class="kw-2">*mut </span>PyArrayObject, clipmode: NPY_CLIPMODE) -&gt; <span class="kw-2">*mut </span>PyObject];
     <span class="macro">impl_api!</span>[<span class="number">125</span>; PyArray_PutTo(self_: <span class="kw-2">*mut </span>PyArrayObject, values0: <span class="kw-2">*mut </span>PyObject, indices0: <span class="kw-2">*mut </span>PyObject, clipmode: NPY_CLIPMODE) -&gt; <span class="kw-2">*mut </span>PyObject];
@@ -587,17 +629,17 @@
     <span class="macro">impl_api!</span>[<span class="number">160</span>; PyArray_GetPtr(obj: <span class="kw-2">*mut </span>PyArrayObject, ind: <span class="kw-2">*mut </span>npy_intp) -&gt; <span class="kw-2">*mut </span>c_void];
     <span class="macro">impl_api!</span>[<span class="number">161</span>; PyArray_CompareLists(l1: <span class="kw-2">*mut </span>npy_intp, l2: <span class="kw-2">*mut </span>npy_intp, n: c_int) -&gt; c_int];
     <span class="macro">impl_api!</span>[<span class="number">162</span>; PyArray_AsCArray(op: <span class="kw-2">*mut *mut </span>PyObject, ptr: <span class="kw-2">*mut </span>c_void, dims: <span class="kw-2">*mut </span>npy_intp, nd: c_int, typedescr: <span class="kw-2">*mut </span>PyArray_Descr) -&gt; c_int];
-    <span class="macro">impl_api!</span>[<span class="number">163</span>; PyArray_As1D(op: <span class="kw-2">*mut *mut </span>PyObject, ptr: <span class="kw-2">*mut *mut </span>c_char, d1: <span class="kw-2">*mut </span>c_int, typecode: c_int) -&gt; c_int];
-    <span class="macro">impl_api!</span>[<span class="number">164</span>; PyArray_As2D(op: <span class="kw-2">*mut *mut </span>PyObject, ptr: <span class="kw-2">*mut *mut *mut </span>c_char, d1: <span class="kw-2">*mut </span>c_int, d2: <span class="kw-2">*mut </span>c_int, typecode: c_int) -&gt; c_int];
+    <span class="macro">impl_api!</span>[<span class="number">163</span>; NumPy1; PyArray_As1D(op: <span class="kw-2">*mut *mut </span>PyObject, ptr: <span class="kw-2">*mut *mut </span>c_char, d1: <span class="kw-2">*mut </span>c_int, typecode: c_int) -&gt; c_int];
+    <span class="macro">impl_api!</span>[<span class="number">164</span>; NumPy1; PyArray_As2D(op: <span class="kw-2">*mut *mut </span>PyObject, ptr: <span class="kw-2">*mut *mut *mut </span>c_char, d1: <span class="kw-2">*mut </span>c_int, d2: <span class="kw-2">*mut </span>c_int, typecode: c_int) -&gt; c_int];
     <span class="macro">impl_api!</span>[<span class="number">165</span>; PyArray_Free(op: <span class="kw-2">*mut </span>PyObject, ptr: <span class="kw-2">*mut </span>c_void) -&gt; c_int];
     <span class="macro">impl_api!</span>[<span class="number">166</span>; PyArray_Converter(object: <span class="kw-2">*mut </span>PyObject, address: <span class="kw-2">*mut *mut </span>PyObject) -&gt; c_int];
     <span class="macro">impl_api!</span>[<span class="number">167</span>; PyArray_IntpFromSequence(seq: <span class="kw-2">*mut </span>PyObject, vals: <span class="kw-2">*mut </span>npy_intp, maxvals: c_int) -&gt; c_int];
     <span class="macro">impl_api!</span>[<span class="number">168</span>; PyArray_Concatenate(op: <span class="kw-2">*mut </span>PyObject, axis: c_int) -&gt; <span class="kw-2">*mut </span>PyObject];
     <span class="macro">impl_api!</span>[<span class="number">169</span>; PyArray_InnerProduct(op1: <span class="kw-2">*mut </span>PyObject, op2: <span class="kw-2">*mut </span>PyObject) -&gt; <span class="kw-2">*mut </span>PyObject];
     <span class="macro">impl_api!</span>[<span class="number">170</span>; PyArray_MatrixProduct(op1: <span class="kw-2">*mut </span>PyObject, op2: <span class="kw-2">*mut </span>PyObject) -&gt; <span class="kw-2">*mut </span>PyObject];
-    <span class="macro">impl_api!</span>[<span class="number">171</span>; PyArray_CopyAndTranspose(op: <span class="kw-2">*mut </span>PyObject) -&gt; <span class="kw-2">*mut </span>PyObject];
+    <span class="macro">impl_api!</span>[<span class="number">171</span>; NumPy1; PyArray_CopyAndTranspose(op: <span class="kw-2">*mut </span>PyObject) -&gt; <span class="kw-2">*mut </span>PyObject];
     <span class="macro">impl_api!</span>[<span class="number">172</span>; PyArray_Correlate(op1: <span class="kw-2">*mut </span>PyObject, op2: <span class="kw-2">*mut </span>PyObject, mode: c_int) -&gt; <span class="kw-2">*mut </span>PyObject];
-    <span class="macro">impl_api!</span>[<span class="number">173</span>; PyArray_TypestrConvert(itemsize: c_int, gentype: c_int) -&gt; c_int];
+    <span class="macro">impl_api!</span>[<span class="number">173</span>; NumPy1; PyArray_TypestrConvert(itemsize: c_int, gentype: c_int) -&gt; c_int];
     <span class="macro">impl_api!</span>[<span class="number">174</span>; PyArray_DescrConverter(obj: <span class="kw-2">*mut </span>PyObject, at: <span class="kw-2">*mut *mut </span>PyArray_Descr) -&gt; c_int];
     <span class="macro">impl_api!</span>[<span class="number">175</span>; PyArray_DescrConverter2(obj: <span class="kw-2">*mut </span>PyObject, at: <span class="kw-2">*mut *mut </span>PyArray_Descr) -&gt; c_int];
     <span class="macro">impl_api!</span>[<span class="number">176</span>; PyArray_IntpConverter(obj: <span class="kw-2">*mut </span>PyObject, seq: <span class="kw-2">*mut </span>PyArray_Dims) -&gt; c_int];
@@ -616,33 +658,33 @@
     <span class="macro">impl_api!</span>[<span class="number">189</span>; PyArray_LexSort(sort_keys: <span class="kw-2">*mut </span>PyObject, axis: c_int) -&gt; <span class="kw-2">*mut </span>PyObject];
     <span class="macro">impl_api!</span>[<span class="number">190</span>; PyArray_Round(a: <span class="kw-2">*mut </span>PyArrayObject, decimals: c_int, out: <span class="kw-2">*mut </span>PyArrayObject) -&gt; <span class="kw-2">*mut </span>PyObject];
     <span class="macro">impl_api!</span>[<span class="number">191</span>; PyArray_EquivTypenums(typenum1: c_int, typenum2: c_int) -&gt; c_uchar];
-    <span class="macro">impl_api!</span>[<span class="number">192</span>; PyArray_RegisterDataType(descr: <span class="kw-2">*mut </span>PyArray_Descr) -&gt; c_int];
+    <span class="macro">impl_api!</span>[<span class="number">192</span>; PyArray_RegisterDataType(descr: <span class="kw-2">*mut </span>PyArray_DescrProto) -&gt; c_int];
     <span class="macro">impl_api!</span>[<span class="number">193</span>; PyArray_RegisterCastFunc(descr: <span class="kw-2">*mut </span>PyArray_Descr, totype: c_int, castfunc: PyArray_VectorUnaryFunc) -&gt; c_int];
     <span class="macro">impl_api!</span>[<span class="number">194</span>; PyArray_RegisterCanCast(descr: <span class="kw-2">*mut </span>PyArray_Descr, totype: c_int, scalar: NPY_SCALARKIND) -&gt; c_int];
     <span class="macro">impl_api!</span>[<span class="number">195</span>; PyArray_InitArrFuncs(f: <span class="kw-2">*mut </span>PyArray_ArrFuncs)];
     <span class="macro">impl_api!</span>[<span class="number">196</span>; PyArray_IntTupleFromIntp(len: c_int, vals: <span class="kw-2">*mut </span>npy_intp) -&gt; <span class="kw-2">*mut </span>PyObject];
-    <span class="macro">impl_api!</span>[<span class="number">197</span>; PyArray_ElementFromName(str: <span class="kw-2">*mut </span>c_char) -&gt; c_int];
+    <span class="macro">impl_api!</span>[<span class="number">197</span>; NumPy1; PyArray_ElementFromName(str: <span class="kw-2">*mut </span>c_char) -&gt; c_int];
     <span class="macro">impl_api!</span>[<span class="number">198</span>; PyArray_ClipmodeConverter(object: <span class="kw-2">*mut </span>PyObject, val: <span class="kw-2">*mut </span>NPY_CLIPMODE) -&gt; c_int];
     <span class="macro">impl_api!</span>[<span class="number">199</span>; PyArray_OutputConverter(object: <span class="kw-2">*mut </span>PyObject, address: <span class="kw-2">*mut *mut </span>PyArrayObject) -&gt; c_int];
     <span class="macro">impl_api!</span>[<span class="number">200</span>; PyArray_BroadcastToShape(obj: <span class="kw-2">*mut </span>PyObject, dims: <span class="kw-2">*mut </span>npy_intp, nd: c_int) -&gt; <span class="kw-2">*mut </span>PyObject];
-    <span class="macro">impl_api!</span>[<span class="number">201</span>; _PyArray_SigintHandler(signum: c_int)];
-    <span class="macro">impl_api!</span>[<span class="number">202</span>; _PyArray_GetSigintBuf() -&gt; <span class="kw-2">*mut </span>c_void];
+    <span class="macro">impl_api!</span>[<span class="number">201</span>; NumPy1; _PyArray_SigintHandler(signum: c_int)];
+    <span class="macro">impl_api!</span>[<span class="number">202</span>; NumPy1; _PyArray_GetSigintBuf() -&gt; <span class="kw-2">*mut </span>c_void];
     <span class="macro">impl_api!</span>[<span class="number">203</span>; PyArray_DescrAlignConverter(obj: <span class="kw-2">*mut </span>PyObject, at: <span class="kw-2">*mut *mut </span>PyArray_Descr) -&gt; c_int];
     <span class="macro">impl_api!</span>[<span class="number">204</span>; PyArray_DescrAlignConverter2(obj: <span class="kw-2">*mut </span>PyObject, at: <span class="kw-2">*mut *mut </span>PyArray_Descr) -&gt; c_int];
     <span class="macro">impl_api!</span>[<span class="number">205</span>; PyArray_SearchsideConverter(obj: <span class="kw-2">*mut </span>PyObject, addr: <span class="kw-2">*mut </span>c_void) -&gt; c_int];
     <span class="macro">impl_api!</span>[<span class="number">206</span>; PyArray_CheckAxis(arr: <span class="kw-2">*mut </span>PyArrayObject, axis: <span class="kw-2">*mut </span>c_int, flags: c_int) -&gt; <span class="kw-2">*mut </span>PyObject];
     <span class="macro">impl_api!</span>[<span class="number">207</span>; PyArray_OverflowMultiplyList(l1: <span class="kw-2">*mut </span>npy_intp, n: c_int) -&gt; npy_intp];
-    <span class="macro">impl_api!</span>[<span class="number">208</span>; PyArray_CompareString(s1: <span class="kw-2">*mut </span>c_char, s2: <span class="kw-2">*mut </span>c_char, len: usize) -&gt; c_int];
+    <span class="macro">impl_api!</span>[<span class="number">208</span>; NumPy1; PyArray_CompareString(s1: <span class="kw-2">*mut </span>c_char, s2: <span class="kw-2">*mut </span>c_char, len: usize) -&gt; c_int];
     <span class="comment">// impl_api![209; PyArray_MultiIterFromObjects(mps: *mut *mut PyObject, n: c_int, nadd: c_int, ...) -&gt; *mut PyObject];
     </span><span class="macro">impl_api!</span>[<span class="number">210</span>; PyArray_GetEndianness() -&gt; c_int];
     <span class="macro">impl_api!</span>[<span class="number">211</span>; PyArray_GetNDArrayCFeatureVersion() -&gt; c_uint];
     <span class="macro">impl_api!</span>[<span class="number">212</span>; PyArray_Correlate2(op1: <span class="kw-2">*mut </span>PyObject, op2: <span class="kw-2">*mut </span>PyObject, mode: c_int) -&gt; <span class="kw-2">*mut </span>PyObject];
     <span class="macro">impl_api!</span>[<span class="number">213</span>; PyArray_NeighborhoodIterNew(x: <span class="kw-2">*mut </span>PyArrayIterObject, bounds: <span class="kw-2">*mut </span>npy_intp, mode: c_int, fill: <span class="kw-2">*mut </span>PyArrayObject) -&gt; <span class="kw-2">*mut </span>PyObject];
-    <span class="macro">impl_api!</span>[<span class="number">219</span>; PyArray_SetDatetimeParseFunction(op: <span class="kw-2">*mut </span>PyObject)];
-    <span class="macro">impl_api!</span>[<span class="number">220</span>; PyArray_DatetimeToDatetimeStruct(val: npy_datetime, fr: NPY_DATETIMEUNIT, result: <span class="kw-2">*mut </span>npy_datetimestruct)];
-    <span class="macro">impl_api!</span>[<span class="number">221</span>; PyArray_TimedeltaToTimedeltaStruct(val: npy_timedelta, fr: NPY_DATETIMEUNIT, result: <span class="kw-2">*mut </span>npy_timedeltastruct)];
-    <span class="macro">impl_api!</span>[<span class="number">222</span>; PyArray_DatetimeStructToDatetime(fr: NPY_DATETIMEUNIT, d: <span class="kw-2">*mut </span>npy_datetimestruct) -&gt; npy_datetime];
-    <span class="macro">impl_api!</span>[<span class="number">223</span>; PyArray_TimedeltaStructToTimedelta(fr: NPY_DATETIMEUNIT, d: <span class="kw-2">*mut </span>npy_timedeltastruct) -&gt; npy_datetime];
+    <span class="macro">impl_api!</span>[<span class="number">219</span>; NumPy1; PyArray_SetDatetimeParseFunction(op: <span class="kw-2">*mut </span>PyObject)];
+    <span class="macro">impl_api!</span>[<span class="number">220</span>; NumPy1; PyArray_DatetimeToDatetimeStruct(val: npy_datetime, fr: NPY_DATETIMEUNIT, result: <span class="kw-2">*mut </span>npy_datetimestruct)];
+    <span class="macro">impl_api!</span>[<span class="number">221</span>; NumPy1; PyArray_TimedeltaToTimedeltaStruct(val: npy_timedelta, fr: NPY_DATETIMEUNIT, result: <span class="kw-2">*mut </span>npy_timedeltastruct)];
+    <span class="macro">impl_api!</span>[<span class="number">222</span>; NumPy1; PyArray_DatetimeStructToDatetime(fr: NPY_DATETIMEUNIT, d: <span class="kw-2">*mut </span>npy_datetimestruct) -&gt; npy_datetime];
+    <span class="macro">impl_api!</span>[<span class="number">223</span>; NumPy1; PyArray_TimedeltaStructToTimedelta(fr: NPY_DATETIMEUNIT, d: <span class="kw-2">*mut </span>npy_timedeltastruct) -&gt; npy_datetime];
     <span class="macro">impl_api!</span>[<span class="number">224</span>; NpyIter_New(op: <span class="kw-2">*mut </span>PyArrayObject, flags: npy_uint32, order: NPY_ORDER, casting: NPY_CASTING, dtype: <span class="kw-2">*mut </span>PyArray_Descr) -&gt; <span class="kw-2">*mut </span>NpyIter];
     <span class="macro">impl_api!</span>[<span class="number">225</span>; NpyIter_MultiNew(nop: c_int, op_in: <span class="kw-2">*mut *mut </span>PyArrayObject, flags: npy_uint32, order: NPY_ORDER, casting: NPY_CASTING, op_flags: <span class="kw-2">*mut </span>npy_uint32, op_request_dtypes: <span class="kw-2">*mut *mut </span>PyArray_Descr) -&gt; <span class="kw-2">*mut </span>NpyIter];
     <span class="macro">impl_api!</span>[<span class="number">226</span>; NpyIter_AdvancedNew(nop: c_int, op_in: <span class="kw-2">*mut *mut </span>PyArrayObject, flags: npy_uint32, order: NPY_ORDER, casting: NPY_CASTING, op_flags: <span class="kw-2">*mut </span>npy_uint32, op_request_dtypes: <span class="kw-2">*mut *mut </span>PyArray_Descr, oa_ndim: c_int, op_axes: <span class="kw-2">*mut *mut </span>c_int, itershape: <span class="kw-2">*mut </span>npy_intp, buffersize: npy_intp) -&gt; <span class="kw-2">*mut </span>NpyIter];
@@ -697,7 +739,7 @@
     <span class="macro">impl_api!</span>[<span class="number">275</span>; PyArray_CanCastTypeTo(from: <span class="kw-2">*mut </span>PyArray_Descr, to: <span class="kw-2">*mut </span>PyArray_Descr, casting: NPY_CASTING) -&gt; npy_bool];
     <span class="macro">impl_api!</span>[<span class="number">276</span>; PyArray_EinsteinSum(subscripts: <span class="kw-2">*mut </span>c_char, nop: npy_intp, op_in: <span class="kw-2">*mut *mut </span>PyArrayObject, dtype: <span class="kw-2">*mut </span>PyArray_Descr, order: NPY_ORDER, casting: NPY_CASTING, out: <span class="kw-2">*mut </span>PyArrayObject) -&gt; <span class="kw-2">*mut </span>PyObject];
     <span class="macro">impl_api!</span>[<span class="number">277</span>; PyArray_NewLikeArray(prototype: <span class="kw-2">*mut </span>PyArrayObject, order: NPY_ORDER, dtype: <span class="kw-2">*mut </span>PyArray_Descr, subok: c_int) -&gt; <span class="kw-2">*mut </span>PyObject];
-    <span class="macro">impl_api!</span>[<span class="number">278</span>; PyArray_GetArrayParamsFromObject(op: <span class="kw-2">*mut </span>PyObject, requested_dtype: <span class="kw-2">*mut </span>PyArray_Descr, writeable: npy_bool, out_dtype: <span class="kw-2">*mut *mut </span>PyArray_Descr, out_ndim: <span class="kw-2">*mut </span>c_int, out_dims: <span class="kw-2">*mut </span>npy_intp, out_arr: <span class="kw-2">*mut *mut </span>PyArrayObject, context: <span class="kw-2">*mut </span>PyObject) -&gt; c_int];
+    <span class="macro">impl_api!</span>[<span class="number">278</span>; NumPy1; PyArray_GetArrayParamsFromObject(op: <span class="kw-2">*mut </span>PyObject, requested_dtype: <span class="kw-2">*mut </span>PyArray_Descr, writeable: npy_bool, out_dtype: <span class="kw-2">*mut *mut </span>PyArray_Descr, out_ndim: <span class="kw-2">*mut </span>c_int, out_dims: <span class="kw-2">*mut </span>npy_intp, out_arr: <span class="kw-2">*mut *mut </span>PyArrayObject, context: <span class="kw-2">*mut </span>PyObject) -&gt; c_int];
     <span class="macro">impl_api!</span>[<span class="number">279</span>; PyArray_ConvertClipmodeSequence(object: <span class="kw-2">*mut </span>PyObject, modes: <span class="kw-2">*mut </span>NPY_CLIPMODE, n: c_int) -&gt; c_int];
     <span class="macro">impl_api!</span>[<span class="number">280</span>; PyArray_MatrixProduct2(op1: <span class="kw-2">*mut </span>PyObject, op2: <span class="kw-2">*mut </span>PyObject, out: <span class="kw-2">*mut </span>PyArrayObject) -&gt; <span class="kw-2">*mut </span>PyObject];
     <span class="macro">impl_api!</span>[<span class="number">281</span>; NpyIter_IsFirstVisit(iter: <span class="kw-2">*mut </span>NpyIter, iop: c_int) -&gt; npy_bool];
@@ -710,18 +752,64 @@
     <span class="macro">impl_api!</span>[<span class="number">288</span>; PyDataMem_NEW(size: usize) -&gt; <span class="kw-2">*mut </span>c_void];
     <span class="macro">impl_api!</span>[<span class="number">289</span>; PyDataMem_FREE(ptr: <span class="kw-2">*mut </span>c_void)];
     <span class="macro">impl_api!</span>[<span class="number">290</span>; PyDataMem_RENEW(ptr: <span class="kw-2">*mut </span>c_void, size: usize) -&gt; <span class="kw-2">*mut </span>c_void];
-    <span class="macro">impl_api!</span>[<span class="number">291</span>; PyDataMem_SetEventHook(newhook: PyDataMem_EventHookFunc, user_data: <span class="kw-2">*mut </span>c_void, old_data: <span class="kw-2">*mut *mut </span>c_void) -&gt; PyDataMem_EventHookFunc];
-    <span class="macro">impl_api!</span>[<span class="number">293</span>; PyArray_MapIterSwapAxes(mit: <span class="kw-2">*mut </span>PyArrayMapIterObject, ret: <span class="kw-2">*mut *mut </span>PyArrayObject, getmap: c_int)];
-    <span class="macro">impl_api!</span>[<span class="number">294</span>; PyArray_MapIterArray(a: <span class="kw-2">*mut </span>PyArrayObject, index: <span class="kw-2">*mut </span>PyObject) -&gt; <span class="kw-2">*mut </span>PyObject];
-    <span class="macro">impl_api!</span>[<span class="number">295</span>; PyArray_MapIterNext(mit: <span class="kw-2">*mut </span>PyArrayMapIterObject)];
+    <span class="macro">impl_api!</span>[<span class="number">291</span>; NumPy1; PyDataMem_SetEventHook(newhook: PyDataMem_EventHookFunc, user_data: <span class="kw-2">*mut </span>c_void, old_data: <span class="kw-2">*mut *mut </span>c_void) -&gt; PyDataMem_EventHookFunc];
+    <span class="macro">impl_api!</span>[<span class="number">293</span>; NumPy1; PyArray_MapIterSwapAxes(mit: <span class="kw-2">*mut </span>PyArrayMapIterObject, ret: <span class="kw-2">*mut *mut </span>PyArrayObject, getmap: c_int)];
+    <span class="macro">impl_api!</span>[<span class="number">294</span>; NumPy1; PyArray_MapIterArray(a: <span class="kw-2">*mut </span>PyArrayObject, index: <span class="kw-2">*mut </span>PyObject) -&gt; <span class="kw-2">*mut </span>PyObject];
+    <span class="macro">impl_api!</span>[<span class="number">295</span>; NumPy1; PyArray_MapIterNext(mit: <span class="kw-2">*mut </span>PyArrayMapIterObject)];
     <span class="macro">impl_api!</span>[<span class="number">296</span>; PyArray_Partition(op: <span class="kw-2">*mut </span>PyArrayObject, ktharray: <span class="kw-2">*mut </span>PyArrayObject, axis: c_int, which: NPY_SELECTKIND) -&gt; c_int];
     <span class="macro">impl_api!</span>[<span class="number">297</span>; PyArray_ArgPartition(op: <span class="kw-2">*mut </span>PyArrayObject, ktharray: <span class="kw-2">*mut </span>PyArrayObject, axis: c_int, which: NPY_SELECTKIND) -&gt; <span class="kw-2">*mut </span>PyObject];
     <span class="macro">impl_api!</span>[<span class="number">298</span>; PyArray_SelectkindConverter(obj: <span class="kw-2">*mut </span>PyObject, selectkind: <span class="kw-2">*mut </span>NPY_SELECTKIND) -&gt; c_int];
     <span class="macro">impl_api!</span>[<span class="number">299</span>; PyDataMem_NEW_ZEROED(size: usize, elsize: usize) -&gt; <span class="kw-2">*mut </span>c_void];
     <span class="macro">impl_api!</span>[<span class="number">300</span>; PyArray_CheckAnyScalarExact(obj: <span class="kw-2">*mut </span>PyObject) -&gt; c_int];
-    <span class="macro">impl_api!</span>[<span class="number">301</span>; PyArray_MapIterArrayCopyIfOverlap(a: <span class="kw-2">*mut </span>PyArrayObject, index: <span class="kw-2">*mut </span>PyObject, copy_if_overlap: c_int, extra_op: <span class="kw-2">*mut </span>PyArrayObject) -&gt; <span class="kw-2">*mut </span>PyObject];
+    <span class="macro">impl_api!</span>[<span class="number">301</span>; NumPy1; PyArray_MapIterArrayCopyIfOverlap(a: <span class="kw-2">*mut </span>PyArrayObject, index: <span class="kw-2">*mut </span>PyObject, copy_if_overlap: c_int, extra_op: <span class="kw-2">*mut </span>PyArrayObject) -&gt; <span class="kw-2">*mut </span>PyObject];
     <span class="macro">impl_api!</span>[<span class="number">302</span>; PyArray_ResolveWritebackIfCopy(self_: <span class="kw-2">*mut </span>PyArrayObject) -&gt; c_int];
     <span class="macro">impl_api!</span>[<span class="number">303</span>; PyArray_SetWritebackIfCopyBase(arr: <span class="kw-2">*mut </span>PyArrayObject, base: <span class="kw-2">*mut </span>PyArrayObject) -&gt; c_int];
+    <span class="macro">impl_api!</span>[<span class="number">304</span>; PyDataMem_SetHandler(handler: <span class="kw-2">*mut </span>PyObject) -&gt; <span class="kw-2">*mut </span>PyObject];
+    <span class="macro">impl_api!</span>[<span class="number">305</span>; PyDataMem_GetHandler() -&gt; <span class="kw-2">*mut </span>PyObject];
+    <span class="macro">impl_api!</span>[<span class="number">307</span>; NumPy2; NpyDatetime_ConvertDatetime64ToDatetimeStruct(meta: <span class="kw-2">*mut </span>PyArray_DatetimeMetaData, dt: npy_datetime, out: <span class="kw-2">*mut </span>npy_datetimestruct) -&gt; c_int];
+    <span class="macro">impl_api!</span>[<span class="number">308</span>; NumPy2; NpyDatetime_ConvertDatetimeStructToDatetime64(meta: <span class="kw-2">*mut </span>PyArray_DatetimeMetaData, dts: <span class="kw-2">*const </span>npy_datetimestruct, out: <span class="kw-2">*mut </span>npy_datetime) -&gt; c_int];
+    <span class="macro">impl_api!</span>[<span class="number">309</span>; NumPy2; NpyDatetime_ConvertPyDateTimeToDatetimeStruct(obj: <span class="kw-2">*mut </span>PyObject, out: <span class="kw-2">*mut </span>npy_datetimestruct, out_bestunit: <span class="kw-2">*mut </span>NPY_DATETIMEUNIT,  apply_tzinfo: c_int) -&gt; c_int];
+    <span class="macro">impl_api!</span>[<span class="number">310</span>; NumPy2; NpyDatetime_GetDatetimeISO8601StrLen(local: c_int, base: NPY_DATETIMEUNIT) -&gt; c_int];
+    <span class="macro">impl_api!</span>[<span class="number">311</span>; NumPy2; NpyDatetime_MakeISO8601Datetime(dts: <span class="kw-2">*mut </span>npy_datetimestruct, outstr: <span class="kw-2">*mut </span>c_char, outlen: npy_intp, local: c_int, utc: c_int, base: NPY_DATETIMEUNIT, tzoffset: c_int, casting: NPY_CASTING) -&gt; c_int];
+    <span class="macro">impl_api!</span>[<span class="number">312</span>; NumPy2; NpyDatetime_ParseISO8601Datetime(str: <span class="kw-2">*const </span>c_char, len: pyo3::ffi::Py_ssize_t, unit: NPY_DATETIMEUNIT, casting: NPY_CASTING, out: <span class="kw-2">*mut </span>npy_datetimestruct, out_bestunit: <span class="kw-2">*mut </span>NPY_DATETIMEUNIT, out_special: <span class="kw-2">*mut </span>npy_bool) -&gt; c_int];
+    <span class="macro">impl_api!</span>[<span class="number">313</span>; NumPy2; NpyString_load(allocator: <span class="kw-2">*mut </span>npy_string_allocator, packed_string: <span class="kw-2">*const </span>npy_packed_static_string, unpacked_string: <span class="kw-2">*mut </span>npy_static_string) -&gt; c_int];
+    <span class="macro">impl_api!</span>[<span class="number">314</span>; NumPy2; NpyString_pack(out: <span class="kw-2">*mut </span>npy_packed_static_string) -&gt; c_int];
+    <span class="macro">impl_api!</span>[<span class="number">315</span>; NumPy2; NpyString_pack_null(allocator: <span class="kw-2">*mut </span>npy_string_allocator, packed_string: <span class="kw-2">*mut </span>npy_packed_static_string) -&gt; c_int];
+    <span class="macro">impl_api!</span>[<span class="number">316</span>; NumPy2; NpyString_acquire_allocator(descr: <span class="kw-2">*const </span>PyArray_StringDTypeObject) -&gt; <span class="kw-2">*mut </span>npy_string_allocator];
+    <span class="macro">impl_api!</span>[<span class="number">317</span>; NumPy2; NpyString_acquire_allocators(n_descriptors: usize, descrs: <span class="kw-2">*const *mut </span>PyArray_Descr, allocators: <span class="kw-2">*mut *mut </span>npy_string_allocator)];
+    <span class="macro">impl_api!</span>[<span class="number">318</span>; NumPy2; NpyString_release_allocator(allocator: <span class="kw-2">*mut </span>npy_string_allocator)];
+    <span class="macro">impl_api!</span>[<span class="number">319</span>; NumPy2; NpyString_release_allocators(length: usize, allocators: <span class="kw-2">*mut *mut </span>npy_string_allocator)];
+    <span class="macro">impl_api!</span>[<span class="number">361</span>; NumPy2; PyArray_GetDefaultDescr(DType: <span class="kw-2">*mut </span>PyArray_DTypeMeta) -&gt; <span class="kw-2">*mut </span>PyArray_Descr];
+    <span class="macro">impl_api!</span>[<span class="number">362</span>; NumPy2; PyArrayInitDTypeMeta_FromSpec(DType: <span class="kw-2">*mut </span>PyArray_DTypeMeta, spec: <span class="kw-2">*mut </span>PyArrayDTypeMeta_Spec) -&gt; c_int];
+    <span class="macro">impl_api!</span>[<span class="number">363</span>; NumPy2; PyArray_CommonDType(dtype1: <span class="kw-2">*mut </span>PyArray_DTypeMeta, dtype2: <span class="kw-2">*mut </span>PyArray_DTypeMeta) -&gt; PyArray_DTypeMeta];
+    <span class="macro">impl_api!</span>[<span class="number">364</span>; NumPy2; PyArray_PromoteDTypeSequence(length: npy_intp, dtypes_in: <span class="kw-2">*mut *mut </span>PyArray_DTypeMeta) -&gt; <span class="kw-2">*mut </span>PyArray_DTypeMeta];
+    <span class="macro">impl_api!</span>[<span class="number">365</span>; NumPy2; _PyDataType_GetArrFuncs(descr: <span class="kw-2">*const </span>PyArray_Descr) -&gt; <span class="kw-2">*mut </span>PyArray_ArrFuncs];
+
+    <span class="attr">#[allow(non_snake_case)]
+    </span><span class="kw">pub unsafe fn </span>PyArray_CopyInto&lt;<span class="lifetime">'py</span>&gt;(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        py: Python&lt;<span class="lifetime">'py</span>&gt;,
+        dst: <span class="kw-2">*mut </span>PyArrayObject,
+        src: <span class="kw-2">*mut </span>PyArrayObject,
+    ) -&gt; c_int {
+        <span class="kw">let </span>offset = <span class="kw">if </span>is_numpy_2(py) { <span class="number">50 </span>} <span class="kw">else </span>{ <span class="number">82 </span>};
+        <span class="kw">let </span>fptr = <span class="self">self</span>.get(py, offset)
+            <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">extern </span><span class="string">"C" </span><span class="kw">fn</span>(dst: <span class="kw-2">*mut </span>PyArrayObject, src: <span class="kw-2">*mut </span>PyArrayObject) -&gt; c_int;
+        (<span class="kw-2">*</span>fptr)(dst, src)
+    }
+
+    <span class="attr">#[allow(non_snake_case)]
+    </span><span class="kw">pub unsafe fn </span>PyArray_CastAnyTo&lt;<span class="lifetime">'py</span>&gt;(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        py: Python&lt;<span class="lifetime">'py</span>&gt;,
+        out: <span class="kw-2">*mut </span>PyArrayObject,
+        mp: <span class="kw-2">*mut </span>PyArrayObject,
+    ) -&gt; c_int {
+        <span class="kw">let </span>offset = <span class="kw">if </span>is_numpy_2(py) { <span class="number">51 </span>} <span class="kw">else </span>{ <span class="number">83 </span>};
+        <span class="kw">let </span>fptr = <span class="self">self</span>.get(py, offset)
+            <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">extern </span><span class="string">"C" </span><span class="kw">fn</span>(out: <span class="kw-2">*mut </span>PyArrayObject, mp: <span class="kw-2">*mut </span>PyArrayObject) -&gt; c_int;
+        (<span class="kw-2">*</span>fptr)(out, mp)
+    }
 }
 
 <span class="comment">// Define type objects associated with the NumPy API

@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/dtype.rs`."><title>dtype.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-081576b923113409.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="numpy" data-themes="" data-resource-suffix="" data-rustdoc-version="1.79.0 (129f3b996 2024-06-10)" data-channel="1.79.0" data-search-js="search-bf21c90c8c1d92b1.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-e32f0c247825364d.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-09095024cf37855e.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../numpy/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Type ‘S’ or ‘/’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings">Settings</a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/dtype.rs`."><title>dtype.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="numpy" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -976,10 +976,32 @@
 <a href="#976" id="976">976</a>
 <a href="#977" id="977">977</a>
 <a href="#978" id="978">978</a>
+<a href="#979" id="979">979</a>
+<a href="#980" id="980">980</a>
+<a href="#981" id="981">981</a>
+<a href="#982" id="982">982</a>
+<a href="#983" id="983">983</a>
+<a href="#984" id="984">984</a>
+<a href="#985" id="985">985</a>
+<a href="#986" id="986">986</a>
+<a href="#987" id="987">987</a>
+<a href="#988" id="988">988</a>
+<a href="#989" id="989">989</a>
+<a href="#990" id="990">990</a>
+<a href="#991" id="991">991</a>
+<a href="#992" id="992">992</a>
+<a href="#993" id="993">993</a>
+<a href="#994" id="994">994</a>
+<a href="#995" id="995">995</a>
+<a href="#996" id="996">996</a>
+<a href="#997" id="997">997</a>
+<a href="#998" id="998">998</a>
+<a href="#999" id="999">999</a>
+<a href="#1000" id="1000">1000</a>
+<a href="#1001" id="1001">1001</a>
+<a href="#1002" id="1002">1002</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::mem::size_of;
-<span class="kw">use </span>std::os::raw::{
-    c_char, c_int, c_long, c_longlong, c_short, c_uint, c_ulong, c_ulonglong, c_ushort,
-};
+<span class="kw">use </span>std::os::raw::{c_int, c_long, c_longlong, c_short, c_uint, c_ulong, c_ulonglong, c_ushort};
 <span class="kw">use </span>std::ptr;
 
 <span class="attr">#[cfg(feature = <span class="string">"half"</span>)]
@@ -997,8 +1019,9 @@
 </span><span class="kw">use </span>pyo3::{sync::GILOnceCell, Py};
 
 <span class="kw">use </span><span class="kw">crate</span>::npyffi::{
-    NpyTypes, PyArray_Descr, NPY_ALIGNED_STRUCT, NPY_BYTEORDER_CHAR, NPY_ITEM_HASOBJECT, NPY_TYPES,
-    PY_ARRAY_API,
+    NpyTypes, PyArray_Descr, PyDataType_ALIGNMENT, PyDataType_ELSIZE, PyDataType_FIELDS,
+    PyDataType_FLAGS, PyDataType_NAMES, PyDataType_SUBARRAY, NPY_ALIGNED_STRUCT,
+    NPY_BYTEORDER_CHAR, NPY_ITEM_HASOBJECT, NPY_TYPES, PY_ARRAY_API,
 };
 
 <span class="kw">pub use </span>num_complex::{Complex32, Complex64};
@@ -1233,8 +1256,11 @@
     ///
     /// Equivalent to [`numpy.dtype.flags`][dtype-flags].
     ///
+    /// In numpy 2 the flags field was widened to allow for more flags.
+    ///
     /// [dtype-flags]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.flags.html
-    </span><span class="kw">pub fn </span>flags(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; c_char {
+    /// [dtype-changes]: https://numpy.org/devdocs/numpy_2_0_migration_guide.html#the-pyarray-descr-struct-has-been-changed
+    </span><span class="kw">pub fn </span>flags(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; u64 {
         <span class="self">self</span>.as_borrowed().flags()
     }
 
@@ -1373,19 +1399,14 @@
     /// Equivalent to [`numpy.dtype.itemsize`][dtype-itemsize].
     ///
     /// [dtype-itemsiize]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.itemsize.html
-
-    </span><span class="kw">fn </span>itemsize(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; usize {
-        <span class="kw">unsafe </span>{ <span class="kw-2">*</span><span class="self">self</span>.as_dtype_ptr() }.elsize.max(<span class="number">0</span>) <span class="kw">as _
-    </span>}
+    </span><span class="kw">fn </span>itemsize(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; usize;
 
     <span class="doccomment">/// Returns the required alignment (bytes) of this type descriptor according to the compiler.
     ///
     /// Equivalent to [`numpy.dtype.alignment`][dtype-alignment].
     ///
     /// [dtype-alignment]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.alignment.html
-    </span><span class="kw">fn </span>alignment(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; usize {
-        <span class="kw">unsafe </span>{ <span class="kw-2">*</span><span class="self">self</span>.as_dtype_ptr() }.alignment.max(<span class="number">0</span>) <span class="kw">as _
-    </span>}
+    </span><span class="kw">fn </span>alignment(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; usize;
 
     <span class="doccomment">/// Returns an ASCII character indicating the byte-order of this type descriptor object.
     ///
@@ -1425,21 +1446,14 @@
     /// Equivalent to [`numpy.dtype.flags`][dtype-flags].
     ///
     /// [dtype-flags]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.flags.html
-    </span><span class="kw">fn </span>flags(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; c_char {
-        <span class="kw">unsafe </span>{ <span class="kw-2">*</span><span class="self">self</span>.as_dtype_ptr() }.flags
-    }
+    </span><span class="kw">fn </span>flags(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; u64;
 
     <span class="doccomment">/// Returns the number of dimensions if this type descriptor represents a sub-array, and zero otherwise.
     ///
     /// Equivalent to [`numpy.dtype.ndim`][dtype-ndim].
     ///
     /// [dtype-ndim]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.ndim.html
-    </span><span class="kw">fn </span>ndim(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; usize {
-        <span class="kw">if </span>!<span class="self">self</span>.has_subarray() {
-            <span class="kw">return </span><span class="number">0</span>;
-        }
-        <span class="kw">unsafe </span>{ PyTuple_Size((<span class="kw-2">*</span>((<span class="kw-2">*</span><span class="self">self</span>.as_dtype_ptr()).subarray)).shape).max(<span class="number">0</span>) <span class="kw">as _ </span>}
-    }
+    </span><span class="kw">fn </span>ndim(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; usize;
 
     <span class="doccomment">/// Returns the type descriptor for the base element of subarrays, regardless of their dimension or shape.
     ///
@@ -1481,16 +1495,14 @@
     </span>}
 
     <span class="doccomment">/// Returns true if the type descriptor is a sub-array.
-    </span><span class="kw">fn </span>has_subarray(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
-        <span class="comment">// equivalent to PyDataType_HASSUBARRAY(self)
-        </span><span class="kw">unsafe </span>{ !(<span class="kw-2">*</span><span class="self">self</span>.as_dtype_ptr()).subarray.is_null() }
-    }
+    ///
+    /// Equivalent to PyDataType_HASSUBARRAY(self).
+    </span><span class="kw">fn </span>has_subarray(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool;
 
     <span class="doccomment">/// Returns true if the type descriptor is a structured type.
-    </span><span class="kw">fn </span>has_fields(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
-        <span class="comment">// equivalent to PyDataType_HASFIELDS(self)
-        </span><span class="kw">unsafe </span>{ !(<span class="kw-2">*</span><span class="self">self</span>.as_dtype_ptr()).names.is_null() }
-    }
+    ///
+    /// Equivalent to PyDataType_HASFIELDS(self).
+    </span><span class="kw">fn </span>has_fields(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool;
 
     <span class="doccomment">/// Returns true if type descriptor byteorder is native, or `None` if not applicable.
     </span><span class="kw">fn </span>is_native_byteorder(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;bool&gt; {
@@ -1554,33 +1566,63 @@
         <span class="kw">unsafe </span>{ PyType::from_borrowed_type_ptr(<span class="self">self</span>.py(), dtype_type_ptr) }
     }
 
+    <span class="kw">fn </span>itemsize(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; usize {
+        <span class="kw">unsafe </span>{ PyDataType_ELSIZE(<span class="self">self</span>.py(), <span class="self">self</span>.as_dtype_ptr()).max(<span class="number">0</span>) <span class="kw">as _ </span>}
+    }
+
+    <span class="kw">fn </span>alignment(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; usize {
+        <span class="kw">unsafe </span>{ PyDataType_ALIGNMENT(<span class="self">self</span>.py(), <span class="self">self</span>.as_dtype_ptr()).max(<span class="number">0</span>) <span class="kw">as _ </span>}
+    }
+
+    <span class="kw">fn </span>flags(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; u64 {
+        <span class="kw">unsafe </span>{ PyDataType_FLAGS(<span class="self">self</span>.py(), <span class="self">self</span>.as_dtype_ptr()) <span class="kw">as _ </span>}
+    }
+
+    <span class="kw">fn </span>ndim(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; usize {
+        <span class="kw">let </span>subarray = <span class="kw">unsafe </span>{ PyDataType_SUBARRAY(<span class="self">self</span>.py(), <span class="self">self</span>.as_dtype_ptr()).as_ref() };
+        <span class="kw">match </span>subarray {
+            <span class="prelude-val">None </span>=&gt; <span class="number">0</span>,
+            <span class="prelude-val">Some</span>(subarray) =&gt; <span class="kw">unsafe </span>{ PyTuple_Size(subarray.shape) }.max(<span class="number">0</span>) <span class="kw">as _</span>,
+        }
+    }
+
     <span class="kw">fn </span>base(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Bound&lt;<span class="lifetime">'py</span>, PyArrayDescr&gt; {
-        <span class="kw">if </span>!<span class="self">self</span>.has_subarray() {
-            <span class="self">self</span>.clone()
-        } <span class="kw">else </span>{
-            <span class="kw">unsafe </span>{
-                Bound::from_borrowed_ptr(<span class="self">self</span>.py(), (<span class="kw-2">*</span>(<span class="kw-2">*</span><span class="self">self</span>.as_dtype_ptr()).subarray).base.cast())
-                    .downcast_into_unchecked()
-            }
+        <span class="kw">let </span>subarray = <span class="kw">unsafe </span>{ PyDataType_SUBARRAY(<span class="self">self</span>.py(), <span class="self">self</span>.as_dtype_ptr()).as_ref() };
+        <span class="kw">match </span>subarray {
+            <span class="prelude-val">None </span>=&gt; <span class="self">self</span>.clone(),
+            <span class="prelude-val">Some</span>(subarray) =&gt; <span class="kw">unsafe </span>{
+                Bound::from_borrowed_ptr(<span class="self">self</span>.py(), subarray.base.cast()).downcast_into_unchecked()
+            },
         }
     }
 
     <span class="kw">fn </span>shape(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Vec&lt;usize&gt; {
-        <span class="kw">if </span>!<span class="self">self</span>.has_subarray() {
-            Vec::new()
-        } <span class="kw">else </span>{
-            <span class="comment">// NumPy guarantees that shape is a tuple of non-negative integers so this should never panic.
-            </span><span class="kw">unsafe </span>{ Borrowed::from_ptr(<span class="self">self</span>.py(), (<span class="kw-2">*</span>(<span class="kw-2">*</span><span class="self">self</span>.as_dtype_ptr()).subarray).shape) }
-                .extract()
-                .unwrap()
+        <span class="kw">let </span>subarray = <span class="kw">unsafe </span>{ PyDataType_SUBARRAY(<span class="self">self</span>.py(), <span class="self">self</span>.as_dtype_ptr()).as_ref() };
+        <span class="kw">match </span>subarray {
+            <span class="prelude-val">None </span>=&gt; Vec::new(),
+            <span class="prelude-val">Some</span>(subarray) =&gt; {
+                <span class="comment">// NumPy guarantees that shape is a tuple of non-negative integers so this should never panic.
+                </span><span class="kw">let </span>shape = <span class="kw">unsafe </span>{ Borrowed::from_ptr(<span class="self">self</span>.py(), subarray.shape) };
+                shape.extract().unwrap()
+            }
         }
+    }
+
+    <span class="kw">fn </span>has_subarray(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
+        <span class="kw">unsafe </span>{ !PyDataType_SUBARRAY(<span class="self">self</span>.py(), <span class="self">self</span>.as_dtype_ptr()).is_null() }
+    }
+
+    <span class="kw">fn </span>has_fields(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
+        <span class="kw">unsafe </span>{ !PyDataType_NAMES(<span class="self">self</span>.py(), <span class="self">self</span>.as_dtype_ptr()).is_null() }
     }
 
     <span class="kw">fn </span>names(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;String&gt;&gt; {
         <span class="kw">if </span>!<span class="self">self</span>.has_fields() {
             <span class="kw">return </span><span class="prelude-val">None</span>;
         }
-        <span class="kw">let </span>names = <span class="kw">unsafe </span>{ Borrowed::from_ptr(<span class="self">self</span>.py(), (<span class="kw-2">*</span><span class="self">self</span>.as_dtype_ptr()).names) };
+        <span class="kw">let </span>names = <span class="kw">unsafe </span>{
+            Borrowed::from_ptr(<span class="self">self</span>.py(), PyDataType_NAMES(<span class="self">self</span>.py(), <span class="self">self</span>.as_dtype_ptr()))
+        };
         names.extract().ok()
     }
 
@@ -1590,7 +1632,9 @@
                 <span class="string">"cannot get field information: type descriptor has no fields"</span>,
             ));
         }
-        <span class="kw">let </span>dict = <span class="kw">unsafe </span>{ Borrowed::from_ptr(<span class="self">self</span>.py(), (<span class="kw-2">*</span><span class="self">self</span>.as_dtype_ptr()).fields) };
+        <span class="kw">let </span>dict = <span class="kw">unsafe </span>{
+            Borrowed::from_ptr(<span class="self">self</span>.py(), PyDataType_FIELDS(<span class="self">self</span>.py(), <span class="self">self</span>.as_dtype_ptr()))
+        };
         <span class="kw">let </span>dict = <span class="kw">unsafe </span>{ dict.downcast_unchecked::&lt;PyDict&gt;() };
         <span class="comment">// NumPy guarantees that fields are tuples of proper size and type, so this should never panic.
         </span><span class="kw">let </span>tuple = dict
@@ -1784,7 +1828,7 @@
 
     <span class="kw">use </span>pyo3::{py_run, types::PyTypeMethods};
 
-    <span class="kw">use </span><span class="kw">crate</span>::npyffi::NPY_NEEDS_PYAPI;
+    <span class="kw">use </span><span class="kw">crate</span>::npyffi::{is_numpy_2, NPY_NEEDS_PYAPI};
 
     <span class="attr">#[test]
     </span><span class="kw">fn </span>test_dtype_new() {
@@ -1813,7 +1857,11 @@
             dtype_bound::&lt;T&gt;(py).typeobj().qualname().unwrap()
         }
         Python::with_gil(|py| {
-            <span class="macro">assert_eq!</span>(type_name::&lt;bool&gt;(py), <span class="string">"bool_"</span>);
+            <span class="kw">if </span>is_numpy_2(py) {
+                <span class="macro">assert_eq!</span>(type_name::&lt;bool&gt;(py), <span class="string">"bool"</span>);
+            } <span class="kw">else </span>{
+                <span class="macro">assert_eq!</span>(type_name::&lt;bool&gt;(py), <span class="string">"bool_"</span>);
+            }
 
             <span class="macro">assert_eq!</span>(type_name::&lt;i8&gt;(py), <span class="string">"int8"</span>);
             <span class="macro">assert_eq!</span>(type_name::&lt;i16&gt;(py), <span class="string">"int16"</span>);
