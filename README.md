@@ -133,17 +133,17 @@ For example, if you specify the following dependencies
 
 ```toml
 numpy = "0.21"
-ndarray = "0.13"
+ndarray = "0.15"
 ```
 
-this will currently depend on both version `0.13.1` and `0.15.3` of `ndarray` by default
-even though `0.13.1` is within the range `>= 0.13, < 0.16`. To fix this, you can run
+this will currently depend on both version `0.15.6` and `0.16.1` of `ndarray` by default
+even though `0.15.6` is within the range `>= 0.15, < 0.17`. To fix this, you can run
 
 ```sh
-cargo update --package ndarray:0.15.3 --precise 0.13.1
+cargo update --package ndarray:0.16.1 --precise 0.15.6
 ```
 
-to achieve a single dependency on version `0.13.1` of `ndarray`.
+to achieve a single dependency on version `0.15.6` of `ndarray`.
 
 ## Contributing
 
