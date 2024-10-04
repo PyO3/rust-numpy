@@ -191,10 +191,7 @@ impl<T, D> IntoPy<PyObject> for PyArray<T, D> {
 
 impl<'py, T: Element, D: Dimension> FromPyObject<'py> for &'py PyArray<T, D> {
     fn extract_bound(ob: &Bound<'py, PyAny>) -> PyResult<Self> {
-        #[allow(clippy::map_clone)] // due to MSRV
-        PyArray::extract(ob)
-            .map(Clone::clone)
-            .map(Bound::into_gil_ref)
+        PyArray::extract(ob).cloned().map(Bound::into_gil_ref)
     }
 }
 

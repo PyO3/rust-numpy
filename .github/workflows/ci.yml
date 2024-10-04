@@ -12,7 +12,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-
   lint:
     runs-on: ubuntu-latest
     steps:
@@ -32,20 +31,48 @@ jobs:
       fail-fast: ${{ !contains(github.event.pull_request.labels.*.name, 'CI-no-fail-fast') }}
       matrix:
         python-version: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
-        platform: [
-          { os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" },
-          { os: "macOS-13",   python-architecture: "x64", rust-target: "x86_64-apple-darwin" },
-          { os: "windows-latest", python-architecture: "x64", rust-target: "x86_64-pc-windows-msvc" },
-        ]
+        platform:
+          [
+            {
+              os: "ubuntu-latest",
+              python-architecture: "x64",
+              rust-target: "x86_64-unknown-linux-gnu",
+            },
+            {
+              os: "macOS-13",
+              python-architecture: "x64",
+              rust-target: "x86_64-apple-darwin",
+            },
+            {
+              os: "windows-latest",
+              python-architecture: "x64",
+              rust-target: "x86_64-pc-windows-msvc",
+            },
+          ]
         include:
           # Older versions of CPython are not available for AArch64.
           - python-version: 3.12
-            platform: { os: "macOS-latest", python-architecture: "arm64", rust-target: "aarch64-apple-darwin" }
+            platform:
+              {
+                os: "macOS-latest",
+                python-architecture: "arm64",
+                rust-target: "aarch64-apple-darwin",
+              }
           # NumPy does not provide pre-built wheels for PyPy on macOS and Windows
           - python-version: pypy-3.7
-            platform: { os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" }
+            platform:
+              {
+                os: "ubuntu-latest",
+                python-architecture: "x64",
+                rust-target: "x86_64-unknown-linux-gnu",
+              }
           - python-version: pypy-3.8
-            platform: { os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" }
+            platform:
+              {
+                os: "ubuntu-latest",
+                python-architecture: "x64",
+                rust-target: "x86_64-unknown-linux-gnu",
+              }
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
@@ -57,20 +84,10 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.platform.rust-target }}
-      - name: Install toml
-        run: pip install toml
-      - name: Edit Cargo.toml and enable new resolver
-        run: |
-          import toml
-          cargo_toml = toml.load("Cargo.toml")
-          cargo_toml["package"]["resolver"] = "2"
-          with open("Cargo.toml", "w") as f:
-            toml.dump(cargo_toml, f)
-        shell: python
       - name: Test
         run: |
-            pip install "numpy" ml_dtypes
-            cargo test --all-features
+          pip install "numpy" ml_dtypes
+          cargo test --all-features
         # Not on PyPy, because no embedding API
         if: ${{ !startsWith(matrix.python-version, 'pypy') }}
       - name: Test example
@@ -90,11 +107,24 @@ jobs:
       fail-fast: ${{ !contains(github.event.pull_request.labels.*.name, 'CI-no-fail-fast') }}
       matrix:
         python-version: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
-        platform: [
-          { os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" },
-          { os: "macOS-13",   python-architecture: "x64", rust-target: "x86_64-apple-darwin" },
-          { os: "windows-latest", python-architecture: "x64", rust-target: "x86_64-pc-windows-msvc" },
-        ]
+        platform:
+          [
+            {
+              os: "ubuntu-latest",
+              python-architecture: "x64",
+              rust-target: "x86_64-unknown-linux-gnu",
+            },
+            {
+              os: "macOS-13",
+              python-architecture: "x64",
+              rust-target: "x86_64-apple-darwin",
+            },
+            {
+              os: "windows-latest",
+              python-architecture: "x64",
+              rust-target: "x86_64-pc-windows-msvc",
+            },
+          ]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
@@ -106,16 +136,6 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.platform.rust-target }}
-      - name: Install toml
-        run: pip install toml
-      - name: Edit Cargo.toml and enable new resolver
-        run: |
-          import toml
-          cargo_toml = toml.load("Cargo.toml")
-          cargo_toml["package"]["resolver"] = "2"
-          with open("Cargo.toml", "w") as f:
-            toml.dump(cargo_toml, f)
-        shell: python
       - name: Test
         run: |
           pip install "numpy<2" ml_dtypes
@@ -149,8 +169,8 @@ jobs:
         continue-on-error: true
       - uses: taiki-e/install-action@valgrind
       - run: |
-            pip install "numpy" ml_dtypes
-            cargo test --all-features --release
+          pip install "numpy" ml_dtypes
+          cargo test --all-features --release
         env:
           CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUNNER: valgrind --leak-check=no --error-exitcode=1
 
@@ -164,8 +184,8 @@ jobs:
         continue-on-error: true
       - uses: taiki-e/install-action@cargo-careful
       - run: |
-            pip install "numpy" ml_dtypes
-            cargo careful test --all-features
+          pip install "numpy" ml_dtypes
+          cargo careful test --all-features
 
   check-msrv:
     runs-on: ubuntu-latest
@@ -176,7 +196,7 @@ jobs:
         with:
           python-version: 3.8
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@1.56.0
+        uses: dtolnay/rust-toolchain@1.63
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: examples/simple
