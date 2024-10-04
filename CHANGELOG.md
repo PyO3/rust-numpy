@@ -1,6 +1,7 @@
 # Changelog
 
 - Unreleased
+  - Bump MSRV to 1.63. ([#450](https://github.com/PyO3/rust-numpy/pull/450))
   - Add `permute` and `transpose` methods for changing the order of axes of a `PyArray`. ([#428](https://github.com/PyO3/rust-numpy/pull/428))
   - Add support for NumPy v2 which had a number of changes to the [C API](https://numpy.org/devdocs/numpy_2_0_migration_guide.html#c-api-changes). ([#442](https://github.com/PyO3/rust-numpy/pull/442))
 
