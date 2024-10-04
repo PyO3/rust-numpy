@@ -80,6 +80,7 @@
 <a href="#80" id="80">80</a>
 <a href="#81" id="81">81</a>
 <a href="#82" id="82">82</a>
+<a href="#83" id="83">83</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::{mem, ptr};
 
 <span class="kw">use </span>ndarray::{ArrayBase, Dimension, OwnedRepr};
@@ -151,7 +152,8 @@
     D: Dimension,
 {
     <span class="kw">fn </span>from(data: ArrayBase&lt;OwnedRepr&lt;A&gt;, D&gt;) -&gt; <span class="self">Self </span>{
-        <span class="self">Self</span>::from(data.into_raw_vec())
+        <span class="attr">#[allow(deprecated)]
+        </span><span class="self">Self</span>::from(data.into_raw_vec())
     }
 }
 
