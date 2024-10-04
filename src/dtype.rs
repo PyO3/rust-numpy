@@ -711,6 +711,11 @@ pub unsafe trait Element: Clone + Send {
 
     /// Returns the associated type descriptor ("dtype") for the given element type.
     fn get_dtype_bound(py: Python<'_>) -> Bound<'_, PyArrayDescr>;
+
+    /// TODO
+    fn get_npy_type() -> Option<NPY_TYPES> {
+        None
+    }
 }
 
 fn npy_int_type_lookup<T, T0, T1, T2>(npy_types: [NPY_TYPES; 3]) -> NPY_TYPES {
@@ -766,6 +771,10 @@ macro_rules! impl_element_scalar {
 
             fn get_dtype_bound(py: Python<'_>) -> Bound<'_, PyArrayDescr> {
                 PyArrayDescr::from_npy_type(py, $npy_type)
+            }
+
+            fn get_npy_type() -> Option<NPY_TYPES> {
+                Some($npy_type)
             }
         }
     };

@@ -86,6 +86,7 @@ pub mod npyffi;
 mod slice_container;
 mod strings;
 mod sum_products;
+pub mod ufunc;
 mod untyped_array;
 
 pub use ndarray;
