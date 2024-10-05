@@ -66,7 +66,7 @@ use std::marker::PhantomData;
 use pyo3::{sync::GILProtected, Bound, Py, Python};
 use rustc_hash::FxHashMap;
 
-use crate::dtype::{Element, PyArrayDescr, PyArrayDescrMethods, clone_methods_impl};
+use crate::dtype::{clone_methods_impl, Element, PyArrayDescr, PyArrayDescrMethods};
 use crate::npyffi::{
     PyArray_DatetimeDTypeMetaData, PyDataType_C_METADATA, NPY_DATETIMEUNIT, NPY_TYPES,
 };
