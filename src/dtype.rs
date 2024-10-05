@@ -10,10 +10,10 @@ use pyo3::{
     ffi::{self, PyTuple_Size},
     pyobject_native_type_extract, pyobject_native_type_named,
     types::{PyAnyMethods, PyDict, PyDictMethods, PyTuple, PyType},
-    Borrowed, Bound, PyAny, PyObject, PyResult, PyTypeInfo, Python, ToPyObject,
+    Borrowed, Bound, Py, PyAny, PyObject, PyResult, PyTypeInfo, Python, ToPyObject,
 };
 #[cfg(feature = "half")]
-use pyo3::{sync::GILOnceCell, Py};
+use pyo3::{sync::GILOnceCell};
 #[cfg(feature = "gil-refs")]
 use pyo3::{AsPyPointer, PyNativeType};
 
@@ -644,56 +644,6 @@ impl<'py> PyArrayDescrMethods<'py> for Bound<'py, PyArrayDescr> {
 
 impl Sealed for Bound<'_, PyArrayDescr> {}
 
-/// Weaker form of `Clone` for types that can be cloned while the GIL is held.
-///
-/// Any type that implements `Clone` can trivially implement `PyClone` by forwarding
-/// to the `Clone::clone` method. However, some types (notably `PyObject`) can only
-/// be safely cloned while the GIL is held, and therefore cannot implement `Clone`.
-/// This trait provides a mechanism for performing a clone while the GIL is held, as
-/// represented by the [`Python`] token provided as an argument to the [`py_clone`]
-/// method. All API's in the `numpy` crate require the GIL to be held, so this weaker
-/// alternative to `Clone` is a sufficient prerequisite for implementing the
-/// [`Element`] trait.
-///
-/// # Implementing `PyClone`
-/// Implementing this trait is trivial for most types, and simply requires defining
-/// the `py_clone` method. The `vec_from_slice` and `array_from_view` methods have
-/// default implementations that simply map the `py_clone` method to each item in
-/// the collection, but types may want to override these implementations if there
-/// is a more efficient way to perform the conversion. In particular, `Clone` types
-/// may instead defer to the `ToOwned::to_owned` and `ArrayBase::to_owned` methods
-/// for increased performance.
-///
-/// [`py_clone`]: Self::py_clone
-pub trait PyClone: Sized {
-    /// Create a clone of the value while the GIL is guaranteed to be held.
-    fn py_clone(&self, py: Python<'_>) -> Self;
-
-    /// Create an owned copy of the slice while the GIL is guaranteed to be held.
-    ///
-    /// Some types may provide implementations of this method that are more efficient
-    /// than simply mapping the `py_clone` method to each element in the slice.
-    #[inline]
-    fn vec_from_slice(py: Python<'_>, slc: &[Self]) -> Vec<Self> {
-        slc.iter().map(|elem| elem.py_clone(py)).collect()
-    }
-
-    /// Create an owned copy of the array while the GIL is guaranteed to be held.
-    ///
-    /// Some types may provide implementations of this method that are more efficient
-    /// than simply mapping the `py_clone` method to each element in the view.
-    #[inline]
-    fn array_from_view<D>(
-        py: Python<'_>,
-        view: ::ndarray::ArrayView<'_, Self, D>,
-    ) -> ::ndarray::Array<Self, D>
-    where
-        D: ::ndarray::Dimension,
-    {
-        view.map(|elem| elem.py_clone(py))
-    }
-}
-
 /// Represents that a type can be an element of `PyArray`.
 ///
 /// Currently, only integer/float/complex/object types are supported. The [NumPy documentation][enumerated-types]
@@ -731,7 +681,7 @@ pub trait PyClone: Sized {
 ///
 /// [enumerated-types]: https://numpy.org/doc/stable/reference/c-api/dtype.html#enumerated-types
 /// [data-models]: https://en.wikipedia.org/wiki/64-bit_computing#64-bit_data_models
-pub unsafe trait Element: PyClone + Send {
+pub unsafe trait Element: Sized + Send {
     /// Flag that indicates whether this type is trivially copyable.
     ///
     /// It should be set to true for all trivially copyable types (like scalar types
@@ -749,6 +699,33 @@ pub unsafe trait Element: PyClone + Send {
 
     /// Returns the associated type descriptor ("dtype") for the given element type.
     fn get_dtype_bound(py: Python<'_>) -> Bound<'_, PyArrayDescr>;
+
+    /// Create a clone of the value while the GIL is guaranteed to be held.
+    fn clone_ref(&self, py: Python<'_>) -> Self;
+
+    /// Create an owned copy of the slice while the GIL is guaranteed to be held.
+    ///
+    /// Some types may provide implementations of this method that are more efficient
+    /// than simply mapping the `py_clone` method to each element in the slice.
+    #[inline]
+    fn vec_from_slice(py: Python<'_>, slc: &[Self]) -> Vec<Self> {
+        slc.iter().map(|elem| elem.clone_ref(py)).collect()
+    }
+
+    /// Create an owned copy of the array while the GIL is guaranteed to be held.
+    ///
+    /// Some types may provide implementations of this method that are more efficient
+    /// than simply mapping the `py_clone` method to each element in the view.
+    #[inline]
+    fn array_from_view<D>(
+        py: Python<'_>,
+        view: ::ndarray::ArrayView<'_, Self, D>,
+    ) -> ::ndarray::Array<Self, D>
+    where
+        D: ::ndarray::Dimension,
+    {
+        view.map(|elem| elem.clone_ref(py))
+    }
 }
 
 fn npy_int_type_lookup<T, T0, T1, T2>(npy_types: [NPY_TYPES; 3]) -> NPY_TYPES {
@@ -796,34 +773,33 @@ fn npy_int_type<T: Bounded + Zero + Sized + PartialEq>() -> NPY_TYPES {
     }
 }
 
-// Implements `PyClone` for a type that implements `Clone`
-macro_rules! impl_py_clone {
-    ($ty:ty $(; [$param:ident $(: $bound:ident)?])?) => {
-        impl <$($param$(: $bound)*)?> $crate::dtype::PyClone for $ty {
-            #[inline]
-            fn py_clone(&self, _py: ::pyo3::Python<'_>) -> Self {
-                self.clone()
-            }
+// Invoke within the `Element` impl for a `Clone` type to provide an efficient
+// implementation of the cloning methods
+macro_rules! clone_methods_impl {
+    ($Self:ty) => {
+        #[inline]
+        fn clone_ref(&self, _py: ::pyo3::Python<'_>) -> $Self {
+            ::std::clone::Clone::clone(self)
+        }
 
-            #[inline]
-            fn vec_from_slice(_py: ::pyo3::Python<'_>, slc: &[Self]) -> Vec<Self> {
-                slc.to_owned()
-            }
+        #[inline]
+        fn vec_from_slice(_py: ::pyo3::Python<'_>, slc: &[$Self]) -> Vec<$Self> {
+            ::std::borrow::ToOwned::to_owned(slc)
+        }
 
-            #[inline]
-            fn array_from_view<D>(
-                _py: ::pyo3::Python<'_>,
-                view: ::ndarray::ArrayView<'_, Self, D>
-            ) -> ::ndarray::Array<Self, D>
-            where
-                D: ::ndarray::Dimension
-            {
-                view.to_owned()
-            }
+        #[inline]
+        fn array_from_view<D>(
+            _py: ::pyo3::Python<'_>,
+            view: ::ndarray::ArrayView<'_, $Self, D>
+        ) -> ::ndarray::Array<$Self, D>
+        where
+            D: ::ndarray::Dimension
+        {
+            ::ndarray::ArrayView::to_owned(&view)
         }
     }
 }
-pub(crate) use impl_py_clone;
+pub(crate) use clone_methods_impl;
 
 macro_rules! impl_element_scalar {
     (@impl: $ty:ty, $npy_type:expr $(,#[$meta:meta])*) => {
@@ -834,8 +810,9 @@ macro_rules! impl_element_scalar {
             fn get_dtype_bound(py: Python<'_>) -> Bound<'_, PyArrayDescr> {
                 PyArrayDescr::from_npy_type(py, $npy_type)
             }
+
+            clone_methods_impl!($ty);
         }
-        impl_py_clone!($ty);
     };
     ($ty:ty => $npy_type:ident $(,#[$meta:meta])*) => {
         impl_element_scalar!(@impl: $ty, NPY_TYPES::$npy_type $(,#[$meta])*);
@@ -870,10 +847,9 @@ unsafe impl Element for bf16 {
             .clone_ref(py)
             .into_bound(py)
     }
-}
 
-#[cfg(feature = "half")]
-impl_py_clone!(bf16);
+    clone_methods_impl!(Self);
+}
 
 impl_element_scalar!(Complex32 => NPY_CFLOAT,
     #[doc = "Complex type with `f32` components which maps to `numpy.csingle` (`numpy.complex64`)."]);
@@ -883,18 +859,16 @@ impl_element_scalar!(Complex64 => NPY_CDOUBLE,
 #[cfg(any(target_pointer_width = "32", target_pointer_width = "64"))]
 impl_element_scalar!(usize, isize);
 
-impl PyClone for PyObject {
-    #[inline]
-    fn py_clone(&self, py: Python<'_>) -> Self {
-        self.clone_ref(py)
-    }
-}
-
 unsafe impl Element for PyObject {
     const IS_COPY: bool = false;
 
     fn get_dtype_bound(py: Python<'_>) -> Bound<'_, PyArrayDescr> {
         PyArrayDescr::object_bound(py)
+    }
+
+    #[inline]
+    fn clone_ref(&self, py: Python<'_>) -> Self {
+        Py::clone_ref(self, py)
     }
 }
 

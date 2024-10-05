@@ -17,7 +17,7 @@ use pyo3::{
 };
 use rustc_hash::FxHashMap;
 
-use crate::dtype::{Element, PyArrayDescr, PyArrayDescrMethods, PyClone};
+use crate::dtype::{clone_methods_impl, Element, PyArrayDescr, PyArrayDescrMethods};
 use crate::npyffi::PyDataType_SET_ELSIZE;
 use crate::npyffi::NPY_TYPES;
 
@@ -82,29 +82,8 @@ unsafe impl<const N: usize> Element for PyFixedString<N> {
 
         unsafe { DTYPES.from_size(py, NPY_TYPES::NPY_STRING, b'|' as _, size_of::<Self>()) }
     }
-}
 
-impl<const N: usize> PyClone for PyFixedString<N> {
-    #[inline]
-    fn py_clone(&self, _py: Python<'_>) -> Self {
-        *self
-    }
-
-    #[inline]
-    fn vec_from_slice(_py: Python<'_>, slc: &[Self]) -> Vec<Self> {
-        slc.to_owned()
-    }
-
-    #[inline]
-    fn array_from_view<D>(
-        _py: Python<'_>,
-        view: ::ndarray::ArrayView<'_, Self, D>,
-    ) -> ::ndarray::Array<Self, D>
-    where
-        D: ::ndarray::Dimension,
-    {
-        view.to_owned()
-    }
+    clone_methods_impl!(Self);
 }
 
 /// A newtype wrapper around [`[PyUCS4; N]`][Py_UCS4] to handle [`str_` scalars][numpy-str] while satisfying coherence.
@@ -168,29 +147,6 @@ impl<const N: usize> From<[Py_UCS4; N]> for PyFixedUnicode<N> {
     }
 }
 
-impl<const N: usize> PyClone for PyFixedUnicode<N> {
-    #[inline]
-    fn py_clone(&self, _py: Python<'_>) -> Self {
-        *self
-    }
-
-    #[inline]
-    fn vec_from_slice(_py: Python<'_>, slc: &[Self]) -> Vec<Self> {
-        slc.to_owned()
-    }
-
-    #[inline]
-    fn array_from_view<D>(
-        _py: Python<'_>,
-        view: ::ndarray::ArrayView<'_, Self, D>,
-    ) -> ::ndarray::Array<Self, D>
-    where
-        D: ::ndarray::Dimension,
-    {
-        view.to_owned()
-    }
-}
-
 unsafe impl<const N: usize> Element for PyFixedUnicode<N> {
     const IS_COPY: bool = true;
 
@@ -199,6 +155,8 @@ unsafe impl<const N: usize> Element for PyFixedUnicode<N> {
 
         unsafe { DTYPES.from_size(py, NPY_TYPES::NPY_UNICODE, b'=' as _, size_of::<Self>()) }
     }
+
+    clone_methods_impl!(Self);
 }
 
 struct TypeDescriptors {

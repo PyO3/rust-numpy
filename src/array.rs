@@ -1473,7 +1473,7 @@ unsafe fn clone_elements<T: Element>(py: Python<'_>, elems: &[T], data_ptr: &mut
         *data_ptr = data_ptr.add(elems.len());
     } else {
         for elem in elems {
-            data_ptr.write(elem.py_clone(py));
+            data_ptr.write(elem.clone_ref(py));
             *data_ptr = data_ptr.add(1);
         }
     }
@@ -2205,7 +2205,7 @@ impl<'py, T, D> PyArrayMethods<'py, T, D> for Bound<'py, PyArray<T, D>> {
         Idx: NpyIndex<Dim = D>,
     {
         let element = unsafe { self.get(index) };
-        element.map(|elem| elem.py_clone(self.py()))
+        element.map(|elem| elem.clone_ref(self.py()))
     }
 
     fn to_dyn(&self) -> &Bound<'py, PyArray<T, IxDyn>> {
