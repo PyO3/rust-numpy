@@ -5,6 +5,8 @@ use std::ptr;
 #[cfg(feature = "half")]
 use half::{bf16, f16};
 use num_traits::{Bounded, Zero};
+#[cfg(feature = "half")]
+use pyo3::sync::GILOnceCell;
 use pyo3::{
     exceptions::{PyIndexError, PyValueError},
     ffi::{self, PyTuple_Size},
@@ -12,8 +14,6 @@ use pyo3::{
     types::{PyAnyMethods, PyDict, PyDictMethods, PyTuple, PyType},
     Borrowed, Bound, Py, PyAny, PyObject, PyResult, PyTypeInfo, Python, ToPyObject,
 };
-#[cfg(feature = "half")]
-use pyo3::{sync::GILOnceCell};
 #[cfg(feature = "gil-refs")]
 use pyo3::{AsPyPointer, PyNativeType};
 
@@ -790,14 +790,14 @@ macro_rules! clone_methods_impl {
         #[inline]
         fn array_from_view<D>(
             _py: ::pyo3::Python<'_>,
-            view: ::ndarray::ArrayView<'_, $Self, D>
+            view: ::ndarray::ArrayView<'_, $Self, D>,
         ) -> ::ndarray::Array<$Self, D>
         where
-            D: ::ndarray::Dimension
+            D: ::ndarray::Dimension,
         {
             ::ndarray::ArrayView::to_owned(&view)
         }
-    }
+    };
 }
 pub(crate) use clone_methods_impl;
 
