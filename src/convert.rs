@@ -41,6 +41,10 @@ pub trait IntoPyArray: Sized {
     type Dim: Dimension;
 
     /// Deprecated form of [`IntoPyArray::into_pyarray_bound`]
+    #[deprecated(
+        since = "0.21.0",
+        note = "will be replaced by `IntoPyArray::into_pyarray_bound` in the future"
+    )]
     #[cfg(feature = "gil-refs")]
     fn into_pyarray<'py>(self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
         Self::into_pyarray_bound(self, py).into_gil_ref()
@@ -149,6 +153,10 @@ pub trait ToPyArray {
     type Dim: Dimension;
 
     /// Deprecated form of [`ToPyArray::to_pyarray_bound`]
+    #[deprecated(
+        since = "0.21.0",
+        note = "will be replaced by `ToPyArray::to_pyarray_bound` in the future"
+    )]
     #[cfg(feature = "gil-refs")]
     fn to_pyarray<'py>(&self, py: Python<'py>) -> &'py PyArray<Self::Item, Self::Dim> {
         Self::to_pyarray_bound(self, py).into_gil_ref()
