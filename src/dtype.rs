@@ -14,8 +14,6 @@ use pyo3::{
     types::{PyAnyMethods, PyDict, PyDictMethods, PyTuple, PyType},
     Borrowed, Bound, Py, PyAny, PyObject, PyResult, PyTypeInfo, Python, ToPyObject,
 };
-#[cfg(feature = "gil-refs")]
-use pyo3::{AsPyPointer, PyNativeType};
 
 use crate::npyffi::{
     NpyTypes, PyArray_Descr, PyDataType_ALIGNMENT, PyDataType_ELSIZE, PyDataType_FIELDS,
@@ -60,24 +58,9 @@ unsafe impl PyTypeInfo for PyArrayDescr {
     fn type_object_raw<'py>(py: Python<'py>) -> *mut ffi::PyTypeObject {
         unsafe { PY_ARRAY_API.get_type_object(py, NpyTypes::PyArrayDescr_Type) }
     }
-
-    #[cfg(feature = "gil-refs")]
-    fn is_type_of(ob: &PyAny) -> bool {
-        unsafe { ffi::PyObject_TypeCheck(ob.as_ptr(), Self::type_object_raw(ob.py())) > 0 }
-    }
 }
 
 pyobject_native_type_extract!(PyArrayDescr);
-
-/// Returns the type descriptor ("dtype") for a registered type.
-#[cfg(feature = "gil-refs")]
-#[deprecated(
-    since = "0.21.0",
-    note = "This will be replaced by `dtype_bound` in the future."
-)]
-pub fn dtype<'py, T: Element>(py: Python<'py>) -> &'py PyArrayDescr {
-    T::get_dtype_bound(py).into_gil_ref()
-}
 
 /// Returns the type descriptor ("dtype") for a registered type.
 pub fn dtype_bound<'py, T: Element>(py: Python<'py>) -> Bound<'py, PyArrayDescr> {
@@ -130,237 +113,6 @@ impl PyArrayDescr {
             let descr = PY_ARRAY_API.PyArray_DescrNewFromType(py, npy_type as _);
             Bound::from_owned_ptr(py, descr.cast()).downcast_into_unchecked()
         }
-    }
-}
-
-#[cfg(feature = "gil-refs")]
-impl PyArrayDescr {
-    /// Creates a new type descriptor ("dtype") object from an arbitrary object.
-    ///
-    /// Equivalent to invoking the constructor of [`numpy.dtype`][dtype].
-    ///
-    /// [dtype]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.html
-    #[deprecated(
-        since = "0.21.0",
-        note = "This will be replace by `new_bound` in the future."
-    )]
-    pub fn new<'py, T: ToPyObject + ?Sized>(py: Python<'py>, ob: &T) -> PyResult<&'py Self> {
-        Self::new_bound(py, ob).map(Bound::into_gil_ref)
-    }
-
-    /// Returns `self` as `*mut PyArray_Descr`.
-    pub fn as_dtype_ptr(&self) -> *mut PyArray_Descr {
-        self.as_borrowed().as_dtype_ptr()
-    }
-
-    /// Returns `self` as `*mut PyArray_Descr` while increasing the reference count.
-    ///
-    /// Useful in cases where the descriptor is stolen by the API.
-    pub fn into_dtype_ptr(&self) -> *mut PyArray_Descr {
-        self.as_borrowed().to_owned().into_dtype_ptr()
-    }
-
-    /// Shortcut for creating a type descriptor of `object` type.
-    #[deprecated(
-        since = "0.21.0",
-        note = "This will be replaced by `object_bound` in the future."
-    )]
-    pub fn object<'py>(py: Python<'py>) -> &'py Self {
-        Self::object_bound(py).into_gil_ref()
-    }
-
-    /// Returns the type descriptor for a registered type.
-    #[deprecated(
-        since = "0.21.0",
-        note = "This will be replaced by `of_bound` in the future."
-    )]
-    pub fn of<'py, T: Element>(py: Python<'py>) -> &'py Self {
-        Self::of_bound::<T>(py).into_gil_ref()
-    }
-
-    /// Returns true if two type descriptors are equivalent.
-    pub fn is_equiv_to(&self, other: &Self) -> bool {
-        self.as_borrowed().is_equiv_to(&other.as_borrowed())
-    }
-
-    /// Returns the [array scalar][arrays-scalars] corresponding to this type descriptor.
-    ///
-    /// Equivalent to [`numpy.dtype.type`][dtype-type].
-    ///
-    /// [arrays-scalars]: https://numpy.org/doc/stable/reference/arrays.scalars.html
-    /// [dtype-type]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.type.html
-    pub fn typeobj(&self) -> &PyType {
-        self.as_borrowed().typeobj().into_gil_ref()
-    }
-
-    /// Returns a unique number for each of the 21 different built-in
-    /// [enumerated types][enumerated-types].
-    ///
-    /// These are roughly ordered from least-to-most precision.
-    ///
-    /// Equivalent to [`numpy.dtype.num`][dtype-num].
-    ///
-    /// [enumerated-types]: https://numpy.org/doc/stable/reference/c-api/dtype.html#enumerated-types
-    /// [dtype-num]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.num.html
-    pub fn num(&self) -> c_int {
-        self.as_borrowed().num()
-    }
-
-    /// Returns the element size of this type descriptor.
-    ///
-    /// Equivalent to [`numpy.dtype.itemsize`][dtype-itemsize].
-    ///
-    /// [dtype-itemsiize]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.itemsize.html
-    pub fn itemsize(&self) -> usize {
-        self.as_borrowed().itemsize()
-    }
-
-    /// Returns the required alignment (bytes) of this type descriptor according to the compiler.
-    ///
-    /// Equivalent to [`numpy.dtype.alignment`][dtype-alignment].
-    ///
-    /// [dtype-alignment]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.alignment.html
-    pub fn alignment(&self) -> usize {
-        self.as_borrowed().alignment()
-    }
-
-    /// Returns an ASCII character indicating the byte-order of this type descriptor object.
-    ///
-    /// All built-in data-type objects have byteorder either `=` or `|`.
-    ///
-    /// Equivalent to [`numpy.dtype.byteorder`][dtype-byteorder].
-    ///
-    /// [dtype-byteorder]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.byteorder.html
-    pub fn byteorder(&self) -> u8 {
-        self.as_borrowed().byteorder()
-    }
-
-    /// Returns a unique ASCII character for each of the 21 different built-in types.
-    ///
-    /// Note that structured data types are categorized as `V` (void).
-    ///
-    /// Equivalent to [`numpy.dtype.char`][dtype-char].
-    ///
-    /// [dtype-char]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.char.html
-    pub fn char(&self) -> u8 {
-        self.as_borrowed().char()
-    }
-
-    /// Returns an ASCII character (one of `biufcmMOSUV`) identifying the general kind of data.
-    ///
-    /// Note that structured data types are categorized as `V` (void).
-    ///
-    /// Equivalent to [`numpy.dtype.kind`][dtype-kind].
-    ///
-    /// [dtype-kind]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.kind.html
-    pub fn kind(&self) -> u8 {
-        self.as_borrowed().kind()
-    }
-
-    /// Returns bit-flags describing how this type descriptor is to be interpreted.
-    ///
-    /// Equivalent to [`numpy.dtype.flags`][dtype-flags].
-    ///
-    /// In numpy 2 the flags field was widened to allow for more flags.
-    ///
-    /// [dtype-flags]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.flags.html
-    /// [dtype-changes]: https://numpy.org/devdocs/numpy_2_0_migration_guide.html#the-pyarray-descr-struct-has-been-changed
-    pub fn flags(&self) -> u64 {
-        self.as_borrowed().flags()
-    }
-
-    /// Returns the number of dimensions if this type descriptor represents a sub-array, and zero otherwise.
-    ///
-    /// Equivalent to [`numpy.dtype.ndim`][dtype-ndim].
-    ///
-    /// [dtype-ndim]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.ndim.html
-    pub fn ndim(&self) -> usize {
-        self.as_borrowed().ndim()
-    }
-
-    /// Returns the type descriptor for the base element of subarrays, regardless of their dimension or shape.
-    ///
-    /// If the dtype is not a subarray, returns self.
-    ///
-    /// Equivalent to [`numpy.dtype.base`][dtype-base].
-    ///
-    /// [dtype-base]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.base.html
-    pub fn base(&self) -> &PyArrayDescr {
-        self.as_borrowed().base().into_gil_ref()
-    }
-
-    /// Returns the shape of the sub-array.
-    ///
-    /// If the dtype is not a sub-array, an empty vector is returned.
-    ///
-    /// Equivalent to [`numpy.dtype.shape`][dtype-shape].
-    ///
-    /// [dtype-shape]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.shape.html
-    pub fn shape(&self) -> Vec<usize> {
-        self.as_borrowed().shape()
-    }
-
-    /// Returns true if the type descriptor contains any reference-counted objects in any fields or sub-dtypes.
-    ///
-    /// Equivalent to [`numpy.dtype.hasobject`][dtype-hasobject].
-    ///
-    /// [dtype-hasobject]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.hasobject.html
-    pub fn has_object(&self) -> bool {
-        self.as_borrowed().has_object()
-    }
-
-    /// Returns true if the type descriptor is a struct which maintains field alignment.
-    ///
-    /// This flag is sticky, so when combining multiple structs together, it is preserved
-    /// and produces new dtypes which are also aligned.
-    ///
-    /// Equivalent to [`numpy.dtype.isalignedstruct`][dtype-isalignedstruct].
-    ///
-    /// [dtype-isalignedstruct]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.isalignedstruct.html
-    pub fn is_aligned_struct(&self) -> bool {
-        self.as_borrowed().is_aligned_struct()
-    }
-
-    /// Returns true if the type descriptor is a sub-array.
-    pub fn has_subarray(&self) -> bool {
-        self.as_borrowed().has_subarray()
-    }
-
-    /// Returns true if the type descriptor is a structured type.
-    pub fn has_fields(&self) -> bool {
-        self.as_borrowed().has_fields()
-    }
-
-    /// Returns true if type descriptor byteorder is native, or `None` if not applicable.
-    pub fn is_native_byteorder(&self) -> Option<bool> {
-        self.as_borrowed().is_native_byteorder()
-    }
-
-    /// Returns an ordered list of field names, or `None` if there are no fields.
-    ///
-    /// The names are ordered according to increasing byte offset.
-    ///
-    /// Equivalent to [`numpy.dtype.names`][dtype-names].
-    ///
-    /// [dtype-names]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.names.html
-    pub fn names(&self) -> Option<Vec<String>> {
-        self.as_borrowed().names()
-    }
-
-    /// Returns the type descriptor and offset of the field with the given name.
-    ///
-    /// This method will return an error if this type descriptor is not structured,
-    /// or if it does not contain a field with a given name.
-    ///
-    /// The list of all names can be found via [`PyArrayDescr::names`].
-    ///
-    /// Equivalent to retrieving a single item from [`numpy.dtype.fields`][dtype-fields].
-    ///
-    /// [dtype-fields]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.fields.html
-    pub fn get_field(&self, name: &str) -> PyResult<(&PyArrayDescr, usize)> {
-        self.as_borrowed()
-            .get_field(name)
-            .map(|(descr, n)| (descr.into_gil_ref(), n))
     }
 }
 
@@ -706,16 +458,6 @@ pub unsafe trait Element: Sized + Send + Sync {
     /// This flag should *always* be set to `false` for object types or record types
     /// that contain object-type fields.
     const IS_COPY: bool;
-
-    /// Returns the associated type descriptor ("dtype") for the given element type.
-    #[cfg(feature = "gil-refs")]
-    #[deprecated(
-        since = "0.21.0",
-        note = "This will be replaced by `get_dtype_bound` in the future."
-    )]
-    fn get_dtype<'py>(py: Python<'py>) -> &'py PyArrayDescr {
-        Self::get_dtype_bound(py).into_gil_ref()
-    }
 
     /// Returns the associated type descriptor ("dtype") for the given element type.
     fn get_dtype_bound(py: Python<'_>) -> Bound<'_, PyArrayDescr>;

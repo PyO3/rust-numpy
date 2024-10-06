@@ -4,8 +4,6 @@ use std::ptr::null_mut;
 
 use ndarray::{Dimension, IxDyn};
 use pyo3::types::PyAnyMethods;
-#[cfg(feature = "gil-refs")]
-use pyo3::PyNativeType;
 use pyo3::{Borrowed, Bound, FromPyObject, PyResult};
 
 use crate::array::PyArray;
@@ -15,14 +13,6 @@ use crate::npyffi::{array::PY_ARRAY_API, NPY_CASTING, NPY_ORDER};
 /// Return value of a function that can yield either an array or a scalar.
 pub trait ArrayOrScalar<'py, T>: FromPyObject<'py> {}
 
-#[cfg(feature = "gil-refs")]
-impl<'py, T, D> ArrayOrScalar<'py, T> for &'py PyArray<T, D>
-where
-    T: Element,
-    D: Dimension,
-{
-}
-
 impl<'py, T, D> ArrayOrScalar<'py, T> for Bound<'py, PyArray<T, D>>
 where
     T: Element,
@@ -31,25 +21,6 @@ where
 }
 
 impl<'py, T> ArrayOrScalar<'py, T> for T where T: Element + FromPyObject<'py> {}
-
-/// Deprecated form of [`inner_bound`]
-#[deprecated(
-    since = "0.21.0",
-    note = "will be replaced by `inner_bound` in the future"
-)]
-#[cfg(feature = "gil-refs")]
-pub fn inner<'py, T, DIN1, DIN2, OUT>(
-    array1: &'py PyArray<T, DIN1>,
-    array2: &'py PyArray<T, DIN2>,
-) -> PyResult<OUT>
-where
-    T: Element,
-    DIN1: Dimension,
-    DIN2: Dimension,
-    OUT: ArrayOrScalar<'py, T>,
-{
-    inner_bound(&array1.as_borrowed(), &array2.as_borrowed())
-}
 
 /// Return the inner product of two arrays.
 ///
@@ -101,25 +72,6 @@ where
         Bound::from_owned_ptr_or_err(py, result)?
     };
     obj.extract()
-}
-
-/// Deprecated form of [`dot_bound`]
-#[cfg(feature = "gil-refs")]
-#[deprecated(
-    since = "0.21.0",
-    note = "will be replaced by `dot_bound` in the future"
-)]
-pub fn dot<'py, T, DIN1, DIN2, OUT>(
-    array1: &'py PyArray<T, DIN1>,
-    array2: &'py PyArray<T, DIN2>,
-) -> PyResult<OUT>
-where
-    T: Element,
-    DIN1: Dimension,
-    DIN2: Dimension,
-    OUT: ArrayOrScalar<'py, T>,
-{
-    dot_bound(&array1.as_borrowed(), &array2.as_borrowed())
 }
 
 /// Return the dot product of two arrays.
@@ -180,24 +132,6 @@ where
     obj.extract()
 }
 
-/// Deprecated form of [`einsum_bound`]
-#[cfg(feature = "gil-refs")]
-#[deprecated(
-    since = "0.21.0",
-    note = "will be replaced by `einsum_bound` in the future"
-)]
-pub fn einsum<'py, T, OUT>(subscripts: &str, arrays: &[&'py PyArray<T, IxDyn>]) -> PyResult<OUT>
-where
-    T: Element,
-    OUT: ArrayOrScalar<'py, T>,
-{
-    // Safety: &PyArray<T, IxDyn> has the same size and layout in memory as
-    // Borrowed<'_, '_, PyArray<T, IxDyn>>
-    einsum_bound(subscripts, unsafe {
-        std::slice::from_raw_parts(arrays.as_ptr().cast(), arrays.len())
-    })
-}
-
 /// Return the Einstein summation convention of given tensors.
 ///
 /// This is usually invoked via the the [`einsum!`][crate::einsum!] macro.
@@ -229,21 +163,6 @@ where
         Bound::from_owned_ptr_or_err(py, result)?
     };
     obj.extract()
-}
-
-/// Deprecated form of [`einsum_bound!`][crate::einsum_bound!]
-#[cfg(feature = "gil-refs")]
-#[deprecated(
-    since = "0.21.0",
-    note = "will be replaced by `einsum_bound!` in the future"
-)]
-#[macro_export]
-macro_rules! einsum {
-    ($subscripts:literal $(,$array:ident)+ $(,)*) => {{
-        use pyo3::PyNativeType;
-        let arrays = [$($array.to_dyn().as_borrowed(),)+];
-        $crate::einsum_bound(concat!($subscripts, "\0"), &arrays)
-    }};
 }
 
 /// Return the Einstein summation convention of given tensors.

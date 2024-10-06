@@ -31,6 +31,3 @@ nalgebra = { version = ">=0.30, <0.34", default-features = false, features = ["s
 
 [package.metadata.docs.rs]
 all-features = true
-
-[features]
-gil-refs = ["pyo3/gil-refs"]
