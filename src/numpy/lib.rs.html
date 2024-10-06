@@ -207,6 +207,10 @@
 <a href="#207" id="207">207</a>
 <a href="#208" id="208">208</a>
 <a href="#209" id="209">209</a>
+<a href="#210" id="210">210</a>
+<a href="#211" id="211">211</a>
+<a href="#212" id="212">212</a>
+<a href="#213" id="213">213</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! This crate provides Rust interfaces for [NumPy C APIs][c-api],
 //! especially for the [ndarray][ndarray] class.
 //!
@@ -248,10 +252,10 @@ as well as the [`PyReadonlyArray::try_as_matrix`] and [`PyReadwriteArray::try_as
 #![cfg_attr(not(feature = <span class="string">"nalgebra"</span>), doc = <span class="string">"```rust,ignore"</span>)]
 </span><span class="doccomment">//! use numpy::pyo3::Python;
 //! use numpy::nalgebra::Matrix3;
-//! use numpy::{pyarray, ToPyArray};
+//! use numpy::{pyarray_bound, ToPyArray, PyArrayMethods};
 //!
 //! Python::with_gil(|py| {
-//!     let py_array = pyarray![py, [0, 1, 2], [3, 4, 5], [6, 7, 8]];
+//!     let py_array = pyarray_bound![py, [0, 1, 2], [3, 4, 5], [6, 7, 8]];
 //!
 //!     let py_array_square;
 //!
@@ -274,12 +278,14 @@ as well as the [`PyReadonlyArray::try_as_matrix`] and [`PyReadwriteArray::try_as
 //!         Matrix3::new(30, 36, 42, 66, 81, 96, 102, 126, 150)
 //!     );
 //! });
-//! ```
-//!
+</span><span class="attr">#![doc = <span class="string">"```"</span>]
+</span><span class="doccomment">//!
 //! [c-api]: https://numpy.org/doc/stable/reference/c-api
 //! [ndarray]: https://numpy.org/doc/stable/reference/arrays.ndarray.html
-
-</span><span class="attr">#![deny(missing_docs, missing_debug_implementations)]
+</span><span class="attr">#![deny(missing_docs)]
+</span><span class="comment">// requiring `Debug` impls is not relevant without gil-refs since `&amp;PyArray`
+// and similar aren't constructible
+</span><span class="attr">#![cfg_attr(feature = <span class="string">"gil-refs"</span>, deny(missing_debug_implementations))]
 
 #[cfg(all(target_os = <span class="string">"windows"</span>, target_arch = <span class="string">"x86"</span>))]
 </span><span class="macro">compile_error!</span>(<span class="string">"Compilation for 32-bit windows is not currently supported. See https://github.com/PyO3/rust-numpy/issues/448"</span>);
@@ -318,7 +324,8 @@ as well as the [`PyReadonlyArray::try_as_matrix`] and [`PyReadwriteArray::try_as
     PyReadwriteArray5, PyReadwriteArray6, PyReadwriteArrayDyn,
 };
 <span class="kw">pub use </span><span class="kw">crate</span>::convert::{IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
-<span class="attr">#[allow(deprecated)]
+<span class="attr">#[cfg(feature = <span class="string">"gil-refs"</span>)]
+#[allow(deprecated)]
 </span><span class="kw">pub use </span><span class="kw">crate</span>::dtype::dtype;
 <span class="kw">pub use </span><span class="kw">crate</span>::dtype::{
     dtype_bound, Complex32, Complex64, Element, PyArrayDescr, PyArrayDescrMethods,
@@ -326,7 +333,8 @@ as well as the [`PyReadonlyArray::try_as_matrix`] and [`PyReadwriteArray::try_as
 <span class="kw">pub use </span><span class="kw">crate</span>::error::{BorrowError, FromVecError, NotContiguousError};
 <span class="kw">pub use </span><span class="kw">crate</span>::npyffi::{PY_ARRAY_API, PY_UFUNC_API};
 <span class="kw">pub use </span><span class="kw">crate</span>::strings::{PyFixedString, PyFixedUnicode};
-<span class="attr">#[allow(deprecated)]
+<span class="attr">#[cfg(feature = <span class="string">"gil-refs"</span>)]
+#[allow(deprecated)]
 </span><span class="kw">pub use </span><span class="kw">crate</span>::sum_products::{dot, einsum, inner};
 <span class="kw">pub use </span><span class="kw">crate</span>::sum_products::{dot_bound, einsum_bound, inner_bound};
 <span class="kw">pub use </span><span class="kw">crate</span>::untyped_array::{PyUntypedArray, PyUntypedArrayMethods};

@@ -356,6 +356,8 @@
 <a href="#356" id="356">356</a>
 <a href="#357" id="357">357</a>
 <a href="#358" id="358">358</a>
+<a href="#359" id="359">359</a>
+<a href="#360" id="360">360</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Defines conversion traits between Rust types and NumPy data types.
 
 </span><span class="kw">use </span>std::{mem, os::raw::c_int, ptr};
@@ -403,6 +405,7 @@
         since = <span class="string">"0.21.0"</span>,
         note = <span class="string">"will be replaced by `IntoPyArray::into_pyarray_bound` in the future"
     </span>)]
+    #[cfg(feature = <span class="string">"gil-refs"</span>)]
     </span><span class="kw">fn </span>into_pyarray&lt;<span class="lifetime">'py</span>&gt;(<span class="self">self</span>, py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span>PyArray&lt;<span class="self">Self</span>::Item, <span class="self">Self</span>::Dim&gt; {
         <span class="self">Self</span>::into_pyarray_bound(<span class="self">self</span>, py).into_gil_ref()
     }
@@ -514,6 +517,7 @@
         since = <span class="string">"0.21.0"</span>,
         note = <span class="string">"will be replaced by `ToPyArray::to_pyarray_bound` in the future"
     </span>)]
+    #[cfg(feature = <span class="string">"gil-refs"</span>)]
     </span><span class="kw">fn </span>to_pyarray&lt;<span class="lifetime">'py</span>&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span>PyArray&lt;<span class="self">Self</span>::Item, <span class="self">Self</span>::Dim&gt; {
         <span class="self">Self</span>::to_pyarray_bound(<span class="self">self</span>, py).into_gil_ref()
     }
@@ -559,7 +563,7 @@
                     <span class="kw">let </span>array = PyArray::&lt;A, <span class="kw">_</span>&gt;::new_bound(py, dim, <span class="bool-val">false</span>);
                     <span class="kw">let </span><span class="kw-2">mut </span>data_ptr = array.data();
                     <span class="kw">for </span>item <span class="kw">in </span><span class="self">self</span>.iter() {
-                        data_ptr.write(item.clone());
+                        data_ptr.write(item.clone_ref(py));
                         data_ptr = data_ptr.add(<span class="number">1</span>);
                     }
                     array
@@ -592,7 +596,7 @@
                 ptr::copy_nonoverlapping(<span class="self">self</span>.data.ptr(), data_ptr, <span class="self">self</span>.len());
             } <span class="kw">else </span>{
                 <span class="kw">for </span>item <span class="kw">in </span><span class="self">self</span>.iter() {
-                    data_ptr.write(item.clone());
+                    data_ptr.write(item.clone_ref(py));
                     data_ptr = data_ptr.add(<span class="number">1</span>);
                 }
             }

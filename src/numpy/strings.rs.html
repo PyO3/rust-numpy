@@ -228,6 +228,10 @@
 <a href="#228" id="228">228</a>
 <a href="#229" id="229">229</a>
 <a href="#230" id="230">230</a>
+<a href="#231" id="231">231</a>
+<a href="#232" id="232">232</a>
+<a href="#233" id="233">233</a>
+<a href="#234" id="234">234</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Types to support arrays of [ASCII][ascii] and [UCS4][ucs4] strings
 //!
 //! [ascii]: https://numpy.org/doc/stable/reference/c-api/dtype.html#c.NPY_STRING
@@ -247,7 +251,7 @@
 };
 <span class="kw">use </span>rustc_hash::FxHashMap;
 
-<span class="kw">use </span><span class="kw">crate</span>::dtype::{Element, PyArrayDescr, PyArrayDescrMethods};
+<span class="kw">use </span><span class="kw">crate</span>::dtype::{clone_methods_impl, Element, PyArrayDescr, PyArrayDescrMethods};
 <span class="kw">use </span><span class="kw">crate</span>::npyffi::PyDataType_SET_ELSIZE;
 <span class="kw">use </span><span class="kw">crate</span>::npyffi::NPY_TYPES;
 
@@ -312,6 +316,8 @@
 
         <span class="kw">unsafe </span>{ DTYPES.from_size(py, NPY_TYPES::NPY_STRING, <span class="string">b'|' </span><span class="kw">as _</span>, size_of::&lt;<span class="self">Self</span>&gt;()) }
     }
+
+    <span class="macro">clone_methods_impl!</span>(<span class="self">Self</span>);
 }
 
 <span class="doccomment">/// A newtype wrapper around [`[PyUCS4; N]`][Py_UCS4] to handle [`str_` scalars][numpy-str] while satisfying coherence.
@@ -383,6 +389,8 @@
 
         <span class="kw">unsafe </span>{ DTYPES.from_size(py, NPY_TYPES::NPY_UNICODE, <span class="string">b'=' </span><span class="kw">as _</span>, size_of::&lt;<span class="self">Self</span>&gt;()) }
     }
+
+    <span class="macro">clone_methods_impl!</span>(<span class="self">Self</span>);
 }
 
 <span class="kw">struct </span>TypeDescriptors {
@@ -421,7 +429,7 @@
             }
         };
 
-        dtype.clone().into_bound(py)
+        dtype.bind(py).to_owned()
     }
 }
 

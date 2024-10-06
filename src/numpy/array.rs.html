@@ -2453,6 +2453,45 @@
 <a href="#2453" id="2453">2453</a>
 <a href="#2454" id="2454">2454</a>
 <a href="#2455" id="2455">2455</a>
+<a href="#2456" id="2456">2456</a>
+<a href="#2457" id="2457">2457</a>
+<a href="#2458" id="2458">2458</a>
+<a href="#2459" id="2459">2459</a>
+<a href="#2460" id="2460">2460</a>
+<a href="#2461" id="2461">2461</a>
+<a href="#2462" id="2462">2462</a>
+<a href="#2463" id="2463">2463</a>
+<a href="#2464" id="2464">2464</a>
+<a href="#2465" id="2465">2465</a>
+<a href="#2466" id="2466">2466</a>
+<a href="#2467" id="2467">2467</a>
+<a href="#2468" id="2468">2468</a>
+<a href="#2469" id="2469">2469</a>
+<a href="#2470" id="2470">2470</a>
+<a href="#2471" id="2471">2471</a>
+<a href="#2472" id="2472">2472</a>
+<a href="#2473" id="2473">2473</a>
+<a href="#2474" id="2474">2474</a>
+<a href="#2475" id="2475">2475</a>
+<a href="#2476" id="2476">2476</a>
+<a href="#2477" id="2477">2477</a>
+<a href="#2478" id="2478">2478</a>
+<a href="#2479" id="2479">2479</a>
+<a href="#2480" id="2480">2480</a>
+<a href="#2481" id="2481">2481</a>
+<a href="#2482" id="2482">2482</a>
+<a href="#2483" id="2483">2483</a>
+<a href="#2484" id="2484">2484</a>
+<a href="#2485" id="2485">2485</a>
+<a href="#2486" id="2486">2486</a>
+<a href="#2487" id="2487">2487</a>
+<a href="#2488" id="2488">2488</a>
+<a href="#2489" id="2489">2489</a>
+<a href="#2490" id="2490">2490</a>
+<a href="#2491" id="2491">2491</a>
+<a href="#2492" id="2492">2492</a>
+<a href="#2493" id="2493">2493</a>
+<a href="#2494" id="2494">2494</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Safe interface for NumPy's [N-dimensional arrays][ndarray]
 //!
 //! [ndarray]: https://numpy.org/doc/stable/reference/arrays.ndarray.html
@@ -2474,9 +2513,11 @@
 <span class="kw">use </span>pyo3::{
     ffi, pyobject_native_type_base,
     types::{DerefToPyAny, PyAnyMethods, PyModule},
-    AsPyPointer, Bound, DowncastError, FromPyObject, IntoPy, Py, PyAny, PyErr, PyNativeType,
-    PyObject, PyResult, PyTypeInfo, Python,
+    AsPyPointer, Bound, DowncastError, IntoPy, Py, PyAny, PyErr, PyObject, PyResult, PyTypeInfo,
+    Python,
 };
+<span class="attr">#[cfg(feature = <span class="string">"gil-refs"</span>)]
+</span><span class="kw">use </span>pyo3::{FromPyObject, PyNativeType};
 
 <span class="kw">use </span><span class="kw">crate</span>::borrow::{PyReadonlyArray, PyReadwriteArray};
 <span class="kw">use </span><span class="kw">crate</span>::cold;
@@ -2625,7 +2666,8 @@
     }
 }
 
-<span class="kw">impl</span>&lt;T, D&gt; From&lt;<span class="kw-2">&amp;</span><span class="lifetime">'_ </span>PyArray&lt;T, D&gt;&gt; <span class="kw">for </span>Py&lt;PyArray&lt;T, D&gt;&gt; {
+<span class="attr">#[cfg(feature = <span class="string">"gil-refs"</span>)]
+</span><span class="kw">impl</span>&lt;T, D&gt; From&lt;<span class="kw-2">&amp;</span><span class="lifetime">'_ </span>PyArray&lt;T, D&gt;&gt; <span class="kw">for </span>Py&lt;PyArray&lt;T, D&gt;&gt; {
     <span class="attr">#[inline]
     </span><span class="kw">fn </span>from(other: <span class="kw-2">&amp;</span>PyArray&lt;T, D&gt;) -&gt; <span class="self">Self </span>{
         <span class="kw">unsafe </span>{ Py::from_borrowed_ptr(other.py(), other.as_ptr()) }
@@ -2644,7 +2686,8 @@
     }
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">'py</span>, T: Element, D: Dimension&gt; FromPyObject&lt;<span class="lifetime">'py</span>&gt; <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">'py </span>PyArray&lt;T, D&gt; {
+<span class="attr">#[cfg(feature = <span class="string">"gil-refs"</span>)]
+</span><span class="kw">impl</span>&lt;<span class="lifetime">'py</span>, T: Element, D: Dimension&gt; FromPyObject&lt;<span class="lifetime">'py</span>&gt; <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">'py </span>PyArray&lt;T, D&gt; {
     <span class="kw">fn </span>extract_bound(ob: <span class="kw-2">&amp;</span>Bound&lt;<span class="lifetime">'py</span>, PyAny&gt;) -&gt; PyResult&lt;<span class="self">Self</span>&gt; {
         PyArray::extract(ob).cloned().map(Bound::into_gil_ref)
     }
@@ -2656,7 +2699,10 @@
     </span><span class="kw">pub fn </span>as_untyped(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>PyUntypedArray {
         <span class="kw">unsafe </span>{ <span class="kw-2">&amp;*</span>(<span class="self">self </span><span class="kw">as </span><span class="kw-2">*const </span><span class="self">Self </span><span class="kw">as </span><span class="kw-2">*const </span>PyUntypedArray) }
     }
+}
 
+<span class="attr">#[cfg(feature = <span class="string">"gil-refs"</span>)]
+</span><span class="kw">impl</span>&lt;T, D&gt; PyArray&lt;T, D&gt; {
     <span class="doccomment">/// Turn `&amp;PyArray&lt;T,D&gt;` into `Py&lt;PyArray&lt;T,D&gt;&gt;`,
     /// i.e. a pointer into Python's heap which is independent of the GIL lifetime.
     ///
@@ -2689,7 +2735,7 @@
     /// This is a wrapper around [`pyo3::FromPyPointer::from_owned_ptr_or_opt`] and inherits its safety contract.
     </span><span class="attr">#[deprecated(since = <span class="string">"0.21.0"</span>, note = <span class="string">"use Bound::from_owned_ptr() instead"</span>)]
     </span><span class="kw">pub unsafe fn </span>from_owned_ptr&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, ptr: <span class="kw-2">*mut </span>ffi::PyObject) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span><span class="self">Self </span>{
-        <span class="attr">#[allow(deprecated)]
+        <span class="attr">#![allow(deprecated)]
         </span>py.from_owned_ptr(ptr)
     }
 
@@ -2700,7 +2746,7 @@
     /// This is a wrapper around [`pyo3::FromPyPointer::from_borrowed_ptr_or_opt`] and inherits its safety contract.
     </span><span class="attr">#[deprecated(since = <span class="string">"0.21.0"</span>, note = <span class="string">"use Bound::from_borrowed_ptr() instead"</span>)]
     </span><span class="kw">pub unsafe fn </span>from_borrowed_ptr&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, ptr: <span class="kw-2">*mut </span>ffi::PyObject) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span><span class="self">Self </span>{
-        <span class="attr">#[allow(deprecated)]
+        <span class="attr">#![allow(deprecated)]
         </span>py.from_borrowed_ptr(ptr)
     }
 
@@ -2740,27 +2786,6 @@
         }
 
         <span class="prelude-val">Ok</span>(array)
-    }
-
-    <span class="doccomment">/// Same as [`shape`][PyUntypedArray::shape], but returns `D` instead of `&amp;[usize]`.
-    </span><span class="attr">#[inline(always)]
-    </span><span class="kw">pub fn </span>dims(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; D {
-        D::from_dimension(<span class="kw-2">&amp;</span>Dim(<span class="self">self</span>.shape())).expect(DIMENSIONALITY_MISMATCH_ERR)
-    }
-
-    <span class="doccomment">/// Deprecated form of [`PyArray&lt;T, D&gt;::new_bound`]
-    ///
-    /// # Safety
-    /// Same as [`PyArray&lt;T, D&gt;::new_bound`]
-    </span><span class="attr">#[deprecated(
-        since = <span class="string">"0.21.0"</span>,
-        note = <span class="string">"will be replaced by `PyArray::new_bound` in the future"
-    </span>)]
-    </span><span class="kw">pub unsafe fn </span>new&lt;<span class="lifetime">'py</span>, ID&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, dims: ID, is_fortran: bool) -&gt; <span class="kw-2">&amp;</span><span class="self">Self
-    </span><span class="kw">where
-        </span>ID: IntoDimension&lt;Dim = D&gt;,
-    {
-        <span class="self">Self</span>::new_bound(py, dims, is_fortran).into_gil_ref()
     }
 
     <span class="doccomment">/// Creates a new uninitialized NumPy array.
@@ -2887,24 +2912,6 @@
         <span class="self">Self</span>::new_with_data(py, dims, strides, data_ptr, container.cast())
     }
 
-    <span class="doccomment">/// Deprecated form of [`PyArray&lt;T, D&gt;::borrow_from_array_bound`]
-    ///
-    /// # Safety
-    /// Same as [`PyArray&lt;T, D&gt;::borrow_from_array_bound`]
-    </span><span class="attr">#[deprecated(
-        since = <span class="string">"0.21.0"</span>,
-        note = <span class="string">"will be replaced by `PyArray::borrow_from_array_bound` in the future"
-    </span>)]
-    </span><span class="kw">pub unsafe fn </span>borrow_from_array&lt;<span class="lifetime">'py</span>, S&gt;(
-        array: <span class="kw-2">&amp;</span>ArrayBase&lt;S, D&gt;,
-        container: <span class="kw-2">&amp;</span><span class="lifetime">'py </span>PyAny,
-    ) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span><span class="self">Self
-    </span><span class="kw">where
-        </span>S: Data&lt;Elem = T&gt;,
-    {
-        <span class="self">Self</span>::borrow_from_array_bound(array, (<span class="kw-2">*</span>container.as_borrowed()).clone()).into_gil_ref()
-    }
-
     <span class="doccomment">/// Creates a NumPy array backed by `array` and ties its ownership to the Python object `container`.
     ///
     /// # Safety
@@ -2956,18 +2963,6 @@
         )
     }
 
-    <span class="doccomment">/// Deprecated form of [`PyArray&lt;T, D&gt;::zeros_bound`]
-    </span><span class="attr">#[deprecated(
-        since = <span class="string">"0.21.0"</span>,
-        note = <span class="string">"will be replaced by `PyArray::zeros_bound` in the future"
-    </span>)]
-    </span><span class="kw">pub fn </span>zeros&lt;<span class="lifetime">'py</span>, ID&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, dims: ID, is_fortran: bool) -&gt; <span class="kw-2">&amp;</span><span class="self">Self
-    </span><span class="kw">where
-        </span>ID: IntoDimension&lt;Dim = D&gt;,
-    {
-        <span class="self">Self</span>::zeros_bound(py, dims, is_fortran).into_gil_ref()
-    }
-
     <span class="doccomment">/// Construct a new NumPy array filled with zeros.
     ///
     /// If `is_fortran` is true, then it has Fortran/column-major order,
@@ -3008,6 +3003,116 @@
             );
             Bound::from_owned_ptr(py, ptr).downcast_into_unchecked()
         }
+    }
+
+    <span class="doccomment">/// Constructs a NumPy from an [`ndarray::Array`]
+    ///
+    /// This method uses the internal [`Vec`] of the [`ndarray::Array`] as the base object of the NumPy array.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use numpy::{PyArray, PyArrayMethods};
+    /// use ndarray::array;
+    /// use pyo3::Python;
+    ///
+    /// Python::with_gil(|py| {
+    ///     let pyarray = PyArray::from_owned_array_bound(py, array![[1, 2], [3, 4]]);
+    ///
+    ///     assert_eq!(pyarray.readonly().as_array(), array![[1, 2], [3, 4]]);
+    /// });
+    /// ```
+    </span><span class="kw">pub fn </span>from_owned_array_bound(py: Python&lt;<span class="lifetime">'_</span>&gt;, <span class="kw-2">mut </span>arr: Array&lt;T, D&gt;) -&gt; Bound&lt;<span class="lifetime">'_</span>, <span class="self">Self</span>&gt; {
+        <span class="kw">let </span>(strides, dims) = (arr.npy_strides(), arr.raw_dim());
+        <span class="kw">let </span>data_ptr = arr.as_mut_ptr();
+        <span class="kw">unsafe </span>{
+            <span class="self">Self</span>::from_raw_parts(
+                py,
+                dims,
+                strides.as_ptr(),
+                data_ptr,
+                PySliceContainer::from(arr),
+            )
+        }
+    }
+
+    <span class="doccomment">/// Construct a NumPy array from a [`ndarray::ArrayBase`].
+    ///
+    /// This method allocates memory in Python's heap via the NumPy API,
+    /// and then copies all elements of the array there.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use numpy::{PyArray, PyArrayMethods};
+    /// use ndarray::array;
+    /// use pyo3::Python;
+    ///
+    /// Python::with_gil(|py| {
+    ///     let pyarray = PyArray::from_array_bound(py, &amp;array![[1, 2], [3, 4]]);
+    ///
+    ///     assert_eq!(pyarray.readonly().as_array(), array![[1, 2], [3, 4]]);
+    /// });
+    /// ```
+    </span><span class="kw">pub fn </span>from_array_bound&lt;<span class="lifetime">'py</span>, S&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, arr: <span class="kw-2">&amp;</span>ArrayBase&lt;S, D&gt;) -&gt; Bound&lt;<span class="lifetime">'py</span>, <span class="self">Self</span>&gt;
+    <span class="kw">where
+        </span>S: Data&lt;Elem = T&gt;,
+    {
+        ToPyArray::to_pyarray_bound(arr, py)
+    }
+}
+
+<span class="attr">#[cfg(feature = <span class="string">"gil-refs"</span>)]
+</span><span class="kw">impl</span>&lt;T: Element, D: Dimension&gt; PyArray&lt;T, D&gt; {
+    <span class="doccomment">/// Same as [`shape`][PyUntypedArray::shape], but returns `D` instead of `&amp;[usize]`.
+    </span><span class="attr">#[inline(always)]
+    </span><span class="kw">pub fn </span>dims(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; D {
+        D::from_dimension(<span class="kw-2">&amp;</span>Dim(<span class="self">self</span>.shape())).expect(DIMENSIONALITY_MISMATCH_ERR)
+    }
+
+    <span class="doccomment">/// Deprecated form of [`PyArray&lt;T, D&gt;::new_bound`]
+    ///
+    /// # Safety
+    /// Same as [`PyArray&lt;T, D&gt;::new_bound`]
+    </span><span class="attr">#[deprecated(
+        since = <span class="string">"0.21.0"</span>,
+        note = <span class="string">"will be replaced by `PyArray::new_bound` in the future"
+    </span>)]
+    </span><span class="kw">pub unsafe fn </span>new&lt;<span class="lifetime">'py</span>, ID&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, dims: ID, is_fortran: bool) -&gt; <span class="kw-2">&amp;</span><span class="self">Self
+    </span><span class="kw">where
+        </span>ID: IntoDimension&lt;Dim = D&gt;,
+    {
+        <span class="self">Self</span>::new_bound(py, dims, is_fortran).into_gil_ref()
+    }
+
+    <span class="doccomment">/// Deprecated form of [`PyArray&lt;T, D&gt;::borrow_from_array_bound`]
+    ///
+    /// # Safety
+    /// Same as [`PyArray&lt;T, D&gt;::borrow_from_array_bound`]
+    </span><span class="attr">#[deprecated(
+        since = <span class="string">"0.21.0"</span>,
+        note = <span class="string">"will be replaced by `PyArray::borrow_from_array_bound` in the future"
+    </span>)]
+    </span><span class="kw">pub unsafe fn </span>borrow_from_array&lt;<span class="lifetime">'py</span>, S&gt;(
+        array: <span class="kw-2">&amp;</span>ArrayBase&lt;S, D&gt;,
+        container: <span class="kw-2">&amp;</span><span class="lifetime">'py </span>PyAny,
+    ) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span><span class="self">Self
+    </span><span class="kw">where
+        </span>S: Data&lt;Elem = T&gt;,
+    {
+        <span class="self">Self</span>::borrow_from_array_bound(array, (<span class="kw-2">*</span>container.as_borrowed()).clone()).into_gil_ref()
+    }
+
+    <span class="doccomment">/// Deprecated form of [`PyArray&lt;T, D&gt;::zeros_bound`]
+    </span><span class="attr">#[deprecated(
+        since = <span class="string">"0.21.0"</span>,
+        note = <span class="string">"will be replaced by `PyArray::zeros_bound` in the future"
+    </span>)]
+    </span><span class="kw">pub fn </span>zeros&lt;<span class="lifetime">'py</span>, ID&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, dims: ID, is_fortran: bool) -&gt; <span class="kw-2">&amp;</span><span class="self">Self
+    </span><span class="kw">where
+        </span>ID: IntoDimension&lt;Dim = D&gt;,
+    {
+        <span class="self">Self</span>::zeros_bound(py, dims, is_fortran).into_gil_ref()
     }
 
     <span class="doccomment">/// Returns an immutable view of the internal data as a slice.
@@ -3051,37 +3156,6 @@
     </span>)]
     </span><span class="kw">pub fn </span>from_owned_array&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, arr: Array&lt;T, D&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span><span class="self">Self </span>{
         <span class="self">Self</span>::from_owned_array_bound(py, arr).into_gil_ref()
-    }
-
-    <span class="doccomment">/// Constructs a NumPy from an [`ndarray::Array`]
-    ///
-    /// This method uses the internal [`Vec`] of the [`ndarray::Array`] as the base object of the NumPy array.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use numpy::{PyArray, PyArrayMethods};
-    /// use ndarray::array;
-    /// use pyo3::Python;
-    ///
-    /// Python::with_gil(|py| {
-    ///     let pyarray = PyArray::from_owned_array_bound(py, array![[1, 2], [3, 4]]);
-    ///
-    ///     assert_eq!(pyarray.readonly().as_array(), array![[1, 2], [3, 4]]);
-    /// });
-    /// ```
-    </span><span class="kw">pub fn </span>from_owned_array_bound(py: Python&lt;<span class="lifetime">'_</span>&gt;, <span class="kw-2">mut </span>arr: Array&lt;T, D&gt;) -&gt; Bound&lt;<span class="lifetime">'_</span>, <span class="self">Self</span>&gt; {
-        <span class="kw">let </span>(strides, dims) = (arr.npy_strides(), arr.raw_dim());
-        <span class="kw">let </span>data_ptr = arr.as_mut_ptr();
-        <span class="kw">unsafe </span>{
-            <span class="self">Self</span>::from_raw_parts(
-                py,
-                dims,
-                strides.as_ptr(),
-                data_ptr,
-                PySliceContainer::from(arr),
-            )
-        }
     }
 
     <span class="doccomment">/// Get a reference of the specified element if the given index is valid.
@@ -3271,31 +3345,6 @@
         <span class="self">Self</span>::from_array_bound(py, arr).into_gil_ref()
     }
 
-    <span class="doccomment">/// Construct a NumPy array from a [`ndarray::ArrayBase`].
-    ///
-    /// This method allocates memory in Python's heap via the NumPy API,
-    /// and then copies all elements of the array there.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use numpy::{PyArray, PyArrayMethods};
-    /// use ndarray::array;
-    /// use pyo3::Python;
-    ///
-    /// Python::with_gil(|py| {
-    ///     let pyarray = PyArray::from_array_bound(py, &amp;array![[1, 2], [3, 4]]);
-    ///
-    ///     assert_eq!(pyarray.readonly().as_array(), array![[1, 2], [3, 4]]);
-    /// });
-    /// ```
-    </span><span class="kw">pub fn </span>from_array_bound&lt;<span class="lifetime">'py</span>, S&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, arr: <span class="kw-2">&amp;</span>ArrayBase&lt;S, D&gt;) -&gt; Bound&lt;<span class="lifetime">'py</span>, <span class="self">Self</span>&gt;
-    <span class="kw">where
-        </span>S: Data&lt;Elem = T&gt;,
-    {
-        ToPyArray::to_pyarray_bound(arr, py)
-    }
-
     <span class="doccomment">/// Get an immutable borrow of the NumPy array
     </span><span class="kw">pub fn </span>try_readonly(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;PyReadonlyArray&lt;<span class="lifetime">'_</span>, T, D&gt;, BorrowError&gt; {
         PyReadonlyArray::try_new(<span class="self">self</span>.as_borrowed().to_owned())
@@ -3391,6 +3440,7 @@
 }
 
 <span class="attr">#[cfg(feature = <span class="string">"nalgebra"</span>)]
+#[cfg(feature = <span class="string">"gil-refs"</span>)]
 </span><span class="kw">impl</span>&lt;N, D&gt; PyArray&lt;N, D&gt;
 <span class="kw">where
     </span>N: nalgebra::Scalar + Element,
@@ -3447,7 +3497,8 @@
 
 <span class="kw">impl</span>&lt;D: Dimension&gt; PyArray&lt;PyObject, D&gt; {
     <span class="doccomment">/// Deprecated form of [`PyArray&lt;T, D&gt;::from_owned_object_array_bound`]
-    </span><span class="attr">#[deprecated(
+    </span><span class="attr">#[cfg(feature = <span class="string">"gil-refs"</span>)]
+    #[deprecated(
         since = <span class="string">"0.21.0"</span>,
         note = <span class="string">"will be replaced by PyArray::from_owned_object_array_bound in the future"
     </span>)]
@@ -3508,7 +3559,8 @@
     }
 }
 
-<span class="kw">impl</span>&lt;T: Copy + Element&gt; PyArray&lt;T, Ix0&gt; {
+<span class="attr">#[cfg(feature = <span class="string">"gil-refs"</span>)]
+</span><span class="kw">impl</span>&lt;T: Copy + Element&gt; PyArray&lt;T, Ix0&gt; {
     <span class="doccomment">/// Get the single element of a zero-dimensional array.
     ///
     /// See [`inner`][crate::inner] for an example.
@@ -3518,15 +3570,6 @@
 }
 
 <span class="kw">impl</span>&lt;T: Element&gt; PyArray&lt;T, Ix1&gt; {
-    <span class="doccomment">/// Deprecated form of [`PyArray&lt;T, Ix1&gt;::from_slice_bound`]
-    </span><span class="attr">#[deprecated(
-        since = <span class="string">"0.21.0"</span>,
-        note = <span class="string">"will be replaced by `PyArray::from_slice_bound` in the future"
-    </span>)]
-    </span><span class="kw">pub fn </span>from_slice&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, slice: <span class="kw-2">&amp;</span>[T]) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span><span class="self">Self </span>{
-        <span class="self">Self</span>::from_slice_bound(py, slice).into_gil_ref()
-    }
-
     <span class="doccomment">/// Construct a one-dimensional array from a [mod@slice].
     ///
     /// # Example
@@ -3545,19 +3588,9 @@
         <span class="kw">unsafe </span>{
             <span class="kw">let </span>array = PyArray::new_bound(py, [slice.len()], <span class="bool-val">false</span>);
             <span class="kw">let </span><span class="kw-2">mut </span>data_ptr = array.data();
-            clone_elements(slice, <span class="kw-2">&amp;mut </span>data_ptr);
+            clone_elements(py, slice, <span class="kw-2">&amp;mut </span>data_ptr);
             array
         }
-    }
-
-    <span class="doccomment">/// Deprecated form of [`PyArray&lt;T, Ix1&gt;::from_vec_bound`]
-    </span><span class="attr">#[deprecated(
-        since = <span class="string">"0.21.0"</span>,
-        note = <span class="string">"will be replaced by `PyArray::from_vec_bound` in the future"
-    </span>)]
-    #[inline(always)]
-    </span><span class="kw">pub fn </span>from_vec&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, vec: Vec&lt;T&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span><span class="self">Self </span>{
-        <span class="self">Self</span>::from_vec_bound(py, vec).into_gil_ref()
     }
 
     <span class="doccomment">/// Construct a one-dimensional array from a [`Vec&lt;T&gt;`][Vec].
@@ -3577,18 +3610,6 @@
     </span><span class="attr">#[inline(always)]
     </span><span class="kw">pub fn </span>from_vec_bound&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, vec: Vec&lt;T&gt;) -&gt; Bound&lt;<span class="lifetime">'py</span>, <span class="self">Self</span>&gt; {
         vec.into_pyarray_bound(py)
-    }
-
-    <span class="doccomment">/// Deprecated form of [`PyArray&lt;T, Ix1&gt;::from_iter_bound`]
-    </span><span class="attr">#[deprecated(
-        since = <span class="string">"0.21.0"</span>,
-        note = <span class="string">"will be replaced by PyArray::from_iter_bound in the future"
-    </span>)]
-    </span><span class="kw">pub fn </span>from_iter&lt;<span class="lifetime">'py</span>, I&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, iter: I) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span><span class="self">Self
-    </span><span class="kw">where
-        </span>I: IntoIterator&lt;Item = T&gt;,
-    {
-        <span class="self">Self</span>::from_iter_bound(py, iter).into_gil_ref()
     }
 
     <span class="doccomment">/// Construct a one-dimensional array from an [`Iterator`].
@@ -3616,9 +3637,44 @@
     }
 }
 
+<span class="attr">#[cfg(feature = <span class="string">"gil-refs"</span>)]
+</span><span class="kw">impl</span>&lt;T: Element&gt; PyArray&lt;T, Ix1&gt; {
+    <span class="doccomment">/// Deprecated form of [`PyArray&lt;T, Ix1&gt;::from_slice_bound`]
+    </span><span class="attr">#[deprecated(
+        since = <span class="string">"0.21.0"</span>,
+        note = <span class="string">"will be replaced by `PyArray::from_slice_bound` in the future"
+    </span>)]
+    </span><span class="kw">pub fn </span>from_slice&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, slice: <span class="kw-2">&amp;</span>[T]) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span><span class="self">Self </span>{
+        <span class="self">Self</span>::from_slice_bound(py, slice).into_gil_ref()
+    }
+
+    <span class="doccomment">/// Deprecated form of [`PyArray&lt;T, Ix1&gt;::from_vec_bound`]
+    </span><span class="attr">#[inline(always)]
+    #[deprecated(
+        since = <span class="string">"0.21.0"</span>,
+        note = <span class="string">"will be replaced by `PyArray::from_vec_bound` in the future"
+    </span>)]
+    </span><span class="kw">pub fn </span>from_vec&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, vec: Vec&lt;T&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span><span class="self">Self </span>{
+        <span class="self">Self</span>::from_vec_bound(py, vec).into_gil_ref()
+    }
+
+    <span class="doccomment">/// Deprecated form of [`PyArray&lt;T, Ix1&gt;::from_iter_bound`]
+    </span><span class="attr">#[deprecated(
+        since = <span class="string">"0.21.0"</span>,
+        note = <span class="string">"will be replaced by PyArray::from_iter_bound in the future"
+    </span>)]
+    </span><span class="kw">pub fn </span>from_iter&lt;<span class="lifetime">'py</span>, I&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, iter: I) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span><span class="self">Self
+    </span><span class="kw">where
+        </span>I: IntoIterator&lt;Item = T&gt;,
+    {
+        <span class="self">Self</span>::from_iter_bound(py, iter).into_gil_ref()
+    }
+}
+
 <span class="kw">impl</span>&lt;T: Element&gt; PyArray&lt;T, Ix2&gt; {
     <span class="doccomment">/// Deprecated form of [`PyArray&lt;T, Ix2&gt;::from_vec2_bound`]
-    </span><span class="attr">#[deprecated(
+    </span><span class="attr">#[cfg(feature = <span class="string">"gil-refs"</span>)]
+    #[deprecated(
         since = <span class="string">"0.21.0"</span>,
         note = <span class="string">"will be replaced by `PyArray::from_vec2_bound` in the future"
     </span>)]
@@ -3662,7 +3718,7 @@
                     cold();
                     <span class="kw">return </span><span class="prelude-val">Err</span>(FromVecError::new(v.len(), len2));
                 }
-                clone_elements(v, <span class="kw-2">&amp;mut </span>data_ptr);
+                clone_elements(py, v, <span class="kw-2">&amp;mut </span>data_ptr);
             }
             <span class="prelude-val">Ok</span>(array)
         }
@@ -3671,7 +3727,8 @@
 
 <span class="kw">impl</span>&lt;T: Element&gt; PyArray&lt;T, Ix3&gt; {
     <span class="doccomment">/// Deprecated form of [`PyArray&lt;T, Ix3&gt;::from_vec3_bound`]
-    </span><span class="attr">#[deprecated(
+    </span><span class="attr">#[cfg(feature = <span class="string">"gil-refs"</span>)]
+    #[deprecated(
         since = <span class="string">"0.21.0"</span>,
         note = <span class="string">"will be replaced by `PyArray::from_vec3_bound` in the future"
     </span>)]
@@ -3730,7 +3787,7 @@
                         cold();
                         <span class="kw">return </span><span class="prelude-val">Err</span>(FromVecError::new(v.len(), len3));
                     }
-                    clone_elements(v, <span class="kw-2">&amp;mut </span>data_ptr);
+                    clone_elements(py, v, <span class="kw-2">&amp;mut </span>data_ptr);
                 }
             }
             <span class="prelude-val">Ok</span>(array)
@@ -3738,7 +3795,8 @@
     }
 }
 
-<span class="kw">impl</span>&lt;T: Element, D&gt; PyArray&lt;T, D&gt; {
+<span class="attr">#[cfg(feature = <span class="string">"gil-refs"</span>)]
+</span><span class="kw">impl</span>&lt;T: Element, D&gt; PyArray&lt;T, D&gt; {
     <span class="doccomment">/// Copies `self` into `other`, performing a data type conversion if necessary.
     ///
     /// See also [`PyArray_CopyInto`][PyArray_CopyInto].
@@ -3910,7 +3968,8 @@
 
 <span class="kw">impl</span>&lt;T: Element + AsPrimitive&lt;f64&gt;&gt; PyArray&lt;T, Ix1&gt; {
     <span class="doccomment">/// Deprecated form of [`PyArray&lt;T, Ix1&gt;::arange_bound`]
-    </span><span class="attr">#[deprecated(
+    </span><span class="attr">#[cfg(feature = <span class="string">"gil-refs"</span>)]
+    #[deprecated(
         since = <span class="string">"0.21.0"</span>,
         note = <span class="string">"will be replaced by PyArray::arange_bound in the future"
     </span>)]
@@ -3953,13 +4012,13 @@
     }
 }
 
-<span class="kw">unsafe fn </span>clone_elements&lt;T: Element&gt;(elems: <span class="kw-2">&amp;</span>[T], data_ptr: <span class="kw-2">&amp;mut *mut </span>T) {
+<span class="kw">unsafe fn </span>clone_elements&lt;T: Element&gt;(py: Python&lt;<span class="lifetime">'_</span>&gt;, elems: <span class="kw-2">&amp;</span>[T], data_ptr: <span class="kw-2">&amp;mut *mut </span>T) {
     <span class="kw">if </span>T::IS_COPY {
         ptr::copy_nonoverlapping(elems.as_ptr(), <span class="kw-2">*</span>data_ptr, elems.len());
         <span class="kw-2">*</span>data_ptr = data_ptr.add(elems.len());
     } <span class="kw">else </span>{
         <span class="kw">for </span>elem <span class="kw">in </span>elems {
-            data_ptr.write(elem.clone());
+            data_ptr.write(elem.clone_ref(py));
             <span class="kw-2">*</span>data_ptr = data_ptr.add(<span class="number">1</span>);
         }
     }
@@ -4173,10 +4232,7 @@
     <span class="kw">where
         </span>T: Element,
         D: Dimension,
-        Idx: NpyIndex&lt;Dim = D&gt;,
-    {
-        <span class="kw">unsafe </span>{ <span class="self">self</span>.get(index) }.cloned()
-    }
+        Idx: NpyIndex&lt;Dim = D&gt;;
 
     <span class="doccomment">/// Turn an array with fixed dimensionality into one with dynamic dimensionality.
     </span><span class="kw">fn </span>to_dyn(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;T, IxDyn&gt;&gt;
@@ -4207,10 +4263,7 @@
     </span><span class="kw">fn </span>to_vec(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;T&gt;, NotContiguousError&gt;
     <span class="kw">where
         </span>T: Element,
-        D: Dimension,
-    {
-        <span class="kw">unsafe </span>{ <span class="self">self</span>.as_slice() }.map(ToOwned::to_owned)
-    }
+        D: Dimension;
 
     <span class="doccomment">/// Get an immutable borrow of the NumPy array
     </span><span class="kw">fn </span>try_readonly(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;PyReadonlyArray&lt;<span class="lifetime">'py</span>, T, D&gt;, BorrowError&gt;
@@ -4314,10 +4367,7 @@
     </span><span class="kw">fn </span>to_owned_array(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Array&lt;T, D&gt;
     <span class="kw">where
         </span>T: Element,
-        D: Dimension,
-    {
-        <span class="kw">unsafe </span>{ <span class="self">self</span>.as_array() }.to_owned()
-    }
+        D: Dimension;
 
     <span class="doccomment">/// Copies `self` into `other`, performing a data type conversion if necessary.
     ///
@@ -4693,8 +4743,27 @@
         <span class="prelude-val">Some</span>(<span class="kw-2">&amp;mut *</span>ptr)
     }
 
+    <span class="kw">fn </span>get_owned&lt;Idx&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, index: Idx) -&gt; <span class="prelude-ty">Option</span>&lt;T&gt;
+    <span class="kw">where
+        </span>T: Element,
+        D: Dimension,
+        Idx: NpyIndex&lt;Dim = D&gt;,
+    {
+        <span class="kw">let </span>element = <span class="kw">unsafe </span>{ <span class="self">self</span>.get(index) };
+        element.map(|elem| elem.clone_ref(<span class="self">self</span>.py()))
+    }
+
     <span class="kw">fn </span>to_dyn(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;T, IxDyn&gt;&gt; {
         <span class="kw">unsafe </span>{ <span class="self">self</span>.downcast_unchecked() }
+    }
+
+    <span class="kw">fn </span>to_vec(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;T&gt;, NotContiguousError&gt;
+    <span class="kw">where
+        </span>T: Element,
+        D: Dimension,
+    {
+        <span class="kw">let </span>slice = <span class="kw">unsafe </span>{ <span class="self">self</span>.as_slice() };
+        slice.map(|slc| T::vec_from_slice(<span class="self">self</span>.py(), slc))
     }
 
     <span class="kw">fn </span>try_readonly(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;PyReadonlyArray&lt;<span class="lifetime">'py</span>, T, D&gt;, BorrowError&gt;
@@ -4747,6 +4816,15 @@
         as_view(<span class="self">self</span>, |shape, ptr| <span class="kw">unsafe </span>{
             RawArrayViewMut::from_shape_ptr(shape, ptr)
         })
+    }
+
+    <span class="kw">fn </span>to_owned_array(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Array&lt;T, D&gt;
+    <span class="kw">where
+        </span>T: Element,
+        D: Dimension,
+    {
+        <span class="kw">let </span>view = <span class="kw">unsafe </span>{ <span class="self">self</span>.as_array() };
+        T::array_from_view(<span class="self">self</span>.py(), view)
     }
 
     <span class="kw">fn </span>copy_to&lt;U: Element&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span>Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;U, D&gt;&gt;) -&gt; PyResult&lt;()&gt;

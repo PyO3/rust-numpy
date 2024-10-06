@@ -343,6 +343,10 @@
 <a href="#343" id="343">343</a>
 <a href="#344" id="344">344</a>
 <a href="#345" id="345">345</a>
+<a href="#346" id="346">346</a>
+<a href="#347" id="347">347</a>
+<a href="#348" id="348">348</a>
+<a href="#349" id="349">349</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Support datetimes and timedeltas
 //!
 //! This module provides wrappers for NumPy's [`datetime64`][scalars-datetime64] and [`timedelta64`][scalars-timedelta64] types
@@ -411,7 +415,7 @@
 <span class="kw">use </span>pyo3::{sync::GILProtected, Bound, Py, Python};
 <span class="kw">use </span>rustc_hash::FxHashMap;
 
-<span class="kw">use </span><span class="kw">crate</span>::dtype::{Element, PyArrayDescr, PyArrayDescrMethods};
+<span class="kw">use </span><span class="kw">crate</span>::dtype::{clone_methods_impl, Element, PyArrayDescr, PyArrayDescrMethods};
 <span class="kw">use </span><span class="kw">crate</span>::npyffi::{
     PyArray_DatetimeDTypeMetaData, PyDataType_C_METADATA, NPY_DATETIMEUNIT, NPY_TYPES,
 };
@@ -508,6 +512,8 @@
 
         DTYPES.from_unit(py, U::UNIT)
     }
+
+    <span class="macro">clone_methods_impl!</span>(<span class="self">Self</span>);
 }
 
 <span class="kw">impl</span>&lt;U: Unit&gt; fmt::Debug <span class="kw">for </span>Datetime&lt;U&gt; {
@@ -543,6 +549,8 @@
 
         DTYPES.from_unit(py, U::UNIT)
     }
+
+    <span class="macro">clone_methods_impl!</span>(<span class="self">Self</span>);
 }
 
 <span class="kw">impl</span>&lt;U: Unit&gt; fmt::Debug <span class="kw">for </span>Timedelta&lt;U&gt; {
@@ -588,7 +596,7 @@
             }
         };
 
-        dtype.clone().into_bound(py)
+        dtype.bind(py).to_owned()
     }
 }
 

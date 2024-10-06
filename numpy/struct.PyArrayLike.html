@@ -94,7 +94,7 @@ it can be useful to opt into nalgebra’s support for <a href="https://docs.rs/n
 }
 
 Python::with_gil(|py| {
-    <span class="kw">let </span>np = py.eval(<span class="string">"__import__('numpy')"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>).unwrap();
+    <span class="kw">let </span>np = py.eval_bound(<span class="string">"__import__('numpy')"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>).unwrap();
     <span class="kw">let </span>sum_standard_layout = <span class="macro">wrap_pyfunction!</span>(sum_standard_layout)(py).unwrap();
     <span class="kw">let </span>sum_dynamic_strides = <span class="macro">wrap_pyfunction!</span>(sum_dynamic_strides)(py).unwrap();
 

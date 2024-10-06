@@ -466,14 +466,19 @@
 <a href="#466" id="466">466</a>
 <a href="#467" id="467">467</a>
 <a href="#468" id="468">468</a>
+<a href="#469" id="469">469</a>
+<a href="#470" id="470">470</a>
+<a href="#471" id="471">471</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Safe, untyped interface for NumPy's [N-dimensional arrays][ndarray]
 //!
 //! [ndarray]: https://numpy.org/doc/stable/reference/arrays.ndarray.html
 </span><span class="kw">use </span>std::slice;
 
+<span class="attr">#[cfg(feature = <span class="string">"gil-refs"</span>)]
+</span><span class="kw">use </span>pyo3::PyNativeType;
 <span class="kw">use </span>pyo3::{
     ffi, pyobject_native_type_extract, pyobject_native_type_named, types::PyAnyMethods,
-    AsPyPointer, Bound, IntoPy, PyAny, PyNativeType, PyObject, PyTypeInfo, Python,
+    AsPyPointer, Bound, IntoPy, PyAny, PyObject, PyTypeInfo, Python,
 };
 
 <span class="kw">use </span><span class="kw">crate</span>::array::{PyArray, PyArrayMethods};
@@ -553,7 +558,8 @@
 
 <span class="macro">pyobject_native_type_extract!</span>(PyUntypedArray);
 
-<span class="kw">impl </span>PyUntypedArray {
+<span class="attr">#[cfg(feature = <span class="string">"gil-refs"</span>)]
+</span><span class="kw">impl </span>PyUntypedArray {
     <span class="doccomment">/// Returns a raw pointer to the underlying [`PyArrayObject`][npyffi::PyArrayObject].
     </span><span class="attr">#[inline]
     </span><span class="kw">pub fn </span>as_array_ptr(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">*mut </span>npyffi::PyArrayObject {
