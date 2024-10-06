@@ -10,7 +10,7 @@ use pyo3::sync::GILOnceCell;
 use pyo3::{
     exceptions::{PyIndexError, PyValueError},
     ffi::{self, PyTuple_Size},
-    pyobject_native_type_extract, pyobject_native_type_named,
+    pyobject_native_type_named,
     types::{PyAnyMethods, PyDict, PyDictMethods, PyTuple, PyType},
     Borrowed, Bound, Py, PyAny, PyObject, PyResult, PyTypeInfo, Python, ToPyObject,
 };
@@ -59,8 +59,6 @@ unsafe impl PyTypeInfo for PyArrayDescr {
         unsafe { PY_ARRAY_API.get_type_object(py, NpyTypes::PyArrayDescr_Type) }
     }
 }
-
-pyobject_native_type_extract!(PyArrayDescr);
 
 /// Returns the type descriptor ("dtype") for a registered type.
 pub fn dtype_bound<'py, T: Element>(py: Python<'py>) -> Bound<'py, PyArrayDescr> {
@@ -148,7 +146,7 @@ pub trait PyArrayDescrMethods<'py>: Sealed {
     /// [enumerated-types]: https://numpy.org/doc/stable/reference/c-api/dtype.html#enumerated-types
     /// [dtype-num]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.num.html
     fn num(&self) -> c_int {
-        unsafe { *self.as_dtype_ptr() }.type_num
+        unsafe { &*self.as_dtype_ptr() }.type_num
     }
 
     /// Returns the element size of this type descriptor.
@@ -173,7 +171,7 @@ pub trait PyArrayDescrMethods<'py>: Sealed {
     ///
     /// [dtype-byteorder]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.byteorder.html
     fn byteorder(&self) -> u8 {
-        unsafe { *self.as_dtype_ptr() }.byteorder.max(0) as _
+        unsafe { &*self.as_dtype_ptr() }.byteorder.max(0) as _
     }
 
     /// Returns a unique ASCII character for each of the 21 different built-in types.
@@ -184,7 +182,7 @@ pub trait PyArrayDescrMethods<'py>: Sealed {
     ///
     /// [dtype-char]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.char.html
     fn char(&self) -> u8 {
-        unsafe { *self.as_dtype_ptr() }.type_.max(0) as _
+        unsafe { &*self.as_dtype_ptr() }.type_.max(0) as _
     }
 
     /// Returns an ASCII character (one of `biufcmMOSUV`) identifying the general kind of data.
@@ -195,7 +193,7 @@ pub trait PyArrayDescrMethods<'py>: Sealed {
     ///
     /// [dtype-kind]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.kind.html
     fn kind(&self) -> u8 {
-        unsafe { *self.as_dtype_ptr() }.kind.max(0) as _
+        unsafe { &*self.as_dtype_ptr() }.kind.max(0) as _
     }
 
     /// Returns bit-flags describing how this type descriptor is to be interpreted.
@@ -319,7 +317,7 @@ impl<'py> PyArrayDescrMethods<'py> for Bound<'py, PyArrayDescr> {
     }
 
     fn typeobj(&self) -> Bound<'py, PyType> {
-        let dtype_type_ptr = unsafe { *self.as_dtype_ptr() }.typeobj;
+        let dtype_type_ptr = unsafe { &*self.as_dtype_ptr() }.typeobj;
         unsafe { PyType::from_borrowed_type_ptr(self.py(), dtype_type_ptr) }
     }
 
@@ -725,7 +723,7 @@ mod tests {
             assert!(!dt.has_subarray());
             assert!(dt.base().is_equiv_to(&dt));
             assert_eq!(dt.ndim(), 0);
-            assert_eq!(dt.shape(), vec![]);
+            assert_eq!(dt.shape(), Vec::<usize>::new());
         });
     }
 
@@ -801,7 +799,7 @@ mod tests {
             assert!(dt.is_aligned_struct());
             assert!(!dt.has_subarray());
             assert_eq!(dt.ndim(), 0);
-            assert_eq!(dt.shape(), vec![]);
+            assert_eq!(dt.shape(), Vec::<usize>::new());
             assert!(dt.base().is_equiv_to(&dt));
             let x = dt.get_field("x").unwrap();
             assert!(x.0.is_equiv_to(&dtype_bound::<u8>(py)));

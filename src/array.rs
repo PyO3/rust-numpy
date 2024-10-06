@@ -5,7 +5,6 @@
 use std::{
     marker::PhantomData,
     mem,
-    ops::Deref,
     os::raw::{c_int, c_void},
     ptr, slice,
 };
@@ -17,10 +16,9 @@ use ndarray::{
 };
 use num_traits::AsPrimitive;
 use pyo3::{
-    ffi, pyobject_native_type_base,
+    ffi,
     types::{DerefToPyAny, PyAnyMethods, PyModule},
-    AsPyPointer, Bound, DowncastError, IntoPy, Py, PyAny, PyErr, PyObject, PyResult, PyTypeInfo,
-    Python,
+    Bound, DowncastError, Py, PyAny, PyErr, PyObject, PyResult, PyTypeInfo, Python,
 };
 
 use crate::borrow::{PyReadonlyArray, PyReadwriteArray};
@@ -133,60 +131,8 @@ unsafe impl<T: Element, D: Dimension> PyTypeInfo for PyArray<T, D> {
         unsafe { npyffi::PY_ARRAY_API.get_type_object(py, npyffi::NpyTypes::PyArray_Type) }
     }
 
-    fn is_type_of_bound(ob: &Bound<'_, PyAny>) -> bool {
+    fn is_type_of(ob: &Bound<'_, PyAny>) -> bool {
         Self::extract::<IgnoreError>(ob).is_ok()
-    }
-}
-
-pyobject_native_type_base!(PyArray<T, D>; T; D);
-
-impl<T, D> AsRef<PyAny> for PyArray<T, D> {
-    #[inline]
-    fn as_ref(&self) -> &PyAny {
-        &self.0
-    }
-}
-
-impl<T, D> Deref for PyArray<T, D> {
-    type Target = PyUntypedArray;
-
-    #[inline]
-    fn deref(&self) -> &Self::Target {
-        self.as_untyped()
-    }
-}
-
-unsafe impl<T, D> AsPyPointer for PyArray<T, D> {
-    #[inline]
-    fn as_ptr(&self) -> *mut ffi::PyObject {
-        self.0.as_ptr()
-    }
-}
-
-impl<T, D> IntoPy<Py<PyArray<T, D>>> for &'_ PyArray<T, D> {
-    #[inline]
-    fn into_py<'py>(self, py: Python<'py>) -> Py<PyArray<T, D>> {
-        unsafe { Py::from_borrowed_ptr(py, self.as_ptr()) }
-    }
-}
-
-impl<'a, T, D> From<&'a PyArray<T, D>> for &'a PyAny {
-    fn from(ob: &'a PyArray<T, D>) -> Self {
-        unsafe { &*(ob as *const PyArray<T, D> as *const PyAny) }
-    }
-}
-
-impl<T, D> IntoPy<PyObject> for PyArray<T, D> {
-    fn into_py<'py>(self, py: Python<'py>) -> PyObject {
-        unsafe { PyObject::from_borrowed_ptr(py, self.as_ptr()) }
-    }
-}
-
-impl<T, D> PyArray<T, D> {
-    /// Access an untyped representation of this array.
-    #[inline(always)]
-    pub fn as_untyped(&self) -> &PyUntypedArray {
-        unsafe { &*(self as *const Self as *const PyUntypedArray) }
     }
 }
 

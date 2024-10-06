@@ -4,8 +4,7 @@
 use std::slice;
 
 use pyo3::{
-    ffi, pyobject_native_type_extract, pyobject_native_type_named, types::PyAnyMethods,
-    AsPyPointer, Bound, IntoPy, PyAny, PyObject, PyTypeInfo, Python,
+    ffi, pyobject_native_type_named, types::PyAnyMethods, Bound, PyAny, PyTypeInfo, Python,
 };
 
 use crate::array::{PyArray, PyArrayMethods};
@@ -70,20 +69,12 @@ unsafe impl PyTypeInfo for PyUntypedArray {
         unsafe { npyffi::PY_ARRAY_API.get_type_object(py, npyffi::NpyTypes::PyArray_Type) }
     }
 
-    fn is_type_of_bound(ob: &Bound<'_, PyAny>) -> bool {
+    fn is_type_of(ob: &Bound<'_, PyAny>) -> bool {
         unsafe { npyffi::PyArray_Check(ob.py(), ob.as_ptr()) != 0 }
     }
 }
 
 pyobject_native_type_named!(PyUntypedArray);
-
-impl IntoPy<PyObject> for PyUntypedArray {
-    fn into_py<'py>(self, py: Python<'py>) -> PyObject {
-        unsafe { PyObject::from_borrowed_ptr(py, self.as_ptr()) }
-    }
-}
-
-pyobject_native_type_extract!(PyUntypedArray);
 
 /// Implementation of functionality for [`PyUntypedArray`].
 #[doc(alias = "PyUntypedArray")]

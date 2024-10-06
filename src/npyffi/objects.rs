@@ -11,7 +11,6 @@ use super::types::*;
 use crate::npyffi::*;
 
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct PyArrayObject {
     pub ob_base: PyObject,
     pub data: *mut c_char,
@@ -25,7 +24,6 @@ pub struct PyArrayObject {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct PyArray_Descr {
     pub ob_base: PyObject,
     pub typeobj: *mut PyTypeObject,
@@ -37,7 +35,6 @@ pub struct PyArray_Descr {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct PyArray_DescrProto {
     pub ob_base: PyObject,
     pub typeobj: *mut PyTypeObject,
@@ -58,7 +55,6 @@ pub struct PyArray_DescrProto {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct _PyArray_DescrNumPy2 {
     pub ob_base: PyObject,
     pub typeobj: *mut PyTypeObject,
@@ -76,7 +72,6 @@ pub struct _PyArray_DescrNumPy2 {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone)]
 struct _PyArray_LegacyDescr {
     pub ob_base: PyObject,
     pub typeobj: *mut PyTypeObject,
@@ -310,7 +305,6 @@ pub type PyArray_FastTakeFunc = Option<
 >;
 
 #[repr(C)]
-#[derive(Clone, Copy)]
 pub struct PyArrayFlagsObject {
     pub ob_base: PyObject,
     pub arr: *mut PyObject,
@@ -325,7 +319,6 @@ pub struct PyArray_Dims {
 }
 
 #[repr(C)]
-#[derive(Clone, Copy)]
 pub struct PyArray_Chunk {
     pub ob_base: PyObject,
     pub base: *mut PyObject,
@@ -349,7 +342,6 @@ pub struct PyArrayInterface {
 }
 
 #[repr(C)]
-#[derive(Clone, Copy)]
 pub struct PyUFuncObject {
     pub ob_base: PyObject,
     pub nin: c_int,
@@ -428,7 +420,6 @@ pub type PyUFunc_MaskedInnerLoopSelectionFunc = Option<
 pub struct NpyIter([u8; 0]);
 
 #[repr(C)]
-#[derive(Clone, Copy)]
 pub struct PyArrayIterObject {
     pub ob_base: PyObject,
     pub nd_m1: c_int,
@@ -449,7 +440,6 @@ pub struct PyArrayIterObject {
 }
 
 #[repr(C)]
-#[derive(Clone, Copy)]
 pub struct PyArrayMultiIterObject {
     pub ob_base: PyObject,
     pub numiter: c_int,
@@ -461,7 +451,6 @@ pub struct PyArrayMultiIterObject {
 }
 
 #[repr(C)]
-#[derive(Clone, Copy)]
 pub struct PyArrayNeighborhoodIterObject {
     pub ob_base: PyObject,
     pub nd_m1: c_int,
@@ -487,7 +476,6 @@ pub struct PyArrayNeighborhoodIterObject {
 }
 
 #[repr(C)]
-#[derive(Clone, Copy)]
 pub struct PyArrayMapIterObject {
     pub ob_base: PyObject,
     pub numiter: c_int,
@@ -571,7 +559,6 @@ pub struct npy_static_string {
 }
 
 #[repr(C)]
-#[derive(Clone, Copy)]
 pub struct PyArray_StringDTypeObject {
     pub base: PyArray_Descr,
     pub na_object: *mut PyObject,

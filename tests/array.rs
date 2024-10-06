@@ -91,8 +91,8 @@ fn rank_zero_array_has_invalid_strides_dimensions() {
         let arr = PyArray::<f64, _>::zeros_bound(py, (), false);
 
         assert_eq!(arr.ndim(), 0);
-        assert_eq!(arr.strides(), &[]);
-        assert_eq!(arr.shape(), &[]);
+        assert_eq!(arr.strides(), &[] as &[isize]);
+        assert_eq!(arr.shape(), &[] as &[usize]);
 
         assert_eq!(arr.len(), 1);
         assert!(!arr.is_empty());
@@ -609,7 +609,14 @@ fn unicode_strings_with_explicit_dtype_works() {
             assert_eq!(array[1].0, [b'b' as _, b'a' as _, b'r' as _, 0, 0, 0]);
             assert_eq!(
                 array[2].0,
-                [b'f' as _, b'o' as _, b'o' as _, b'b' as _, b'a' as _, b'r' as _]
+                [
+                    b'f' as u32,
+                    b'o' as _,
+                    b'o' as _,
+                    b'b' as _,
+                    b'a' as _,
+                    b'r' as _
+                ]
             );
         }
 
