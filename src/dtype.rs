@@ -71,6 +71,10 @@ pyobject_native_type_extract!(PyArrayDescr);
 
 /// Returns the type descriptor ("dtype") for a registered type.
 #[cfg(feature = "gil-refs")]
+#[deprecated(
+    since = "0.21.0",
+    note = "This will be replaced by `dtype_bound` in the future."
+)]
 pub fn dtype<'py, T: Element>(py: Python<'py>) -> &'py PyArrayDescr {
     T::get_dtype_bound(py).into_gil_ref()
 }
@@ -136,6 +140,10 @@ impl PyArrayDescr {
     /// Equivalent to invoking the constructor of [`numpy.dtype`][dtype].
     ///
     /// [dtype]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.html
+    #[deprecated(
+        since = "0.21.0",
+        note = "This will be replace by `new_bound` in the future."
+    )]
     pub fn new<'py, T: ToPyObject + ?Sized>(py: Python<'py>, ob: &T) -> PyResult<&'py Self> {
         Self::new_bound(py, ob).map(Bound::into_gil_ref)
     }
@@ -153,11 +161,19 @@ impl PyArrayDescr {
     }
 
     /// Shortcut for creating a type descriptor of `object` type.
+    #[deprecated(
+        since = "0.21.0",
+        note = "This will be replaced by `object_bound` in the future."
+    )]
     pub fn object<'py>(py: Python<'py>) -> &'py Self {
         Self::object_bound(py).into_gil_ref()
     }
 
     /// Returns the type descriptor for a registered type.
+    #[deprecated(
+        since = "0.21.0",
+        note = "This will be replaced by `of_bound` in the future."
+    )]
     pub fn of<'py, T: Element>(py: Python<'py>) -> &'py Self {
         Self::of_bound::<T>(py).into_gil_ref()
     }
@@ -693,6 +709,10 @@ pub unsafe trait Element: Sized + Send {
 
     /// Returns the associated type descriptor ("dtype") for the given element type.
     #[cfg(feature = "gil-refs")]
+    #[deprecated(
+        since = "0.21.0",
+        note = "This will be replaced by `get_dtype_bound` in the future."
+    )]
     fn get_dtype<'py>(py: Python<'py>) -> &'py PyArrayDescr {
         Self::get_dtype_bound(py).into_gil_ref()
     }

@@ -33,6 +33,10 @@ where
 impl<'py, T> ArrayOrScalar<'py, T> for T where T: Element + FromPyObject<'py> {}
 
 /// Deprecated form of [`inner_bound`]
+#[deprecated(
+    since = "0.21.0",
+    note = "will be replaced by `inner_bound` in the future"
+)]
 #[cfg(feature = "gil-refs")]
 pub fn inner<'py, T, DIN1, DIN2, OUT>(
     array1: &'py PyArray<T, DIN1>,
@@ -101,6 +105,10 @@ where
 
 /// Deprecated form of [`dot_bound`]
 #[cfg(feature = "gil-refs")]
+#[deprecated(
+    since = "0.21.0",
+    note = "will be replaced by `dot_bound` in the future"
+)]
 pub fn dot<'py, T, DIN1, DIN2, OUT>(
     array1: &'py PyArray<T, DIN1>,
     array2: &'py PyArray<T, DIN2>,
@@ -174,6 +182,10 @@ where
 
 /// Deprecated form of [`einsum_bound`]
 #[cfg(feature = "gil-refs")]
+#[deprecated(
+    since = "0.21.0",
+    note = "will be replaced by `einsum_bound` in the future"
+)]
 pub fn einsum<'py, T, OUT>(subscripts: &str, arrays: &[&'py PyArray<T, IxDyn>]) -> PyResult<OUT>
 where
     T: Element,
@@ -221,6 +233,10 @@ where
 
 /// Deprecated form of [`einsum_bound!`][crate::einsum_bound!]
 #[cfg(feature = "gil-refs")]
+#[deprecated(
+    since = "0.21.0",
+    note = "will be replaced by `einsum_bound!` in the future"
+)]
 #[macro_export]
 macro_rules! einsum {
     ($subscripts:literal $(,$array:ident)+ $(,)*) => {{
