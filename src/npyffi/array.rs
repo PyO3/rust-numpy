@@ -23,10 +23,10 @@ pub(crate) fn numpy_core_name(py: Python<'_>) -> PyResult<&'static str> {
 
             // strategy mirrored from https://github.com/pybind/pybind11/blob/af67e87393b0f867ccffc2702885eea12de063fc/include/pybind11/numpy.h#L175-L195
 
-            let numpy = PyModule::import_bound(py, "numpy")?;
+            let numpy = PyModule::import(py, "numpy")?;
             let version_string = numpy.getattr("__version__")?;
 
-            let numpy_lib = PyModule::import_bound(py, "numpy.lib")?;
+            let numpy_lib = PyModule::import(py, "numpy.lib")?;
             let numpy_version = numpy_lib
                 .getattr("NumpyVersion")?
                 .call1((version_string,))?;

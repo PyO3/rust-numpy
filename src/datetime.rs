@@ -256,6 +256,7 @@ mod tests {
     use super::*;
 
     use pyo3::{
+        ffi::c_str,
         py_run,
         types::{PyAnyMethods, PyDict, PyModule},
     };
@@ -266,14 +267,14 @@ mod tests {
     fn from_python_to_rust() {
         Python::with_gil(|py| {
             let locals = py
-                .eval_bound("{ 'np': __import__('numpy') }", None, None)
+                .eval(c_str!("{ 'np': __import__('numpy') }"), None, None)
                 .unwrap()
                 .downcast_into::<PyDict>()
                 .unwrap();
 
             let array = py
-                .eval_bound(
-                    "np.array([np.datetime64('1970-01-01')])",
+                .eval(
+                    c_str!("np.array([np.datetime64('1970-01-01')])"),
                     None,
                     Some(&locals),
                 )
@@ -294,7 +295,7 @@ mod tests {
             *array.readwrite().get_mut(0).unwrap() = Timedelta::<units::Minutes>::from(5);
 
             let np = py
-                .eval_bound("__import__('numpy')", None, None)
+                .eval(c_str!("__import__('numpy')"), None, None)
                 .unwrap()
                 .downcast_into::<PyModule>()
                 .unwrap();

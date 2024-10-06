@@ -9,7 +9,7 @@ name = "rust_parallel"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { version = "0.22.0", features = ["extension-module", "multiple-pymethods"] }
+pyo3 = { version = "0.23.0-dev", features = ["extension-module", "multiple-pymethods"] }
 numpy = { path = "../.." }
 ndarray = { version = "0.16", features = ["rayon", "blas"] }
 blas-src = { version = "0.8", features = ["openblas"] }

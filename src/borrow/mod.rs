@@ -654,6 +654,7 @@ mod tests {
     use pyo3::{types::IntoPyDict, Python};
 
     use crate::array::PyArray1;
+    use pyo3::ffi::c_str;
 
     #[test]
     fn test_debug_formatting() {
@@ -697,9 +698,9 @@ mod tests {
             let array = PyArray::<f64, _>::zeros_bound(py, 10, false);
 
             // The view will make the internal reference check of `PyArray_Resize` fail.
-            let locals = [("array", &array)].into_py_dict_bound(py);
+            let locals = [("array", &array)].into_py_dict(py).unwrap();
             let _view = py
-                .eval_bound("array[:]", None, Some(&locals))
+                .eval(c_str!("array[:]"), None, Some(&locals))
                 .unwrap()
                 .downcast_into::<PyArray1<f64>>()
                 .unwrap();

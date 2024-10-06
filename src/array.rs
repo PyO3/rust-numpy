@@ -118,7 +118,7 @@ pub type PyArrayDyn<T> = PyArray<T, IxDyn>;
 
 /// Returns a handle to NumPy's multiarray module.
 pub fn get_array_module<'py>(py: Python<'py>) -> PyResult<Bound<'_, PyModule>> {
-    PyModule::import_bound(py, npyffi::array::mod_name(py)?)
+    PyModule::import(py, npyffi::array::mod_name(py)?)
 }
 
 impl<T, D> DerefToPyAny for PyArray<T, D> {}
@@ -1674,7 +1674,7 @@ mod tests {
     fn test_hasobject_flag() {
         Python::with_gil(|py| {
             let array: Bound<'_, PyArray<PyObject, _>> =
-                PyArray1::from_slice_bound(py, &[PyList::empty_bound(py).into()]);
+                PyArray1::from_slice_bound(py, &[PyList::empty(py).into()]);
 
             py_run!(py, array, "assert array.dtype.hasobject");
         });

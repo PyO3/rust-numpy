@@ -169,7 +169,7 @@ where
             .bind(py);
 
         let kwargs = if C::VAL {
-            let kwargs = PyDict::new_bound(py);
+            let kwargs = PyDict::new(py);
             kwargs.set_item(intern!(py, "dtype"), T::get_dtype_bound(py))?;
             Some(kwargs)
         } else {

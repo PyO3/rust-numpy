@@ -730,7 +730,7 @@ mod tests {
     #[test]
     fn test_dtype_methods_subarray() {
         Python::with_gil(|py| {
-            let locals = PyDict::new_bound(py);
+            let locals = PyDict::new(py);
             py_run!(
                 py,
                 *locals,
@@ -766,7 +766,7 @@ mod tests {
     #[test]
     fn test_dtype_methods_record() {
         Python::with_gil(|py| {
-            let locals = PyDict::new_bound(py);
+            let locals = PyDict::new(py);
             py_run!(
                 py,
                 *locals,
