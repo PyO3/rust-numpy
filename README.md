@@ -125,7 +125,7 @@ This crate uses types from `ndarray` in its public API. `ndarray` is re-exported
 in the crate root so that you do not need to specify it as a direct dependency.
 
 Furthermore, this crate is compatible with multiple versions of `ndarray` and therefore depends
-on a range of semver-incompatible versions, currently `>= 0.13, < 0.16`. Cargo does not
+on a range of semver-incompatible versions, currently `>= 0.15, < 0.17`. Cargo does not
 automatically choose a single version of `ndarray` by itself if you depend directly or indirectly
 on anything but that exact range. It can therefore be necessary to manually unify these dependencies.
 
