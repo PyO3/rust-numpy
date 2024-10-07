@@ -27,7 +27,7 @@ use crate::npyffi;
 /// ```
 /// # use pyo3::prelude::*;
 /// use pyo3::exceptions::PyTypeError;
-/// use numpy::{Element, PyUntypedArray, PyArray1, dtype_bound};
+/// use numpy::{Element, PyUntypedArray, PyArray1, dtype};
 /// use numpy::{PyUntypedArrayMethods, PyArrayMethods, PyArrayDescrMethods};
 ///
 /// #[pyfunction]
@@ -40,11 +40,11 @@ use crate::npyffi;
 ///
 ///     let element_type = array.dtype();
 ///
-///     if element_type.is_equiv_to(&dtype_bound::<f32>(py)) {
+///     if element_type.is_equiv_to(&dtype::<f32>(py)) {
 ///         let array = array.downcast::<PyArray1<f32>>()?;
 ///
 ///         implementation(array)
-///     } else if element_type.is_equiv_to(&dtype_bound::<f64>(py)) {
+///     } else if element_type.is_equiv_to(&dtype::<f64>(py)) {
 ///         let array = array.downcast::<PyArray1<f64>>()?;
 ///
 ///         implementation(array)
@@ -54,7 +54,7 @@ use crate::npyffi;
 /// }
 /// #
 /// # Python::with_gil(|py| {
-/// #   let array = PyArray1::<f64>::zeros_bound(py, 42, false);
+/// #   let array = PyArray1::<f64>::zeros(py, 42, false);
 /// #   entry_point(py, array.as_untyped())
 /// # }).unwrap();
 /// ```
@@ -90,13 +90,13 @@ pub trait PyUntypedArrayMethods<'py>: Sealed {
     ///
     /// ```
     /// use numpy::prelude::*;
-    /// use numpy::{dtype_bound, PyArray};
+    /// use numpy::{dtype, PyArray};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///    let array = PyArray::from_vec_bound(py, vec![1_i32, 2, 3]);
+    ///    let array = PyArray::from_vec(py, vec![1_i32, 2, 3]);
     ///
-    ///    assert!(array.dtype().is_equiv_to(&dtype_bound::<i32>(py)));
+    ///    assert!(array.dtype().is_equiv_to(&dtype::<i32>(py)));
     /// });
     /// ```
     ///
@@ -114,11 +114,11 @@ pub trait PyUntypedArrayMethods<'py>: Sealed {
     /// use pyo3::{types::{IntoPyDict, PyAnyMethods}, Python};
     ///
     /// Python::with_gil(|py| {
-    ///     let array = PyArray1::arange_bound(py, 0, 10, 1);
+    ///     let array = PyArray1::arange(py, 0, 10, 1);
     ///     assert!(array.is_contiguous());
     ///
     ///     let view = py
-    ///         .eval_bound("array[::2]", None, Some(&[("array", array)].into_py_dict_bound(py)))
+    ///         .eval("array[::2]", None, Some(&[("array", array)].into_py_dict(py).unwrap()))
     ///         .unwrap()
     ///         .downcast_into::<PyArray1<i32>>()
     ///         .unwrap();
@@ -155,7 +155,7 @@ pub trait PyUntypedArrayMethods<'py>: Sealed {
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let arr = PyArray3::<f64>::zeros_bound(py, [4, 5, 6], false);
+    ///     let arr = PyArray3::<f64>::zeros(py, [4, 5, 6], false);
     ///
     ///     assert_eq!(arr.ndim(), 3);
     /// });
@@ -179,7 +179,7 @@ pub trait PyUntypedArrayMethods<'py>: Sealed {
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let arr = PyArray3::<f64>::zeros_bound(py, [4, 5, 6], false);
+    ///     let arr = PyArray3::<f64>::zeros(py, [4, 5, 6], false);
     ///
     ///     assert_eq!(arr.strides(), &[240, 48, 8]);
     /// });
@@ -211,7 +211,7 @@ pub trait PyUntypedArrayMethods<'py>: Sealed {
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let arr = PyArray3::<f64>::zeros_bound(py, [4, 5, 6], false);
+    ///     let arr = PyArray3::<f64>::zeros(py, [4, 5, 6], false);
     ///
     ///     assert_eq!(arr.shape(), &[4, 5, 6]);
     /// });

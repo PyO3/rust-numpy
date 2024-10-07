@@ -461,7 +461,7 @@ mod tests {
     #[test]
     fn without_base_object() {
         Python::with_gil(|py| {
-            let array = PyArray::<f64, _>::zeros_bound(py, (1, 2, 3), false);
+            let array = PyArray::<f64, _>::zeros(py, (1, 2, 3), false);
 
             let base = unsafe { (*array.as_array_ptr()).base };
             assert!(base.is_null());
@@ -478,7 +478,7 @@ mod tests {
     #[test]
     fn with_base_object() {
         Python::with_gil(|py| {
-            let array = Array::<f64, _>::zeros((1, 2, 3)).into_pyarray_bound(py);
+            let array = Array::<f64, _>::zeros((1, 2, 3)).into_pyarray(py);
 
             let base = unsafe { (*array.as_array_ptr()).base };
             assert!(!base.is_null());
@@ -498,7 +498,7 @@ mod tests {
     #[test]
     fn view_without_base_object() {
         Python::with_gil(|py| {
-            let array = PyArray::<f64, _>::zeros_bound(py, (1, 2, 3), false);
+            let array = PyArray::<f64, _>::zeros(py, (1, 2, 3), false);
 
             let locals = [("array", &array)].into_py_dict(py).unwrap();
             let view = py
@@ -527,7 +527,7 @@ mod tests {
     #[test]
     fn view_with_base_object() {
         Python::with_gil(|py| {
-            let array = Array::<f64, _>::zeros((1, 2, 3)).into_pyarray_bound(py);
+            let array = Array::<f64, _>::zeros((1, 2, 3)).into_pyarray(py);
 
             let locals = [("array", &array)].into_py_dict(py).unwrap();
             let view = py
@@ -562,7 +562,7 @@ mod tests {
     #[test]
     fn view_of_view_without_base_object() {
         Python::with_gil(|py| {
-            let array = PyArray::<f64, _>::zeros_bound(py, (1, 2, 3), false);
+            let array = PyArray::<f64, _>::zeros(py, (1, 2, 3), false);
 
             let locals = [("array", &array)].into_py_dict(py).unwrap();
             let view1 = py
@@ -610,7 +610,7 @@ mod tests {
     #[test]
     fn view_of_view_with_base_object() {
         Python::with_gil(|py| {
-            let array = Array::<f64, _>::zeros((1, 2, 3)).into_pyarray_bound(py);
+            let array = Array::<f64, _>::zeros((1, 2, 3)).into_pyarray(py);
 
             let locals = [("array", &array)].into_py_dict(py).unwrap();
             let view1 = py
@@ -664,7 +664,7 @@ mod tests {
     #[test]
     fn view_with_negative_strides() {
         Python::with_gil(|py| {
-            let array = PyArray::<f64, _>::zeros_bound(py, (1, 2, 3), false);
+            let array = PyArray::<f64, _>::zeros(py, (1, 2, 3), false);
 
             let locals = [("array", &array)].into_py_dict(py).unwrap();
             let view = py
@@ -696,7 +696,7 @@ mod tests {
     #[test]
     fn array_with_zero_dimensions() {
         Python::with_gil(|py| {
-            let array = PyArray::<f64, _>::zeros_bound(py, (1, 0, 3), false);
+            let array = PyArray::<f64, _>::zeros(py, (1, 0, 3), false);
 
             let base = unsafe { (*array.as_array_ptr()).base };
             assert!(base.is_null());
@@ -713,7 +713,7 @@ mod tests {
     #[test]
     fn view_with_non_dividing_strides() {
         Python::with_gil(|py| {
-            let array = PyArray::<f64, _>::zeros_bound(py, (10, 10), false);
+            let array = PyArray::<f64, _>::zeros(py, (10, 10), false);
             let locals = [("array", array)].into_py_dict(py).unwrap();
 
             let view1 = py
@@ -772,8 +772,8 @@ mod tests {
     #[test]
     fn borrow_multiple_arrays() {
         Python::with_gil(|py| {
-            let array1 = PyArray::<f64, _>::zeros_bound(py, 10, false);
-            let array2 = PyArray::<f64, _>::zeros_bound(py, 10, false);
+            let array1 = PyArray::<f64, _>::zeros(py, 10, false);
+            let array2 = PyArray::<f64, _>::zeros(py, 10, false);
 
             let base1 = base_address(py, array1.as_array_ptr());
             let base2 = base_address(py, array2.as_array_ptr());
@@ -817,7 +817,7 @@ mod tests {
     #[test]
     fn borrow_multiple_views() {
         Python::with_gil(|py| {
-            let array = PyArray::<f64, _>::zeros_bound(py, 10, false);
+            let array = PyArray::<f64, _>::zeros(py, 10, false);
             let base = base_address(py, array.as_array_ptr());
 
             let locals = [("array", array)].into_py_dict(py).unwrap();

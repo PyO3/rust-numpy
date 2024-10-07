@@ -5,8 +5,8 @@ use half::{bf16, f16};
 use ndarray::{array, s, Array1, Dim};
 use numpy::prelude::*;
 use numpy::{
-    dtype_bound, get_array_module, npyffi::NPY_ORDER, pyarray_bound, PyArray, PyArray1, PyArray2,
-    PyArrayDescr, PyFixedString, PyFixedUnicode,
+    dtype, get_array_module, npyffi::NPY_ORDER, pyarray, PyArray, PyArray1, PyArray2, PyArrayDescr,
+    PyFixedString, PyFixedUnicode,
 };
 use pyo3::ffi::c_str;
 use pyo3::{
@@ -37,7 +37,7 @@ fn new_c_order() {
     Python::with_gil(|py| {
         let dims = [3, 5];
 
-        let arr = PyArray::<f64, _>::zeros_bound(py, dims, false);
+        let arr = PyArray::<f64, _>::zeros(py, dims, false);
 
         assert!(arr.ndim() == 2);
         assert!(arr.dims() == dims);
@@ -59,7 +59,7 @@ fn new_fortran_order() {
     Python::with_gil(|py| {
         let dims = [3, 5];
 
-        let arr = PyArray::<f64, _>::zeros_bound(py, dims, true);
+        let arr = PyArray::<f64, _>::zeros(py, dims, true);
 
         assert!(arr.ndim() == 2);
         assert!(arr.dims() == dims);
@@ -81,7 +81,7 @@ fn tuple_as_dim() {
     Python::with_gil(|py| {
         let dims = (3, 5);
 
-        let arr = PyArray::<f64, _>::zeros_bound(py, dims, false);
+        let arr = PyArray::<f64, _>::zeros(py, dims, false);
 
         assert!(arr.ndim() == 2);
         assert!(arr.dims() == [3, 5]);
@@ -91,7 +91,7 @@ fn tuple_as_dim() {
 #[test]
 fn rank_zero_array_has_invalid_strides_dimensions() {
     Python::with_gil(|py| {
-        let arr = PyArray::<f64, _>::zeros_bound(py, (), false);
+        let arr = PyArray::<f64, _>::zeros(py, (), false);
 
         assert_eq!(arr.ndim(), 0);
         assert_eq!(arr.strides(), &[] as &[isize]);
@@ -109,7 +109,7 @@ fn zeros() {
     Python::with_gil(|py| {
         let dims = [3, 4];
 
-        let arr = PyArray::<f64, _>::zeros_bound(py, dims, false);
+        let arr = PyArray::<f64, _>::zeros(py, dims, false);
 
         assert!(arr.ndim() == 2);
         assert!(arr.dims() == dims);
@@ -117,7 +117,7 @@ fn zeros() {
         let size = size_of::<f64>() as isize;
         assert!(arr.strides() == [dims[1] as isize * size, size]);
 
-        let arr = PyArray::<f64, _>::zeros_bound(py, dims, true);
+        let arr = PyArray::<f64, _>::zeros(py, dims, true);
 
         assert!(arr.ndim() == 2);
         assert!(arr.dims() == dims);
@@ -130,7 +130,7 @@ fn zeros() {
 #[test]
 fn arange() {
     Python::with_gil(|py| {
-        let arr = PyArray::<f64, _>::arange_bound(py, 0.0, 1.0, 0.1);
+        let arr = PyArray::<f64, _>::arange(py, 0.0, 1.0, 0.1);
 
         assert_eq!(arr.ndim(), 1);
         assert_eq!(arr.dims(), Dim([10]));
@@ -140,7 +140,7 @@ fn arange() {
 #[test]
 fn as_array() {
     Python::with_gil(|py| {
-        let pyarr = PyArray::<f64, _>::zeros_bound(py, [3, 2, 4], false).readonly();
+        let pyarr = PyArray::<f64, _>::zeros(py, [3, 2, 4], false).readonly();
         let arr = pyarr.as_array();
 
         assert_eq!(pyarr.shape(), arr.shape());
@@ -174,7 +174,7 @@ fn as_raw_array() {
 #[test]
 fn as_slice() {
     Python::with_gil(|py| {
-        let arr = PyArray::<i32, _>::zeros_bound(py, [3, 2, 4], false);
+        let arr = PyArray::<i32, _>::zeros(py, [3, 2, 4], false);
         assert_eq!(arr.readonly().as_slice().unwrap().len(), 3 * 2 * 4);
 
         let not_contiguous = not_contiguous_array(py);
@@ -186,7 +186,7 @@ fn as_slice() {
 #[test]
 fn is_instance() {
     Python::with_gil(|py| {
-        let arr = PyArray2::<f64>::zeros_bound(py, [3, 5], false);
+        let arr = PyArray2::<f64>::zeros(py, [3, 5], false);
 
         assert!(arr.is_instance_of::<PyArray2<f64>>());
         assert!(!arr.is_instance_of::<PyList>());
@@ -196,7 +196,7 @@ fn is_instance() {
 #[test]
 fn from_vec2() {
     Python::with_gil(|py| {
-        let pyarray = PyArray::from_vec2_bound(py, &[vec![1, 2, 3], vec![4, 5, 6]]).unwrap();
+        let pyarray = PyArray::from_vec2(py, &[vec![1, 2, 3], vec![4, 5, 6]]).unwrap();
 
         assert_eq!(pyarray.readonly().as_array(), array![[1, 2, 3], [4, 5, 6]]);
     });
@@ -205,7 +205,7 @@ fn from_vec2() {
 #[test]
 fn from_vec2_ragged() {
     Python::with_gil(|py| {
-        let pyarray = PyArray::from_vec2_bound(py, &[vec![1, 2, 3], vec![4, 5]]);
+        let pyarray = PyArray::from_vec2(py, &[vec![1, 2, 3], vec![4, 5]]);
 
         let err = pyarray.unwrap_err();
         assert_eq!(err.to_string(), "invalid length: 2, but expected 3");
@@ -215,7 +215,7 @@ fn from_vec2_ragged() {
 #[test]
 fn from_vec3() {
     Python::with_gil(|py| {
-        let pyarray = PyArray::from_vec3_bound(
+        let pyarray = PyArray::from_vec3(
             py,
             &[
                 vec![vec![1, 2], vec![3, 4]],
@@ -235,7 +235,7 @@ fn from_vec3() {
 #[test]
 fn from_vec3_ragged() {
     Python::with_gil(|py| {
-        let pyarray = PyArray::from_vec3_bound(
+        let pyarray = PyArray::from_vec3(
             py,
             &[
                 vec![vec![1, 2], vec![3, 4]],
@@ -247,7 +247,7 @@ fn from_vec3_ragged() {
         let err = pyarray.unwrap_err();
         assert_eq!(err.to_string(), "invalid length: 1, but expected 2");
 
-        let pyarray = PyArray::from_vec3_bound(
+        let pyarray = PyArray::from_vec3(
             py,
             &[
                 vec![vec![1, 2], vec![3, 4]],
@@ -264,7 +264,7 @@ fn from_vec3_ragged() {
 #[test]
 fn array_cast() {
     Python::with_gil(|py| {
-        let arr_f64 = pyarray_bound![py, [1.5, 2.5, 3.5], [1.5, 2.5, 3.5]];
+        let arr_f64 = pyarray![py, [1.5, 2.5, 3.5], [1.5, 2.5, 3.5]];
         let arr_i32 = arr_f64.cast::<i32>(false).unwrap();
 
         assert_eq!(arr_i32.readonly().as_array(), array![[1, 2, 3], [1, 2, 3]]);
@@ -275,7 +275,7 @@ fn array_cast() {
 fn handle_negative_strides() {
     Python::with_gil(|py| {
         let arr = array![[2, 3], [4, 5u32]];
-        let pyarr = arr.to_pyarray_bound(py);
+        let pyarr = arr.to_pyarray(py);
 
         let neg_str_pyarr = py
             .eval(
@@ -298,7 +298,7 @@ fn handle_negative_strides() {
 fn dtype_via_python_attribute() {
     Python::with_gil(|py| {
         let arr = array![[2, 3], [4, 5u32]];
-        let pyarr = arr.to_pyarray_bound(py);
+        let pyarr = arr.to_pyarray(py);
 
         let dt = py
             .eval(
@@ -310,7 +310,7 @@ fn dtype_via_python_attribute() {
             .downcast_into::<PyArrayDescr>()
             .unwrap();
 
-        assert!(dt.is_equiv_to(&dtype_bound::<u32>(py)));
+        assert!(dt.is_equiv_to(&dtype::<u32>(py)));
     });
 }
 
@@ -325,7 +325,7 @@ impl Owner {
     fn array(this: Bound<'_, Self>) -> Bound<'_, PyArray1<f64>> {
         let array = &this.borrow().array;
 
-        unsafe { PyArray1::borrow_from_array_bound(array, this.into_any()) }
+        unsafe { PyArray1::borrow_from_array(array, this.into_any()) }
     }
 }
 
@@ -351,7 +351,7 @@ fn borrow_from_array_works() {
 #[test]
 fn downcasting_works() {
     Python::with_gil(|py| {
-        let ob = PyArray::from_slice_bound(py, &[1_i32, 2, 3]).into_any();
+        let ob = PyArray::from_slice(py, &[1_i32, 2, 3]).into_any();
 
         assert!(ob.downcast::<PyArray1<i32>>().is_ok());
     });
@@ -360,7 +360,7 @@ fn downcasting_works() {
 #[test]
 fn downcasting_respects_element_type() {
     Python::with_gil(|py| {
-        let ob = PyArray::from_slice_bound(py, &[1_i32, 2, 3]).into_any();
+        let ob = PyArray::from_slice(py, &[1_i32, 2, 3]).into_any();
 
         assert!(ob.downcast::<PyArray1<f64>>().is_err());
     });
@@ -369,7 +369,7 @@ fn downcasting_respects_element_type() {
 #[test]
 fn downcasting_respects_dimensionality() {
     Python::with_gil(|py| {
-        let ob = PyArray::from_slice_bound(py, &[1_i32, 2, 3]).into_any();
+        let ob = PyArray::from_slice(py, &[1_i32, 2, 3]).into_any();
 
         assert!(ob.downcast::<PyArray2<i32>>().is_err());
     });
@@ -378,7 +378,7 @@ fn downcasting_respects_dimensionality() {
 #[test]
 fn unbind_works() {
     let arr: Py<PyArray1<_>> = Python::with_gil(|py| {
-        let arr = PyArray::from_slice_bound(py, &[1_i32, 2, 3]);
+        let arr = PyArray::from_slice(py, &[1_i32, 2, 3]);
 
         arr.unbind()
     });
@@ -393,8 +393,8 @@ fn unbind_works() {
 #[test]
 fn copy_to_works() {
     Python::with_gil(|py| {
-        let arr1 = PyArray::arange_bound(py, 2.0, 5.0, 1.0);
-        let arr2 = unsafe { PyArray::<i64, _>::new_bound(py, [3], false) };
+        let arr1 = PyArray::arange(py, 2.0, 5.0, 1.0);
+        let arr2 = unsafe { PyArray::<i64, _>::new(py, [3], false) };
 
         arr1.copy_to(&arr2).unwrap();
 
@@ -405,7 +405,7 @@ fn copy_to_works() {
 #[test]
 fn get_works() {
     Python::with_gil(|py| {
-        let array = pyarray_bound![py, [[1, 2], [3, 4]], [[5, 6], [7, 8]], [[9, 10], [11, 12]]];
+        let array = pyarray![py, [[1, 2], [3, 4]], [[5, 6], [7, 8]], [[9, 10], [11, 12]]];
 
         unsafe {
             assert_eq!(array.get([0, 0, 0]), Some(&1));
@@ -424,7 +424,7 @@ fn get_works() {
 #[test]
 fn permute_and_transpose() {
     Python::with_gil(|py| {
-        let array = array![[0, 1, 2], [3, 4, 5]].into_pyarray_bound(py);
+        let array = array![[0, 1, 2], [3, 4, 5]].into_pyarray(py);
 
         let permuted = array.permute(Some([1, 0])).unwrap();
         assert_eq!(
@@ -444,7 +444,7 @@ fn permute_and_transpose() {
             array![[0, 3], [1, 4], [2, 5]]
         );
 
-        let array = pyarray_bound![py, [[1, 2], [3, 4]], [[5, 6], [7, 8]], [[9, 10], [11, 12]]];
+        let array = pyarray![py, [[1, 2], [3, 4]], [[5, 6], [7, 8]], [[9, 10], [11, 12]]];
 
         let permuted = array.permute(Some([0, 2, 1])).unwrap();
         assert_eq!(
@@ -457,7 +457,7 @@ fn permute_and_transpose() {
 #[test]
 fn reshape() {
     Python::with_gil(|py| {
-        let array = PyArray::from_iter_bound(py, 0..9)
+        let array = PyArray::from_iter(py, 0..9)
             .reshape_with_order([3, 3], NPY_ORDER::NPY_FORTRANORDER)
             .unwrap();
 

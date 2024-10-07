@@ -16,7 +16,7 @@ fn rust_parallel<'py>(m: &Bound<'py, PyModule>) -> PyResult<()> {
         let x = x.as_array();
         let y = y.as_array();
         let z = Zip::from(x.rows()).par_map_collect(|row| row.dot(&y));
-        z.into_pyarray_bound(py)
+        z.into_pyarray(py)
     }
     Ok(())
 }

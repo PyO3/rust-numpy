@@ -154,7 +154,7 @@ where
                 let array = Array1::from(vec)
                     .into_dimensionality()
                     .expect("D being compatible to Ix1")
-                    .into_pyarray_bound(py)
+                    .into_pyarray(py)
                     .readonly();
                 return Ok(Self(array, PhantomData));
             }
@@ -170,7 +170,7 @@ where
 
         let kwargs = if C::VAL {
             let kwargs = PyDict::new(py);
-            kwargs.set_item(intern!(py, "dtype"), T::get_dtype_bound(py))?;
+            kwargs.set_item(intern!(py, "dtype"), T::get_dtype(py))?;
             Some(kwargs)
         } else {
             None

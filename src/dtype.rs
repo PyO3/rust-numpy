@@ -28,19 +28,19 @@ pub use num_complex::{Complex32, Complex64};
 /// # Example
 ///
 /// ```
-/// use numpy::{dtype_bound, get_array_module, PyArrayDescr, PyArrayDescrMethods};
+/// use numpy::{dtype, get_array_module, PyArrayDescr, PyArrayDescrMethods};
 /// use numpy::pyo3::{types::{IntoPyDict, PyAnyMethods}, Python};
 ///
 /// Python::with_gil(|py| {
-///     let locals = [("np", get_array_module(py).unwrap())].into_py_dict_bound(py);
+///     let locals = [("np", get_array_module(py).unwrap())].into_py_dict(py).unwrap();
 ///
 ///     let dt = py
-///         .eval_bound("np.array([1, 2, 3.0]).dtype", Some(&locals), None)
+///         .eval("np.array([1, 2, 3.0]).dtype", Some(&locals), None)
 ///         .unwrap()
 ///         .downcast_into::<PyArrayDescr>()
 ///         .unwrap();
 ///
-///     assert!(dt.is_equiv_to(&dtype_bound::<f64>(py)));
+///     assert!(dt.is_equiv_to(&dtype::<f64>(py)));
 /// });
 /// ```
 ///
@@ -61,8 +61,16 @@ unsafe impl PyTypeInfo for PyArrayDescr {
 }
 
 /// Returns the type descriptor ("dtype") for a registered type.
+#[inline]
+pub fn dtype<'py, T: Element>(py: Python<'py>) -> Bound<'py, PyArrayDescr> {
+    T::get_dtype(py)
+}
+
+/// Deprecated name for [`dtype`].
+#[deprecated(since = "0.23.0", note = "renamed to `dtype`")]
+#[inline]
 pub fn dtype_bound<'py, T: Element>(py: Python<'py>) -> Bound<'py, PyArrayDescr> {
-    T::get_dtype_bound(py)
+    dtype::<T>(py)
 }
 
 impl PyArrayDescr {
@@ -72,10 +80,7 @@ impl PyArrayDescr {
     ///
     /// [dtype]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.html
     #[inline]
-    pub fn new_bound<'py, T: ToPyObject + ?Sized>(
-        py: Python<'py>,
-        ob: &T,
-    ) -> PyResult<Bound<'py, Self>> {
+    pub fn new<'py, T: ToPyObject + ?Sized>(py: Python<'py>, ob: &T) -> PyResult<Bound<'py, Self>> {
         fn inner(py: Python<'_>, obj: PyObject) -> PyResult<Bound<'_, PyArrayDescr>> {
             let mut descr: *mut PyArray_Descr = ptr::null_mut();
             unsafe {
@@ -89,14 +94,40 @@ impl PyArrayDescr {
         inner(py, ob.to_object(py))
     }
 
+    /// Deprecated name for [`PyArrayDescr::new`].
+    #[deprecated(since = "0.23.0", note = "renamed to `PyArrayDescr::new`")]
+    #[inline]
+    pub fn new_bound<'py, T: ToPyObject + ?Sized>(
+        py: Python<'py>,
+        ob: &T,
+    ) -> PyResult<Bound<'py, Self>> {
+        Self::new(py, ob)
+    }
+
     /// Shortcut for creating a type descriptor of `object` type.
-    pub fn object_bound(py: Python<'_>) -> Bound<'_, Self> {
+    #[inline]
+    pub fn object(py: Python<'_>) -> Bound<'_, Self> {
         Self::from_npy_type(py, NPY_TYPES::NPY_OBJECT)
     }
 
+    /// Deprecated name for [`PyArrayDescr::object`].
+    #[deprecated(since = "0.23.0", note = "renamed to `PyArrayDescr::object`")]
+    #[inline]
+    pub fn object_bound(py: Python<'_>) -> Bound<'_, Self> {
+        Self::object(py)
+    }
+
     /// Returns the type descriptor for a registered type.
+    #[inline]
+    pub fn of<'py, T: Element>(py: Python<'py>) -> Bound<'py, Self> {
+        T::get_dtype(py)
+    }
+
+    /// Deprecated name for [`PyArrayDescr::of`].
+    #[deprecated(since = "0.23.0", note = "renamed to `PyArrayDescr::of`")]
+    #[inline]
     pub fn of_bound<'py, T: Element>(py: Python<'py>) -> Bound<'py, Self> {
-        T::get_dtype_bound(py)
+        Self::of::<T>(py)
     }
 
     fn from_npy_type<'py>(py: Python<'py>, npy_type: NPY_TYPES) -> Bound<'py, Self> {
@@ -458,7 +489,14 @@ pub unsafe trait Element: Sized + Send + Sync {
     const IS_COPY: bool;
 
     /// Returns the associated type descriptor ("dtype") for the given element type.
-    fn get_dtype_bound(py: Python<'_>) -> Bound<'_, PyArrayDescr>;
+    fn get_dtype(py: Python<'_>) -> Bound<'_, PyArrayDescr>;
+
+    /// Deprecated name for [`Element::get_dtype`].
+    #[deprecated(since = "0.23.0", note = "renamed to `Element::get_dtype`")]
+    #[inline]
+    fn get_dtype_bound(py: Python<'_>) -> Bound<'_, PyArrayDescr> {
+        Self::get_dtype(py)
+    }
 
     /// Create a clone of the value while the GIL is guaranteed to be held.
     fn clone_ref(&self, py: Python<'_>) -> Self;
@@ -567,7 +605,7 @@ macro_rules! impl_element_scalar {
         unsafe impl Element for $ty {
             const IS_COPY: bool = true;
 
-            fn get_dtype_bound(py: Python<'_>) -> Bound<'_, PyArrayDescr> {
+            fn get_dtype(py: Python<'_>) -> Bound<'_, PyArrayDescr> {
                 PyArrayDescr::from_npy_type(py, $npy_type)
             }
 
@@ -597,12 +635,12 @@ impl_element_scalar!(f16 => NPY_HALF);
 unsafe impl Element for bf16 {
     const IS_COPY: bool = true;
 
-    fn get_dtype_bound(py: Python<'_>) -> Bound<'_, PyArrayDescr> {
+    fn get_dtype(py: Python<'_>) -> Bound<'_, PyArrayDescr> {
         static DTYPE: GILOnceCell<Py<PyArrayDescr>> = GILOnceCell::new();
 
         DTYPE
             .get_or_init(py, || {
-                PyArrayDescr::new_bound(py, "bfloat16").expect("A package which provides a `bfloat16` data type for NumPy is required to use the `half::bf16` element type.").unbind()
+                PyArrayDescr::new(py, "bfloat16").expect("A package which provides a `bfloat16` data type for NumPy is required to use the `half::bf16` element type.").unbind()
             })
             .clone_ref(py)
             .into_bound(py)
@@ -622,8 +660,8 @@ impl_element_scalar!(usize, isize);
 unsafe impl Element for PyObject {
     const IS_COPY: bool = false;
 
-    fn get_dtype_bound(py: Python<'_>) -> Bound<'_, PyArrayDescr> {
-        PyArrayDescr::object_bound(py)
+    fn get_dtype(py: Python<'_>) -> Bound<'_, PyArrayDescr> {
+        PyArrayDescr::object(py)
     }
 
     #[inline]
@@ -644,28 +682,24 @@ mod tests {
     #[test]
     fn test_dtype_new() {
         Python::with_gil(|py| {
-            assert!(PyArrayDescr::new_bound(py, "float64")
+            assert!(PyArrayDescr::new(py, "float64")
                 .unwrap()
-                .is(&dtype_bound::<f64>(py)));
+                .is(&dtype::<f64>(py)));
 
-            let dt = PyArrayDescr::new_bound(py, [("a", "O"), ("b", "?")].as_ref()).unwrap();
+            let dt = PyArrayDescr::new(py, [("a", "O"), ("b", "?")].as_ref()).unwrap();
             assert_eq!(dt.names(), Some(vec!["a".to_owned(), "b".to_owned()]));
             assert!(dt.has_object());
-            assert!(dt
-                .get_field("a")
-                .unwrap()
-                .0
-                .is(&dtype_bound::<PyObject>(py)));
-            assert!(dt.get_field("b").unwrap().0.is(&dtype_bound::<bool>(py)));
+            assert!(dt.get_field("a").unwrap().0.is(&dtype::<PyObject>(py)));
+            assert!(dt.get_field("b").unwrap().0.is(&dtype::<bool>(py)));
 
-            assert!(PyArrayDescr::new_bound(py, &123_usize).is_err());
+            assert!(PyArrayDescr::new(py, &123_usize).is_err());
         });
     }
 
     #[test]
     fn test_dtype_names() {
         fn type_name<T: Element>(py: Python<'_>) -> Bound<'_, PyString> {
-            dtype_bound::<T>(py).typeobj().qualname().unwrap()
+            dtype::<T>(py).typeobj().qualname().unwrap()
         }
         Python::with_gil(|py| {
             if is_numpy_2(py) {
@@ -705,7 +739,7 @@ mod tests {
     #[test]
     fn test_dtype_methods_scalar() {
         Python::with_gil(|py| {
-            let dt = dtype_bound::<f64>(py);
+            let dt = dtype::<f64>(py);
 
             assert_eq!(dt.num(), NPY_TYPES::NPY_DOUBLE as c_int);
             assert_eq!(dt.flags(), 0);
@@ -759,7 +793,7 @@ mod tests {
             assert!(dt.has_subarray());
             assert_eq!(dt.ndim(), 2);
             assert_eq!(dt.shape(), vec![2, 3]);
-            assert!(dt.base().is_equiv_to(&dtype_bound::<f64>(py)));
+            assert!(dt.base().is_equiv_to(&dtype::<f64>(py)));
         });
     }
 
@@ -802,13 +836,13 @@ mod tests {
             assert_eq!(dt.shape(), Vec::<usize>::new());
             assert!(dt.base().is_equiv_to(&dt));
             let x = dt.get_field("x").unwrap();
-            assert!(x.0.is_equiv_to(&dtype_bound::<u8>(py)));
+            assert!(x.0.is_equiv_to(&dtype::<u8>(py)));
             assert_eq!(x.1, 0);
             let y = dt.get_field("y").unwrap();
-            assert!(y.0.is_equiv_to(&dtype_bound::<f64>(py)));
+            assert!(y.0.is_equiv_to(&dtype::<f64>(py)));
             assert_eq!(y.1, 8);
             let z = dt.get_field("z").unwrap();
-            assert!(z.0.is_equiv_to(&dtype_bound::<PyObject>(py)));
+            assert!(z.0.is_equiv_to(&dtype::<PyObject>(py)));
             assert_eq!(z.1, 16);
         });
     }

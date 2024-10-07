@@ -41,9 +41,9 @@
 //! }
 //!
 //! Python::with_gil(|py| {
-//!     let x = PyArray1::<f64>::zeros_bound(py, 42, false);
-//!     let y = PyArray1::<f64>::zeros_bound(py, 42, false);
-//!     let z = PyArray1::<f64>::zeros_bound(py, 42, false);
+//!     let x = PyArray1::<f64>::zeros(py, 42, false);
+//!     let y = PyArray1::<f64>::zeros(py, 42, false);
+//!     let z = PyArray1::<f64>::zeros(py, 42, false);
 //!
 //!     // Will work as the three arrays are distinct.
 //!     add(&x, &y, &z);
@@ -66,13 +66,13 @@
 //! use pyo3::{types::{IntoPyDict, PyAnyMethods}, Python};
 //!
 //! Python::with_gil(|py| {
-//!     let array = PyArray1::arange_bound(py, 0.0, 10.0, 1.0);
-//!     let locals = [("array", array)].into_py_dict_bound(py);
+//!     let array = PyArray1::arange(py, 0.0, 10.0, 1.0);
+//!     let locals = [("array", array)].into_py_dict(py).unwrap();
 //!
-//!     let view1 = py.eval_bound("array[:5]", None, Some(&locals)).unwrap().downcast_into::<PyArray1<f64>>().unwrap();
-//!     let view2 = py.eval_bound("array[5:]", None, Some(&locals)).unwrap().downcast_into::<PyArray1<f64>>().unwrap();
-//!     let view3 = py.eval_bound("array[::2]", None, Some(&locals)).unwrap().downcast_into::<PyArray1<f64>>().unwrap();
-//!     let view4 = py.eval_bound("array[1::2]", None, Some(&locals)).unwrap().downcast_into::<PyArray1<f64>>().unwrap();
+//!     let view1 = py.eval("array[:5]", None, Some(&locals)).unwrap().downcast_into::<PyArray1<f64>>().unwrap();
+//!     let view2 = py.eval("array[5:]", None, Some(&locals)).unwrap().downcast_into::<PyArray1<f64>>().unwrap();
+//!     let view3 = py.eval("array[::2]", None, Some(&locals)).unwrap().downcast_into::<PyArray1<f64>>().unwrap();
+//!     let view4 = py.eval("array[1::2]", None, Some(&locals)).unwrap().downcast_into::<PyArray1<f64>>().unwrap();
 //!
 //!     {
 //!         let _view1 = view1.readwrite();
@@ -95,11 +95,11 @@
 //! use pyo3::{types::{IntoPyDict, PyAnyMethods}, Python};
 //!
 //! Python::with_gil(|py| {
-//!     let array = PyArray2::<f64>::zeros_bound(py, (10, 10), false);
-//!     let locals = [("array", array)].into_py_dict_bound(py);
+//!     let array = PyArray2::<f64>::zeros(py, (10, 10), false);
+//!     let locals = [("array", array)].into_py_dict(py).unwrap();
 //!
-//!     let view1 = py.eval_bound("array[:, ::3]", None, Some(&locals)).unwrap().downcast_into::<PyArray2<f64>>().unwrap();
-//!     let view2 = py.eval_bound("array[:, 1::3]", None, Some(&locals)).unwrap().downcast_into::<PyArray2<f64>>().unwrap();
+//!     let view1 = py.eval("array[:, ::3]", None, Some(&locals)).unwrap().downcast_into::<PyArray2<f64>>().unwrap();
+//!     let view2 = py.eval("array[:, 1::3]", None, Some(&locals)).unwrap().downcast_into::<PyArray2<f64>>().unwrap();
 //!
 //!     // A false conflict as the views do not actually share any elements.
 //!     let res = catch_unwind(AssertUnwindSafe(|| {
@@ -306,7 +306,7 @@ where
     /// }
     ///
     /// Python::with_gil(|py| {
-    ///     let np = py.eval_bound("__import__('numpy')", None, None).unwrap();
+    ///     let np = py.eval("__import__('numpy')", None, None).unwrap();
     ///     let sum_standard_layout = wrap_pyfunction!(sum_standard_layout)(py).unwrap();
     ///     let sum_dynamic_strides = wrap_pyfunction!(sum_dynamic_strides)(py).unwrap();
     ///
@@ -596,7 +596,7 @@ where
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let pyarray = PyArray::arange_bound(py, 0, 10, 1);
+    ///     let pyarray = PyArray::arange(py, 0, 10, 1);
     ///     assert_eq!(pyarray.len(), 10);
     ///
     ///     let pyarray = pyarray.readwrite();
@@ -659,7 +659,7 @@ mod tests {
     #[test]
     fn test_debug_formatting() {
         Python::with_gil(|py| {
-            let array = PyArray::<f64, _>::zeros_bound(py, (1, 2, 3), false);
+            let array = PyArray::<f64, _>::zeros(py, (1, 2, 3), false);
 
             {
                 let shared = array.readonly();
@@ -685,7 +685,7 @@ mod tests {
     #[should_panic(expected = "AlreadyBorrowed")]
     fn cannot_clone_exclusive_borrow_via_deref() {
         Python::with_gil(|py| {
-            let array = PyArray::<f64, _>::zeros_bound(py, (3, 2, 1), false);
+            let array = PyArray::<f64, _>::zeros(py, (3, 2, 1), false);
 
             let exclusive = array.readwrite();
             let _shared = exclusive.clone();
@@ -695,7 +695,7 @@ mod tests {
     #[test]
     fn failed_resize_does_not_double_release() {
         Python::with_gil(|py| {
-            let array = PyArray::<f64, _>::zeros_bound(py, 10, false);
+            let array = PyArray::<f64, _>::zeros(py, 10, false);
 
             // The view will make the internal reference check of `PyArray_Resize` fail.
             let locals = [("array", &array)].into_py_dict(py).unwrap();
@@ -713,7 +713,7 @@ mod tests {
     #[test]
     fn ineffective_resize_does_not_conflict() {
         Python::with_gil(|py| {
-            let array = PyArray::<f64, _>::zeros_bound(py, 10, false);
+            let array = PyArray::<f64, _>::zeros(py, 10, false);
 
             let exclusive = array.readwrite();
             assert!(exclusive.resize(10).is_ok());

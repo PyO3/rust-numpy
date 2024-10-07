@@ -26,7 +26,7 @@ as well as the [`PyReadonlyArray::try_as_matrix`] and [`PyReadwriteArray::try_as
 //! use numpy::{ToPyArray, PyArray, PyArrayMethods};
 //!
 //! Python::with_gil(|py| {
-//!     let py_array = array![[1i64, 2], [3, 4]].to_pyarray_bound(py);
+//!     let py_array = array![[1i64, 2], [3, 4]].to_pyarray(py);
 //!
 //!     assert_eq!(
 //!         py_array.readonly().as_array(),
@@ -39,10 +39,10 @@ as well as the [`PyReadonlyArray::try_as_matrix`] and [`PyReadwriteArray::try_as
 #![cfg_attr(not(feature = "nalgebra"), doc = "```rust,ignore")]
 //! use numpy::pyo3::Python;
 //! use numpy::nalgebra::Matrix3;
-//! use numpy::{pyarray_bound, ToPyArray, PyArrayMethods};
+//! use numpy::{pyarray, ToPyArray, PyArrayMethods};
 //!
 //! Python::with_gil(|py| {
-//!     let py_array = pyarray_bound![py, [0, 1, 2], [3, 4, 5], [6, 7, 8]];
+//!     let py_array = pyarray![py, [0, 1, 2], [3, 4, 5], [6, 7, 8]];
 //!
 //!     let py_array_square;
 //!
@@ -105,12 +105,14 @@ pub use crate::borrow::{
     PyReadwriteArray5, PyReadwriteArray6, PyReadwriteArrayDyn,
 };
 pub use crate::convert::{IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
-pub use crate::dtype::{
-    dtype_bound, Complex32, Complex64, Element, PyArrayDescr, PyArrayDescrMethods,
-};
+#[allow(deprecated)]
+pub use crate::dtype::dtype_bound;
+pub use crate::dtype::{dtype, Complex32, Complex64, Element, PyArrayDescr, PyArrayDescrMethods};
 pub use crate::error::{BorrowError, FromVecError, NotContiguousError};
 pub use crate::npyffi::{PY_ARRAY_API, PY_UFUNC_API};
 pub use crate::strings::{PyFixedString, PyFixedUnicode};
+pub use crate::sum_products::{dot, einsum, inner};
+#[allow(deprecated)]
 pub use crate::sum_products::{dot_bound, einsum_bound, inner_bound};
 pub use crate::untyped_array::{PyUntypedArray, PyUntypedArrayMethods};
 
@@ -147,27 +149,6 @@ mod doctest {
 #[inline(always)]
 fn cold() {}
 
-/// Deprecated form of [`pyarray_bound`]
-#[deprecated(
-    since = "0.21.0",
-    note = "will be replace by `pyarray_bound` in the future"
-)]
-#[macro_export]
-macro_rules! pyarray {
-    ($py: ident, $([$([$($x:expr),* $(,)*]),+ $(,)*]),+ $(,)*) => {{
-        #[allow(deprecated)]
-        $crate::IntoPyArray::into_pyarray($crate::array![$([$([$($x,)*],)*],)*], $py)
-    }};
-    ($py: ident, $([$($x:expr),* $(,)*]),+ $(,)*) => {{
-        #[allow(deprecated)]
-        $crate::IntoPyArray::into_pyarray($crate::array![$([$($x,)*],)*], $py)
-    }};
-    ($py: ident, $($x:expr),* $(,)*) => {{
-        #[allow(deprecated)]
-        $crate::IntoPyArray::into_pyarray($crate::array![$($x,)*], $py)
-    }};
-}
-
 /// Create a [`PyArray`] with one, two or three dimensions.
 ///
 /// This macro is backed by [`ndarray::array`].
@@ -177,10 +158,10 @@ macro_rules! pyarray {
 /// ```
 /// use numpy::pyo3::Python;
 /// use numpy::ndarray::array;
-/// use numpy::{pyarray_bound, PyArrayMethods};
+/// use numpy::{pyarray, PyArrayMethods};
 ///
 /// Python::with_gil(|py| {
-///     let array = pyarray_bound![py, [1, 2], [3, 4]];
+///     let array = pyarray![py, [1, 2], [3, 4]];
 ///
 ///     assert_eq!(
 ///         array.readonly().as_array(),
@@ -188,14 +169,29 @@ macro_rules! pyarray {
 ///     );
 /// });
 #[macro_export]
-macro_rules! pyarray_bound {
+macro_rules! pyarray {
     ($py: ident, $([$([$($x:expr),* $(,)*]),+ $(,)*]),+ $(,)*) => {{
-        $crate::IntoPyArray::into_pyarray_bound($crate::array![$([$([$($x,)*],)*],)*], $py)
+        $crate::IntoPyArray::into_pyarray($crate::array![$([$([$($x,)*],)*],)*], $py)
     }};
     ($py: ident, $([$($x:expr),* $(,)*]),+ $(,)*) => {{
-        $crate::IntoPyArray::into_pyarray_bound($crate::array![$([$($x,)*],)*], $py)
+        $crate::IntoPyArray::into_pyarray($crate::array![$([$($x,)*],)*], $py)
     }};
     ($py: ident, $($x:expr),* $(,)*) => {{
-        $crate::IntoPyArray::into_pyarray_bound($crate::array![$($x,)*], $py)
+        $crate::IntoPyArray::into_pyarray($crate::array![$($x,)*], $py)
+    }};
+}
+
+/// Deprecated name for [`pyarray`].
+#[deprecated(since = "0.23.0", note = "renamed to `pyarray`")]
+#[macro_export]
+macro_rules! pyarray_bound {
+    ($py: ident, $([$([$($x:expr),* $(,)*]),+ $(,)*]),+ $(,)*) => {{
+        $crate::IntoPyArray::into_pyarray($crate::array![$([$([$($x,)*],)*],)*], $py)
+    }};
+    ($py: ident, $([$($x:expr),* $(,)*]),+ $(,)*) => {{
+        $crate::IntoPyArray::into_pyarray($crate::array![$([$($x,)*],)*], $py)
+    }};
+    ($py: ident, $($x:expr),* $(,)*) => {{
+        $crate::IntoPyArray::into_pyarray($crate::array![$($x,)*], $py)
     }};
 }

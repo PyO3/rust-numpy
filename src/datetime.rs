@@ -16,13 +16,13 @@
 //!
 //! Python::with_gil(|py| {
 //! #    let locals = py
-//! #        .eval_bound("{ 'np': __import__('numpy') }", None, None)
+//! #        .eval("{ 'np': __import__('numpy') }", None, None)
 //! #        .unwrap()
 //! #        .downcast_into::<PyDict>()
 //! #        .unwrap();
 //! #
 //!     let array = py
-//!         .eval_bound(
+//!         .eval(
 //!             "np.array([np.datetime64('2017-04-21')])",
 //!             None,
 //!             Some(&locals),
@@ -37,7 +37,7 @@
 //!     );
 //!
 //!     let array = py
-//!         .eval_bound(
+//!         .eval(
 //!             "np.array([np.datetime64('2022-03-29')]) - np.array([np.datetime64('2017-04-21')])",
 //!             None,
 //!             Some(&locals),
@@ -158,7 +158,7 @@ impl<U: Unit> From<Datetime<U>> for i64 {
 unsafe impl<U: Unit> Element for Datetime<U> {
     const IS_COPY: bool = true;
 
-    fn get_dtype_bound(py: Python<'_>) -> Bound<'_, PyArrayDescr> {
+    fn get_dtype(py: Python<'_>) -> Bound<'_, PyArrayDescr> {
         static DTYPES: TypeDescriptors = unsafe { TypeDescriptors::new(NPY_TYPES::NPY_DATETIME) };
 
         DTYPES.from_unit(py, U::UNIT)
@@ -195,7 +195,7 @@ impl<U: Unit> From<Timedelta<U>> for i64 {
 unsafe impl<U: Unit> Element for Timedelta<U> {
     const IS_COPY: bool = true;
 
-    fn get_dtype_bound(py: Python<'_>) -> Bound<'_, PyArrayDescr> {
+    fn get_dtype(py: Python<'_>) -> Bound<'_, PyArrayDescr> {
         static DTYPES: TypeDescriptors = unsafe { TypeDescriptors::new(NPY_TYPES::NPY_TIMEDELTA) };
 
         DTYPES.from_unit(py, U::UNIT)
@@ -290,7 +290,7 @@ mod tests {
     #[test]
     fn from_rust_to_python() {
         Python::with_gil(|py| {
-            let array = PyArray1::<Timedelta<units::Minutes>>::zeros_bound(py, 1, false);
+            let array = PyArray1::<Timedelta<units::Minutes>>::zeros(py, 1, false);
 
             *array.readwrite().get_mut(0).unwrap() = Timedelta::<units::Minutes>::from(5);
 
@@ -322,7 +322,7 @@ mod tests {
     fn unit_conversion() {
         #[track_caller]
         fn convert<'py, S: Unit, D: Unit>(py: Python<'py>, expected_value: i64) {
-            let array = PyArray1::<Timedelta<S>>::from_slice_bound(py, &[Timedelta::<S>::from(1)]);
+            let array = PyArray1::<Timedelta<S>>::from_slice(py, &[Timedelta::<S>::from(1)]);
             let array = array.cast::<Timedelta<D>>(false).unwrap();
 
             let value: i64 = array.get_owned(0).unwrap().into();
