@@ -1,9 +1,10 @@
 # Changelog
 
-- Unreleased
+- v0.22.0
   - Bump MSRV to 1.63. ([#450](https://github.com/PyO3/rust-numpy/pull/450))
   - Add `permute` and `transpose` methods for changing the order of axes of a `PyArray`. ([#428](https://github.com/PyO3/rust-numpy/pull/428))
   - Add support for NumPy v2 which had a number of changes to the [C API](https://numpy.org/devdocs/numpy_2_0_migration_guide.html#c-api-changes). ([#442](https://github.com/PyO3/rust-numpy/pull/442))
+  - Add support for ndarray 0.16. ([#439](https://github.com/PyO3/rust-numpy/pull/439))
   - Bumped pyo3 dependency to v0.22.0 which required the addition of several new methods to the `Element` trait. ([#435](https://github.com/PyO3/rust-numpy/pull/435))
 
 - v0.21.0
