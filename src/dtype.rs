@@ -8,11 +8,12 @@ use num_traits::{Bounded, Zero};
 #[cfg(feature = "half")]
 use pyo3::sync::GILOnceCell;
 use pyo3::{
+    conversion::IntoPyObject,
     exceptions::{PyIndexError, PyValueError},
     ffi::{self, PyTuple_Size},
     pyobject_native_type_named,
     types::{PyAnyMethods, PyDict, PyDictMethods, PyTuple, PyType},
-    Borrowed, Bound, Py, PyAny, PyObject, PyResult, PyTypeInfo, Python, ToPyObject,
+    Borrowed, Bound, Py, PyAny, PyObject, PyResult, PyTypeInfo, Python,
 };
 
 use crate::npyffi::{
@@ -80,8 +81,14 @@ impl PyArrayDescr {
     ///
     /// [dtype]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.html
     #[inline]
-    pub fn new<'py, T: ToPyObject + ?Sized>(py: Python<'py>, ob: &T) -> PyResult<Bound<'py, Self>> {
-        fn inner(py: Python<'_>, obj: PyObject) -> PyResult<Bound<'_, PyArrayDescr>> {
+    pub fn new<'a, 'py, T>(py: Python<'py>, ob: T) -> PyResult<Bound<'py, Self>>
+    where
+        T: IntoPyObject<'py>,
+    {
+        fn inner<'py>(
+            py: Python<'py>,
+            obj: Borrowed<'_, 'py, PyAny>,
+        ) -> PyResult<Bound<'py, PyArrayDescr>> {
             let mut descr: *mut PyArray_Descr = ptr::null_mut();
             unsafe {
                 // None is an invalid input here and is not converted to NPY_DEFAULT_TYPE
@@ -91,17 +98,24 @@ impl PyArrayDescr {
             }
         }
 
-        inner(py, ob.to_object(py))
+        inner(
+            py,
+            ob.into_pyobject(py)
+                .map_err(Into::into)?
+                .into_any()
+                .as_borrowed(),
+        )
     }
 
     /// Deprecated name for [`PyArrayDescr::new`].
     #[deprecated(since = "0.23.0", note = "renamed to `PyArrayDescr::new`")]
+    #[allow(deprecated)]
     #[inline]
-    pub fn new_bound<'py, T: ToPyObject + ?Sized>(
+    pub fn new_bound<'py, T: pyo3::ToPyObject + ?Sized>(
         py: Python<'py>,
         ob: &T,
     ) -> PyResult<Bound<'py, Self>> {
-        Self::new(py, ob)
+        Self::new(py, ob.to_object(py))
     }
 
     /// Shortcut for creating a type descriptor of `object` type.
@@ -598,6 +612,7 @@ macro_rules! clone_methods_impl {
     };
 }
 pub(crate) use clone_methods_impl;
+use pyo3::BoundObject;
 
 macro_rules! impl_element_scalar {
     (@impl: $ty:ty, $npy_type:expr $(,#[$meta:meta])*) => {
@@ -692,7 +707,7 @@ mod tests {
             assert!(dt.get_field("a").unwrap().0.is(&dtype::<PyObject>(py)));
             assert!(dt.get_field("b").unwrap().0.is(&dtype::<bool>(py)));
 
-            assert!(PyArrayDescr::new(py, &123_usize).is_err());
+            assert!(PyArrayDescr::new(py, 123_usize).is_err());
         });
     }
 

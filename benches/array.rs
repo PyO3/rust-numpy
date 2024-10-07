@@ -6,7 +6,7 @@ use test::{black_box, Bencher};
 use std::ops::Range;
 
 use numpy::{PyArray1, PyArray2, PyArray3};
-use pyo3::{types::PyAnyMethods, Bound, Python, ToPyObject};
+use pyo3::{types::PyAnyMethods, Bound, Python};
 
 #[bench]
 fn extract_success(bencher: &mut Bencher) {
