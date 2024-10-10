@@ -153,6 +153,9 @@ jobs:
     needs: [lint, check-msrv, examples]
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - uses: messense/maturin-action@v1
         with:
           target: aarch64
@@ -164,6 +167,9 @@ jobs:
     needs: [lint, check-msrv, examples]
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         continue-on-error: true
@@ -179,6 +185,9 @@ jobs:
     needs: [lint, check-msrv, examples]
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - uses: dtolnay/rust-toolchain@nightly
       - uses: Swatinem/rust-cache@v2
         continue-on-error: true
@@ -194,7 +203,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.8
+          python-version: '3.12'
       - name: Install Rust
         uses: dtolnay/rust-toolchain@1.63
       - uses: Swatinem/rust-cache@v2
@@ -235,6 +244,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: Install OpenBLAS
         run: sudo apt install --yes libopenblas-dev
       - name: Install Rust
@@ -252,6 +264,9 @@ jobs:
     needs: [lint, check-msrv, examples]
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: Install numpy
         run: pip install "numpy" ml_dtypes
       - uses: Swatinem/rust-cache@v2
