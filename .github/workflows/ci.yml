@@ -50,6 +50,14 @@ jobs:
             },
           ]
         include:
+          # ubuntu-24.04 does not support 3.7
+          - python-version: 3.7
+            platform:
+              {
+                os: "ubuntu-22.04",
+                python-architecture: "x64",
+                rust-target: "x86_64-unknown-linux-gnu",
+              }
           # Older versions of CPython are not available for AArch64.
           - python-version: 3.12
             platform:
@@ -67,6 +75,15 @@ jobs:
                 rust-target: "x86_64-unknown-linux-gnu",
               }
           - python-version: pypy-3.8
+            platform:
+              {
+                os: "ubuntu-latest",
+                python-architecture: "x64",
+                rust-target: "x86_64-unknown-linux-gnu",
+              }
+        exclude:
+          # ubuntu-24.04 does not support 3.7
+          - python-version: 3.7
             platform:
               {
                 os: "ubuntu-latest",
@@ -125,6 +142,24 @@ jobs:
               rust-target: "x86_64-pc-windows-msvc",
             },
           ]
+        include:
+          # ubuntu-24.04 does not support 3.7
+          - python-version: 3.7
+            platform:
+              {
+                os: "ubuntu-22.04",
+                python-architecture: "x64",
+                rust-target: "x86_64-unknown-linux-gnu",
+              }
+        exclude:
+          # ubuntu-24.04 does not support 3.7
+          - python-version: 3.7
+            platform:
+              {
+                os: "ubuntu-latest",
+                python-architecture: "x64",
+                rust-target: "x86_64-unknown-linux-gnu",
+              }
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
