@@ -39,7 +39,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 pyo3 = { version = "0.22", features = ["extension-module"] }
-numpy = "0.21"
+numpy = "0.22"
 ```
 
 ```rust
@@ -94,7 +94,7 @@ name = "numpy-test"
 
 [dependencies]
 pyo3 = { version = "0.22", features = ["auto-initialize"] }
-numpy = "0.21"
+numpy = "0.22"
 ```
 
 ```rust
@@ -132,7 +132,7 @@ on anything but that exact range. It can therefore be necessary to manually unif
 For example, if you specify the following dependencies
 
 ```toml
-numpy = "0.21"
+numpy = "0.22"
 ndarray = "0.15"
 ```
 
@@ -154,4 +154,3 @@ PyO3's [Contributing.md](https://github.com/PyO3/pyo3/blob/main/Contributing.md)
 is a nice guide for starting.
 
 Also, we have a [Gitter](https://gitter.im/PyO3/Lobby) channel for communicating.
-
