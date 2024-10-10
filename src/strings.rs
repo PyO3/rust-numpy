@@ -51,7 +51,7 @@ use crate::npyffi::NPY_TYPES;
 /// use numpy::{PyArray1, PyUntypedArrayMethods, PyFixedString};
 ///
 /// # Python::with_gil(|py| {
-/// let array = PyArray1::<PyFixedString<3>>::from_vec_bound(py, vec![[b'f', b'o', b'o'].into()]);
+/// let array = PyArray1::<PyFixedString<3>>::from_vec(py, vec![[b'f', b'o', b'o'].into()]);
 ///
 /// assert!(array.dtype().to_string().contains("S3"));
 /// # });
@@ -77,7 +77,7 @@ impl<const N: usize> From<[Py_UCS1; N]> for PyFixedString<N> {
 unsafe impl<const N: usize> Element for PyFixedString<N> {
     const IS_COPY: bool = true;
 
-    fn get_dtype_bound(py: Python<'_>) -> Bound<'_, PyArrayDescr> {
+    fn get_dtype(py: Python<'_>) -> Bound<'_, PyArrayDescr> {
         static DTYPES: TypeDescriptors = TypeDescriptors::new();
 
         unsafe { DTYPES.from_size(py, NPY_TYPES::NPY_STRING, b'|' as _, size_of::<Self>()) }
@@ -116,7 +116,7 @@ unsafe impl<const N: usize> Element for PyFixedString<N> {
 /// use numpy::{PyArray1, PyUntypedArrayMethods, PyFixedUnicode};
 ///
 /// # Python::with_gil(|py| {
-/// let array = PyArray1::<PyFixedUnicode<3>>::from_vec_bound(py, vec![[b'b' as _, b'a' as _, b'r' as _].into()]);
+/// let array = PyArray1::<PyFixedUnicode<3>>::from_vec(py, vec![[b'b' as _, b'a' as _, b'r' as _].into()]);
 ///
 /// assert!(array.dtype().to_string().contains("U3"));
 /// # });
@@ -150,7 +150,7 @@ impl<const N: usize> From<[Py_UCS4; N]> for PyFixedUnicode<N> {
 unsafe impl<const N: usize> Element for PyFixedUnicode<N> {
     const IS_COPY: bool = true;
 
-    fn get_dtype_bound(py: Python<'_>) -> Bound<'_, PyArrayDescr> {
+    fn get_dtype(py: Python<'_>) -> Bound<'_, PyArrayDescr> {
         static DTYPES: TypeDescriptors = TypeDescriptors::new();
 
         unsafe { DTYPES.from_size(py, NPY_TYPES::NPY_UNICODE, b'=' as _, size_of::<Self>()) }

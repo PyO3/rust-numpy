@@ -27,7 +27,7 @@ fn get_numpy_api<'py>(
     module: &str,
     capsule: &str,
 ) -> PyResult<*const *const c_void> {
-    let module = PyModule::import_bound(py, module)?;
+    let module = PyModule::import(py, module)?;
     let capsule = module.getattr(capsule)?.downcast_into::<PyCapsule>()?;
 
     let api = capsule.pointer() as *const *const c_void;

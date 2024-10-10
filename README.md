@@ -71,7 +71,7 @@ fn rust_ext<'py>(_py: Python<'py>, m: &Bound<'py, PyModule>) -> PyResult<()> {
         let x = x.as_array();
         let y = y.as_array();
         let z = axpy(a, x, y);
-        z.into_pyarray_bound(py)
+        z.into_pyarray(py)
     }
 
     // wrapper of `mult`
@@ -103,11 +103,11 @@ use pyo3::{types::{IntoPyDict, PyAnyMethods}, PyResult, Python};
 
 fn main() -> PyResult<()> {
     Python::with_gil(|py| {
-        let np = py.import_bound("numpy")?;
-        let locals = [("np", np)].into_py_dict_bound(py);
+        let np = py.import("numpy")?;
+        let locals = [("np", np)].into_py_dict(py)?;
 
         let pyarray = py
-            .eval_bound("np.absolute(np.array([-1, -2, -3], dtype='int32'))", Some(&locals), None)?
+            .eval("np.absolute(np.array([-1, -2, -3], dtype='int32'))", Some(&locals), None)?
             .downcast_into::<PyArray1<i32>>()?;
 
         let readonly = pyarray.readonly();
