@@ -14,7 +14,7 @@ use pyo3::{
 
 use crate::npyffi::*;
 
-pub(crate) const MOD_NAME: &str = "numpy.core.multiarray";
+pub(crate) const MOD_NAME: &str = "numpy._core.multiarray";
 const CAPSULE_NAME: &str = "_ARRAY_API";
 
 /// A global variable which stores a ['capsule'](https://docs.python.org/3/c-api/capsule.html)
