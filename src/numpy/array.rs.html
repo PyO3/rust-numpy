@@ -2616,7 +2616,7 @@
 
 <span class="doccomment">/// Returns a handle to NumPy's multiarray module.
 </span><span class="kw">pub fn </span>get_array_module&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; PyResult&lt;Bound&lt;<span class="lifetime">'_</span>, PyModule&gt;&gt; {
-    PyModule::import_bound(py, npyffi::array::MOD_NAME)
+    PyModule::import_bound(py, npyffi::array::mod_name(py)<span class="question-mark">?</span>)
 }
 
 <span class="kw">impl</span>&lt;T, D&gt; DerefToPyAny <span class="kw">for </span>PyArray&lt;T, D&gt; {}

@@ -87,6 +87,15 @@
 <a href="#87" id="87">87</a>
 <a href="#88" id="88">88</a>
 <a href="#89" id="89">89</a>
+<a href="#90" id="90">90</a>
+<a href="#91" id="91">91</a>
+<a href="#92" id="92">92</a>
+<a href="#93" id="93">93</a>
+<a href="#94" id="94">94</a>
+<a href="#95" id="95">95</a>
+<a href="#96" id="96">96</a>
+<a href="#97" id="97">97</a>
+<a href="#98" id="98">98</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Low-Level binding for [UFunc API](https://numpy.org/doc/stable/reference/c-api/ufunc.html)
 
 </span><span class="kw">use </span>std::os::raw::<span class="kw-2">*</span>;
@@ -95,7 +104,16 @@
 
 <span class="kw">use </span><span class="kw">crate</span>::npyffi::<span class="kw-2">*</span>;
 
-<span class="kw">const </span>MOD_NAME: <span class="kw-2">&amp;</span>str = <span class="string">"numpy.core.umath"</span>;
+<span class="kw">fn </span>mod_name(py: Python&lt;<span class="lifetime">'_</span>&gt;) -&gt; PyResult&lt;<span class="kw-2">&amp;</span><span class="lifetime">'static </span>str&gt; {
+    <span class="kw">static </span>MOD_NAME: GILOnceCell&lt;String&gt; = GILOnceCell::new();
+    MOD_NAME
+        .get_or_try_init(py, || {
+            <span class="kw">let </span>numpy_core = <span class="kw">super</span>::array::numpy_core_name(py)<span class="question-mark">?</span>;
+            <span class="prelude-val">Ok</span>(<span class="macro">format!</span>(<span class="string">"{}.umath"</span>, numpy_core))
+        })
+        .map(String::as_str)
+}
+
 <span class="kw">const </span>CAPSULE_NAME: <span class="kw-2">&amp;</span>str = <span class="string">"_UFUNC_API"</span>;
 
 <span class="doccomment">/// A global variable which stores a ['capsule'](https://docs.python.org/3/c-api/capsule.html)
@@ -112,7 +130,7 @@
     <span class="kw">unsafe fn </span>get&lt;<span class="lifetime">'py</span>&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, py: Python&lt;<span class="lifetime">'py</span>&gt;, offset: isize) -&gt; <span class="kw-2">*const *const </span>c_void {
         <span class="kw">let </span>api = <span class="self">self
             </span>.<span class="number">0
-            </span>.get_or_try_init(py, || get_numpy_api(py, MOD_NAME, CAPSULE_NAME))
+            </span>.get_or_try_init(py, || get_numpy_api(py, mod_name(py)<span class="question-mark">?</span>, CAPSULE_NAME))
             .expect(<span class="string">"Failed to access NumPy ufunc API capsule"</span>);
 
         api.offset(offset)
