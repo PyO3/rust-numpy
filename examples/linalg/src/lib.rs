@@ -13,7 +13,7 @@ fn rust_linalg<'py>(m: &Bound<'py, PyModule>) -> PyResult<()> {
         let y = x
             .inv()
             .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
-        Ok(y.into_pyarray_bound(py))
+        Ok(y.into_pyarray(py))
     }
     Ok(())
 }

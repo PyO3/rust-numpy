@@ -64,7 +64,7 @@ fn rust_ext<'py>(m: &Bound<'py, PyModule>) -> PyResult<()> {
         let x = x.as_array();
         let y = y.as_array();
         let z = axpy(a, x, y);
-        z.into_pyarray_bound(py)
+        z.into_pyarray(py)
     }
 
     // wrapper of `mult`
@@ -82,7 +82,7 @@ fn rust_ext<'py>(m: &Bound<'py, PyModule>) -> PyResult<()> {
         py: Python<'py>,
         x: PyReadonlyArrayDyn<'py, Complex64>,
     ) -> Bound<'py, PyArrayDyn<Complex64>> {
-        conj(x.as_array()).into_pyarray_bound(py)
+        conj(x.as_array()).into_pyarray(py)
     }
 
     // example of how to extract an array from a dictionary
@@ -131,13 +131,13 @@ fn rust_ext<'py>(m: &Bound<'py, PyModule>) -> PyResult<()> {
                 x.readonly().as_array(),
                 y.readonly().as_array(),
             )
-            .into_pyarray_bound(x.py())
+            .into_pyarray(x.py())
             .into_any()),
             (SupportedArray::I64(x), SupportedArray::I64(y)) => Ok(generic_add(
                 x.readonly().as_array(),
                 y.readonly().as_array(),
             )
-            .into_pyarray_bound(x.py())
+            .into_pyarray(x.py())
             .into_any()),
             (SupportedArray::F64(x), SupportedArray::I64(y))
             | (SupportedArray::I64(y), SupportedArray::F64(x)) => {
@@ -145,7 +145,7 @@ fn rust_ext<'py>(m: &Bound<'py, PyModule>) -> PyResult<()> {
 
                 Ok(
                     generic_add(x.readonly().as_array(), y.readonly().as_array())
-                        .into_pyarray_bound(x.py())
+                        .into_pyarray(x.py())
                         .into_any(),
                 )
             }

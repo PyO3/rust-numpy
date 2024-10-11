@@ -136,7 +136,7 @@ fn insert_shared<'py>(py: Python<'py>) -> PyResult<*const Shared> {
                 release_mut: release_mut_shared,
             };
 
-            let capsule = PyCapsule::new_bound_with_destructor(
+            let capsule = PyCapsule::new_with_destructor(
                 py,
                 shared,
                 Some(CString::new("_RUST_NUMPY_BORROW_CHECKING_API").unwrap()),
@@ -450,6 +450,7 @@ mod tests {
     use crate::array::{PyArray, PyArray1, PyArray2, PyArray3, PyArrayMethods};
     use crate::convert::IntoPyArray;
     use crate::untyped_array::PyUntypedArrayMethods;
+    use pyo3::ffi::c_str;
 
     fn get_borrow_flags<'py>(py: Python<'py>) -> &'py BorrowFlagsInner {
         let shared = get_or_insert_shared(py).unwrap();
@@ -460,7 +461,7 @@ mod tests {
     #[test]
     fn without_base_object() {
         Python::with_gil(|py| {
-            let array = PyArray::<f64, _>::zeros_bound(py, (1, 2, 3), false);
+            let array = PyArray::<f64, _>::zeros(py, (1, 2, 3), false);
 
             let base = unsafe { (*array.as_array_ptr()).base };
             assert!(base.is_null());
@@ -477,7 +478,7 @@ mod tests {
     #[test]
     fn with_base_object() {
         Python::with_gil(|py| {
-            let array = Array::<f64, _>::zeros((1, 2, 3)).into_pyarray_bound(py);
+            let array = Array::<f64, _>::zeros((1, 2, 3)).into_pyarray(py);
 
             let base = unsafe { (*array.as_array_ptr()).base };
             assert!(!base.is_null());
@@ -497,11 +498,11 @@ mod tests {
     #[test]
     fn view_without_base_object() {
         Python::with_gil(|py| {
-            let array = PyArray::<f64, _>::zeros_bound(py, (1, 2, 3), false);
+            let array = PyArray::<f64, _>::zeros(py, (1, 2, 3), false);
 
-            let locals = [("array", &array)].into_py_dict_bound(py);
+            let locals = [("array", &array)].into_py_dict(py).unwrap();
             let view = py
-                .eval_bound("array[:,:,0]", None, Some(&locals))
+                .eval(c_str!("array[:,:,0]"), None, Some(&locals))
                 .unwrap()
                 .downcast_into::<PyArray2<f64>>()
                 .unwrap();
@@ -526,11 +527,11 @@ mod tests {
     #[test]
     fn view_with_base_object() {
         Python::with_gil(|py| {
-            let array = Array::<f64, _>::zeros((1, 2, 3)).into_pyarray_bound(py);
+            let array = Array::<f64, _>::zeros((1, 2, 3)).into_pyarray(py);
 
-            let locals = [("array", &array)].into_py_dict_bound(py);
+            let locals = [("array", &array)].into_py_dict(py).unwrap();
             let view = py
-                .eval_bound("array[:,:,0]", None, Some(&locals))
+                .eval(c_str!("array[:,:,0]"), None, Some(&locals))
                 .unwrap()
                 .downcast_into::<PyArray2<f64>>()
                 .unwrap();
@@ -561,11 +562,11 @@ mod tests {
     #[test]
     fn view_of_view_without_base_object() {
         Python::with_gil(|py| {
-            let array = PyArray::<f64, _>::zeros_bound(py, (1, 2, 3), false);
+            let array = PyArray::<f64, _>::zeros(py, (1, 2, 3), false);
 
-            let locals = [("array", &array)].into_py_dict_bound(py);
+            let locals = [("array", &array)].into_py_dict(py).unwrap();
             let view1 = py
-                .eval_bound("array[:,:,0]", None, Some(&locals))
+                .eval(c_str!("array[:,:,0]"), None, Some(&locals))
                 .unwrap()
                 .downcast_into::<PyArray2<f64>>()
                 .unwrap();
@@ -574,9 +575,9 @@ mod tests {
                 array.as_ptr().cast::<c_void>()
             );
 
-            let locals = [("view1", &view1)].into_py_dict_bound(py);
+            let locals = [("view1", &view1)].into_py_dict(py).unwrap();
             let view2 = py
-                .eval_bound("view1[:,0]", None, Some(&locals))
+                .eval(c_str!("view1[:,0]"), None, Some(&locals))
                 .unwrap()
                 .downcast_into::<PyArray1<f64>>()
                 .unwrap();
@@ -609,11 +610,11 @@ mod tests {
     #[test]
     fn view_of_view_with_base_object() {
         Python::with_gil(|py| {
-            let array = Array::<f64, _>::zeros((1, 2, 3)).into_pyarray_bound(py);
+            let array = Array::<f64, _>::zeros((1, 2, 3)).into_pyarray(py);
 
-            let locals = [("array", &array)].into_py_dict_bound(py);
+            let locals = [("array", &array)].into_py_dict(py).unwrap();
             let view1 = py
-                .eval_bound("array[:,:,0]", None, Some(&locals))
+                .eval(c_str!("array[:,:,0]"), None, Some(&locals))
                 .unwrap()
                 .downcast_into::<PyArray2<f64>>()
                 .unwrap();
@@ -622,9 +623,9 @@ mod tests {
                 array.as_ptr().cast::<c_void>(),
             );
 
-            let locals = [("view1", &view1)].into_py_dict_bound(py);
+            let locals = [("view1", &view1)].into_py_dict(py).unwrap();
             let view2 = py
-                .eval_bound("view1[:,0]", None, Some(&locals))
+                .eval(c_str!("view1[:,0]"), None, Some(&locals))
                 .unwrap()
                 .downcast_into::<PyArray1<f64>>()
                 .unwrap();
@@ -663,11 +664,11 @@ mod tests {
     #[test]
     fn view_with_negative_strides() {
         Python::with_gil(|py| {
-            let array = PyArray::<f64, _>::zeros_bound(py, (1, 2, 3), false);
+            let array = PyArray::<f64, _>::zeros(py, (1, 2, 3), false);
 
-            let locals = [("array", &array)].into_py_dict_bound(py);
+            let locals = [("array", &array)].into_py_dict(py).unwrap();
             let view = py
-                .eval_bound("array[::-1,:,::-1]", None, Some(&locals))
+                .eval(c_str!("array[::-1,:,::-1]"), None, Some(&locals))
                 .unwrap()
                 .downcast_into::<PyArray3<f64>>()
                 .unwrap();
@@ -695,7 +696,7 @@ mod tests {
     #[test]
     fn array_with_zero_dimensions() {
         Python::with_gil(|py| {
-            let array = PyArray::<f64, _>::zeros_bound(py, (1, 0, 3), false);
+            let array = PyArray::<f64, _>::zeros(py, (1, 0, 3), false);
 
             let base = unsafe { (*array.as_array_ptr()).base };
             assert!(base.is_null());
@@ -712,11 +713,11 @@ mod tests {
     #[test]
     fn view_with_non_dividing_strides() {
         Python::with_gil(|py| {
-            let array = PyArray::<f64, _>::zeros_bound(py, (10, 10), false);
-            let locals = [("array", array)].into_py_dict_bound(py);
+            let array = PyArray::<f64, _>::zeros(py, (10, 10), false);
+            let locals = [("array", array)].into_py_dict(py).unwrap();
 
             let view1 = py
-                .eval_bound("array[:,::3]", None, Some(&locals))
+                .eval(c_str!("array[:,::3]"), None, Some(&locals))
                 .unwrap()
                 .downcast_into::<PyArray2<f64>>()
                 .unwrap();
@@ -727,7 +728,7 @@ mod tests {
             assert_eq!(key1.gcd_strides, 8);
 
             let view2 = py
-                .eval_bound("array[:,1::3]", None, Some(&locals))
+                .eval(c_str!("array[:,1::3]"), None, Some(&locals))
                 .unwrap()
                 .downcast_into::<PyArray2<f64>>()
                 .unwrap();
@@ -738,7 +739,7 @@ mod tests {
             assert_eq!(key2.gcd_strides, 8);
 
             let view3 = py
-                .eval_bound("array[:,::2]", None, Some(&locals))
+                .eval(c_str!("array[:,::2]"), None, Some(&locals))
                 .unwrap()
                 .downcast_into::<PyArray2<f64>>()
                 .unwrap();
@@ -749,7 +750,7 @@ mod tests {
             assert_eq!(key3.gcd_strides, 16);
 
             let view4 = py
-                .eval_bound("array[:,1::2]", None, Some(&locals))
+                .eval(c_str!("array[:,1::2]"), None, Some(&locals))
                 .unwrap()
                 .downcast_into::<PyArray2<f64>>()
                 .unwrap();
@@ -771,8 +772,8 @@ mod tests {
     #[test]
     fn borrow_multiple_arrays() {
         Python::with_gil(|py| {
-            let array1 = PyArray::<f64, _>::zeros_bound(py, 10, false);
-            let array2 = PyArray::<f64, _>::zeros_bound(py, 10, false);
+            let array1 = PyArray::<f64, _>::zeros(py, 10, false);
+            let array2 = PyArray::<f64, _>::zeros(py, 10, false);
 
             let base1 = base_address(py, array1.as_array_ptr());
             let base2 = base_address(py, array2.as_array_ptr());
@@ -816,13 +817,13 @@ mod tests {
     #[test]
     fn borrow_multiple_views() {
         Python::with_gil(|py| {
-            let array = PyArray::<f64, _>::zeros_bound(py, 10, false);
+            let array = PyArray::<f64, _>::zeros(py, 10, false);
             let base = base_address(py, array.as_array_ptr());
 
-            let locals = [("array", array)].into_py_dict_bound(py);
+            let locals = [("array", array)].into_py_dict(py).unwrap();
 
             let view1 = py
-                .eval_bound("array[:5]", None, Some(&locals))
+                .eval(c_str!("array[:5]"), None, Some(&locals))
                 .unwrap()
                 .downcast_into::<PyArray1<f64>>()
                 .unwrap();
@@ -842,7 +843,7 @@ mod tests {
             }
 
             let view2 = py
-                .eval_bound("array[5:]", None, Some(&locals))
+                .eval(c_str!("array[5:]"), None, Some(&locals))
                 .unwrap()
                 .downcast_into::<PyArray1<f64>>()
                 .unwrap();
@@ -865,7 +866,7 @@ mod tests {
             }
 
             let view3 = py
-                .eval_bound("array[5:]", None, Some(&locals))
+                .eval(c_str!("array[5:]"), None, Some(&locals))
                 .unwrap()
                 .downcast_into::<PyArray1<f64>>()
                 .unwrap();
@@ -891,7 +892,7 @@ mod tests {
             }
 
             let view4 = py
-                .eval_bound("array[7:]", None, Some(&locals))
+                .eval(c_str!("array[7:]"), None, Some(&locals))
                 .unwrap()
                 .downcast_into::<PyArray1<f64>>()
                 .unwrap();

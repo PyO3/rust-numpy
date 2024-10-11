@@ -29,7 +29,7 @@ const CAPSULE_NAME: &str = "_ARRAY_API";
 /// use numpy::prelude::*;
 /// use numpy::{PyArray, npyffi::types::NPY_SORTKIND, PY_ARRAY_API};
 /// pyo3::Python::with_gil(|py| {
-///     let array = PyArray::from_slice_bound(py, &[3, 2, 4]);
+///     let array = PyArray::from_slice(py, &[3, 2, 4]);
 ///     unsafe {
 ///         PY_ARRAY_API.PyArray_Sort(py, array.as_array_ptr(), 0, NPY_SORTKIND::NPY_QUICKSORT);
 ///     }
