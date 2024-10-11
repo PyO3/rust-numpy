@@ -6,7 +6,16 @@ use pyo3::{ffi::PyObject, sync::GILOnceCell};
 
 use crate::npyffi::*;
 
-const MOD_NAME: &str = "numpy.core.umath";
+fn mod_name(py: Python<'_>) -> PyResult<&'static str> {
+    static MOD_NAME: GILOnceCell<String> = GILOnceCell::new();
+    MOD_NAME
+        .get_or_try_init(py, || {
+            let numpy_core = super::array::numpy_core_name(py)?;
+            Ok(format!("{}.umath", numpy_core))
+        })
+        .map(String::as_str)
+}
+
 const CAPSULE_NAME: &str = "_UFUNC_API";
 
 /// A global variable which stores a ['capsule'](https://docs.python.org/3/c-api/capsule.html)
@@ -23,7 +32,7 @@ impl PyUFuncAPI {
     unsafe fn get<'py>(&self, py: Python<'py>, offset: isize) -> *const *const c_void {
         let api = self
             .0
-            .get_or_try_init(py, || get_numpy_api(py, MOD_NAME, CAPSULE_NAME))
+            .get_or_try_init(py, || get_numpy_api(py, mod_name(py)?, CAPSULE_NAME))
             .expect("Failed to access NumPy ufunc API capsule");
 
         api.offset(offset)
