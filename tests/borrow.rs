@@ -348,6 +348,20 @@ fn resize_using_exclusive_borrow() {
     });
 }
 
+#[test]
+fn can_make_python_array_nonwriteable() {
+    Python::with_gil(|py| {
+        let array = PyArray1::<f64>::zeros_bound(py, 10, false);
+        let locals = [("array", &array)].into_py_dict_bound(py);
+        array.readwrite().make_nonwriteable();
+        assert!(!py
+            .eval_bound("array.flags.writeable", None, Some(&locals))
+            .unwrap()
+            .extract::<bool>()
+            .unwrap())
+    })
+}
+
 #[cfg(feature = "nalgebra")]
 #[test]
 fn matrix_from_numpy() {

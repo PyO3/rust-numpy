@@ -420,6 +420,9 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
 
     /// Creates a NumPy array backed by `array` and ties its ownership to the Python object `container`.
     ///
+    /// The resulting NumPy array will be writeable from Python space.  If this is undesireable, use
+    /// [PyReadwriteArray::make_nonwriteable].
+    ///
     /// # Safety
     ///
     /// `container` is set as a base object of the returned array which must not be dropped until `container` is dropped.
