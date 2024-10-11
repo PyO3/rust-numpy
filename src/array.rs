@@ -122,7 +122,7 @@ pub type PyArrayDyn<T> = PyArray<T, IxDyn>;
 
 /// Returns a handle to NumPy's multiarray module.
 pub fn get_array_module<'py>(py: Python<'py>) -> PyResult<Bound<'_, PyModule>> {
-    PyModule::import_bound(py, npyffi::array::MOD_NAME)
+    PyModule::import_bound(py, npyffi::array::mod_name(py)?)
 }
 
 impl<T, D> DerefToPyAny for PyArray<T, D> {}
