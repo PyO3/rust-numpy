@@ -48,6 +48,11 @@ jobs:
               python-architecture: "x64",
               rust-target: "x86_64-pc-windows-msvc",
             },
+            {
+              os: "windows-latest",
+              python-architecture: "x86",
+              rust-target: "i686-pc-windows-msvc",
+            },
           ]
         include:
           # ubuntu-24.04 does not support 3.7
@@ -141,6 +146,11 @@ jobs:
               python-architecture: "x64",
               rust-target: "x86_64-pc-windows-msvc",
             },
+            {
+              os: "windows-latest",
+              python-architecture: "x86",
+              rust-target: "i686-pc-windows-msvc",
+            },
           ]
         include:
           # ubuntu-24.04 does not support 3.7
@@ -181,6 +191,7 @@ jobs:
           nox -f examples/simple/noxfile.py
     env:
       CARGO_TERM_VERBOSE: true
+      CARGO_BUILD_TARGET: ${{ matrix.platform.rust-target }}
       RUST_BACKTRACE: 1
 
   cross-build:
