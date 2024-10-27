@@ -208,9 +208,6 @@
 <a href="#208" id="208">208</a>
 <a href="#209" id="209">209</a>
 <a href="#210" id="210">210</a>
-<a href="#211" id="211">211</a>
-<a href="#212" id="212">212</a>
-<a href="#213" id="213">213</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! This crate provides Rust interfaces for [NumPy C APIs][c-api],
 //! especially for the [ndarray][ndarray] class.
 //!
@@ -287,10 +284,7 @@ as well as the [`PyReadonlyArray::try_as_matrix`] and [`PyReadwriteArray::try_as
 // and similar aren't constructible
 </span><span class="attr">#![cfg_attr(feature = <span class="string">"gil-refs"</span>, deny(missing_debug_implementations))]
 
-#[cfg(all(target_os = <span class="string">"windows"</span>, target_arch = <span class="string">"x86"</span>))]
-</span><span class="macro">compile_error!</span>(<span class="string">"Compilation for 32-bit windows is not currently supported. See https://github.com/PyO3/rust-numpy/issues/448"</span>);
-
-<span class="kw">pub mod </span>array;
+</span><span class="kw">pub mod </span>array;
 <span class="kw">mod </span>array_like;
 <span class="kw">pub mod </span>borrow;
 <span class="kw">pub mod </span>convert;
