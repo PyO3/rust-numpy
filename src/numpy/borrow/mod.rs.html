@@ -689,6 +689,36 @@
 <a href="#689" id="689">689</a>
 <a href="#690" id="690">690</a>
 <a href="#691" id="691">691</a>
+<a href="#692" id="692">692</a>
+<a href="#693" id="693">693</a>
+<a href="#694" id="694">694</a>
+<a href="#695" id="695">695</a>
+<a href="#696" id="696">696</a>
+<a href="#697" id="697">697</a>
+<a href="#698" id="698">698</a>
+<a href="#699" id="699">699</a>
+<a href="#700" id="700">700</a>
+<a href="#701" id="701">701</a>
+<a href="#702" id="702">702</a>
+<a href="#703" id="703">703</a>
+<a href="#704" id="704">704</a>
+<a href="#705" id="705">705</a>
+<a href="#706" id="706">706</a>
+<a href="#707" id="707">707</a>
+<a href="#708" id="708">708</a>
+<a href="#709" id="709">709</a>
+<a href="#710" id="710">710</a>
+<a href="#711" id="711">711</a>
+<a href="#712" id="712">712</a>
+<a href="#713" id="713">713</a>
+<a href="#714" id="714">714</a>
+<a href="#715" id="715">715</a>
+<a href="#716" id="716">716</a>
+<a href="#717" id="717">717</a>
+<a href="#718" id="718">718</a>
+<a href="#719" id="719">719</a>
+<a href="#720" id="720">720</a>
+<a href="#721" id="721">721</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Types to safely create references into NumPy arrays
 //!
 //! It is assumed that unchecked code - which includes unsafe Rust and Python - is validated by its author
@@ -706,7 +736,7 @@
 //! ```rust
 //! # use std::panic::{catch_unwind, AssertUnwindSafe};
 //! #
-//! use numpy::{PyArray1, PyArrayMethods};
+//! use numpy::{PyArray1, PyArrayMethods, npyffi::flags};
 //! use ndarray::Zip;
 //! use pyo3::{Python, Bound};
 //!
@@ -866,6 +896,7 @@
 <span class="kw">use </span><span class="kw">crate</span>::convert::NpyIndex;
 <span class="kw">use </span><span class="kw">crate</span>::dtype::Element;
 <span class="kw">use </span><span class="kw">crate</span>::error::{BorrowError, NotContiguousError};
+<span class="kw">use </span><span class="kw">crate</span>::npyffi::flags;
 <span class="kw">use </span><span class="kw">crate</span>::untyped_array::PyUntypedArrayMethods;
 
 <span class="kw">use </span>shared::{acquire, acquire_mut, release, release_mut};
@@ -1144,6 +1175,18 @@
         </span><span class="kw">unsafe </span>{ <span class="kw-2">&amp;*</span>(<span class="self">self </span><span class="kw">as </span><span class="kw-2">*const </span><span class="self">Self </span><span class="kw">as </span><span class="kw-2">*const </span><span class="self">Self</span>::Target) }
     }
 }
+<span class="kw">impl</span>&lt;<span class="lifetime">'py</span>, T, D&gt; From&lt;PyReadwriteArray&lt;<span class="lifetime">'py</span>, T, D&gt;&gt; <span class="kw">for </span>PyReadonlyArray&lt;<span class="lifetime">'py</span>, T, D&gt;
+<span class="kw">where
+    </span>T: Element,
+    D: Dimension,
+{
+    <span class="kw">fn </span>from(value: PyReadwriteArray&lt;<span class="lifetime">'py</span>, T, D&gt;) -&gt; <span class="self">Self </span>{
+        <span class="kw">let </span>array = value.array.clone();
+        ::std::mem::drop(value);
+        <span class="self">Self</span>::try_new(array)
+            .expect(<span class="string">"releasing an exclusive reference should immediately permit a shared reference"</span>)
+    }
+}
 
 <span class="kw">impl</span>&lt;<span class="lifetime">'py</span>, T: Element, D: Dimension&gt; FromPyObject&lt;<span class="lifetime">'py</span>&gt; <span class="kw">for </span>PyReadwriteArray&lt;<span class="lifetime">'py</span>, T, D&gt; {
     <span class="kw">fn </span>extract_bound(obj: <span class="kw-2">&amp;</span>Bound&lt;<span class="lifetime">'py</span>, PyAny&gt;) -&gt; PyResult&lt;<span class="self">Self</span>&gt; {
@@ -1184,6 +1227,23 @@
         </span>I: NpyIndex&lt;Dim = D&gt;,
     {
         <span class="kw">unsafe </span>{ <span class="self">self</span>.array.get_mut(index) }
+    }
+
+    <span class="doccomment">/// Clear the [`WRITEABLE` flag][writeable] from the underlying NumPy array.
+    ///
+    /// Calling this will prevent any further [PyReadwriteArray]s from being taken out.  Python
+    /// space can reset this flag, unless the additional flag [`OWNDATA`][owndata] is unset.  Such
+    /// an array can be created from Rust space by using [PyArray::borrow_from_array_bound].
+    ///
+    /// [writeable]: https://numpy.org/doc/stable/reference/c-api/array.html#c.NPY_ARRAY_WRITEABLE
+    /// [owndata]: https://numpy.org/doc/stable/reference/c-api/array.html#c.NPY_ARRAY_OWNDATA
+    </span><span class="kw">pub fn </span>make_nonwriteable(<span class="self">self</span>) -&gt; PyReadonlyArray&lt;<span class="lifetime">'py</span>, T, D&gt; {
+        <span class="comment">// SAFETY: consuming the only extant mutable reference guarantees we cannot invalidate an
+        // existing reference, nor allow the caller to keep hold of one.
+        </span><span class="kw">unsafe </span>{
+            (<span class="kw-2">*</span><span class="self">self</span>.as_array_ptr()).flags &amp;= !flags::NPY_ARRAY_WRITEABLE;
+        }
+        <span class="self">self</span>.into()
     }
 }
 
