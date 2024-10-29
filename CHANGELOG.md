@@ -1,5 +1,10 @@
 # Changelog
 
+- v0.22.1
+  - Fix building on 32-bit Windows. ([#463](https://github.com/PyO3/rust-numpy/pull/463))
+  - Add `PyReadwriteArray::make_nonwriteable`. ([#462](https://github.com/PyO3/rust-numpy/pull/462))
+  - Implement `From<PyReadWriteArray>` for `PyReadonlyArray`. ([#462](https://github.com/PyO3/rust-numpy/pull/462))
+
 - v0.22.0
   - Bump MSRV to 1.63. ([#450](https://github.com/PyO3/rust-numpy/pull/450))
   - Add `permute` and `transpose` methods for changing the order of axes of a `PyArray`. ([#428](https://github.com/PyO3/rust-numpy/pull/428))
