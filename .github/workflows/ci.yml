@@ -30,7 +30,18 @@ jobs:
     strategy:
       fail-fast: ${{ !contains(github.event.pull_request.labels.*.name, 'CI-no-fail-fast') }}
       matrix:
-        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version:
+          [
+            "3.7",
+            "3.8",
+            "3.9",
+            "3.10",
+            "3.11",
+            "3.12",
+            "3.13",
+            "pypy-3.9",
+            "pypy-3.10",
+          ]
         platform:
           [
             {
@@ -71,21 +82,6 @@ jobs:
                 python-architecture: "arm64",
                 rust-target: "aarch64-apple-darwin",
               }
-          # NumPy does not provide pre-built wheels for PyPy on macOS and Windows
-          - python-version: pypy-3.7
-            platform:
-              {
-                os: "ubuntu-latest",
-                python-architecture: "x64",
-                rust-target: "x86_64-unknown-linux-gnu",
-              }
-          - python-version: pypy-3.8
-            platform:
-              {
-                os: "ubuntu-latest",
-                python-architecture: "x64",
-                rust-target: "x86_64-unknown-linux-gnu",
-              }
         exclude:
           # ubuntu-24.04 does not support 3.7
           - python-version: 3.7
@@ -94,6 +90,20 @@ jobs:
                 os: "ubuntu-latest",
                 python-architecture: "x64",
                 rust-target: "x86_64-unknown-linux-gnu",
+              }
+          - python-version: pypy-3.9
+            platform:
+              {
+                os: "windows-latest",
+                python-architecture: "x86",
+                rust-target: "i686-pc-windows-msvc",
+              }
+          - python-version: pypy-3.10
+            platform:
+              {
+                os: "windows-latest",
+                python-architecture: "x86",
+                rust-target: "i686-pc-windows-msvc",
               }
     steps:
       - uses: actions/checkout@v4
@@ -201,7 +211,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
       - uses: messense/maturin-action@v1
         with:
           target: aarch64
@@ -215,7 +225,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         continue-on-error: true
@@ -233,7 +243,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
       - uses: dtolnay/rust-toolchain@nightly
       - uses: Swatinem/rust-cache@v2
         continue-on-error: true
@@ -249,7 +259,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
       - name: Install Rust
         uses: dtolnay/rust-toolchain@1.63
       - uses: Swatinem/rust-cache@v2
@@ -292,7 +302,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
       - name: Install OpenBLAS
         run: sudo apt install --yes libopenblas-dev
       - name: Install Rust
@@ -312,7 +322,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
       - name: Install numpy
         run: pip install "numpy" ml_dtypes
       - uses: Swatinem/rust-cache@v2

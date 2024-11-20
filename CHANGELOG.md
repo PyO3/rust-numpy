@@ -1,5 +1,6 @@
 # Changelog
-
+- v0.23.0
+  - Drop support for PyPy 3.7 and 3.8. ([#470](https://github.com/PyO3/rust-numpy/pull/470))
 - v0.22.1
   - Fix building on 32-bit Windows. ([#463](https://github.com/PyO3/rust-numpy/pull/463))
   - Add `PyReadwriteArray::make_nonwriteable`. ([#462](https://github.com/PyO3/rust-numpy/pull/462))
