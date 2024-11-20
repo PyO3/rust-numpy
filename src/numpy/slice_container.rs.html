@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/slice_container.rs`."><title>slice_container.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="numpy" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/slice_container.rs`."><title>slice_container.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-492a78a4a87dcc01.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="numpy" data-themes="" data-resource-suffix="" data-rustdoc-version="1.82.0 (f6e511eec 2024-10-15)" data-channel="1.82.0" data-search-js="search-a99f1315e7cc5121.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-921df33f47b8780c.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-3b12f09e550e0385.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -81,6 +81,14 @@
 <a href="#81" id="81">81</a>
 <a href="#82" id="82">82</a>
 <a href="#83" id="83">83</a>
+<a href="#84" id="84">84</a>
+<a href="#85" id="85">85</a>
+<a href="#86" id="86">86</a>
+<a href="#87" id="87">87</a>
+<a href="#88" id="88">88</a>
+<a href="#89" id="89">89</a>
+<a href="#90" id="90">90</a>
+<a href="#91" id="91">91</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::{mem, ptr};
 
 <span class="kw">use </span>ndarray::{ArrayBase, Dimension, OwnedRepr};
@@ -96,9 +104,17 @@
     drop: <span class="kw">unsafe fn</span>(<span class="kw-2">*mut </span>u8, usize, usize),
 }
 
-<span class="kw">unsafe impl </span>Send <span class="kw">for </span>PySliceContainer {}
+<span class="comment">// This resembles `unsafe impl&lt;T: Send&gt; Send for PySliceContainer&lt;T&gt; {}` if we
+// were allow to use a generic there.
+// SAFETY: Every construction below enforces `T: Send` fulfilling the ideal bound above
+</span><span class="kw">unsafe impl </span>Send <span class="kw">for </span>PySliceContainer {}
 
-<span class="kw">impl</span>&lt;T: Send&gt; From&lt;Box&lt;[T]&gt;&gt; <span class="kw">for </span>PySliceContainer {
+<span class="comment">// This resembles `unsafe impl&lt;T: Sync&gt; Sync for PySliceContainer&lt;T&gt; {}` if we
+// were allow to use a generic there.
+// SAFETY: Every construction below enforces `T: Sync` fulfilling the ideal bound above
+</span><span class="kw">unsafe impl </span>Sync <span class="kw">for </span>PySliceContainer {}
+
+<span class="kw">impl</span>&lt;T: Send + Sync&gt; From&lt;Box&lt;[T]&gt;&gt; <span class="kw">for </span>PySliceContainer {
     <span class="kw">fn </span>from(data: Box&lt;[T]&gt;) -&gt; <span class="self">Self </span>{
         <span class="kw">unsafe fn </span>drop_boxed_slice&lt;T&gt;(ptr: <span class="kw-2">*mut </span>u8, len: usize, _cap: usize) {
             <span class="kw">let _ </span>= Box::from_raw(ptr::slice_from_raw_parts_mut(ptr <span class="kw">as </span><span class="kw-2">*mut </span>T, len));
@@ -122,7 +138,7 @@
     }
 }
 
-<span class="kw">impl</span>&lt;T: Send&gt; From&lt;Vec&lt;T&gt;&gt; <span class="kw">for </span>PySliceContainer {
+<span class="kw">impl</span>&lt;T: Send + Sync&gt; From&lt;Vec&lt;T&gt;&gt; <span class="kw">for </span>PySliceContainer {
     <span class="kw">fn </span>from(data: Vec&lt;T&gt;) -&gt; <span class="self">Self </span>{
         <span class="kw">unsafe fn </span>drop_vec&lt;T&gt;(ptr: <span class="kw-2">*mut </span>u8, len: usize, cap: usize) {
             <span class="kw">let _ </span>= Vec::from_raw_parts(ptr <span class="kw">as </span><span class="kw-2">*mut </span>T, len, cap);
@@ -148,7 +164,7 @@
 
 <span class="kw">impl</span>&lt;A, D&gt; From&lt;ArrayBase&lt;OwnedRepr&lt;A&gt;, D&gt;&gt; <span class="kw">for </span>PySliceContainer
 <span class="kw">where
-    </span>A: Send,
+    </span>A: Send + Sync,
     D: Dimension,
 {
     <span class="kw">fn </span>from(data: ArrayBase&lt;OwnedRepr&lt;A&gt;, D&gt;) -&gt; <span class="self">Self </span>{
