@@ -697,7 +697,7 @@ impl Sealed for Bound<'_, PyArrayDescr> {}
 ///
 /// [enumerated-types]: https://numpy.org/doc/stable/reference/c-api/dtype.html#enumerated-types
 /// [data-models]: https://en.wikipedia.org/wiki/64-bit_computing#64-bit_data_models
-pub unsafe trait Element: Sized + Send {
+pub unsafe trait Element: Sized + Send + Sync {
     /// Flag that indicates whether this type is trivially copyable.
     ///
     /// It should be set to true for all trivially copyable types (like scalar types

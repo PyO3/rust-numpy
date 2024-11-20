@@ -13,9 +13,17 @@ pub(crate) struct PySliceContainer {
     drop: unsafe fn(*mut u8, usize, usize),
 }
 
+// This resembles `unsafe impl<T: Send> Send for PySliceContainer<T> {}` if we
+// were allow to use a generic there.
+// SAFETY: Every construction below enforces `T: Send` fulfilling the ideal bound above
 unsafe impl Send for PySliceContainer {}
 
-impl<T: Send> From<Box<[T]>> for PySliceContainer {
+// This resembles `unsafe impl<T: Sync> Sync for PySliceContainer<T> {}` if we
+// were allow to use a generic there.
+// SAFETY: Every construction below enforces `T: Sync` fulfilling the ideal bound above
+unsafe impl Sync for PySliceContainer {}
+
+impl<T: Send + Sync> From<Box<[T]>> for PySliceContainer {
     fn from(data: Box<[T]>) -> Self {
         unsafe fn drop_boxed_slice<T>(ptr: *mut u8, len: usize, _cap: usize) {
             let _ = Box::from_raw(ptr::slice_from_raw_parts_mut(ptr as *mut T, len));
@@ -39,7 +47,7 @@ impl<T: Send> From<Box<[T]>> for PySliceContainer {
     }
 }
 
-impl<T: Send> From<Vec<T>> for PySliceContainer {
+impl<T: Send + Sync> From<Vec<T>> for PySliceContainer {
     fn from(data: Vec<T>) -> Self {
         unsafe fn drop_vec<T>(ptr: *mut u8, len: usize, cap: usize) {
             let _ = Vec::from_raw_parts(ptr as *mut T, len, cap);
@@ -65,7 +73,7 @@ impl<T: Send> From<Vec<T>> for PySliceContainer {
 
 impl<A, D> From<ArrayBase<OwnedRepr<A>, D>> for PySliceContainer
 where
-    A: Send,
+    A: Send + Sync,
     D: Dimension,
 {
     fn from(data: ArrayBase<OwnedRepr<A>, D>) -> Self {
