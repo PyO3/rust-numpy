@@ -111,19 +111,20 @@ pub trait PyUntypedArrayMethods<'py>: Sealed {
     ///
     /// ```
     /// use numpy::{PyArray1, PyUntypedArrayMethods};
-    /// use pyo3::{types::{IntoPyDict, PyAnyMethods}, Python};
+    /// use pyo3::{types::{IntoPyDict, PyAnyMethods}, Python, ffi::c_str};
     ///
+    /// # fn main() -> pyo3::PyResult<()> {
     /// Python::with_gil(|py| {
     ///     let array = PyArray1::arange(py, 0, 10, 1);
     ///     assert!(array.is_contiguous());
     ///
     ///     let view = py
-    ///         .eval("array[::2]", None, Some(&[("array", array)].into_py_dict(py).unwrap()))
-    ///         .unwrap()
-    ///         .downcast_into::<PyArray1<i32>>()
-    ///         .unwrap();
+    ///         .eval(c_str!("array[::2]"), None, Some(&[("array", array)].into_py_dict(py)?))?
+    ///         .downcast_into::<PyArray1<i32>>()?;
     ///     assert!(!view.is_contiguous());
-    /// });
+    /// #   Ok(())
+    /// })
+    /// # }
     /// ```
     fn is_contiguous(&self) -> bool {
         unsafe {

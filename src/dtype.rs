@@ -30,19 +30,20 @@ pub use num_complex::{Complex32, Complex64};
 ///
 /// ```
 /// use numpy::{dtype, get_array_module, PyArrayDescr, PyArrayDescrMethods};
-/// use numpy::pyo3::{types::{IntoPyDict, PyAnyMethods}, Python};
+/// use numpy::pyo3::{types::{IntoPyDict, PyAnyMethods}, Python, ffi::c_str};
 ///
+/// # fn main() -> pyo3::PyResult<()> {
 /// Python::with_gil(|py| {
-///     let locals = [("np", get_array_module(py).unwrap())].into_py_dict(py).unwrap();
+///     let locals = [("np", get_array_module(py)?)].into_py_dict(py)?;
 ///
 ///     let dt = py
-///         .eval("np.array([1, 2, 3.0]).dtype", Some(&locals), None)
-///         .unwrap()
-///         .downcast_into::<PyArrayDescr>()
-///         .unwrap();
+///         .eval(c_str!("np.array([1, 2, 3.0]).dtype"), Some(&locals), None)?
+///         .downcast_into::<PyArrayDescr>()?;
 ///
 ///     assert!(dt.is_equiv_to(&dtype::<f64>(py)));
-/// });
+/// #   Ok(())
+/// })
+/// # }
 /// ```
 ///
 /// [dtype]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.html

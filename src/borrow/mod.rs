@@ -63,16 +63,17 @@
 //!
 //! ```rust
 //! use numpy::{PyArray1, PyArrayMethods};
-//! use pyo3::{types::{IntoPyDict, PyAnyMethods}, Python};
+//! use pyo3::{types::{IntoPyDict, PyAnyMethods}, Python, ffi::c_str};
 //!
+//! # fn main() -> pyo3::PyResult<()> {
 //! Python::with_gil(|py| {
 //!     let array = PyArray1::arange(py, 0.0, 10.0, 1.0);
-//!     let locals = [("array", array)].into_py_dict(py).unwrap();
+//!     let locals = [("array", array)].into_py_dict(py)?;
 //!
-//!     let view1 = py.eval("array[:5]", None, Some(&locals)).unwrap().downcast_into::<PyArray1<f64>>().unwrap();
-//!     let view2 = py.eval("array[5:]", None, Some(&locals)).unwrap().downcast_into::<PyArray1<f64>>().unwrap();
-//!     let view3 = py.eval("array[::2]", None, Some(&locals)).unwrap().downcast_into::<PyArray1<f64>>().unwrap();
-//!     let view4 = py.eval("array[1::2]", None, Some(&locals)).unwrap().downcast_into::<PyArray1<f64>>().unwrap();
+//!     let view1 = py.eval(c_str!("array[:5]"), None, Some(&locals))?.downcast_into::<PyArray1<f64>>()?;
+//!     let view2 = py.eval(c_str!("array[5:]"), None, Some(&locals))?.downcast_into::<PyArray1<f64>>()?;
+//!     let view3 = py.eval(c_str!("array[::2]"), None, Some(&locals))?.downcast_into::<PyArray1<f64>>()?;
+//!     let view4 = py.eval(c_str!("array[1::2]"), None, Some(&locals))?.downcast_into::<PyArray1<f64>>()?;
 //!
 //!     {
 //!         let _view1 = view1.readwrite();
@@ -83,7 +84,9 @@
 //!         let _view3 = view3.readwrite();
 //!         let _view4 = view4.readwrite();
 //!     }
-//! });
+//! #   Ok(())
+//! })
+//! # }
 //! ```
 //!
 //! The third example shows that some views are incorrectly rejected since the borrows are over-approximated.
@@ -92,14 +95,15 @@
 //! # use std::panic::{catch_unwind, AssertUnwindSafe};
 //! #
 //! use numpy::{PyArray2, PyArrayMethods};
-//! use pyo3::{types::{IntoPyDict, PyAnyMethods}, Python};
+//! use pyo3::{types::{IntoPyDict, PyAnyMethods}, Python, ffi::c_str};
 //!
+//! # fn main() -> pyo3::PyResult<()> {
 //! Python::with_gil(|py| {
 //!     let array = PyArray2::<f64>::zeros(py, (10, 10), false);
-//!     let locals = [("array", array)].into_py_dict(py).unwrap();
+//!     let locals = [("array", array)].into_py_dict(py)?;
 //!
-//!     let view1 = py.eval("array[:, ::3]", None, Some(&locals)).unwrap().downcast_into::<PyArray2<f64>>().unwrap();
-//!     let view2 = py.eval("array[:, 1::3]", None, Some(&locals)).unwrap().downcast_into::<PyArray2<f64>>().unwrap();
+//!     let view1 = py.eval(c_str!("array[:, ::3]"), None, Some(&locals))?.downcast_into::<PyArray2<f64>>()?;
+//!     let view2 = py.eval(c_str!("array[:, 1::3]"), None, Some(&locals))?.downcast_into::<PyArray2<f64>>()?;
 //!
 //!     // A false conflict as the views do not actually share any elements.
 //!     let res = catch_unwind(AssertUnwindSafe(|| {
@@ -107,7 +111,9 @@
 //!         let _view2 = view2.readwrite();
 //!     }));
 //!     assert!(res.is_err());
-//! });
+//! #   Ok(())
+//! })
+//! # }
 //! ```
 //!
 //! # Rationale
@@ -289,7 +295,7 @@ where
     ///
     /// ```rust
     /// # use pyo3::prelude::*;
-    /// use pyo3::py_run;
+    /// use pyo3::{py_run, ffi::c_str};
     /// use numpy::{get_array_module, PyReadonlyArray2};
     /// use nalgebra::{MatrixView, Const, Dyn};
     ///
@@ -305,17 +311,20 @@ where
     ///     matrix.map(|matrix| matrix.sum())
     /// }
     ///
+    /// # fn main() -> pyo3::PyResult<()> {
     /// Python::with_gil(|py| {
-    ///     let np = py.eval("__import__('numpy')", None, None).unwrap();
-    ///     let sum_standard_layout = wrap_pyfunction!(sum_standard_layout)(py).unwrap();
-    ///     let sum_dynamic_strides = wrap_pyfunction!(sum_dynamic_strides)(py).unwrap();
+    ///     let np = py.eval(c_str!("__import__('numpy')"), None, None)?;
+    ///     let sum_standard_layout = wrap_pyfunction!(sum_standard_layout)(py)?;
+    ///     let sum_dynamic_strides = wrap_pyfunction!(sum_dynamic_strides)(py)?;
     ///
     ///     py_run!(py, np sum_standard_layout, r"assert sum_standard_layout(np.ones((2, 2), order='F')) == 4.");
     ///     py_run!(py, np sum_standard_layout, r"assert sum_standard_layout(np.ones((2, 2, 2))[:,:,0]) is None");
     ///
     ///     py_run!(py, np sum_dynamic_strides, r"assert sum_dynamic_strides(np.ones((2, 2), order='F')) == 4.");
     ///     py_run!(py, np sum_dynamic_strides, r"assert sum_dynamic_strides(np.ones((2, 2, 2))[:,:,0]) == 4.");
-    /// });
+    /// #   Ok(())
+    /// })
+    /// # }
     /// ```
     #[doc(alias = "nalgebra")]
     pub fn try_as_matrix<R, C, RStride, CStride>(

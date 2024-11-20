@@ -11,25 +11,22 @@
 //!
 //! ```
 //! use numpy::{datetime::{units, Datetime, Timedelta}, PyArray1, PyArrayMethods};
-//! use pyo3::{Python, types::PyAnyMethods};
+//! use pyo3::{Python, types::PyAnyMethods, ffi::c_str};
 //! # use pyo3::types::PyDict;
 //!
+//! # fn main() -> pyo3::PyResult<()> {
 //! Python::with_gil(|py| {
 //! #    let locals = py
-//! #        .eval("{ 'np': __import__('numpy') }", None, None)
-//! #        .unwrap()
-//! #        .downcast_into::<PyDict>()
-//! #        .unwrap();
+//! #        .eval(c_str!("{ 'np': __import__('numpy') }"), None, None)?
+//! #        .downcast_into::<PyDict>()?;
 //! #
 //!     let array = py
 //!         .eval(
-//!             "np.array([np.datetime64('2017-04-21')])",
+//!             c_str!("np.array([np.datetime64('2017-04-21')])"),
 //!             None,
 //!             Some(&locals),
-//!         )
-//!         .unwrap()
-//!         .downcast_into::<PyArray1<Datetime<units::Days>>>()
-//!         .unwrap();
+//!         )?
+//!         .downcast_into::<PyArray1<Datetime<units::Days>>>()?;
 //!
 //!     assert_eq!(
 //!         array.get_owned(0).unwrap(),
@@ -38,19 +35,19 @@
 //!
 //!     let array = py
 //!         .eval(
-//!             "np.array([np.datetime64('2022-03-29')]) - np.array([np.datetime64('2017-04-21')])",
+//!             c_str!("np.array([np.datetime64('2022-03-29')]) - np.array([np.datetime64('2017-04-21')])"),
 //!             None,
 //!             Some(&locals),
-//!         )
-//!         .unwrap()
-//!         .downcast_into::<PyArray1<Timedelta<units::Days>>>()
-//!         .unwrap();
+//!         )?
+//!         .downcast_into::<PyArray1<Timedelta<units::Days>>>()?;
 //!
 //!     assert_eq!(
 //!         array.get_owned(0).unwrap(),
 //!         Timedelta::<units::Days>::from(1_803)
 //!     );
-//! });
+//! #   Ok(())
+//! })
+//! # }
 //! ```
 //!
 //! [datetime]: https://numpy.org/doc/stable/reference/arrays.datetime.html

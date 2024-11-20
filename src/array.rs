@@ -1055,17 +1055,18 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> {
     ///
     /// ```
     /// use numpy::{PyArray2, PyArrayMethods};
-    /// use pyo3::{Python, types::PyAnyMethods};
+    /// use pyo3::{Python, types::PyAnyMethods, ffi::c_str};
     ///
+    /// # fn main() -> pyo3::PyResult<()> {
     /// Python::with_gil(|py| {
     ///     let pyarray= py
-    ///         .eval("__import__('numpy').array([[0, 1], [2, 3]], dtype='int64')", None, None)
-    ///         .unwrap()
-    ///         .downcast_into::<PyArray2<i64>>()
-    ///         .unwrap();
+    ///         .eval(c_str!("__import__('numpy').array([[0, 1], [2, 3]], dtype='int64')"), None, None)?
+    ///         .downcast_into::<PyArray2<i64>>()?;
     ///
-    ///     assert_eq!(pyarray.to_vec().unwrap(), vec![0, 1, 2, 3]);
-    /// });
+    ///     assert_eq!(pyarray.to_vec()?, vec![0, 1, 2, 3]);
+    /// #   Ok(())
+    /// })
+    /// # }
     /// ```
     fn to_vec(&self) -> Result<Vec<T>, NotContiguousError>
     where
