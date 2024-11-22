@@ -54,13 +54,13 @@
 //! [scalars-datetime64]: https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.datetime64
 //! [scalars-timedelta64]: https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.timedelta64
 
-use std::cell::RefCell;
 use std::collections::hash_map::Entry;
 use std::fmt;
 use std::hash::Hash;
 use std::marker::PhantomData;
+use std::sync::Mutex;
 
-use pyo3::{sync::GILProtected, Bound, Py, Python};
+use pyo3::{Bound, Py, Python};
 use rustc_hash::FxHashMap;
 
 use crate::dtype::{clone_methods_impl, Element, PyArrayDescr, PyArrayDescrMethods};
@@ -209,8 +209,7 @@ impl<U: Unit> fmt::Debug for Timedelta<U> {
 
 struct TypeDescriptors {
     npy_type: NPY_TYPES,
-    #[allow(clippy::type_complexity)]
-    dtypes: GILProtected<RefCell<Option<FxHashMap<NPY_DATETIMEUNIT, Py<PyArrayDescr>>>>>,
+    dtypes: Mutex<Option<FxHashMap<NPY_DATETIMEUNIT, Py<PyArrayDescr>>>>,
 }
 
 impl TypeDescriptors {
@@ -218,13 +217,14 @@ impl TypeDescriptors {
     const unsafe fn new(npy_type: NPY_TYPES) -> Self {
         Self {
             npy_type,
-            dtypes: GILProtected::new(RefCell::new(None)),
+            dtypes: Mutex::new(None),
         }
     }
 
     #[allow(clippy::wrong_self_convention)]
     fn from_unit<'py>(&self, py: Python<'py>, unit: NPY_DATETIMEUNIT) -> Bound<'py, PyArrayDescr> {
-        let mut dtypes = self.dtypes.get(py).borrow_mut();
+        // FIXME probably a deadlock risk here due to the GIL? Might need MutexExt trait in PyO3
+        let mut dtypes = self.dtypes.lock().expect("dtype cache poisoned");
 
         let dtype = match dtypes.get_or_insert_with(Default::default).entry(unit) {
             Entry::Occupied(entry) => entry.into_mut(),

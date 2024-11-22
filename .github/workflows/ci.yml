@@ -39,6 +39,7 @@ jobs:
             "3.11",
             "3.12",
             "3.13",
+            "3.13t",
             "pypy-3.9",
             "pypy-3.10",
           ]
@@ -108,7 +109,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: Quansight-Labs/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
           architecture: ${{ matrix.platform.python-architecture }}
