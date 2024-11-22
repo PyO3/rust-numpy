@@ -1,6 +1,12 @@
 # Changelog
 - v0.23.0
   - Drop support for PyPy 3.7 and 3.8. ([#470](https://github.com/PyO3/rust-numpy/pull/470))
+  - Require `Element: Sync` as part of the free-threading support in PyO3 0.23 ([#469](https://github.com/PyO3/rust-numpy/pull/469))
+  - Bump PyO3 dependency to v0.23.0 ([[#457](https://github.com/PyO3/rust-numpy/pull/457)])
+    - removed the `gil-refs` feature
+    - reintroduced function names without `_bound` suffix + deprecating the old names
+    - switched to `IntoPyObject` as trait bound
+
 - v0.22.1
   - Fix building on 32-bit Windows. ([#463](https://github.com/PyO3/rust-numpy/pull/463))
   - Add `PyReadwriteArray::make_nonwriteable`. ([#462](https://github.com/PyO3/rust-numpy/pull/462))

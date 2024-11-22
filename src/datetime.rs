@@ -11,25 +11,22 @@
 //!
 //! ```
 //! use numpy::{datetime::{units, Datetime, Timedelta}, PyArray1, PyArrayMethods};
-//! use pyo3::{Python, types::PyAnyMethods};
+//! use pyo3::{Python, types::PyAnyMethods, ffi::c_str};
 //! # use pyo3::types::PyDict;
 //!
+//! # fn main() -> pyo3::PyResult<()> {
 //! Python::with_gil(|py| {
 //! #    let locals = py
-//! #        .eval_bound("{ 'np': __import__('numpy') }", None, None)
-//! #        .unwrap()
-//! #        .downcast_into::<PyDict>()
-//! #        .unwrap();
+//! #        .eval(c_str!("{ 'np': __import__('numpy') }"), None, None)?
+//! #        .downcast_into::<PyDict>()?;
 //! #
 //!     let array = py
-//!         .eval_bound(
-//!             "np.array([np.datetime64('2017-04-21')])",
+//!         .eval(
+//!             c_str!("np.array([np.datetime64('2017-04-21')])"),
 //!             None,
 //!             Some(&locals),
-//!         )
-//!         .unwrap()
-//!         .downcast_into::<PyArray1<Datetime<units::Days>>>()
-//!         .unwrap();
+//!         )?
+//!         .downcast_into::<PyArray1<Datetime<units::Days>>>()?;
 //!
 //!     assert_eq!(
 //!         array.get_owned(0).unwrap(),
@@ -37,20 +34,20 @@
 //!     );
 //!
 //!     let array = py
-//!         .eval_bound(
-//!             "np.array([np.datetime64('2022-03-29')]) - np.array([np.datetime64('2017-04-21')])",
+//!         .eval(
+//!             c_str!("np.array([np.datetime64('2022-03-29')]) - np.array([np.datetime64('2017-04-21')])"),
 //!             None,
 //!             Some(&locals),
-//!         )
-//!         .unwrap()
-//!         .downcast_into::<PyArray1<Timedelta<units::Days>>>()
-//!         .unwrap();
+//!         )?
+//!         .downcast_into::<PyArray1<Timedelta<units::Days>>>()?;
 //!
 //!     assert_eq!(
 //!         array.get_owned(0).unwrap(),
 //!         Timedelta::<units::Days>::from(1_803)
 //!     );
-//! });
+//! #   Ok(())
+//! })
+//! # }
 //! ```
 //!
 //! [datetime]: https://numpy.org/doc/stable/reference/arrays.datetime.html
@@ -158,7 +155,7 @@ impl<U: Unit> From<Datetime<U>> for i64 {
 unsafe impl<U: Unit> Element for Datetime<U> {
     const IS_COPY: bool = true;
 
-    fn get_dtype_bound(py: Python<'_>) -> Bound<'_, PyArrayDescr> {
+    fn get_dtype(py: Python<'_>) -> Bound<'_, PyArrayDescr> {
         static DTYPES: TypeDescriptors = unsafe { TypeDescriptors::new(NPY_TYPES::NPY_DATETIME) };
 
         DTYPES.from_unit(py, U::UNIT)
@@ -195,7 +192,7 @@ impl<U: Unit> From<Timedelta<U>> for i64 {
 unsafe impl<U: Unit> Element for Timedelta<U> {
     const IS_COPY: bool = true;
 
-    fn get_dtype_bound(py: Python<'_>) -> Bound<'_, PyArrayDescr> {
+    fn get_dtype(py: Python<'_>) -> Bound<'_, PyArrayDescr> {
         static DTYPES: TypeDescriptors = unsafe { TypeDescriptors::new(NPY_TYPES::NPY_TIMEDELTA) };
 
         DTYPES.from_unit(py, U::UNIT)
@@ -256,6 +253,7 @@ mod tests {
     use super::*;
 
     use pyo3::{
+        ffi::c_str,
         py_run,
         types::{PyAnyMethods, PyDict, PyModule},
     };
@@ -266,14 +264,14 @@ mod tests {
     fn from_python_to_rust() {
         Python::with_gil(|py| {
             let locals = py
-                .eval_bound("{ 'np': __import__('numpy') }", None, None)
+                .eval(c_str!("{ 'np': __import__('numpy') }"), None, None)
                 .unwrap()
                 .downcast_into::<PyDict>()
                 .unwrap();
 
             let array = py
-                .eval_bound(
-                    "np.array([np.datetime64('1970-01-01')])",
+                .eval(
+                    c_str!("np.array([np.datetime64('1970-01-01')])"),
                     None,
                     Some(&locals),
                 )
@@ -289,12 +287,12 @@ mod tests {
     #[test]
     fn from_rust_to_python() {
         Python::with_gil(|py| {
-            let array = PyArray1::<Timedelta<units::Minutes>>::zeros_bound(py, 1, false);
+            let array = PyArray1::<Timedelta<units::Minutes>>::zeros(py, 1, false);
 
             *array.readwrite().get_mut(0).unwrap() = Timedelta::<units::Minutes>::from(5);
 
             let np = py
-                .eval_bound("__import__('numpy')", None, None)
+                .eval(c_str!("__import__('numpy')"), None, None)
                 .unwrap()
                 .downcast_into::<PyModule>()
                 .unwrap();
@@ -321,7 +319,7 @@ mod tests {
     fn unit_conversion() {
         #[track_caller]
         fn convert<'py, S: Unit, D: Unit>(py: Python<'py>, expected_value: i64) {
-            let array = PyArray1::<Timedelta<S>>::from_slice_bound(py, &[Timedelta::<S>::from(1)]);
+            let array = PyArray1::<Timedelta<S>>::from_slice(py, &[Timedelta::<S>::from(1)]);
             let array = array.cast::<Timedelta<D>>(false).unwrap();
 
             let value: i64 = array.get_owned(0).unwrap().into();

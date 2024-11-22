@@ -23,10 +23,10 @@ pub(crate) fn numpy_core_name(py: Python<'_>) -> PyResult<&'static str> {
 
             // strategy mirrored from https://github.com/pybind/pybind11/blob/af67e87393b0f867ccffc2702885eea12de063fc/include/pybind11/numpy.h#L175-L195
 
-            let numpy = PyModule::import_bound(py, "numpy")?;
+            let numpy = PyModule::import(py, "numpy")?;
             let version_string = numpy.getattr("__version__")?;
 
-            let numpy_lib = PyModule::import_bound(py, "numpy.lib")?;
+            let numpy_lib = PyModule::import(py, "numpy.lib")?;
             let numpy_version = numpy_lib
                 .getattr("NumpyVersion")?
                 .call1((version_string,))?;
@@ -65,7 +65,7 @@ const CAPSULE_NAME: &str = "_ARRAY_API";
 /// use numpy::prelude::*;
 /// use numpy::{PyArray, npyffi::types::NPY_SORTKIND, PY_ARRAY_API};
 /// pyo3::Python::with_gil(|py| {
-///     let array = PyArray::from_slice_bound(py, &[3, 2, 4]);
+///     let array = PyArray::from_slice(py, &[3, 2, 4]);
 ///     unsafe {
 ///         PY_ARRAY_API.PyArray_Sort(py, array.as_array_ptr(), 0, NPY_SORTKIND::NPY_QUICKSORT);
 ///     }

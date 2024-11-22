@@ -3,11 +3,8 @@
 //! [ndarray]: https://numpy.org/doc/stable/reference/arrays.ndarray.html
 use std::slice;
 
-#[cfg(feature = "gil-refs")]
-use pyo3::PyNativeType;
 use pyo3::{
-    ffi, pyobject_native_type_extract, pyobject_native_type_named, types::PyAnyMethods,
-    AsPyPointer, Bound, IntoPy, PyAny, PyObject, PyTypeInfo, Python,
+    ffi, pyobject_native_type_named, types::PyAnyMethods, Bound, PyAny, PyTypeInfo, Python,
 };
 
 use crate::array::{PyArray, PyArrayMethods};
@@ -30,7 +27,7 @@ use crate::npyffi;
 /// ```
 /// # use pyo3::prelude::*;
 /// use pyo3::exceptions::PyTypeError;
-/// use numpy::{Element, PyUntypedArray, PyArray1, dtype_bound};
+/// use numpy::{Element, PyUntypedArray, PyArray1, dtype};
 /// use numpy::{PyUntypedArrayMethods, PyArrayMethods, PyArrayDescrMethods};
 ///
 /// #[pyfunction]
@@ -43,11 +40,11 @@ use crate::npyffi;
 ///
 ///     let element_type = array.dtype();
 ///
-///     if element_type.is_equiv_to(&dtype_bound::<f32>(py)) {
+///     if element_type.is_equiv_to(&dtype::<f32>(py)) {
 ///         let array = array.downcast::<PyArray1<f32>>()?;
 ///
 ///         implementation(array)
-///     } else if element_type.is_equiv_to(&dtype_bound::<f64>(py)) {
+///     } else if element_type.is_equiv_to(&dtype::<f64>(py)) {
 ///         let array = array.downcast::<PyArray1<f64>>()?;
 ///
 ///         implementation(array)
@@ -57,7 +54,7 @@ use crate::npyffi;
 /// }
 /// #
 /// # Python::with_gil(|py| {
-/// #   let array = PyArray1::<f64>::zeros_bound(py, 42, false);
+/// #   let array = PyArray1::<f64>::zeros(py, 42, false);
 /// #   entry_point(py, array.as_untyped())
 /// # }).unwrap();
 /// ```
@@ -72,193 +69,12 @@ unsafe impl PyTypeInfo for PyUntypedArray {
         unsafe { npyffi::PY_ARRAY_API.get_type_object(py, npyffi::NpyTypes::PyArray_Type) }
     }
 
-    fn is_type_of_bound(ob: &Bound<'_, PyAny>) -> bool {
+    fn is_type_of(ob: &Bound<'_, PyAny>) -> bool {
         unsafe { npyffi::PyArray_Check(ob.py(), ob.as_ptr()) != 0 }
     }
 }
 
 pyobject_native_type_named!(PyUntypedArray);
-
-impl IntoPy<PyObject> for PyUntypedArray {
-    fn into_py<'py>(self, py: Python<'py>) -> PyObject {
-        unsafe { PyObject::from_borrowed_ptr(py, self.as_ptr()) }
-    }
-}
-
-pyobject_native_type_extract!(PyUntypedArray);
-
-#[cfg(feature = "gil-refs")]
-impl PyUntypedArray {
-    /// Returns a raw pointer to the underlying [`PyArrayObject`][npyffi::PyArrayObject].
-    #[inline]
-    pub fn as_array_ptr(&self) -> *mut npyffi::PyArrayObject {
-        self.as_borrowed().as_array_ptr()
-    }
-
-    /// Returns the `dtype` of the array.
-    ///
-    /// See also [`ndarray.dtype`][ndarray-dtype] and [`PyArray_DTYPE`][PyArray_DTYPE].
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use numpy::prelude::*;
-    /// use numpy::{dtype_bound, PyArray};
-    /// use pyo3::Python;
-    ///
-    /// Python::with_gil(|py| {
-    ///    let array = PyArray::from_vec_bound(py, vec![1_i32, 2, 3]);
-    ///
-    ///    assert!(array.dtype().is_equiv_to(&dtype_bound::<i32>(py)));
-    /// });
-    /// ```
-    ///
-    /// [ndarray-dtype]: https://numpy.org/doc/stable/reference/generated/numpy.ndarray.dtype.html
-    /// [PyArray_DTYPE]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_DTYPE
-    #[inline]
-    pub fn dtype(&self) -> &PyArrayDescr {
-        self.as_borrowed().dtype().into_gil_ref()
-    }
-
-    /// Returns `true` if the internal data of the array is contiguous,
-    /// indepedently of whether C-style/row-major or Fortran-style/column-major.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use numpy::{PyArray1, PyUntypedArrayMethods};
-    /// use pyo3::{types::{IntoPyDict, PyAnyMethods}, Python};
-    ///
-    /// Python::with_gil(|py| {
-    ///     let array = PyArray1::arange_bound(py, 0, 10, 1);
-    ///     assert!(array.is_contiguous());
-    ///
-    ///     let view = py
-    ///         .eval_bound("array[::2]", None, Some(&[("array", array)].into_py_dict_bound(py)))
-    ///         .unwrap()
-    ///         .downcast_into::<PyArray1<i32>>()
-    ///         .unwrap();
-    ///     assert!(!view.is_contiguous());
-    /// });
-    /// ```
-    #[inline]
-    pub fn is_contiguous(&self) -> bool {
-        self.as_borrowed().is_contiguous()
-    }
-
-    /// Returns `true` if the internal data of the array is Fortran-style/column-major contiguous.
-    #[inline]
-    pub fn is_fortran_contiguous(&self) -> bool {
-        self.as_borrowed().is_fortran_contiguous()
-    }
-
-    /// Returns `true` if the internal data of the array is C-style/row-major contiguous.
-    #[inline]
-    pub fn is_c_contiguous(&self) -> bool {
-        self.as_borrowed().is_c_contiguous()
-    }
-
-    /// Returns the number of dimensions of the array.
-    ///
-    /// See also [`ndarray.ndim`][ndarray-ndim] and [`PyArray_NDIM`][PyArray_NDIM].
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use numpy::{PyArray3, PyUntypedArrayMethods};
-    /// use pyo3::Python;
-    ///
-    /// Python::with_gil(|py| {
-    ///     let arr = PyArray3::<f64>::zeros_bound(py, [4, 5, 6], false);
-    ///
-    ///     assert_eq!(arr.ndim(), 3);
-    /// });
-    /// ```
-    ///
-    /// [ndarray-ndim]: https://numpy.org/doc/stable/reference/generated/numpy.ndarray.ndim.html
-    /// [PyArray_NDIM]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_NDIM
-    #[inline]
-    pub fn ndim(&self) -> usize {
-        self.as_borrowed().ndim()
-    }
-
-    /// Returns a slice indicating how many bytes to advance when iterating along each axis.
-    ///
-    /// See also [`ndarray.strides`][ndarray-strides] and [`PyArray_STRIDES`][PyArray_STRIDES].
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use numpy::{PyArray3, PyUntypedArrayMethods};
-    /// use pyo3::Python;
-    ///
-    /// Python::with_gil(|py| {
-    ///     let arr = PyArray3::<f64>::zeros_bound(py, [4, 5, 6], false);
-    ///
-    ///     assert_eq!(arr.strides(), &[240, 48, 8]);
-    /// });
-    /// ```
-    /// [ndarray-strides]: https://numpy.org/doc/stable/reference/generated/numpy.ndarray.strides.html
-    /// [PyArray_STRIDES]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_STRIDES
-    #[inline]
-    pub fn strides(&self) -> &[isize] {
-        let n = self.ndim();
-        if n == 0 {
-            cold();
-            return &[];
-        }
-        let ptr = self.as_array_ptr();
-        unsafe {
-            let p = (*ptr).strides;
-            slice::from_raw_parts(p, n)
-        }
-    }
-
-    /// Returns a slice which contains dimmensions of the array.
-    ///
-    /// See also [`ndarray.shape`][ndaray-shape] and [`PyArray_DIMS`][PyArray_DIMS].
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use numpy::{PyArray3, PyUntypedArrayMethods};
-    /// use pyo3::Python;
-    ///
-    /// Python::with_gil(|py| {
-    ///     let arr = PyArray3::<f64>::zeros_bound(py, [4, 5, 6], false);
-    ///
-    ///     assert_eq!(arr.shape(), &[4, 5, 6]);
-    /// });
-    /// ```
-    ///
-    /// [ndarray-shape]: https://numpy.org/doc/stable/reference/generated/numpy.ndarray.shape.html
-    /// [PyArray_DIMS]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_DIMS
-    #[inline]
-    pub fn shape(&self) -> &[usize] {
-        let n = self.ndim();
-        if n == 0 {
-            cold();
-            return &[];
-        }
-        let ptr = self.as_array_ptr();
-        unsafe {
-            let p = (*ptr).dimensions as *mut usize;
-            slice::from_raw_parts(p, n)
-        }
-    }
-
-    /// Calculates the total number of elements in the array.
-    #[inline]
-    pub fn len(&self) -> usize {
-        self.as_borrowed().len()
-    }
-
-    /// Returns `true` if the there are no elements in the array.
-    #[inline]
-    pub fn is_empty(&self) -> bool {
-        self.as_borrowed().is_empty()
-    }
-}
 
 /// Implementation of functionality for [`PyUntypedArray`].
 #[doc(alias = "PyUntypedArray")]
@@ -274,13 +90,13 @@ pub trait PyUntypedArrayMethods<'py>: Sealed {
     ///
     /// ```
     /// use numpy::prelude::*;
-    /// use numpy::{dtype_bound, PyArray};
+    /// use numpy::{dtype, PyArray};
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///    let array = PyArray::from_vec_bound(py, vec![1_i32, 2, 3]);
+    ///    let array = PyArray::from_vec(py, vec![1_i32, 2, 3]);
     ///
-    ///    assert!(array.dtype().is_equiv_to(&dtype_bound::<i32>(py)));
+    ///    assert!(array.dtype().is_equiv_to(&dtype::<i32>(py)));
     /// });
     /// ```
     ///
@@ -295,19 +111,20 @@ pub trait PyUntypedArrayMethods<'py>: Sealed {
     ///
     /// ```
     /// use numpy::{PyArray1, PyUntypedArrayMethods};
-    /// use pyo3::{types::{IntoPyDict, PyAnyMethods}, Python};
+    /// use pyo3::{types::{IntoPyDict, PyAnyMethods}, Python, ffi::c_str};
     ///
+    /// # fn main() -> pyo3::PyResult<()> {
     /// Python::with_gil(|py| {
-    ///     let array = PyArray1::arange_bound(py, 0, 10, 1);
+    ///     let array = PyArray1::arange(py, 0, 10, 1);
     ///     assert!(array.is_contiguous());
     ///
     ///     let view = py
-    ///         .eval_bound("array[::2]", None, Some(&[("array", array)].into_py_dict_bound(py)))
-    ///         .unwrap()
-    ///         .downcast_into::<PyArray1<i32>>()
-    ///         .unwrap();
+    ///         .eval(c_str!("array[::2]"), None, Some(&[("array", array)].into_py_dict(py)?))?
+    ///         .downcast_into::<PyArray1<i32>>()?;
     ///     assert!(!view.is_contiguous());
-    /// });
+    /// #   Ok(())
+    /// })
+    /// # }
     /// ```
     fn is_contiguous(&self) -> bool {
         unsafe {
@@ -339,7 +156,7 @@ pub trait PyUntypedArrayMethods<'py>: Sealed {
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let arr = PyArray3::<f64>::zeros_bound(py, [4, 5, 6], false);
+    ///     let arr = PyArray3::<f64>::zeros(py, [4, 5, 6], false);
     ///
     ///     assert_eq!(arr.ndim(), 3);
     /// });
@@ -363,7 +180,7 @@ pub trait PyUntypedArrayMethods<'py>: Sealed {
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let arr = PyArray3::<f64>::zeros_bound(py, [4, 5, 6], false);
+    ///     let arr = PyArray3::<f64>::zeros(py, [4, 5, 6], false);
     ///
     ///     assert_eq!(arr.strides(), &[240, 48, 8]);
     /// });
@@ -395,7 +212,7 @@ pub trait PyUntypedArrayMethods<'py>: Sealed {
     /// use pyo3::Python;
     ///
     /// Python::with_gil(|py| {
-    ///     let arr = PyArray3::<f64>::zeros_bound(py, [4, 5, 6], false);
+    ///     let arr = PyArray3::<f64>::zeros(py, [4, 5, 6], false);
     ///
     ///     assert_eq!(arr.shape(), &[4, 5, 6]);
     /// });

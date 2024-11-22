@@ -4,7 +4,8 @@ use std::error::Error;
 use std::fmt;
 
 use pyo3::{
-    exceptions::PyTypeError, Bound, Py, PyErr, PyErrArguments, PyObject, Python, ToPyObject,
+    conversion::IntoPyObject, exceptions::PyTypeError, Bound, Py, PyErr, PyErrArguments, PyObject,
+    Python,
 };
 
 use crate::dtype::PyArrayDescr;
@@ -22,7 +23,11 @@ macro_rules! impl_pyerr {
 
         impl PyErrArguments for $err_type {
             fn arguments<'py>(self, py: Python<'py>) -> PyObject {
-                self.to_string().to_object(py)
+                self.to_string()
+                    .into_pyobject(py)
+                    .unwrap()
+                    .into_any()
+                    .unbind()
             }
         }
 
@@ -92,7 +97,11 @@ impl PyErrArguments for TypeErrorArguments {
             to: self.to.into_bound(py),
         };
 
-        err.to_string().to_object(py)
+        err.to_string()
+            .into_pyobject(py)
+            .unwrap()
+            .into_any()
+            .unbind()
     }
 }
 
