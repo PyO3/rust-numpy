@@ -345,19 +345,6 @@
 <a href="#345" id="345">345</a>
 <a href="#346" id="346">346</a>
 <a href="#347" id="347">347</a>
-<a href="#348" id="348">348</a>
-<a href="#349" id="349">349</a>
-<a href="#350" id="350">350</a>
-<a href="#351" id="351">351</a>
-<a href="#352" id="352">352</a>
-<a href="#353" id="353">353</a>
-<a href="#354" id="354">354</a>
-<a href="#355" id="355">355</a>
-<a href="#356" id="356">356</a>
-<a href="#357" id="357">357</a>
-<a href="#358" id="358">358</a>
-<a href="#359" id="359">359</a>
-<a href="#360" id="360">360</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Defines conversion traits between Rust types and NumPy data types.
 
 </span><span class="kw">use </span>std::{mem, os::raw::c_int, ptr};
@@ -384,7 +371,7 @@
 /// use pyo3::Python;
 ///
 /// Python::with_gil(|py| {
-///     let py_array = vec![1, 2, 3].into_pyarray_bound(py);
+///     let py_array = vec![1, 2, 3].into_pyarray(py);
 ///
 ///     assert_eq!(py_array.readonly().as_slice().unwrap(), &amp;[1, 2, 3]);
 ///
@@ -400,29 +387,25 @@
     <span class="doccomment">/// The dimension type of the resulting array.
     </span><span class="kw">type </span>Dim: Dimension;
 
-    <span class="doccomment">/// Deprecated form of [`IntoPyArray::into_pyarray_bound`]
-    </span><span class="attr">#[deprecated(
-        since = <span class="string">"0.21.0"</span>,
-        note = <span class="string">"will be replaced by `IntoPyArray::into_pyarray_bound` in the future"
-    </span>)]
-    #[cfg(feature = <span class="string">"gil-refs"</span>)]
-    </span><span class="kw">fn </span>into_pyarray&lt;<span class="lifetime">'py</span>&gt;(<span class="self">self</span>, py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span>PyArray&lt;<span class="self">Self</span>::Item, <span class="self">Self</span>::Dim&gt; {
-        <span class="self">Self</span>::into_pyarray_bound(<span class="self">self</span>, py).into_gil_ref()
-    }
-
     <span class="doccomment">/// Consumes `self` and moves its data into a NumPy array.
-    </span><span class="kw">fn </span>into_pyarray_bound&lt;<span class="lifetime">'py</span>&gt;(<span class="self">self</span>, py: Python&lt;<span class="lifetime">'py</span>&gt;)
-        -&gt; Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;<span class="self">Self</span>::Item, <span class="self">Self</span>::Dim&gt;&gt;;
+    </span><span class="kw">fn </span>into_pyarray&lt;<span class="lifetime">'py</span>&gt;(<span class="self">self</span>, py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;<span class="self">Self</span>::Item, <span class="self">Self</span>::Dim&gt;&gt;;
+
+    <span class="doccomment">/// Deprecated name for [`IntoPyArray::into_pyarray`].
+    </span><span class="attr">#[deprecated(since = <span class="string">"0.23.0"</span>, note = <span class="string">"renamed to `IntoPyArray::into_pyarray`"</span>)]
+    #[inline]
+    </span><span class="kw">fn </span>into_pyarray_bound&lt;<span class="lifetime">'py</span>&gt;(
+        <span class="self">self</span>,
+        py: Python&lt;<span class="lifetime">'py</span>&gt;,
+    ) -&gt; Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;<span class="self">Self</span>::Item, <span class="self">Self</span>::Dim&gt;&gt; {
+        <span class="self">self</span>.into_pyarray(py)
+    }
 }
 
 <span class="kw">impl</span>&lt;T: Element&gt; IntoPyArray <span class="kw">for </span>Box&lt;[T]&gt; {
     <span class="kw">type </span>Item = T;
     <span class="kw">type </span>Dim = Ix1;
 
-    <span class="kw">fn </span>into_pyarray_bound&lt;<span class="lifetime">'py</span>&gt;(
-        <span class="self">self</span>,
-        py: Python&lt;<span class="lifetime">'py</span>&gt;,
-    ) -&gt; Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;<span class="self">Self</span>::Item, <span class="self">Self</span>::Dim&gt;&gt; {
+    <span class="kw">fn </span>into_pyarray&lt;<span class="lifetime">'py</span>&gt;(<span class="self">self</span>, py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;<span class="self">Self</span>::Item, <span class="self">Self</span>::Dim&gt;&gt; {
         <span class="kw">let </span>container = PySliceContainer::from(<span class="self">self</span>);
         <span class="kw">let </span>dims = Dim([container.len]);
         <span class="kw">let </span>strides = [mem::size_of::&lt;T&gt;() <span class="kw">as </span>npy_intp];
@@ -438,10 +421,7 @@
     <span class="kw">type </span>Item = T;
     <span class="kw">type </span>Dim = Ix1;
 
-    <span class="kw">fn </span>into_pyarray_bound&lt;<span class="lifetime">'py</span>&gt;(
-        <span class="kw-2">mut </span><span class="self">self</span>,
-        py: Python&lt;<span class="lifetime">'py</span>&gt;,
-    ) -&gt; Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;<span class="self">Self</span>::Item, <span class="self">Self</span>::Dim&gt;&gt; {
+    <span class="kw">fn </span>into_pyarray&lt;<span class="lifetime">'py</span>&gt;(<span class="kw-2">mut </span><span class="self">self</span>, py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;<span class="self">Self</span>::Item, <span class="self">Self</span>::Dim&gt;&gt; {
         <span class="kw">let </span>dims = Dim([<span class="self">self</span>.len()]);
         <span class="kw">let </span>strides = [mem::size_of::&lt;T&gt;() <span class="kw">as </span>npy_intp];
         <span class="kw">let </span>data_ptr = <span class="self">self</span>.as_mut_ptr();
@@ -465,11 +445,8 @@
     <span class="kw">type </span>Item = A;
     <span class="kw">type </span>Dim = D;
 
-    <span class="kw">fn </span>into_pyarray_bound&lt;<span class="lifetime">'py</span>&gt;(
-        <span class="self">self</span>,
-        py: Python&lt;<span class="lifetime">'py</span>&gt;,
-    ) -&gt; Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;<span class="self">Self</span>::Item, <span class="self">Self</span>::Dim&gt;&gt; {
-        PyArray::from_owned_array_bound(py, <span class="self">self</span>)
+    <span class="kw">fn </span>into_pyarray&lt;<span class="lifetime">'py</span>&gt;(<span class="self">self</span>, py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;<span class="self">Self</span>::Item, <span class="self">Self</span>::Dim&gt;&gt; {
+        PyArray::from_owned_array(py, <span class="self">self</span>)
     }
 }
 
@@ -484,7 +461,7 @@
 /// use pyo3::Python;
 ///
 /// Python::with_gil(|py| {
-///     let py_array = vec![1, 2, 3].to_pyarray_bound(py);
+///     let py_array = vec![1, 2, 3].to_pyarray(py);
 ///
 ///     assert_eq!(py_array.readonly().as_slice().unwrap(), &amp;[1, 2, 3]);
 /// });
@@ -500,7 +477,7 @@
 ///
 /// Python::with_gil(|py| {
 ///     let array = arr3(&amp;[[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]]);
-///     let py_array = array.slice(s![.., 0..1, ..]).to_pyarray_bound(py);
+///     let py_array = array.slice(s![.., 0..1, ..]).to_pyarray(py);
 ///
 ///     assert_eq!(py_array.readonly().as_array(), arr3(&amp;[[[1, 2, 3]], [[7, 8, 9]]]));
 ///     assert!(py_array.is_c_contiguous());
@@ -512,26 +489,23 @@
     <span class="doccomment">/// The dimension type of the resulting array.
     </span><span class="kw">type </span>Dim: Dimension;
 
-    <span class="doccomment">/// Deprecated form of [`ToPyArray::to_pyarray_bound`]
-    </span><span class="attr">#[deprecated(
-        since = <span class="string">"0.21.0"</span>,
-        note = <span class="string">"will be replaced by `ToPyArray::to_pyarray_bound` in the future"
-    </span>)]
-    #[cfg(feature = <span class="string">"gil-refs"</span>)]
-    </span><span class="kw">fn </span>to_pyarray&lt;<span class="lifetime">'py</span>&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'py </span>PyArray&lt;<span class="self">Self</span>::Item, <span class="self">Self</span>::Dim&gt; {
-        <span class="self">Self</span>::to_pyarray_bound(<span class="self">self</span>, py).into_gil_ref()
-    }
-
     <span class="doccomment">/// Copies the content pointed to by `&amp;self` into a newly allocated NumPy array.
-    </span><span class="kw">fn </span>to_pyarray_bound&lt;<span class="lifetime">'py</span>&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;<span class="self">Self</span>::Item, <span class="self">Self</span>::Dim&gt;&gt;;
+    </span><span class="kw">fn </span>to_pyarray&lt;<span class="lifetime">'py</span>&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;<span class="self">Self</span>::Item, <span class="self">Self</span>::Dim&gt;&gt;;
+
+    <span class="doccomment">/// Deprecated name for [ToPyArray::to_pyarray`].
+    </span><span class="attr">#[deprecated(since = <span class="string">"0.23.0"</span>, note = <span class="string">"renamed to ToPyArray::to_pyarray`"</span>)]
+    #[inline]
+    </span><span class="kw">fn </span>to_pyarray_bound&lt;<span class="lifetime">'py</span>&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;<span class="self">Self</span>::Item, <span class="self">Self</span>::Dim&gt;&gt; {
+        <span class="self">self</span>.to_pyarray(py)
+    }
 }
 
 <span class="kw">impl</span>&lt;T: Element&gt; ToPyArray <span class="kw">for </span>[T] {
     <span class="kw">type </span>Item = T;
     <span class="kw">type </span>Dim = Ix1;
 
-    <span class="kw">fn </span>to_pyarray_bound&lt;<span class="lifetime">'py</span>&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;<span class="self">Self</span>::Item, <span class="self">Self</span>::Dim&gt;&gt; {
-        PyArray::from_slice_bound(py, <span class="self">self</span>)
+    <span class="kw">fn </span>to_pyarray&lt;<span class="lifetime">'py</span>&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;<span class="self">Self</span>::Item, <span class="self">Self</span>::Dim&gt;&gt; {
+        PyArray::from_slice(py, <span class="self">self</span>)
     }
 }
 
@@ -544,7 +518,7 @@
     <span class="kw">type </span>Item = A;
     <span class="kw">type </span>Dim = D;
 
-    <span class="kw">fn </span>to_pyarray_bound&lt;<span class="lifetime">'py</span>&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;<span class="self">Self</span>::Item, <span class="self">Self</span>::Dim&gt;&gt; {
+    <span class="kw">fn </span>to_pyarray&lt;<span class="lifetime">'py</span>&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;<span class="self">Self</span>::Item, <span class="self">Self</span>::Dim&gt;&gt; {
         <span class="kw">let </span>len = <span class="self">self</span>.len();
         <span class="kw">match </span><span class="self">self</span>.order() {
             <span class="prelude-val">Some</span>(flag) <span class="kw">if </span>A::IS_COPY =&gt; {
@@ -560,7 +534,7 @@
                 <span class="comment">// if the array is not contiguous, copy all elements by `ArrayBase::iter`.
                 </span><span class="kw">let </span>dim = <span class="self">self</span>.raw_dim();
                 <span class="kw">unsafe </span>{
-                    <span class="kw">let </span>array = PyArray::&lt;A, <span class="kw">_</span>&gt;::new_bound(py, dim, <span class="bool-val">false</span>);
+                    <span class="kw">let </span>array = PyArray::&lt;A, <span class="kw">_</span>&gt;::new(py, dim, <span class="bool-val">false</span>);
                     <span class="kw">let </span><span class="kw-2">mut </span>data_ptr = array.data();
                     <span class="kw">for </span>item <span class="kw">in </span><span class="self">self</span>.iter() {
                         data_ptr.write(item.clone_ref(py));
@@ -588,9 +562,9 @@
     /// matching the [memory layout][memory-layout] used by [`nalgebra`].
     ///
     /// [memory-layout]: https://nalgebra.org/docs/faq/#what-is-the-memory-layout-of-matrices
-    </span><span class="kw">fn </span>to_pyarray_bound&lt;<span class="lifetime">'py</span>&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;<span class="self">Self</span>::Item, <span class="self">Self</span>::Dim&gt;&gt; {
+    </span><span class="kw">fn </span>to_pyarray&lt;<span class="lifetime">'py</span>&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;<span class="self">Self</span>::Item, <span class="self">Self</span>::Dim&gt;&gt; {
         <span class="kw">unsafe </span>{
-            <span class="kw">let </span>array = PyArray::&lt;N, <span class="kw">_</span>&gt;::new_bound(py, (<span class="self">self</span>.nrows(), <span class="self">self</span>.ncols()), <span class="bool-val">true</span>);
+            <span class="kw">let </span>array = PyArray::&lt;N, <span class="kw">_</span>&gt;::new(py, (<span class="self">self</span>.nrows(), <span class="self">self</span>.ncols()), <span class="bool-val">true</span>);
             <span class="kw">let </span><span class="kw-2">mut </span>data_ptr = array.data();
             <span class="kw">if </span><span class="self">self</span>.data.is_contiguous() {
                 ptr::copy_nonoverlapping(<span class="self">self</span>.data.ptr(), data_ptr, <span class="self">self</span>.len());

@@ -254,39 +254,12 @@
 <a href="#254" id="254">254</a>
 <a href="#255" id="255">255</a>
 <a href="#256" id="256">256</a>
-<a href="#257" id="257">257</a>
-<a href="#258" id="258">258</a>
-<a href="#259" id="259">259</a>
-<a href="#260" id="260">260</a>
-<a href="#261" id="261">261</a>
-<a href="#262" id="262">262</a>
-<a href="#263" id="263">263</a>
-<a href="#264" id="264">264</a>
-<a href="#265" id="265">265</a>
-<a href="#266" id="266">266</a>
-<a href="#267" id="267">267</a>
-<a href="#268" id="268">268</a>
-<a href="#269" id="269">269</a>
-<a href="#270" id="270">270</a>
-<a href="#271" id="271">271</a>
-<a href="#272" id="272">272</a>
-<a href="#273" id="273">273</a>
-<a href="#274" id="274">274</a>
-<a href="#275" id="275">275</a>
-<a href="#276" id="276">276</a>
-<a href="#277" id="277">277</a>
-<a href="#278" id="278">278</a>
-<a href="#279" id="279">279</a>
-<a href="#280" id="280">280</a>
-<a href="#281" id="281">281</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::borrow::Cow;
 <span class="kw">use </span>std::ffi::{CStr, CString};
 <span class="kw">use </span>std::ptr::null_mut;
 
 <span class="kw">use </span>ndarray::{Dimension, IxDyn};
 <span class="kw">use </span>pyo3::types::PyAnyMethods;
-<span class="attr">#[cfg(feature = <span class="string">"gil-refs"</span>)]
-</span><span class="kw">use </span>pyo3::PyNativeType;
 <span class="kw">use </span>pyo3::{Borrowed, Bound, FromPyObject, PyResult};
 
 <span class="kw">use </span><span class="kw">crate</span>::array::PyArray;
@@ -296,14 +269,6 @@
 <span class="doccomment">/// Return value of a function that can yield either an array or a scalar.
 </span><span class="kw">pub trait </span>ArrayOrScalar&lt;<span class="lifetime">'py</span>, T&gt;: FromPyObject&lt;<span class="lifetime">'py</span>&gt; {}
 
-<span class="attr">#[cfg(feature = <span class="string">"gil-refs"</span>)]
-</span><span class="kw">impl</span>&lt;<span class="lifetime">'py</span>, T, D&gt; ArrayOrScalar&lt;<span class="lifetime">'py</span>, T&gt; <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">'py </span>PyArray&lt;T, D&gt;
-<span class="kw">where
-    </span>T: Element,
-    D: Dimension,
-{
-}
-
 <span class="kw">impl</span>&lt;<span class="lifetime">'py</span>, T, D&gt; ArrayOrScalar&lt;<span class="lifetime">'py</span>, T&gt; <span class="kw">for </span>Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;T, D&gt;&gt;
 <span class="kw">where
     </span>T: Element,
@@ -312,25 +277,6 @@
 }
 
 <span class="kw">impl</span>&lt;<span class="lifetime">'py</span>, T&gt; ArrayOrScalar&lt;<span class="lifetime">'py</span>, T&gt; <span class="kw">for </span>T <span class="kw">where </span>T: Element + FromPyObject&lt;<span class="lifetime">'py</span>&gt; {}
-
-<span class="doccomment">/// Deprecated form of [`inner_bound`]
-</span><span class="attr">#[deprecated(
-    since = <span class="string">"0.21.0"</span>,
-    note = <span class="string">"will be replaced by `inner_bound` in the future"
-</span>)]
-#[cfg(feature = <span class="string">"gil-refs"</span>)]
-</span><span class="kw">pub fn </span>inner&lt;<span class="lifetime">'py</span>, T, DIN1, DIN2, OUT&gt;(
-    array1: <span class="kw-2">&amp;</span><span class="lifetime">'py </span>PyArray&lt;T, DIN1&gt;,
-    array2: <span class="kw-2">&amp;</span><span class="lifetime">'py </span>PyArray&lt;T, DIN2&gt;,
-) -&gt; PyResult&lt;OUT&gt;
-<span class="kw">where
-    </span>T: Element,
-    DIN1: Dimension,
-    DIN2: Dimension,
-    OUT: ArrayOrScalar&lt;<span class="lifetime">'py</span>, T&gt;,
-{
-    inner_bound(<span class="kw-2">&amp;</span>array1.as_borrowed(), <span class="kw-2">&amp;</span>array2.as_borrowed())
-}
 
 <span class="doccomment">/// Return the inner product of two arrays.
 ///
@@ -342,11 +288,11 @@
 ///
 /// ```
 /// use pyo3::Python;
-/// use numpy::{inner_bound, pyarray_bound, PyArray0};
+/// use numpy::{inner, pyarray, PyArray0};
 ///
 /// Python::with_gil(|py| {
-///     let vector = pyarray_bound![py, 1.0, 2.0, 3.0];
-///     let result: f64 = inner_bound(&amp;vector, &amp;vector).unwrap();
+///     let vector = pyarray![py, 1.0, 2.0, 3.0];
+///     let result: f64 = inner(&amp;vector, &amp;vector).unwrap();
 ///     assert_eq!(result, 14.0);
 /// });
 /// ```
@@ -356,17 +302,17 @@
 /// ```
 /// use pyo3::{Python, Bound};
 /// use numpy::prelude::*;
-/// use numpy::{inner_bound, pyarray_bound, PyArray0};
+/// use numpy::{inner, pyarray, PyArray0};
 ///
 /// Python::with_gil(|py| {
-///     let vector = pyarray_bound![py, 1, 2, 3];
-///     let result: Bound&lt;'_, PyArray0&lt;_&gt;&gt; = inner_bound(&amp;vector, &amp;vector).unwrap();
+///     let vector = pyarray![py, 1, 2, 3];
+///     let result: Bound&lt;'_, PyArray0&lt;_&gt;&gt; = inner(&amp;vector, &amp;vector).unwrap();
 ///     assert_eq!(result.item(), 14);
 /// });
 /// ```
 ///
 /// [inner]: https://numpy.org/doc/stable/reference/generated/numpy.inner.html
-</span><span class="kw">pub fn </span>inner_bound&lt;<span class="lifetime">'py</span>, T, DIN1, DIN2, OUT&gt;(
+</span><span class="kw">pub fn </span>inner&lt;<span class="lifetime">'py</span>, T, DIN1, DIN2, OUT&gt;(
     array1: <span class="kw-2">&amp;</span>Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;T, DIN1&gt;&gt;,
     array2: <span class="kw-2">&amp;</span>Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;T, DIN2&gt;&gt;,
 ) -&gt; PyResult&lt;OUT&gt;
@@ -384,15 +330,12 @@
     obj.extract()
 }
 
-<span class="doccomment">/// Deprecated form of [`dot_bound`]
-</span><span class="attr">#[cfg(feature = <span class="string">"gil-refs"</span>)]
-#[deprecated(
-    since = <span class="string">"0.21.0"</span>,
-    note = <span class="string">"will be replaced by `dot_bound` in the future"
-</span>)]
-</span><span class="kw">pub fn </span>dot&lt;<span class="lifetime">'py</span>, T, DIN1, DIN2, OUT&gt;(
-    array1: <span class="kw-2">&amp;</span><span class="lifetime">'py </span>PyArray&lt;T, DIN1&gt;,
-    array2: <span class="kw-2">&amp;</span><span class="lifetime">'py </span>PyArray&lt;T, DIN2&gt;,
+<span class="doccomment">/// Deprecated name for [`inner`].
+</span><span class="attr">#[deprecated(since = <span class="string">"0.23.0"</span>, note = <span class="string">"renamed to `inner`"</span>)]
+#[inline]
+</span><span class="kw">pub fn </span>inner_bound&lt;<span class="lifetime">'py</span>, T, DIN1, DIN2, OUT&gt;(
+    array1: <span class="kw-2">&amp;</span>Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;T, DIN1&gt;&gt;,
+    array2: <span class="kw-2">&amp;</span>Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;T, DIN2&gt;&gt;,
 ) -&gt; PyResult&lt;OUT&gt;
 <span class="kw">where
     </span>T: Element,
@@ -400,7 +343,7 @@
     DIN2: Dimension,
     OUT: ArrayOrScalar&lt;<span class="lifetime">'py</span>, T&gt;,
 {
-    dot_bound(<span class="kw-2">&amp;</span>array1.as_borrowed(), <span class="kw-2">&amp;</span>array2.as_borrowed())
+    inner(array1, array2)
 }
 
 <span class="doccomment">/// Return the dot product of two arrays.
@@ -414,13 +357,13 @@
 /// ```
 /// use pyo3::{Python, Bound};
 /// use ndarray::array;
-/// use numpy::{dot_bound, pyarray_bound, PyArray2, PyArrayMethods};
+/// use numpy::{dot, pyarray, PyArray2, PyArrayMethods};
 ///
 /// Python::with_gil(|py| {
-///     let matrix = pyarray_bound![py, [1, 0], [0, 1]];
-///     let another_matrix = pyarray_bound![py, [4, 1], [2, 2]];
+///     let matrix = pyarray![py, [1, 0], [0, 1]];
+///     let another_matrix = pyarray![py, [4, 1], [2, 2]];
 ///
-///     let result: Bound&lt;'_, PyArray2&lt;_&gt;&gt; = dot_bound(&amp;matrix, &amp;another_matrix).unwrap();
+///     let result: Bound&lt;'_, PyArray2&lt;_&gt;&gt; = dot(&amp;matrix, &amp;another_matrix).unwrap();
 ///
 ///     assert_eq!(
 ///         result.readonly().as_array(),
@@ -433,17 +376,17 @@
 ///
 /// ```
 /// use pyo3::Python;
-/// use numpy::{dot_bound, pyarray_bound, PyArray0};
+/// use numpy::{dot, pyarray, PyArray0};
 ///
 /// Python::with_gil(|py| {
-///     let vector = pyarray_bound![py, 1.0, 2.0, 3.0];
-///     let result: f64 = dot_bound(&amp;vector, &amp;vector).unwrap();
+///     let vector = pyarray![py, 1.0, 2.0, 3.0];
+///     let result: f64 = dot(&amp;vector, &amp;vector).unwrap();
 ///     assert_eq!(result, 14.0);
 /// });
 /// ```
 ///
 /// [dot]: https://numpy.org/doc/stable/reference/generated/numpy.dot.html
-</span><span class="kw">pub fn </span>dot_bound&lt;<span class="lifetime">'py</span>, T, DIN1, DIN2, OUT&gt;(
+</span><span class="kw">pub fn </span>dot&lt;<span class="lifetime">'py</span>, T, DIN1, DIN2, OUT&gt;(
     array1: <span class="kw-2">&amp;</span>Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;T, DIN1&gt;&gt;,
     array2: <span class="kw-2">&amp;</span>Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;T, DIN2&gt;&gt;,
 ) -&gt; PyResult&lt;OUT&gt;
@@ -461,28 +404,26 @@
     obj.extract()
 }
 
-<span class="doccomment">/// Deprecated form of [`einsum_bound`]
-</span><span class="attr">#[cfg(feature = <span class="string">"gil-refs"</span>)]
-#[deprecated(
-    since = <span class="string">"0.21.0"</span>,
-    note = <span class="string">"will be replaced by `einsum_bound` in the future"
-</span>)]
-</span><span class="kw">pub fn </span>einsum&lt;<span class="lifetime">'py</span>, T, OUT&gt;(subscripts: <span class="kw-2">&amp;</span>str, arrays: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="lifetime">'py </span>PyArray&lt;T, IxDyn&gt;]) -&gt; PyResult&lt;OUT&gt;
+<span class="doccomment">/// Deprecated name for [`dot`].
+</span><span class="attr">#[deprecated(since = <span class="string">"0.23.0"</span>, note = <span class="string">"renamed to `dot`"</span>)]
+#[inline]
+</span><span class="kw">pub fn </span>dot_bound&lt;<span class="lifetime">'py</span>, T, DIN1, DIN2, OUT&gt;(
+    array1: <span class="kw-2">&amp;</span>Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;T, DIN1&gt;&gt;,
+    array2: <span class="kw-2">&amp;</span>Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;T, DIN2&gt;&gt;,
+) -&gt; PyResult&lt;OUT&gt;
 <span class="kw">where
     </span>T: Element,
+    DIN1: Dimension,
+    DIN2: Dimension,
     OUT: ArrayOrScalar&lt;<span class="lifetime">'py</span>, T&gt;,
 {
-    <span class="comment">// Safety: &amp;PyArray&lt;T, IxDyn&gt; has the same size and layout in memory as
-    // Borrowed&lt;'_, '_, PyArray&lt;T, IxDyn&gt;&gt;
-    </span>einsum_bound(subscripts, <span class="kw">unsafe </span>{
-        std::slice::from_raw_parts(arrays.as_ptr().cast(), arrays.len())
-    })
+    dot(array1, array2)
 }
 
 <span class="doccomment">/// Return the Einstein summation convention of given tensors.
 ///
 /// This is usually invoked via the the [`einsum!`][crate::einsum!] macro.
-</span><span class="kw">pub fn </span>einsum_bound&lt;<span class="lifetime">'py</span>, T, OUT&gt;(
+</span><span class="kw">pub fn </span>einsum&lt;<span class="lifetime">'py</span>, T, OUT&gt;(
     subscripts: <span class="kw-2">&amp;</span>str,
     arrays: <span class="kw-2">&amp;</span>[Borrowed&lt;<span class="lifetime">'_</span>, <span class="lifetime">'py</span>, PyArray&lt;T, IxDyn&gt;&gt;],
 ) -&gt; PyResult&lt;OUT&gt;
@@ -512,19 +453,18 @@
     obj.extract()
 }
 
-<span class="doccomment">/// Deprecated form of [`einsum_bound!`][crate::einsum_bound!]
-</span><span class="attr">#[cfg(feature = <span class="string">"gil-refs"</span>)]
-#[deprecated(
-    since = <span class="string">"0.21.0"</span>,
-    note = <span class="string">"will be replaced by `einsum_bound!` in the future"
-</span>)]
-#[macro_export]
-</span><span class="macro">macro_rules!</span> einsum {
-    (<span class="macro-nonterminal">$subscripts</span>:literal $(,<span class="macro-nonterminal">$array</span>:ident)+ $(,)<span class="kw-2">*</span>) =&gt; {{
-        <span class="kw">use </span>pyo3::PyNativeType;
-        <span class="kw">let </span>arrays = [$(<span class="macro-nonterminal">$array</span>.to_dyn().as_borrowed(),)+];
-        <span class="macro-nonterminal">$crate::einsum_bound</span>(<span class="macro">concat!</span>(<span class="macro-nonterminal">$subscripts</span>, <span class="string">"\0"</span>), <span class="kw-2">&amp;</span>arrays)
-    }};
+<span class="doccomment">/// Deprecated name for [`einsum`].
+</span><span class="attr">#[deprecated(since = <span class="string">"0.23.0"</span>, note = <span class="string">"renamed to `einsum`"</span>)]
+#[inline]
+</span><span class="kw">pub fn </span>einsum_bound&lt;<span class="lifetime">'py</span>, T, OUT&gt;(
+    subscripts: <span class="kw-2">&amp;</span>str,
+    arrays: <span class="kw-2">&amp;</span>[Borrowed&lt;<span class="lifetime">'_</span>, <span class="lifetime">'py</span>, PyArray&lt;T, IxDyn&gt;&gt;],
+) -&gt; PyResult&lt;OUT&gt;
+<span class="kw">where
+    </span>T: Element,
+    OUT: ArrayOrScalar&lt;<span class="lifetime">'py</span>, T&gt;,
+{
+    einsum(subscripts, arrays)
 }
 
 <span class="doccomment">/// Return the Einstein summation convention of given tensors.
@@ -537,13 +477,13 @@
 /// ```
 /// use pyo3::{Python, Bound};
 /// use ndarray::array;
-/// use numpy::{einsum_bound, pyarray_bound, PyArray, PyArray2, PyArrayMethods};
+/// use numpy::{einsum, pyarray, PyArray, PyArray2, PyArrayMethods};
 ///
 /// Python::with_gil(|py| {
-///     let tensor = PyArray::arange_bound(py, 0, 2 * 3 * 4, 1).reshape([2, 3, 4]).unwrap();
-///     let another_tensor = pyarray_bound![py, [20, 30], [40, 50], [60, 70]];
+///     let tensor = PyArray::arange(py, 0, 2 * 3 * 4, 1).reshape([2, 3, 4]).unwrap();
+///     let another_tensor = pyarray![py, [20, 30], [40, 50], [60, 70]];
 ///
-///     let result: Bound&lt;'_, PyArray2&lt;_&gt;&gt; = einsum_bound!("ijk,ji-&gt;ik", tensor, another_tensor).unwrap();
+///     let result: Bound&lt;'_, PyArray2&lt;_&gt;&gt; = einsum!("ijk,ji-&gt;ik", tensor, another_tensor).unwrap();
 ///
 ///     assert_eq!(
 ///         result.readonly().as_array(),
@@ -554,10 +494,20 @@
 ///
 /// [einsum]: https://numpy.org/doc/stable/reference/generated/numpy.einsum.html
 </span><span class="attr">#[macro_export]
+</span><span class="macro">macro_rules!</span> einsum {
+    (<span class="macro-nonterminal">$subscripts</span>:literal $(,<span class="macro-nonterminal">$array</span>:ident)+ $(,)<span class="kw-2">*</span>) =&gt; {{
+        <span class="kw">let </span>arrays = [$(<span class="macro-nonterminal">$array</span>.to_dyn().as_borrowed(),)+];
+        <span class="macro-nonterminal">$crate::einsum</span>(<span class="macro">concat!</span>(<span class="macro-nonterminal">$subscripts</span>, <span class="string">"\0"</span>), <span class="kw-2">&amp;</span>arrays)
+    }};
+}
+
+<span class="doccomment">/// Deprecated name for [`einsum!`].
+</span><span class="attr">#[deprecated(since = <span class="string">"0.23.0"</span>, note = <span class="string">"renamed to `einsum!`"</span>)]
+#[macro_export]
 </span><span class="macro">macro_rules!</span> einsum_bound {
     (<span class="macro-nonterminal">$subscripts</span>:literal $(,<span class="macro-nonterminal">$array</span>:ident)+ $(,)<span class="kw-2">*</span>) =&gt; {{
         <span class="kw">let </span>arrays = [$(<span class="macro-nonterminal">$array</span>.to_dyn().as_borrowed(),)+];
-        <span class="macro-nonterminal">$crate::einsum_bound</span>(<span class="macro">concat!</span>(<span class="macro-nonterminal">$subscripts</span>, <span class="string">"\0"</span>), <span class="kw-2">&amp;</span>arrays)
+        <span class="macro-nonterminal">$crate::einsum</span>(<span class="macro">concat!</span>(<span class="macro-nonterminal">$subscripts</span>, <span class="string">"\0"</span>), <span class="kw-2">&amp;</span>arrays)
     }};
 }
 </code></pre></div></section></main></body></html>

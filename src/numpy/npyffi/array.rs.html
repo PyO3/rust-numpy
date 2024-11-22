@@ -509,10 +509,10 @@
 
             // strategy mirrored from https://github.com/pybind/pybind11/blob/af67e87393b0f867ccffc2702885eea12de063fc/include/pybind11/numpy.h#L175-L195
 
-            </span><span class="kw">let </span>numpy = PyModule::import_bound(py, <span class="string">"numpy"</span>)<span class="question-mark">?</span>;
+            </span><span class="kw">let </span>numpy = PyModule::import(py, <span class="string">"numpy"</span>)<span class="question-mark">?</span>;
             <span class="kw">let </span>version_string = numpy.getattr(<span class="string">"__version__"</span>)<span class="question-mark">?</span>;
 
-            <span class="kw">let </span>numpy_lib = PyModule::import_bound(py, <span class="string">"numpy.lib"</span>)<span class="question-mark">?</span>;
+            <span class="kw">let </span>numpy_lib = PyModule::import(py, <span class="string">"numpy.lib"</span>)<span class="question-mark">?</span>;
             <span class="kw">let </span>numpy_version = numpy_lib
                 .getattr(<span class="string">"NumpyVersion"</span>)<span class="question-mark">?
                 </span>.call1((version_string,))<span class="question-mark">?</span>;
@@ -551,7 +551,7 @@
 /// use numpy::prelude::*;
 /// use numpy::{PyArray, npyffi::types::NPY_SORTKIND, PY_ARRAY_API};
 /// pyo3::Python::with_gil(|py| {
-///     let array = PyArray::from_slice_bound(py, &amp;[3, 2, 4]);
+///     let array = PyArray::from_slice(py, &amp;[3, 2, 4]);
 ///     unsafe {
 ///         PY_ARRAY_API.PyArray_Sort(py, array.as_array_ptr(), 0, NPY_SORTKIND::NPY_QUICKSORT);
 ///     }

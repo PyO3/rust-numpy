@@ -179,13 +179,23 @@
 <a href="#179" id="179">179</a>
 <a href="#180" id="180">180</a>
 <a href="#181" id="181">181</a>
+<a href="#182" id="182">182</a>
+<a href="#183" id="183">183</a>
+<a href="#184" id="184">184</a>
+<a href="#185" id="185">185</a>
+<a href="#186" id="186">186</a>
+<a href="#187" id="187">187</a>
+<a href="#188" id="188">188</a>
+<a href="#189" id="189">189</a>
+<a href="#190" id="190">190</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Defines error types.
 
 </span><span class="kw">use </span>std::error::Error;
 <span class="kw">use </span>std::fmt;
 
 <span class="kw">use </span>pyo3::{
-    exceptions::PyTypeError, Bound, Py, PyErr, PyErrArguments, PyObject, Python, ToPyObject,
+    conversion::IntoPyObject, exceptions::PyTypeError, Bound, Py, PyErr, PyErrArguments, PyObject,
+    Python,
 };
 
 <span class="kw">use </span><span class="kw">crate</span>::dtype::PyArrayDescr;
@@ -203,7 +213,11 @@
 
         <span class="kw">impl </span>PyErrArguments <span class="kw">for </span><span class="macro-nonterminal">$err_type </span>{
             <span class="kw">fn </span>arguments&lt;<span class="lifetime">'py</span>&gt;(<span class="self">self</span>, py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; PyObject {
-                <span class="self">self</span>.to_string().to_object(py)
+                <span class="self">self</span>.to_string()
+                    .into_pyobject(py)
+                    .unwrap()
+                    .into_any()
+                    .unbind()
             }
         }
 
@@ -273,7 +287,11 @@
             to: <span class="self">self</span>.to.into_bound(py),
         };
 
-        err.to_string().to_object(py)
+        err.to_string()
+            .into_pyobject(py)
+            .unwrap()
+            .into_any()
+            .unbind()
     }
 }
 

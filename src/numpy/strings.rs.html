@@ -285,7 +285,7 @@
 /// use numpy::{PyArray1, PyUntypedArrayMethods, PyFixedString};
 ///
 /// # Python::with_gil(|py| {
-/// let array = PyArray1::&lt;PyFixedString&lt;3&gt;&gt;::from_vec_bound(py, vec![[b'f', b'o', b'o'].into()]);
+/// let array = PyArray1::&lt;PyFixedString&lt;3&gt;&gt;::from_vec(py, vec![[b'f', b'o', b'o'].into()]);
 ///
 /// assert!(array.dtype().to_string().contains("S3"));
 /// # });
@@ -311,7 +311,7 @@
 <span class="kw">unsafe impl</span>&lt;<span class="kw">const </span>N: usize&gt; Element <span class="kw">for </span>PyFixedString&lt;N&gt; {
     <span class="kw">const </span>IS_COPY: bool = <span class="bool-val">true</span>;
 
-    <span class="kw">fn </span>get_dtype_bound(py: Python&lt;<span class="lifetime">'_</span>&gt;) -&gt; Bound&lt;<span class="lifetime">'_</span>, PyArrayDescr&gt; {
+    <span class="kw">fn </span>get_dtype(py: Python&lt;<span class="lifetime">'_</span>&gt;) -&gt; Bound&lt;<span class="lifetime">'_</span>, PyArrayDescr&gt; {
         <span class="kw">static </span>DTYPES: TypeDescriptors = TypeDescriptors::new();
 
         <span class="kw">unsafe </span>{ DTYPES.from_size(py, NPY_TYPES::NPY_STRING, <span class="string">b'|' </span><span class="kw">as _</span>, size_of::&lt;<span class="self">Self</span>&gt;()) }
@@ -350,7 +350,7 @@
 /// use numpy::{PyArray1, PyUntypedArrayMethods, PyFixedUnicode};
 ///
 /// # Python::with_gil(|py| {
-/// let array = PyArray1::&lt;PyFixedUnicode&lt;3&gt;&gt;::from_vec_bound(py, vec![[b'b' as _, b'a' as _, b'r' as _].into()]);
+/// let array = PyArray1::&lt;PyFixedUnicode&lt;3&gt;&gt;::from_vec(py, vec![[b'b' as _, b'a' as _, b'r' as _].into()]);
 ///
 /// assert!(array.dtype().to_string().contains("U3"));
 /// # });
@@ -384,7 +384,7 @@
 <span class="kw">unsafe impl</span>&lt;<span class="kw">const </span>N: usize&gt; Element <span class="kw">for </span>PyFixedUnicode&lt;N&gt; {
     <span class="kw">const </span>IS_COPY: bool = <span class="bool-val">true</span>;
 
-    <span class="kw">fn </span>get_dtype_bound(py: Python&lt;<span class="lifetime">'_</span>&gt;) -&gt; Bound&lt;<span class="lifetime">'_</span>, PyArrayDescr&gt; {
+    <span class="kw">fn </span>get_dtype(py: Python&lt;<span class="lifetime">'_</span>&gt;) -&gt; Bound&lt;<span class="lifetime">'_</span>, PyArrayDescr&gt; {
         <span class="kw">static </span>DTYPES: TypeDescriptors = TypeDescriptors::new();
 
         <span class="kw">unsafe </span>{ DTYPES.from_size(py, NPY_TYPES::NPY_UNICODE, <span class="string">b'=' </span><span class="kw">as _</span>, size_of::&lt;<span class="self">Self</span>&gt;()) }

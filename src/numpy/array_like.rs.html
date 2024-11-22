@@ -360,7 +360,7 @@
                 <span class="kw">let </span>array = Array1::from(vec)
                     .into_dimensionality()
                     .expect(<span class="string">"D being compatible to Ix1"</span>)
-                    .into_pyarray_bound(py)
+                    .into_pyarray(py)
                     .readonly();
                 <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="self">Self</span>(array, PhantomData));
             }
@@ -375,8 +375,8 @@
             </span>.bind(py);
 
         <span class="kw">let </span>kwargs = <span class="kw">if </span>C::VAL {
-            <span class="kw">let </span>kwargs = PyDict::new_bound(py);
-            kwargs.set_item(<span class="macro">intern!</span>(py, <span class="string">"dtype"</span>), T::get_dtype_bound(py))<span class="question-mark">?</span>;
+            <span class="kw">let </span>kwargs = PyDict::new(py);
+            kwargs.set_item(<span class="macro">intern!</span>(py, <span class="string">"dtype"</span>), T::get_dtype(py))<span class="question-mark">?</span>;
             <span class="prelude-val">Some</span>(kwargs)
         } <span class="kw">else </span>{
             <span class="prelude-val">None

@@ -131,7 +131,7 @@
     module: <span class="kw-2">&amp;</span>str,
     capsule: <span class="kw-2">&amp;</span>str,
 ) -&gt; PyResult&lt;<span class="kw-2">*const *const </span>c_void&gt; {
-    <span class="kw">let </span>module = PyModule::import_bound(py, module)<span class="question-mark">?</span>;
+    <span class="kw">let </span>module = PyModule::import(py, module)<span class="question-mark">?</span>;
     <span class="kw">let </span>capsule = module.getattr(capsule)<span class="question-mark">?</span>.downcast_into::&lt;PyCapsule&gt;()<span class="question-mark">?</span>;
 
     <span class="kw">let </span>api = capsule.pointer() <span class="kw">as </span><span class="kw-2">*const *const </span>c_void;

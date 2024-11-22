@@ -592,19 +592,6 @@
 <a href="#592" id="592">592</a>
 <a href="#593" id="593">593</a>
 <a href="#594" id="594">594</a>
-<a href="#595" id="595">595</a>
-<a href="#596" id="596">596</a>
-<a href="#597" id="597">597</a>
-<a href="#598" id="598">598</a>
-<a href="#599" id="599">599</a>
-<a href="#600" id="600">600</a>
-<a href="#601" id="601">601</a>
-<a href="#602" id="602">602</a>
-<a href="#603" id="603">603</a>
-<a href="#604" id="604">604</a>
-<a href="#605" id="605">605</a>
-<a href="#606" id="606">606</a>
-<a href="#607" id="607">607</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Low-Lebel binding for NumPy C API C-objects
 //!
 //! &lt;https://numpy.org/doc/stable/reference/c-api/types-and-structures.html&gt;
@@ -618,7 +605,6 @@
 <span class="kw">use </span><span class="kw">crate</span>::npyffi::<span class="kw-2">*</span>;
 
 <span class="attr">#[repr(C)]
-#[derive(Copy, Clone)]
 </span><span class="kw">pub struct </span>PyArrayObject {
     <span class="kw">pub </span>ob_base: PyObject,
     <span class="kw">pub </span>data: <span class="kw-2">*mut </span>c_char,
@@ -632,7 +618,6 @@
 }
 
 <span class="attr">#[repr(C)]
-#[derive(Copy, Clone)]
 </span><span class="kw">pub struct </span>PyArray_Descr {
     <span class="kw">pub </span>ob_base: PyObject,
     <span class="kw">pub </span>typeobj: <span class="kw-2">*mut </span>PyTypeObject,
@@ -644,7 +629,6 @@
 }
 
 <span class="attr">#[repr(C)]
-#[derive(Copy, Clone)]
 </span><span class="kw">pub struct </span>PyArray_DescrProto {
     <span class="kw">pub </span>ob_base: PyObject,
     <span class="kw">pub </span>typeobj: <span class="kw-2">*mut </span>PyTypeObject,
@@ -665,7 +649,6 @@
 }
 
 <span class="attr">#[repr(C)]
-#[derive(Copy, Clone)]
 </span><span class="kw">pub struct </span>_PyArray_DescrNumPy2 {
     <span class="kw">pub </span>ob_base: PyObject,
     <span class="kw">pub </span>typeobj: <span class="kw-2">*mut </span>PyTypeObject,
@@ -683,7 +666,6 @@
 }
 
 <span class="attr">#[repr(C)]
-#[derive(Copy, Clone)]
 </span><span class="kw">struct </span>_PyArray_LegacyDescr {
     <span class="kw">pub </span>ob_base: PyObject,
     <span class="kw">pub </span>typeobj: <span class="kw-2">*mut </span>PyTypeObject,
@@ -917,7 +899,6 @@
 &gt;;
 
 <span class="attr">#[repr(C)]
-#[derive(Clone, Copy)]
 </span><span class="kw">pub struct </span>PyArrayFlagsObject {
     <span class="kw">pub </span>ob_base: PyObject,
     <span class="kw">pub </span>arr: <span class="kw-2">*mut </span>PyObject,
@@ -932,7 +913,6 @@
 }
 
 <span class="attr">#[repr(C)]
-#[derive(Clone, Copy)]
 </span><span class="kw">pub struct </span>PyArray_Chunk {
     <span class="kw">pub </span>ob_base: PyObject,
     <span class="kw">pub </span>base: <span class="kw-2">*mut </span>PyObject,
@@ -956,7 +936,6 @@
 }
 
 <span class="attr">#[repr(C)]
-#[derive(Clone, Copy)]
 </span><span class="kw">pub struct </span>PyUFuncObject {
     <span class="kw">pub </span>ob_base: PyObject,
     <span class="kw">pub </span>nin: c_int,
@@ -1035,7 +1014,6 @@
 </span><span class="kw">pub struct </span>NpyIter([u8; <span class="number">0</span>]);
 
 <span class="attr">#[repr(C)]
-#[derive(Clone, Copy)]
 </span><span class="kw">pub struct </span>PyArrayIterObject {
     <span class="kw">pub </span>ob_base: PyObject,
     <span class="kw">pub </span>nd_m1: c_int,
@@ -1056,7 +1034,6 @@
 }
 
 <span class="attr">#[repr(C)]
-#[derive(Clone, Copy)]
 </span><span class="kw">pub struct </span>PyArrayMultiIterObject {
     <span class="kw">pub </span>ob_base: PyObject,
     <span class="kw">pub </span>numiter: c_int,
@@ -1068,7 +1045,6 @@
 }
 
 <span class="attr">#[repr(C)]
-#[derive(Clone, Copy)]
 </span><span class="kw">pub struct </span>PyArrayNeighborhoodIterObject {
     <span class="kw">pub </span>ob_base: PyObject,
     <span class="kw">pub </span>nd_m1: c_int,
@@ -1094,7 +1070,6 @@
 }
 
 <span class="attr">#[repr(C)]
-#[derive(Clone, Copy)]
 </span><span class="kw">pub struct </span>PyArrayMapIterObject {
     <span class="kw">pub </span>ob_base: PyObject,
     <span class="kw">pub </span>numiter: c_int,
@@ -1178,7 +1153,6 @@
 }
 
 <span class="attr">#[repr(C)]
-#[derive(Clone, Copy)]
 </span><span class="kw">pub struct </span>PyArray_StringDTypeObject {
     <span class="kw">pub </span>base: PyArray_Descr,
     <span class="kw">pub </span>na_object: <span class="kw-2">*mut </span>PyObject,
