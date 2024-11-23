@@ -6,6 +6,7 @@
     - removed the `gil-refs` feature
     - reintroduced function names without `_bound` suffix + deprecating the old names
     - switched to `IntoPyObject` as trait bound
+  - Support Python 3.13t "free-threaded" Python. ([#471](https://github.com/PyO3/rust-numpy/pull/471)
 
 - v0.22.1
   - Fix building on 32-bit Windows. ([#463](https://github.com/PyO3/rust-numpy/pull/463))
