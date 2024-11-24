@@ -24,10 +24,14 @@ num-traits = "0.2"
 ndarray = ">= 0.15, < 0.17"
 pyo3 = { version = "0.23.0", default-features = false, features = ["macros"] }
 rustc-hash = "1.1"
+parking_lot = "0.12.3"
 
 [dev-dependencies]
 pyo3 = { version = "0.23.0", default-features = false, features = ["auto-initialize"] }
 nalgebra = { version = ">=0.30, <0.34", default-features = false, features = ["std"] }
+
+[build-dependencies]
+pyo3-build-config = { version = "0.23.1", features = ["resolve-config"] }
 
 [package.metadata.docs.rs]
 all-features = true

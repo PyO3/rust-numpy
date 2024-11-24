@@ -13,6 +13,7 @@ use crate::array::get_array_module;
 use crate::cold;
 use crate::error::BorrowError;
 use crate::npyffi::{PyArrayObject, PyArray_Check, PyDataType_ELSIZE, NPY_ARRAY_WRITEABLE};
+use parking_lot::Mutex;
 
 /// Defines the shared C API used for borrow checking
 ///
@@ -45,7 +46,7 @@ unsafe impl Send for Shared {}
 unsafe extern "C" fn acquire_shared(flags: *mut c_void, array: *mut PyArrayObject) -> c_int {
     // SAFETY: GIL must be held when calling `acquire_shared`.
     let py = Python::assume_gil_acquired();
-    let flags = &mut *(flags as *mut BorrowFlags);
+    let flags = &*(flags as *mut BorrowFlags);
 
     let address = base_address(py, array);
     let key = borrow_key(py, array);
@@ -63,7 +64,7 @@ unsafe extern "C" fn acquire_mut_shared(flags: *mut c_void, array: *mut PyArrayO
 
     // SAFETY: GIL must be held when calling `acquire_shared`.
     let py = Python::assume_gil_acquired();
-    let flags = &mut *(flags as *mut BorrowFlags);
+    let flags = &*(flags as *mut BorrowFlags);
 
     let address = base_address(py, array);
     let key = borrow_key(py, array);
@@ -77,8 +78,7 @@ unsafe extern "C" fn acquire_mut_shared(flags: *mut c_void, array: *mut PyArrayO
 unsafe extern "C" fn release_shared(flags: *mut c_void, array: *mut PyArrayObject) {
     // SAFETY: GIL must be held when calling `acquire_shared`.
     let py = Python::assume_gil_acquired();
-    let flags = &mut *(flags as *mut BorrowFlags);
-
+    let flags = &*(flags as *mut BorrowFlags);
     let address = base_address(py, array);
     let key = borrow_key(py, array);
 
@@ -88,7 +88,7 @@ unsafe extern "C" fn release_shared(flags: *mut c_void, array: *mut PyArrayObjec
 unsafe extern "C" fn release_mut_shared(flags: *mut c_void, array: *mut PyArrayObject) {
     // SAFETY: GIL must be held when calling `acquire_shared`.
     let py = Python::assume_gil_acquired();
-    let flags = &mut *(flags as *mut BorrowFlags);
+    let flags = &*(flags as *mut BorrowFlags);
 
     let address = base_address(py, array);
     let key = borrow_key(py, array);
@@ -250,14 +250,14 @@ impl BorrowKey {
     }
 }
 
-type BorrowFlagsInner = FxHashMap<*mut c_void, FxHashMap<BorrowKey, isize>>;
+type BorrowFlagsInner = Mutex<FxHashMap<*mut c_void, FxHashMap<BorrowKey, isize>>>;
 
 #[derive(Default)]
 struct BorrowFlags(BorrowFlagsInner);
 
 impl BorrowFlags {
-    fn acquire(&mut self, address: *mut c_void, key: BorrowKey) -> Result<(), ()> {
-        let borrow_flags = &mut self.0;
+    fn acquire(&self, address: *mut c_void, key: BorrowKey) -> Result<(), ()> {
+        let mut borrow_flags = self.0.lock();
 
         match borrow_flags.entry(address) {
             Entry::Occupied(entry) => {
@@ -298,11 +298,10 @@ impl BorrowFlags {
         Ok(())
     }
 
-    fn release(&mut self, address: *mut c_void, key: BorrowKey) {
-        let borrow_flags = &mut self.0;
+    fn release(&self, address: *mut c_void, key: BorrowKey) {
+        let mut borrow_flags = self.0.lock();
 
         let same_base_arrays = borrow_flags.get_mut(&address).unwrap();
-
         let readers = same_base_arrays.get_mut(&key).unwrap();
 
         *readers -= 1;
@@ -316,8 +315,8 @@ impl BorrowFlags {
         }
     }
 
-    fn acquire_mut(&mut self, address: *mut c_void, key: BorrowKey) -> Result<(), ()> {
-        let borrow_flags = &mut self.0;
+    fn acquire_mut(&self, address: *mut c_void, key: BorrowKey) -> Result<(), ()> {
+        let mut borrow_flags = self.0.lock();
 
         match borrow_flags.entry(address) {
             Entry::Occupied(entry) => {
@@ -352,8 +351,8 @@ impl BorrowFlags {
         Ok(())
     }
 
-    fn release_mut(&mut self, address: *mut c_void, key: BorrowKey) {
-        let borrow_flags = &mut self.0;
+    fn release_mut(&self, address: *mut c_void, key: BorrowKey) {
+        let mut borrow_flags = self.0.lock();
 
         let same_base_arrays = borrow_flags.get_mut(&address).unwrap();
 
@@ -782,7 +781,8 @@ mod tests {
             let _exclusive1 = array1.readwrite();
 
             {
-                let borrow_flags = get_borrow_flags(py);
+                let borrow_flags = get_borrow_flags(py).lock();
+                #[cfg(not(Py_GIL_DISABLED))]
                 assert_eq!(borrow_flags.len(), 1);
 
                 let same_base_arrays = &borrow_flags[&base1];
@@ -796,7 +796,8 @@ mod tests {
             let _shared2 = array2.readonly();
 
             {
-                let borrow_flags = get_borrow_flags(py);
+                let borrow_flags = get_borrow_flags(py).lock();
+                #[cfg(not(Py_GIL_DISABLED))]
                 assert_eq!(borrow_flags.len(), 2);
 
                 let same_base_arrays = &borrow_flags[&base1];
@@ -832,7 +833,8 @@ mod tests {
             let exclusive1 = view1.readwrite();
 
             {
-                let borrow_flags = get_borrow_flags(py);
+                let borrow_flags = get_borrow_flags(py).lock();
+                #[cfg(not(Py_GIL_DISABLED))]
                 assert_eq!(borrow_flags.len(), 1);
 
                 let same_base_arrays = &borrow_flags[&base];
@@ -852,7 +854,8 @@ mod tests {
             let shared2 = view2.readonly();
 
             {
-                let borrow_flags = get_borrow_flags(py);
+                let borrow_flags = get_borrow_flags(py).lock();
+                #[cfg(not(Py_GIL_DISABLED))]
                 assert_eq!(borrow_flags.len(), 1);
 
                 let same_base_arrays = &borrow_flags[&base];
@@ -875,7 +878,8 @@ mod tests {
             let shared3 = view3.readonly();
 
             {
-                let borrow_flags = get_borrow_flags(py);
+                let borrow_flags = get_borrow_flags(py).lock();
+                #[cfg(not(Py_GIL_DISABLED))]
                 assert_eq!(borrow_flags.len(), 1);
 
                 let same_base_arrays = &borrow_flags[&base];
@@ -901,7 +905,8 @@ mod tests {
             let shared4 = view4.readonly();
 
             {
-                let borrow_flags = get_borrow_flags(py);
+                let borrow_flags = get_borrow_flags(py).lock();
+                #[cfg(not(Py_GIL_DISABLED))]
                 assert_eq!(borrow_flags.len(), 1);
 
                 let same_base_arrays = &borrow_flags[&base];
@@ -923,7 +928,8 @@ mod tests {
             drop(shared2);
 
             {
-                let borrow_flags = get_borrow_flags(py);
+                let borrow_flags = get_borrow_flags(py).lock();
+                #[cfg(not(Py_GIL_DISABLED))]
                 assert_eq!(borrow_flags.len(), 1);
 
                 let same_base_arrays = &borrow_flags[&base];
@@ -945,7 +951,8 @@ mod tests {
             drop(shared3);
 
             {
-                let borrow_flags = get_borrow_flags(py);
+                let borrow_flags = get_borrow_flags(py).lock();
+                #[cfg(not(Py_GIL_DISABLED))]
                 assert_eq!(borrow_flags.len(), 1);
 
                 let same_base_arrays = &borrow_flags[&base];
@@ -965,7 +972,8 @@ mod tests {
             drop(exclusive1);
 
             {
-                let borrow_flags = get_borrow_flags(py);
+                let borrow_flags = get_borrow_flags(py).lock();
+                #[cfg(not(Py_GIL_DISABLED))]
                 assert_eq!(borrow_flags.len(), 1);
 
                 let same_base_arrays = &borrow_flags[&base];
@@ -983,8 +991,9 @@ mod tests {
 
             drop(shared4);
 
+            #[cfg(not(Py_GIL_DISABLED))]
             {
-                let borrow_flags = get_borrow_flags(py);
+                let borrow_flags = get_borrow_flags(py).lock();
                 assert_eq!(borrow_flags.len(), 0);
             }
         });
