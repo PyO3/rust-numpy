@@ -34,3 +34,4 @@ all-features = true
 
 [features]
 gil-refs = ["pyo3/gil-refs"]
+multiple-pymethods = ["pyo3/multiple-pymethods"]
