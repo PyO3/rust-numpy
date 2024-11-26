@@ -6,6 +6,7 @@
     - removed the `gil-refs` feature
     - reintroduced function names without `_bound` suffix + deprecating the old names
     - switched to `IntoPyObject` as trait bound
+  - Bump `rustc-hash` dependency to 2.0. ([[#472](https://github.com/PyO3/rust-numpy/pull/472)])
 
 - v0.22.1
   - Fix building on 32-bit Windows. ([#463](https://github.com/PyO3/rust-numpy/pull/463))
