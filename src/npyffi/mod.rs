@@ -53,7 +53,7 @@ macro_rules! impl_api {
     [$offset: expr; $fname: ident ($($arg: ident: $t: ty),* $(,)?) $(-> $ret: ty)?] => {
         #[allow(non_snake_case)]
         pub unsafe fn $fname<'py>(&self, py: Python<'py>, $($arg : $t), *) $(-> $ret)* {
-            let fptr = self.get(py, $offset) as *const extern fn ($($arg : $t), *) $(-> $ret)*;
+            let fptr = self.get(py, $offset) as *const extern "C" fn ($($arg : $t), *) $(-> $ret)*;
             (*fptr)($($arg), *)
         }
     };
@@ -69,7 +69,7 @@ macro_rules! impl_api {
                 API_VERSION_2_0,
                 *API_VERSION.get(py).expect("API_VERSION is initialized"),
             );
-            let fptr = self.get(py, $offset) as *const extern fn ($($arg: $t), *) $(-> $ret)*;
+            let fptr = self.get(py, $offset) as *const extern "C" fn ($($arg: $t), *) $(-> $ret)*;
             (*fptr)($($arg), *)
         }
 
@@ -84,7 +84,7 @@ macro_rules! impl_api {
                 API_VERSION_2_0,
                 *API_VERSION.get(py).expect("API_VERSION is initialized"),
             );
-            let fptr = self.get(py, $offset) as *const extern fn ($($arg: $t), *) $(-> $ret)*;
+            let fptr = self.get(py, $offset) as *const extern "C" fn ($($arg: $t), *) $(-> $ret)*;
             (*fptr)($($arg), *)
         }
 
