@@ -1,6 +1,6 @@
 [package]
 name = "numpy"
-version = "0.23.0-dev"
+version = "0.23.0"
 authors = [
     "The rust-numpy Project Developers",
     "PyO3 Project and Contributors <https://github.com/PyO3>"
@@ -22,12 +22,12 @@ num-complex = ">= 0.2, < 0.5"
 num-integer = "0.1"
 num-traits = "0.2"
 ndarray = ">= 0.15, < 0.17"
-pyo3 = { version = "0.23.0", default-features = false, features = ["macros"] }
-rustc-hash = "1.1"
+pyo3 = { version = "0.23.4", default-features = false, features = ["macros"] }
+rustc-hash = "2.0"
 parking_lot = "0.12.3"
 
 [dev-dependencies]
-pyo3 = { version = "0.23.0", default-features = false, features = ["auto-initialize"] }
+pyo3 = { version = "0.23.3", default-features = false, features = ["auto-initialize"] }
 nalgebra = { version = ">=0.30, <0.34", default-features = false, features = ["std"] }
 
 [build-dependencies]
