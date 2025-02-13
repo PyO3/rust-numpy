@@ -3,6 +3,7 @@ use std::ffi::{c_void, CString};
 use std::mem::forget;
 use std::os::raw::{c_char, c_int};
 use std::slice::from_raw_parts;
+use std::sync::Mutex;
 
 use num_integer::gcd;
 use pyo3::types::{PyAnyMethods, PyCapsuleMethods};
@@ -13,15 +14,11 @@ use crate::array::get_array_module;
 use crate::cold;
 use crate::error::BorrowError;
 use crate::npyffi::{PyArrayObject, PyArray_Check, PyDataType_ELSIZE, NPY_ARRAY_WRITEABLE};
-use parking_lot::Mutex;
 
 /// Defines the shared C API used for borrow checking
 ///
 /// This structure will be placed into a capsule at
 /// `numpy.core.multiarray._RUST_NUMPY_BORROW_CHECKING_API`.
-///
-/// All functions exposed here assume the GIL is held
-/// while they are called.
 ///
 /// Versions are assumed to be backwards-compatible, i.e.
 /// an extension which knows version N will work using
@@ -257,7 +254,7 @@ struct BorrowFlags(BorrowFlagsInner);
 
 impl BorrowFlags {
     fn acquire(&self, address: *mut c_void, key: BorrowKey) -> Result<(), ()> {
-        let mut borrow_flags = self.0.lock();
+        let mut borrow_flags = self.0.lock().unwrap();
 
         match borrow_flags.entry(address) {
             Entry::Occupied(entry) => {
@@ -299,7 +296,7 @@ impl BorrowFlags {
     }
 
     fn release(&self, address: *mut c_void, key: BorrowKey) {
-        let mut borrow_flags = self.0.lock();
+        let mut borrow_flags = self.0.lock().unwrap();
 
         let same_base_arrays = borrow_flags.get_mut(&address).unwrap();
         let readers = same_base_arrays.get_mut(&key).unwrap();
@@ -316,7 +313,7 @@ impl BorrowFlags {
     }
 
     fn acquire_mut(&self, address: *mut c_void, key: BorrowKey) -> Result<(), ()> {
-        let mut borrow_flags = self.0.lock();
+        let mut borrow_flags = self.0.lock().unwrap();
 
         match borrow_flags.entry(address) {
             Entry::Occupied(entry) => {
@@ -352,7 +349,7 @@ impl BorrowFlags {
     }
 
     fn release_mut(&self, address: *mut c_void, key: BorrowKey) {
-        let mut borrow_flags = self.0.lock();
+        let mut borrow_flags = self.0.lock().unwrap();
 
         let same_base_arrays = borrow_flags.get_mut(&address).unwrap();
 
@@ -781,7 +778,7 @@ mod tests {
             let _exclusive1 = array1.readwrite();
 
             {
-                let borrow_flags = get_borrow_flags(py).lock();
+                let borrow_flags = get_borrow_flags(py).lock().unwrap();
                 #[cfg(not(Py_GIL_DISABLED))]
                 assert_eq!(borrow_flags.len(), 1);
 
@@ -796,7 +793,7 @@ mod tests {
             let _shared2 = array2.readonly();
 
             {
-                let borrow_flags = get_borrow_flags(py).lock();
+                let borrow_flags = get_borrow_flags(py).lock().unwrap();
                 #[cfg(not(Py_GIL_DISABLED))]
                 assert_eq!(borrow_flags.len(), 2);
 
@@ -833,7 +830,7 @@ mod tests {
             let exclusive1 = view1.readwrite();
 
             {
-                let borrow_flags = get_borrow_flags(py).lock();
+                let borrow_flags = get_borrow_flags(py).lock().unwrap();
                 #[cfg(not(Py_GIL_DISABLED))]
                 assert_eq!(borrow_flags.len(), 1);
 
@@ -854,7 +851,7 @@ mod tests {
             let shared2 = view2.readonly();
 
             {
-                let borrow_flags = get_borrow_flags(py).lock();
+                let borrow_flags = get_borrow_flags(py).lock().unwrap();
                 #[cfg(not(Py_GIL_DISABLED))]
                 assert_eq!(borrow_flags.len(), 1);
 
@@ -878,7 +875,7 @@ mod tests {
             let shared3 = view3.readonly();
 
             {
-                let borrow_flags = get_borrow_flags(py).lock();
+                let borrow_flags = get_borrow_flags(py).lock().unwrap();
                 #[cfg(not(Py_GIL_DISABLED))]
                 assert_eq!(borrow_flags.len(), 1);
 
@@ -905,7 +902,7 @@ mod tests {
             let shared4 = view4.readonly();
 
             {
-                let borrow_flags = get_borrow_flags(py).lock();
+                let borrow_flags = get_borrow_flags(py).lock().unwrap();
                 #[cfg(not(Py_GIL_DISABLED))]
                 assert_eq!(borrow_flags.len(), 1);
 
@@ -928,7 +925,7 @@ mod tests {
             drop(shared2);
 
             {
-                let borrow_flags = get_borrow_flags(py).lock();
+                let borrow_flags = get_borrow_flags(py).lock().unwrap();
                 #[cfg(not(Py_GIL_DISABLED))]
                 assert_eq!(borrow_flags.len(), 1);
 
@@ -951,7 +948,7 @@ mod tests {
             drop(shared3);
 
             {
-                let borrow_flags = get_borrow_flags(py).lock();
+                let borrow_flags = get_borrow_flags(py).lock().unwrap();
                 #[cfg(not(Py_GIL_DISABLED))]
                 assert_eq!(borrow_flags.len(), 1);
 
@@ -972,7 +969,7 @@ mod tests {
             drop(exclusive1);
 
             {
-                let borrow_flags = get_borrow_flags(py).lock();
+                let borrow_flags = get_borrow_flags(py).lock().unwrap();
                 #[cfg(not(Py_GIL_DISABLED))]
                 assert_eq!(borrow_flags.len(), 1);
 
@@ -993,7 +990,7 @@ mod tests {
 
             #[cfg(not(Py_GIL_DISABLED))]
             {
-                let borrow_flags = get_borrow_flags(py).lock();
+                let borrow_flags = get_borrow_flags(py).lock().unwrap();
                 assert_eq!(borrow_flags.len(), 0);
             }
         });
