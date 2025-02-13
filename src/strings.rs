@@ -178,8 +178,23 @@ impl TypeDescriptors {
         byteorder: c_char,
         size: usize,
     ) -> Bound<'py, PyArrayDescr> {
-        // FIXME probably a deadlock risk here due to the GIL? Might need MutexExt trait in PyO3
+        // FIXME create a proper MutexExt trait that handles poisoning and upstream to PyO3
+        struct Guard(*mut pyo3::ffi::PyThreadState);
+
+        impl Drop for Guard {
+            fn drop(&mut self) {
+                unsafe { pyo3::ffi::PyEval_RestoreThread(self.0) };
+            }
+        }
+
+        // we are currently attached to the python runtime and we might block trying to acquire
+        // the dtype cache mutex, so detach to avoid a possible deadlock.
+        let ts_guard = Guard(unsafe { pyo3::ffi::PyEval_SaveThread() });
+
         let mut dtypes = self.dtypes.lock().expect("dtype cache poisoned");
+
+        // we've acquire the dtype cache lock so it's safe to re-attach to the runtime
+        drop(ts_guard);
 
         let dtype = match dtypes.get_or_insert_with(Default::default).entry(size) {
             Entry::Occupied(entry) => entry.into_mut(),
