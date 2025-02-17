@@ -463,7 +463,7 @@ mod tests {
             BorrowFlagsState(
                 inner.len(),
                 base_arrays.len(),
-                base_arrays.get(key).map(|x| *x),
+                base_arrays.get(key).copied(),
             )
         } else {
             BorrowFlagsState(0, 0, None)
