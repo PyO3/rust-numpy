@@ -3,16 +3,15 @@
 //! [ascii]: https://numpy.org/doc/stable/reference/c-api/dtype.html#c.NPY_STRING
 //! [ucs4]: https://numpy.org/doc/stable/reference/c-api/dtype.html#c.NPY_UNICODE
 
-use std::cell::RefCell;
 use std::collections::hash_map::Entry;
 use std::fmt;
 use std::mem::size_of;
 use std::os::raw::c_char;
 use std::str;
+use std::sync::Mutex;
 
 use pyo3::{
     ffi::{Py_UCS1, Py_UCS4},
-    sync::GILProtected,
     Bound, Py, Python,
 };
 use rustc_hash::FxHashMap;
@@ -20,6 +19,7 @@ use rustc_hash::FxHashMap;
 use crate::dtype::{clone_methods_impl, Element, PyArrayDescr, PyArrayDescrMethods};
 use crate::npyffi::PyDataType_SET_ELSIZE;
 use crate::npyffi::NPY_TYPES;
+use crate::ThreadStateGuard;
 
 /// A newtype wrapper around [`[u8; N]`][Py_UCS1] to handle [`byte` scalars][numpy-bytes] while satisfying coherence.
 ///
@@ -160,14 +160,13 @@ unsafe impl<const N: usize> Element for PyFixedUnicode<N> {
 }
 
 struct TypeDescriptors {
-    #[allow(clippy::type_complexity)]
-    dtypes: GILProtected<RefCell<Option<FxHashMap<usize, Py<PyArrayDescr>>>>>,
+    dtypes: Mutex<Option<FxHashMap<usize, Py<PyArrayDescr>>>>,
 }
 
 impl TypeDescriptors {
     const fn new() -> Self {
         Self {
-            dtypes: GILProtected::new(RefCell::new(None)),
+            dtypes: Mutex::new(None),
         }
     }
 
@@ -180,7 +179,13 @@ impl TypeDescriptors {
         byteorder: c_char,
         size: usize,
     ) -> Bound<'py, PyArrayDescr> {
-        let mut dtypes = self.dtypes.get(py).borrow_mut();
+        // Detach from the runtime to avoid deadlocking on acquiring the mutex.
+        let ts_guard = ThreadStateGuard::new();
+
+        let mut dtypes = self.dtypes.lock().expect("dtype cache poisoned");
+
+        // Now we hold the mutex so it's safe to re-attach to the runtime.
+        drop(ts_guard);
 
         let dtype = match dtypes.get_or_insert_with(Default::default).entry(size) {
             Entry::Occupied(entry) => entry.into_mut(),

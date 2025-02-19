@@ -149,6 +149,23 @@ mod doctest {
 #[inline(always)]
 fn cold() {}
 
+/// An RAII guard for avoiding deadlocks with the GIL or other global
+/// synchronization events in the Python runtime
+// FIXME create a proper MutexExt trait that handles poisoning and upstream to PyO3
+struct ThreadStateGuard(*mut pyo3::ffi::PyThreadState);
+
+impl ThreadStateGuard {
+    fn new() -> ThreadStateGuard {
+        ThreadStateGuard(unsafe { pyo3::ffi::PyEval_SaveThread() })
+    }
+}
+
+impl Drop for ThreadStateGuard {
+    fn drop(&mut self) {
+        unsafe { pyo3::ffi::PyEval_RestoreThread(self.0) };
+    }
+}
+
 /// Create a [`PyArray`] with one, two or three dimensions.
 ///
 /// This macro is backed by [`ndarray::array`].

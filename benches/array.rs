@@ -6,7 +6,7 @@ use test::{black_box, Bencher};
 use std::ops::Range;
 
 use numpy::{PyArray1, PyArray2, PyArray3};
-use pyo3::{types::PyAnyMethods, Bound, Python};
+use pyo3::{types::PyAnyMethods, Bound, IntoPyObjectExt, Python};
 
 #[bench]
 fn extract_success(bencher: &mut Bencher) {
@@ -115,7 +115,11 @@ fn from_slice_large(bencher: &mut Bencher) {
 }
 
 fn from_object_slice(bencher: &mut Bencher, size: usize) {
-    let vec = Python::with_gil(|py| (0..size).map(|val| val.to_object(py)).collect::<Vec<_>>());
+    let vec = Python::with_gil(|py| {
+        (0..size)
+            .map(|val| val.into_py_any(py).unwrap())
+            .collect::<Vec<_>>()
+    });
 
     Python::with_gil(|py| {
         bencher.iter(|| {

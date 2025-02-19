@@ -3,6 +3,7 @@ use std::ffi::{c_void, CString};
 use std::mem::forget;
 use std::os::raw::{c_char, c_int};
 use std::slice::from_raw_parts;
+use std::sync::Mutex;
 
 use num_integer::gcd;
 use pyo3::types::{PyAnyMethods, PyCapsuleMethods};
@@ -18,9 +19,6 @@ use crate::npyffi::{PyArrayObject, PyArray_Check, PyDataType_ELSIZE, NPY_ARRAY_W
 ///
 /// This structure will be placed into a capsule at
 /// `numpy.core.multiarray._RUST_NUMPY_BORROW_CHECKING_API`.
-///
-/// All functions exposed here assume the GIL is held
-/// while they are called.
 ///
 /// Versions are assumed to be backwards-compatible, i.e.
 /// an extension which knows version N will work using
@@ -45,7 +43,7 @@ unsafe impl Send for Shared {}
 unsafe extern "C" fn acquire_shared(flags: *mut c_void, array: *mut PyArrayObject) -> c_int {
     // SAFETY: GIL must be held when calling `acquire_shared`.
     let py = Python::assume_gil_acquired();
-    let flags = &mut *(flags as *mut BorrowFlags);
+    let flags = &*(flags as *mut BorrowFlags);
 
     let address = base_address(py, array);
     let key = borrow_key(py, array);
@@ -63,7 +61,7 @@ unsafe extern "C" fn acquire_mut_shared(flags: *mut c_void, array: *mut PyArrayO
 
     // SAFETY: GIL must be held when calling `acquire_shared`.
     let py = Python::assume_gil_acquired();
-    let flags = &mut *(flags as *mut BorrowFlags);
+    let flags = &*(flags as *mut BorrowFlags);
 
     let address = base_address(py, array);
     let key = borrow_key(py, array);
@@ -77,8 +75,7 @@ unsafe extern "C" fn acquire_mut_shared(flags: *mut c_void, array: *mut PyArrayO
 unsafe extern "C" fn release_shared(flags: *mut c_void, array: *mut PyArrayObject) {
     // SAFETY: GIL must be held when calling `acquire_shared`.
     let py = Python::assume_gil_acquired();
-    let flags = &mut *(flags as *mut BorrowFlags);
-
+    let flags = &*(flags as *mut BorrowFlags);
     let address = base_address(py, array);
     let key = borrow_key(py, array);
 
@@ -88,7 +85,7 @@ unsafe extern "C" fn release_shared(flags: *mut c_void, array: *mut PyArrayObjec
 unsafe extern "C" fn release_mut_shared(flags: *mut c_void, array: *mut PyArrayObject) {
     // SAFETY: GIL must be held when calling `acquire_shared`.
     let py = Python::assume_gil_acquired();
-    let flags = &mut *(flags as *mut BorrowFlags);
+    let flags = &*(flags as *mut BorrowFlags);
 
     let address = base_address(py, array);
     let key = borrow_key(py, array);
@@ -253,12 +250,11 @@ impl BorrowKey {
 type BorrowFlagsInner = FxHashMap<*mut c_void, FxHashMap<BorrowKey, isize>>;
 
 #[derive(Default)]
-struct BorrowFlags(BorrowFlagsInner);
+struct BorrowFlags(Mutex<BorrowFlagsInner>);
 
 impl BorrowFlags {
-    fn acquire(&mut self, address: *mut c_void, key: BorrowKey) -> Result<(), ()> {
-        let borrow_flags = &mut self.0;
-
+    fn acquire(&self, address: *mut c_void, key: BorrowKey) -> Result<(), ()> {
+        let mut borrow_flags = self.0.lock().unwrap();
         match borrow_flags.entry(address) {
             Entry::Occupied(entry) => {
                 let same_base_arrays = entry.into_mut();
@@ -298,11 +294,10 @@ impl BorrowFlags {
         Ok(())
     }
 
-    fn release(&mut self, address: *mut c_void, key: BorrowKey) {
-        let borrow_flags = &mut self.0;
+    fn release(&self, address: *mut c_void, key: BorrowKey) {
+        let mut borrow_flags = self.0.lock().unwrap();
 
         let same_base_arrays = borrow_flags.get_mut(&address).unwrap();
-
         let readers = same_base_arrays.get_mut(&key).unwrap();
 
         *readers -= 1;
@@ -316,8 +311,8 @@ impl BorrowFlags {
         }
     }
 
-    fn acquire_mut(&mut self, address: *mut c_void, key: BorrowKey) -> Result<(), ()> {
-        let borrow_flags = &mut self.0;
+    fn acquire_mut(&self, address: *mut c_void, key: BorrowKey) -> Result<(), ()> {
+        let mut borrow_flags = self.0.lock().unwrap();
 
         match borrow_flags.entry(address) {
             Entry::Occupied(entry) => {
@@ -352,8 +347,8 @@ impl BorrowFlags {
         Ok(())
     }
 
-    fn release_mut(&mut self, address: *mut c_void, key: BorrowKey) {
-        let borrow_flags = &mut self.0;
+    fn release_mut(&self, address: *mut c_void, key: BorrowKey) {
+        let mut borrow_flags = self.0.lock().unwrap();
 
         let same_base_arrays = borrow_flags.get_mut(&address).unwrap();
 
@@ -452,10 +447,38 @@ mod tests {
     use crate::untyped_array::PyUntypedArrayMethods;
     use pyo3::ffi::c_str;
 
-    fn get_borrow_flags<'py>(py: Python<'py>) -> &'py BorrowFlagsInner {
+    struct BorrowFlagsState {
+        #[cfg(not(Py_GIL_DISABLED))]
+        n_flags: usize,
+        n_arrays: usize,
+        flag: Option<isize>,
+    }
+
+    fn get_borrow_flags_state<'py>(
+        py: Python<'py>,
+        base: *mut c_void,
+        key: &BorrowKey,
+    ) -> BorrowFlagsState {
         let shared = get_or_insert_shared(py).unwrap();
         assert_eq!(shared.version, 1);
-        unsafe { &(*(shared.flags as *mut BorrowFlags)).0 }
+        let inner = unsafe { &(*(shared.flags as *mut BorrowFlags)).0 }
+            .lock()
+            .unwrap();
+        if let Some(base_arrays) = inner.get(&base) {
+            BorrowFlagsState {
+                #[cfg(not(Py_GIL_DISABLED))]
+                n_flags: inner.len(),
+                n_arrays: base_arrays.len(),
+                flag: base_arrays.get(key).copied(),
+            }
+        } else {
+            BorrowFlagsState {
+                #[cfg(not(Py_GIL_DISABLED))]
+                n_flags: 0,
+                n_arrays: 0,
+                flag: None,
+            }
+        }
     }
 
     #[test]
@@ -782,34 +805,30 @@ mod tests {
             let _exclusive1 = array1.readwrite();
 
             {
-                let borrow_flags = get_borrow_flags(py);
-                assert_eq!(borrow_flags.len(), 1);
+                let state = get_borrow_flags_state(py, base1, &key1);
+                #[cfg(not(Py_GIL_DISABLED))]
+                // borrow checking state is shared and other tests might have registered a borrow
+                assert_eq!(state.n_flags, 1);
 
-                let same_base_arrays = &borrow_flags[&base1];
-                assert_eq!(same_base_arrays.len(), 1);
-
-                let flag = same_base_arrays[&key1];
-                assert_eq!(flag, -1);
+                assert_eq!(state.n_arrays, 1);
+                assert_eq!(state.flag, Some(-1));
             }
 
             let key2 = borrow_key(py, array2.as_array_ptr());
             let _shared2 = array2.readonly();
 
             {
-                let borrow_flags = get_borrow_flags(py);
-                assert_eq!(borrow_flags.len(), 2);
+                let state = get_borrow_flags_state(py, base1, &key1);
+                #[cfg(not(Py_GIL_DISABLED))]
+                // borrow checking state is shared and other tests might have registered a borrow
+                assert_eq!(state.n_flags, 2);
 
-                let same_base_arrays = &borrow_flags[&base1];
-                assert_eq!(same_base_arrays.len(), 1);
+                assert_eq!(state.n_arrays, 1);
+                assert_eq!(state.flag, Some(-1));
 
-                let flag = same_base_arrays[&key1];
-                assert_eq!(flag, -1);
-
-                let same_base_arrays = &borrow_flags[&base2];
-                assert_eq!(same_base_arrays.len(), 1);
-
-                let flag = same_base_arrays[&key2];
-                assert_eq!(flag, 1);
+                let state = get_borrow_flags_state(py, base2, &key2);
+                assert_eq!(state.n_arrays, 1);
+                assert_eq!(state.flag, Some(1));
             }
         });
     }
@@ -832,14 +851,13 @@ mod tests {
             let exclusive1 = view1.readwrite();
 
             {
-                let borrow_flags = get_borrow_flags(py);
-                assert_eq!(borrow_flags.len(), 1);
+                let state = get_borrow_flags_state(py, base, &key1);
 
-                let same_base_arrays = &borrow_flags[&base];
-                assert_eq!(same_base_arrays.len(), 1);
-
-                let flag = same_base_arrays[&key1];
-                assert_eq!(flag, -1);
+                #[cfg(not(Py_GIL_DISABLED))]
+                // borrow checking state is shared and other tests might have registered a borrow
+                assert_eq!(state.n_flags, 1);
+                assert_eq!(state.n_arrays, 1);
+                assert_eq!(state.flag, Some(-1));
             }
 
             let view2 = py
@@ -852,17 +870,15 @@ mod tests {
             let shared2 = view2.readonly();
 
             {
-                let borrow_flags = get_borrow_flags(py);
-                assert_eq!(borrow_flags.len(), 1);
+                let state = get_borrow_flags_state(py, base, &key1);
+                #[cfg(not(Py_GIL_DISABLED))]
+                // borrow checking state is shared and other tests might have registered a borrow
+                assert_eq!(state.n_flags, 1);
+                assert_eq!(state.n_arrays, 2);
+                assert_eq!(state.flag, Some(-1));
 
-                let same_base_arrays = &borrow_flags[&base];
-                assert_eq!(same_base_arrays.len(), 2);
-
-                let flag = same_base_arrays[&key1];
-                assert_eq!(flag, -1);
-
-                let flag = same_base_arrays[&key2];
-                assert_eq!(flag, 1);
+                let state = get_borrow_flags_state(py, base, &key2);
+                assert_eq!(state.flag, Some(1));
             }
 
             let view3 = py
@@ -875,20 +891,18 @@ mod tests {
             let shared3 = view3.readonly();
 
             {
-                let borrow_flags = get_borrow_flags(py);
-                assert_eq!(borrow_flags.len(), 1);
+                let state = get_borrow_flags_state(py, base, &key1);
+                #[cfg(not(Py_GIL_DISABLED))]
+                // borrow checking state is shared and other tests might have registered a borrow
+                assert_eq!(state.n_flags, 1);
+                assert_eq!(state.n_arrays, 2);
+                assert_eq!(state.flag, Some(-1));
 
-                let same_base_arrays = &borrow_flags[&base];
-                assert_eq!(same_base_arrays.len(), 2);
+                let state = get_borrow_flags_state(py, base, &key2);
+                assert_eq!(state.flag, Some(2));
 
-                let flag = same_base_arrays[&key1];
-                assert_eq!(flag, -1);
-
-                let flag = same_base_arrays[&key2];
-                assert_eq!(flag, 2);
-
-                let flag = same_base_arrays[&key3];
-                assert_eq!(flag, 2);
+                let state = get_borrow_flags_state(py, base, &key3);
+                assert_eq!(state.flag, Some(2));
             }
 
             let view4 = py
@@ -901,91 +915,89 @@ mod tests {
             let shared4 = view4.readonly();
 
             {
-                let borrow_flags = get_borrow_flags(py);
-                assert_eq!(borrow_flags.len(), 1);
+                let state = get_borrow_flags_state(py, base, &key1);
+                #[cfg(not(Py_GIL_DISABLED))]
+                // borrow checking state is shared and other tests might have registered a borrow
+                assert_eq!(state.n_flags, 1);
+                assert_eq!(state.n_arrays, 3);
+                assert_eq!(state.flag, Some(-1));
 
-                let same_base_arrays = &borrow_flags[&base];
-                assert_eq!(same_base_arrays.len(), 3);
+                let state = get_borrow_flags_state(py, base, &key2);
+                assert_eq!(state.flag, Some(2));
 
-                let flag = same_base_arrays[&key1];
-                assert_eq!(flag, -1);
+                let state = get_borrow_flags_state(py, base, &key3);
+                assert_eq!(state.flag, Some(2));
 
-                let flag = same_base_arrays[&key2];
-                assert_eq!(flag, 2);
-
-                let flag = same_base_arrays[&key3];
-                assert_eq!(flag, 2);
-
-                let flag = same_base_arrays[&key4];
-                assert_eq!(flag, 1);
+                let state = get_borrow_flags_state(py, base, &key4);
+                assert_eq!(state.flag, Some(1));
             }
 
             drop(shared2);
 
             {
-                let borrow_flags = get_borrow_flags(py);
-                assert_eq!(borrow_flags.len(), 1);
+                let state = get_borrow_flags_state(py, base, &key1);
+                #[cfg(not(Py_GIL_DISABLED))]
+                // borrow checking state is shared and other tests might have registered a borrow
+                assert_eq!(state.n_flags, 1);
+                assert_eq!(state.n_arrays, 3);
+                assert_eq!(state.flag, Some(-1));
 
-                let same_base_arrays = &borrow_flags[&base];
-                assert_eq!(same_base_arrays.len(), 3);
+                let state = get_borrow_flags_state(py, base, &key2);
+                assert_eq!(state.flag, Some(1));
 
-                let flag = same_base_arrays[&key1];
-                assert_eq!(flag, -1);
+                let state = get_borrow_flags_state(py, base, &key3);
+                assert_eq!(state.flag, Some(1));
 
-                let flag = same_base_arrays[&key2];
-                assert_eq!(flag, 1);
-
-                let flag = same_base_arrays[&key3];
-                assert_eq!(flag, 1);
-
-                let flag = same_base_arrays[&key4];
-                assert_eq!(flag, 1);
+                let state = get_borrow_flags_state(py, base, &key4);
+                assert_eq!(state.flag, Some(1));
             }
 
             drop(shared3);
 
             {
-                let borrow_flags = get_borrow_flags(py);
-                assert_eq!(borrow_flags.len(), 1);
+                let state = get_borrow_flags_state(py, base, &key1);
+                #[cfg(not(Py_GIL_DISABLED))]
+                // borrow checking state is shared and other tests might have registered a borrow
+                assert_eq!(state.n_flags, 1);
+                assert_eq!(state.n_arrays, 2);
+                assert_eq!(state.flag, Some(-1));
 
-                let same_base_arrays = &borrow_flags[&base];
-                assert_eq!(same_base_arrays.len(), 2);
+                let state = get_borrow_flags_state(py, base, &key2);
+                assert_eq!(state.flag, None);
 
-                let flag = same_base_arrays[&key1];
-                assert_eq!(flag, -1);
+                let state = get_borrow_flags_state(py, base, &key3);
+                assert_eq!(state.flag, None);
 
-                assert!(!same_base_arrays.contains_key(&key2));
-
-                assert!(!same_base_arrays.contains_key(&key3));
-
-                let flag = same_base_arrays[&key4];
-                assert_eq!(flag, 1);
+                let state = get_borrow_flags_state(py, base, &key4);
+                assert_eq!(state.flag, Some(1));
             }
 
             drop(exclusive1);
 
             {
-                let borrow_flags = get_borrow_flags(py);
-                assert_eq!(borrow_flags.len(), 1);
+                let state = get_borrow_flags_state(py, base, &key1);
+                #[cfg(not(Py_GIL_DISABLED))]
+                // borrow checking state is shared and other tests might have registered a borrow
+                assert_eq!(state.n_flags, 1);
+                assert_eq!(state.n_arrays, 1);
+                assert_eq!(state.flag, None);
 
-                let same_base_arrays = &borrow_flags[&base];
-                assert_eq!(same_base_arrays.len(), 1);
+                let state = get_borrow_flags_state(py, base, &key2);
+                assert_eq!(state.flag, None);
 
-                assert!(!same_base_arrays.contains_key(&key1));
+                let state = get_borrow_flags_state(py, base, &key3);
+                assert_eq!(state.flag, None);
 
-                assert!(!same_base_arrays.contains_key(&key2));
-
-                assert!(!same_base_arrays.contains_key(&key3));
-
-                let flag = same_base_arrays[&key4];
-                assert_eq!(flag, 1);
+                let state = get_borrow_flags_state(py, base, &key4);
+                assert_eq!(state.flag, Some(1));
             }
 
             drop(shared4);
 
+            #[cfg(not(Py_GIL_DISABLED))]
+            // borrow checking state is shared and other tests might have registered a borrow
             {
-                let borrow_flags = get_borrow_flags(py);
-                assert_eq!(borrow_flags.len(), 0);
+                assert_eq!(get_borrow_flags_state(py, base, &key1).n_flags, 0);
             }
         });
     }

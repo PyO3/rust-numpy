@@ -1,4 +1,7 @@
 # Changelog
+- v0.24.0
+  - Support Python 3.13t "free-threaded" Python. ([#471](https://github.com/PyO3/rust-numpy/pull/471)
+
 - v0.23.0
   - Drop support for PyPy 3.7 and 3.8. ([#470](https://github.com/PyO3/rust-numpy/pull/470))
   - Require `Element: Sync` as part of the free-threading support in PyO3 0.23 ([#469](https://github.com/PyO3/rust-numpy/pull/469))
