@@ -67,6 +67,7 @@ use crate::dtype::{clone_methods_impl, Element, PyArrayDescr, PyArrayDescrMethod
 use crate::npyffi::{
     PyArray_DatetimeDTypeMetaData, PyDataType_C_METADATA, NPY_DATETIMEUNIT, NPY_TYPES,
 };
+use crate::ThreadStateGuard;
 
 /// Represents the [datetime units][datetime-units] supported by NumPy
 ///
@@ -223,8 +224,13 @@ impl TypeDescriptors {
 
     #[allow(clippy::wrong_self_convention)]
     fn from_unit<'py>(&self, py: Python<'py>, unit: NPY_DATETIMEUNIT) -> Bound<'py, PyArrayDescr> {
-        // FIXME probably a deadlock risk here due to the GIL? Might need MutexExt trait in PyO3
+        // Detach from the runtime to avoid deadlocking on acquiring the mutex.
+        let ts_guard = ThreadStateGuard::new();
+
         let mut dtypes = self.dtypes.lock().expect("dtype cache poisoned");
+
+        // Now we hold the mutex so it's safe to re-attach to the runtime.
+        drop(ts_guard);
 
         let dtype = match dtypes.get_or_insert_with(Default::default).entry(unit) {
             Entry::Occupied(entry) => entry.into_mut(),
