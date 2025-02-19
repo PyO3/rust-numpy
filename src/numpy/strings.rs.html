@@ -232,21 +232,25 @@
 <a href="#231" id="231">231</a>
 <a href="#232" id="232">232</a>
 <a href="#233" id="233">233</a>
-<a href="#234" id="234">234</a></pre></div><pre class="rust"><code><span class="doccomment">//! Types to support arrays of [ASCII][ascii] and [UCS4][ucs4] strings
+<a href="#234" id="234">234</a>
+<a href="#235" id="235">235</a>
+<a href="#236" id="236">236</a>
+<a href="#237" id="237">237</a>
+<a href="#238" id="238">238</a>
+<a href="#239" id="239">239</a></pre></div><pre class="rust"><code><span class="doccomment">//! Types to support arrays of [ASCII][ascii] and [UCS4][ucs4] strings
 //!
 //! [ascii]: https://numpy.org/doc/stable/reference/c-api/dtype.html#c.NPY_STRING
 //! [ucs4]: https://numpy.org/doc/stable/reference/c-api/dtype.html#c.NPY_UNICODE
 
-</span><span class="kw">use </span>std::cell::RefCell;
-<span class="kw">use </span>std::collections::hash_map::Entry;
+</span><span class="kw">use </span>std::collections::hash_map::Entry;
 <span class="kw">use </span>std::fmt;
 <span class="kw">use </span>std::mem::size_of;
 <span class="kw">use </span>std::os::raw::c_char;
 <span class="kw">use </span>std::str;
+<span class="kw">use </span>std::sync::Mutex;
 
 <span class="kw">use </span>pyo3::{
     ffi::{Py_UCS1, Py_UCS4},
-    sync::GILProtected,
     Bound, Py, Python,
 };
 <span class="kw">use </span>rustc_hash::FxHashMap;
@@ -254,6 +258,7 @@
 <span class="kw">use </span><span class="kw">crate</span>::dtype::{clone_methods_impl, Element, PyArrayDescr, PyArrayDescrMethods};
 <span class="kw">use </span><span class="kw">crate</span>::npyffi::PyDataType_SET_ELSIZE;
 <span class="kw">use </span><span class="kw">crate</span>::npyffi::NPY_TYPES;
+<span class="kw">use </span><span class="kw">crate</span>::ThreadStateGuard;
 
 <span class="doccomment">/// A newtype wrapper around [`[u8; N]`][Py_UCS1] to handle [`byte` scalars][numpy-bytes] while satisfying coherence.
 ///
@@ -394,14 +399,13 @@
 }
 
 <span class="kw">struct </span>TypeDescriptors {
-    <span class="attr">#[allow(clippy::type_complexity)]
-    </span>dtypes: GILProtected&lt;RefCell&lt;<span class="prelude-ty">Option</span>&lt;FxHashMap&lt;usize, Py&lt;PyArrayDescr&gt;&gt;&gt;&gt;&gt;,
+    dtypes: Mutex&lt;<span class="prelude-ty">Option</span>&lt;FxHashMap&lt;usize, Py&lt;PyArrayDescr&gt;&gt;&gt;&gt;,
 }
 
 <span class="kw">impl </span>TypeDescriptors {
     <span class="kw">const fn </span>new() -&gt; <span class="self">Self </span>{
         <span class="self">Self </span>{
-            dtypes: GILProtected::new(RefCell::new(<span class="prelude-val">None</span>)),
+            dtypes: Mutex::new(<span class="prelude-val">None</span>),
         }
     }
 
@@ -414,7 +418,13 @@
         byteorder: c_char,
         size: usize,
     ) -&gt; Bound&lt;<span class="lifetime">'py</span>, PyArrayDescr&gt; {
-        <span class="kw">let </span><span class="kw-2">mut </span>dtypes = <span class="self">self</span>.dtypes.get(py).borrow_mut();
+        <span class="comment">// Detach from the runtime to avoid deadlocking on acquiring the mutex.
+        </span><span class="kw">let </span>ts_guard = ThreadStateGuard::new();
+
+        <span class="kw">let </span><span class="kw-2">mut </span>dtypes = <span class="self">self</span>.dtypes.lock().expect(<span class="string">"dtype cache poisoned"</span>);
+
+        <span class="comment">// Now we hold the mutex so it's safe to re-attach to the runtime.
+        </span>drop(ts_guard);
 
         <span class="kw">let </span>dtype = <span class="kw">match </span>dtypes.get_or_insert_with(Default::default).entry(size) {
             Entry::Occupied(entry) =&gt; entry.into_mut(),

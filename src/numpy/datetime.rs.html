@@ -345,7 +345,13 @@
 <a href="#344" id="344">344</a>
 <a href="#345" id="345">345</a>
 <a href="#346" id="346">346</a>
-<a href="#347" id="347">347</a></pre></div><pre class="rust"><code><span class="doccomment">//! Support datetimes and timedeltas
+<a href="#347" id="347">347</a>
+<a href="#348" id="348">348</a>
+<a href="#349" id="349">349</a>
+<a href="#350" id="350">350</a>
+<a href="#351" id="351">351</a>
+<a href="#352" id="352">352</a>
+<a href="#353" id="353">353</a></pre></div><pre class="rust"><code><span class="doccomment">//! Support datetimes and timedeltas
 //!
 //! This module provides wrappers for NumPy's [`datetime64`][scalars-datetime64] and [`timedelta64`][scalars-timedelta64] types
 //! which are used for time keeping with with an emphasis on scientific applications.
@@ -401,19 +407,20 @@
 //! [scalars-datetime64]: https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.datetime64
 //! [scalars-timedelta64]: https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.timedelta64
 
-</span><span class="kw">use </span>std::cell::RefCell;
-<span class="kw">use </span>std::collections::hash_map::Entry;
+</span><span class="kw">use </span>std::collections::hash_map::Entry;
 <span class="kw">use </span>std::fmt;
 <span class="kw">use </span>std::hash::Hash;
 <span class="kw">use </span>std::marker::PhantomData;
+<span class="kw">use </span>std::sync::Mutex;
 
-<span class="kw">use </span>pyo3::{sync::GILProtected, Bound, Py, Python};
+<span class="kw">use </span>pyo3::{Bound, Py, Python};
 <span class="kw">use </span>rustc_hash::FxHashMap;
 
 <span class="kw">use </span><span class="kw">crate</span>::dtype::{clone_methods_impl, Element, PyArrayDescr, PyArrayDescrMethods};
 <span class="kw">use </span><span class="kw">crate</span>::npyffi::{
     PyArray_DatetimeDTypeMetaData, PyDataType_C_METADATA, NPY_DATETIMEUNIT, NPY_TYPES,
 };
+<span class="kw">use </span><span class="kw">crate</span>::ThreadStateGuard;
 
 <span class="doccomment">/// Represents the [datetime units][datetime-units] supported by NumPy
 ///
@@ -556,8 +563,7 @@
 
 <span class="kw">struct </span>TypeDescriptors {
     npy_type: NPY_TYPES,
-    <span class="attr">#[allow(clippy::type_complexity)]
-    </span>dtypes: GILProtected&lt;RefCell&lt;<span class="prelude-ty">Option</span>&lt;FxHashMap&lt;NPY_DATETIMEUNIT, Py&lt;PyArrayDescr&gt;&gt;&gt;&gt;&gt;,
+    dtypes: Mutex&lt;<span class="prelude-ty">Option</span>&lt;FxHashMap&lt;NPY_DATETIMEUNIT, Py&lt;PyArrayDescr&gt;&gt;&gt;&gt;,
 }
 
 <span class="kw">impl </span>TypeDescriptors {
@@ -565,13 +571,19 @@
     </span><span class="kw">const unsafe fn </span>new(npy_type: NPY_TYPES) -&gt; <span class="self">Self </span>{
         <span class="self">Self </span>{
             npy_type,
-            dtypes: GILProtected::new(RefCell::new(<span class="prelude-val">None</span>)),
+            dtypes: Mutex::new(<span class="prelude-val">None</span>),
         }
     }
 
     <span class="attr">#[allow(clippy::wrong_self_convention)]
     </span><span class="kw">fn </span>from_unit&lt;<span class="lifetime">'py</span>&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, py: Python&lt;<span class="lifetime">'py</span>&gt;, unit: NPY_DATETIMEUNIT) -&gt; Bound&lt;<span class="lifetime">'py</span>, PyArrayDescr&gt; {
-        <span class="kw">let </span><span class="kw-2">mut </span>dtypes = <span class="self">self</span>.dtypes.get(py).borrow_mut();
+        <span class="comment">// Detach from the runtime to avoid deadlocking on acquiring the mutex.
+        </span><span class="kw">let </span>ts_guard = ThreadStateGuard::new();
+
+        <span class="kw">let </span><span class="kw-2">mut </span>dtypes = <span class="self">self</span>.dtypes.lock().expect(<span class="string">"dtype cache poisoned"</span>);
+
+        <span class="comment">// Now we hold the mutex so it's safe to re-attach to the runtime.
+        </span>drop(ts_guard);
 
         <span class="kw">let </span>dtype = <span class="kw">match </span>dtypes.get_or_insert_with(Default::default).entry(unit) {
             Entry::Occupied(entry) =&gt; entry.into_mut(),

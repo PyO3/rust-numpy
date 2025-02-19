@@ -157,7 +157,7 @@
     </span>[<span class="macro-nonterminal">$offset</span>: expr; <span class="macro-nonterminal">$fname</span>: ident ($(<span class="macro-nonterminal">$arg</span>: ident: <span class="macro-nonterminal">$t</span>: ty),* $(,)<span class="question-mark">?</span>) $(-&gt; <span class="macro-nonterminal">$ret</span>: ty)<span class="question-mark">?</span>] =&gt; {
         <span class="attr">#[allow(non_snake_case)]
         </span><span class="kw">pub unsafe fn </span><span class="macro-nonterminal">$fname</span>&lt;<span class="lifetime">'py</span>&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, py: Python&lt;<span class="lifetime">'py</span>&gt;, $(<span class="macro-nonterminal">$arg </span>: <span class="macro-nonterminal">$t</span>), <span class="kw-2">*</span>) $(-&gt; <span class="macro-nonterminal">$ret</span>)* {
-            <span class="kw">let </span>fptr = <span class="self">self</span>.get(py, <span class="macro-nonterminal">$offset</span>) <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">extern fn </span>($(<span class="macro-nonterminal">$arg </span>: <span class="macro-nonterminal">$t</span>), <span class="kw-2">*</span>) $(-&gt; <span class="macro-nonterminal">$ret</span>)<span class="kw-2">*</span>;
+            <span class="kw">let </span>fptr = <span class="self">self</span>.get(py, <span class="macro-nonterminal">$offset</span>) <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">extern </span><span class="string">"C" </span><span class="kw">fn </span>($(<span class="macro-nonterminal">$arg </span>: <span class="macro-nonterminal">$t</span>), <span class="kw-2">*</span>) $(-&gt; <span class="macro-nonterminal">$ret</span>)<span class="kw-2">*</span>;
             (<span class="kw-2">*</span>fptr)($(<span class="macro-nonterminal">$arg</span>), <span class="kw-2">*</span>)
         }
     };
@@ -173,7 +173,7 @@
                 API_VERSION_2_0,
                 <span class="kw-2">*</span>API_VERSION.get(py).expect(<span class="string">"API_VERSION is initialized"</span>),
             );
-            <span class="kw">let </span>fptr = <span class="self">self</span>.get(py, <span class="macro-nonterminal">$offset</span>) <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">extern fn </span>($(<span class="macro-nonterminal">$arg</span>: <span class="macro-nonterminal">$t</span>), <span class="kw-2">*</span>) $(-&gt; <span class="macro-nonterminal">$ret</span>)<span class="kw-2">*</span>;
+            <span class="kw">let </span>fptr = <span class="self">self</span>.get(py, <span class="macro-nonterminal">$offset</span>) <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">extern </span><span class="string">"C" </span><span class="kw">fn </span>($(<span class="macro-nonterminal">$arg</span>: <span class="macro-nonterminal">$t</span>), <span class="kw-2">*</span>) $(-&gt; <span class="macro-nonterminal">$ret</span>)<span class="kw-2">*</span>;
             (<span class="kw-2">*</span>fptr)($(<span class="macro-nonterminal">$arg</span>), <span class="kw-2">*</span>)
         }
 
@@ -188,7 +188,7 @@
                 API_VERSION_2_0,
                 <span class="kw-2">*</span>API_VERSION.get(py).expect(<span class="string">"API_VERSION is initialized"</span>),
             );
-            <span class="kw">let </span>fptr = <span class="self">self</span>.get(py, <span class="macro-nonterminal">$offset</span>) <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">extern fn </span>($(<span class="macro-nonterminal">$arg</span>: <span class="macro-nonterminal">$t</span>), <span class="kw-2">*</span>) $(-&gt; <span class="macro-nonterminal">$ret</span>)<span class="kw-2">*</span>;
+            <span class="kw">let </span>fptr = <span class="self">self</span>.get(py, <span class="macro-nonterminal">$offset</span>) <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">extern </span><span class="string">"C" </span><span class="kw">fn </span>($(<span class="macro-nonterminal">$arg</span>: <span class="macro-nonterminal">$t</span>), <span class="kw-2">*</span>) $(-&gt; <span class="macro-nonterminal">$ret</span>)<span class="kw-2">*</span>;
             (<span class="kw-2">*</span>fptr)($(<span class="macro-nonterminal">$arg</span>), <span class="kw-2">*</span>)
         }
 

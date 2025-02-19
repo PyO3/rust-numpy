@@ -195,7 +195,24 @@
 <a href="#194" id="194">194</a>
 <a href="#195" id="195">195</a>
 <a href="#196" id="196">196</a>
-<a href="#197" id="197">197</a></pre></div><pre class="rust"><code><span class="doccomment">//! This crate provides Rust interfaces for [NumPy C APIs][c-api],
+<a href="#197" id="197">197</a>
+<a href="#198" id="198">198</a>
+<a href="#199" id="199">199</a>
+<a href="#200" id="200">200</a>
+<a href="#201" id="201">201</a>
+<a href="#202" id="202">202</a>
+<a href="#203" id="203">203</a>
+<a href="#204" id="204">204</a>
+<a href="#205" id="205">205</a>
+<a href="#206" id="206">206</a>
+<a href="#207" id="207">207</a>
+<a href="#208" id="208">208</a>
+<a href="#209" id="209">209</a>
+<a href="#210" id="210">210</a>
+<a href="#211" id="211">211</a>
+<a href="#212" id="212">212</a>
+<a href="#213" id="213">213</a>
+<a href="#214" id="214">214</a></pre></div><pre class="rust"><code><span class="doccomment">//! This crate provides Rust interfaces for [NumPy C APIs][c-api],
 //! especially for the [ndarray][ndarray] class.
 //!
 //! It uses [`pyo3`] for Rust bindings to CPython, and uses
@@ -345,6 +362,23 @@ as well as the [`PyReadonlyArray::try_as_matrix`] and [`PyReadwriteArray::try_as
 <span class="attr">#[cold]
 #[inline(always)]
 </span><span class="kw">fn </span>cold() {}
+
+<span class="doccomment">/// An RAII guard for avoiding deadlocks with the GIL or other global
+/// synchronization events in the Python runtime
+</span><span class="comment">// FIXME create a proper MutexExt trait that handles poisoning and upstream to PyO3
+</span><span class="kw">struct </span>ThreadStateGuard(<span class="kw-2">*mut </span>pyo3::ffi::PyThreadState);
+
+<span class="kw">impl </span>ThreadStateGuard {
+    <span class="kw">fn </span>new() -&gt; ThreadStateGuard {
+        ThreadStateGuard(<span class="kw">unsafe </span>{ pyo3::ffi::PyEval_SaveThread() })
+    }
+}
+
+<span class="kw">impl </span>Drop <span class="kw">for </span>ThreadStateGuard {
+    <span class="kw">fn </span>drop(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
+        <span class="kw">unsafe </span>{ pyo3::ffi::PyEval_RestoreThread(<span class="self">self</span>.<span class="number">0</span>) };
+    }
+}
 
 <span class="doccomment">/// Create a [`PyArray`] with one, two or three dimensions.
 ///
