@@ -19,6 +19,7 @@ use rustc_hash::FxHashMap;
 use crate::dtype::{clone_methods_impl, Element, PyArrayDescr, PyArrayDescrMethods};
 use crate::npyffi::PyDataType_SET_ELSIZE;
 use crate::npyffi::NPY_TYPES;
+use crate::ThreadStateGuard;
 
 /// A newtype wrapper around [`[u8; N]`][Py_UCS1] to handle [`byte` scalars][numpy-bytes] while satisfying coherence.
 ///
@@ -178,22 +179,12 @@ impl TypeDescriptors {
         byteorder: c_char,
         size: usize,
     ) -> Bound<'py, PyArrayDescr> {
-        // FIXME create a proper MutexExt trait that handles poisoning and upstream to PyO3
-        struct Guard(*mut pyo3::ffi::PyThreadState);
-
-        impl Drop for Guard {
-            fn drop(&mut self) {
-                unsafe { pyo3::ffi::PyEval_RestoreThread(self.0) };
-            }
-        }
-
-        // we are currently attached to the python runtime and we might block trying to acquire
-        // the dtype cache mutex, so detach to avoid a possible deadlock.
-        let ts_guard = Guard(unsafe { pyo3::ffi::PyEval_SaveThread() });
+        // Detach from the runtime to avoid deadlocking on acquiring the mutex.
+        let ts_guard = ThreadStateGuard::new();
 
         let mut dtypes = self.dtypes.lock().expect("dtype cache poisoned");
 
-        // we've acquire the dtype cache lock so it's safe to re-attach to the runtime
+        // Now we hold the mutex so it's safe to re-attach to the runtime.
         drop(ts_guard);
 
         let dtype = match dtypes.get_or_insert_with(Default::default).entry(size) {
