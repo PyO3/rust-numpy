@@ -2,7 +2,7 @@
 
 use std::{mem, os::raw::c_int, ptr};
 
-use ndarray::{ArrayBase, Data, Dim, Dimension, IntoDimension, Ix1, OwnedRepr};
+use ndarray::{ArrayBase, Data, Dim, Dimension, IntoDimension, Ix1, Ix2, OwnedRepr};
 use pyo3::{Bound, Python};
 
 use crate::array::{PyArray, PyArrayMethods};
@@ -89,6 +89,31 @@ impl<T: Element> IntoPyArray for Vec<T> {
         }
     }
 }
+
+#[cfg(feature = "faer")]
+impl<T: Element> IntoPyArray for faer::Mat<T> {
+    type Item = T;
+    type Dim = Ix2;
+
+    fn into_pyarray<'py>(mut self, py: Python<'py>) -> Bound<'py, PyArray<Self::Item, Self::Dim>> {
+        let dims = Dim([self.nrows(), self.ncols()]);
+        let rstride = self.row_stride();
+        let cstride = self.col_stride();
+        // let strides = [mem::size_of::<T>() as npy_intp, mem::size_of::<T>() as npy_intp];
+        let strides = [rstride*mem::size_of::<T>() as npy_intp, cstride*mem::size_of::<T>() as npy_intp];
+        let data_ptr = self.as_ptr_mut();
+        unsafe {
+            PyArray::from_raw_parts(
+                py,
+                dims,
+                strides.as_ptr(),
+                data_ptr,
+                PySliceContainer::from(self),
+            )
+        }
+    }
+}
+
 
 impl<A, D> IntoPyArray for ArrayBase<OwnedRepr<A>, D>
 where

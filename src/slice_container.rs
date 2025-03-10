@@ -1,4 +1,4 @@
-use std::{mem, ptr};
+use std::{mem, ptr, slice::from_raw_parts_mut};
 
 use ndarray::{ArrayBase, Dimension, OwnedRepr};
 use pyo3::pyclass;
@@ -61,6 +61,31 @@ impl<T: Send + Sync> From<Vec<T>> for PySliceContainer {
         let len = data.len();
         let cap = data.capacity();
         let drop = drop_vec::<T>;
+
+        Self {
+            ptr,
+            len,
+            cap,
+            drop,
+        }
+    }
+}
+
+#[cfg(feature = "faer")]
+impl<T: Send + Sync> From<faer::Mat<T>> for PySliceContainer {
+    fn from(data: faer::Mat<T>) -> Self {
+        unsafe fn drop_faer_mat<T>(ptr: *mut u8, len: usize, _cap: usize) {
+            faer::mat::MatMut::from_raw_parts_mut(ptr as *mut T, len, 1, 1, 1);
+        }
+
+        // FIXME(adamreichold): Use `Vec::into_raw_parts`
+        // when it becomes stable and compatible with our MSRV.
+        let mut data = mem::ManuallyDrop::new(data);
+
+        let ptr = data.as_ptr_mut() as *mut u8;
+        let len = data.nrows() * data.ncols();
+        let cap = 0;
+        let drop = drop_faer_mat::<T>;
 
         Self {
             ptr,

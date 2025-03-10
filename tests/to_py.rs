@@ -287,6 +287,32 @@ fn slice_container_type_confusion() {
         let _py_arr = vec![1, 2, 3].into_pyarray(py);
     });
 }
+#[cfg(feature = "faer")]
+#[test]
+fn faer_mat_to_numpy() {
+    let faer_mat: faer::Mat<f64> = faer::Scale(2.0)*faer::mat::Mat::<f64>::identity(2, 2);
+    let faer_mat_wide: faer::Mat<f64> = faer::mat![[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]];
+    let faer_mat_tall: faer::Mat<f64> = faer_mat_wide.transpose().to_owned();
+    Python::with_gil(|py| {
+        let mat_pyarray = faer_mat.into_pyarray(py);
+        let mat_wide_pyarray = faer_mat_wide.into_pyarray(py);
+        let mat_tall_pyarray = faer_mat_tall.into_pyarray(py);
+        assert_eq!(
+            mat_pyarray.readonly().as_array(),
+            array![[2.0f64, 0.0f64], [0.0f64, 2.0f64]]
+        );
+        assert_eq!(
+            mat_wide_pyarray.readonly().as_array(),
+            array![[1.0f64, 2.0, 3.0], [4.0, 5.0, 6.0]]
+        );
+        assert_eq!(
+            mat_tall_pyarray.readonly().as_array(),
+            array![[1.0f64, 4.0],
+                   [2.0,    5.0],
+                   [3.0,    6.0]]
+        );
+    });
+}
 
 #[cfg(feature = "nalgebra")]
 #[test]
