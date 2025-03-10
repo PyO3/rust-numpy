@@ -75,7 +75,7 @@ impl<T: Send + Sync> From<Vec<T>> for PySliceContainer {
 impl<T: Send + Sync> From<faer::Mat<T>> for PySliceContainer {
     fn from(data: faer::Mat<T>) -> Self {
         unsafe fn drop_faer_mat<T>(ptr: *mut u8, len: usize, _cap: usize) {
-            faer::mat::MatMut::from_raw_parts_mut(ptr as *mut T, len, 1, 1, 1);
+            let _ = faer::mat::MatMut::from_raw_parts_mut(ptr as *mut T, len, 1, 1, 1);
         }
 
         // FIXME(adamreichold): Use `Vec::into_raw_parts`
