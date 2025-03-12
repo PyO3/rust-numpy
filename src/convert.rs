@@ -99,8 +99,10 @@ impl<T: Element> IntoPyArray for faer::Mat<T> {
         let dims = Dim([self.nrows(), self.ncols()]);
         let rstride = self.row_stride();
         let cstride = self.col_stride();
-        // let strides = [mem::size_of::<T>() as npy_intp, mem::size_of::<T>() as npy_intp];
-        let strides = [rstride*mem::size_of::<T>() as npy_intp, cstride*mem::size_of::<T>() as npy_intp];
+        let strides = [
+            rstride * mem::size_of::<T>() as npy_intp,
+            cstride * mem::size_of::<T>() as npy_intp,
+        ];
         let data_ptr = self.as_ptr_mut();
         unsafe {
             PyArray::from_raw_parts(
@@ -113,7 +115,6 @@ impl<T: Element> IntoPyArray for faer::Mat<T> {
         }
     }
 }
-
 
 impl<A, D> IntoPyArray for ArrayBase<OwnedRepr<A>, D>
 where
