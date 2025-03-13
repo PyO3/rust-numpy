@@ -1,5 +1,6 @@
 # Changelog
 - v0.24.0
+  - Bump PyO3 dependency to v0.24.0. ([#483](https://github.com/PyO3/rust-numpy/pull/483)
   - Support Python 3.13t "free-threaded" Python. ([#471](https://github.com/PyO3/rust-numpy/pull/471)
 
 - v0.23.0
