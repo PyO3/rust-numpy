@@ -76,7 +76,12 @@ impl<T: Send + Sync> From<faer::Mat<T>> for PySliceContainer {
     fn from(data: faer::Mat<T>) -> Self {
         unsafe fn drop_faer_mat<T>(ptr: *mut u8, len_nrows: usize, cap_ncols: usize) {
             let _ = faer::mat::MatMut::from_raw_parts_mut(
-                ptr as *mut T, len_nrows, cap_ncols, 1, cap_ncols as isize);
+                ptr as *mut T,
+                len_nrows,
+                cap_ncols,
+                1,
+                cap_ncols as isize,
+            );
         }
 
         let mut data = mem::ManuallyDrop::new(data);
