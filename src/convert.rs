@@ -42,16 +42,6 @@ pub trait IntoPyArray: Sized {
 
     /// Consumes `self` and moves its data into a NumPy array.
     fn into_pyarray<'py>(self, py: Python<'py>) -> Bound<'py, PyArray<Self::Item, Self::Dim>>;
-
-    /// Deprecated name for [`IntoPyArray::into_pyarray`].
-    #[deprecated(since = "0.23.0", note = "renamed to `IntoPyArray::into_pyarray`")]
-    #[inline]
-    fn into_pyarray_bound<'py>(
-        self,
-        py: Python<'py>,
-    ) -> Bound<'py, PyArray<Self::Item, Self::Dim>> {
-        self.into_pyarray(py)
-    }
 }
 
 impl<T: Element> IntoPyArray for Box<[T]> {
@@ -144,13 +134,6 @@ pub trait ToPyArray {
 
     /// Copies the content pointed to by `&self` into a newly allocated NumPy array.
     fn to_pyarray<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray<Self::Item, Self::Dim>>;
-
-    /// Deprecated name for [ToPyArray::to_pyarray`].
-    #[deprecated(since = "0.23.0", note = "renamed to ToPyArray::to_pyarray`")]
-    #[inline]
-    fn to_pyarray_bound<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray<Self::Item, Self::Dim>> {
-        self.to_pyarray(py)
-    }
 }
 
 impl<T: Element> ToPyArray for [T] {
