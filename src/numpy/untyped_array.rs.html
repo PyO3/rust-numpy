@@ -241,7 +241,7 @@
 <a href=#241 id=241 data-nosnippet>241</a>
 <a href=#242 id=242 data-nosnippet>242</a>    <span class="doccomment">/// Returns `true` if the there are no elements in the array.
 <a href=#243 id=243 data-nosnippet>243</a>    </span><span class="kw">fn </span>is_empty(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
-<a href=#244 id=244 data-nosnippet>244</a>        <span class="self">self</span>.shape().iter().any(|dim| <span class="kw-2">*</span>dim == <span class="number">0</span>)
+<a href=#244 id=244 data-nosnippet>244</a>        <span class="self">self</span>.shape().contains(<span class="kw-2">&amp;</span><span class="number">0</span>)
 <a href=#245 id=245 data-nosnippet>245</a>    }
 <a href=#246 id=246 data-nosnippet>246</a>}
 <a href=#247 id=247 data-nosnippet>247</a>
