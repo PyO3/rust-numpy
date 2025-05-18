@@ -3,7 +3,7 @@ name = "numpy"
 version = "0.25.0"
 authors = [
     "The rust-numpy Project Developers",
-    "PyO3 Project and Contributors <https://github.com/PyO3>"
+    "PyO3 Project and Contributors <https://github.com/PyO3>",
 ]
 description = "PyO3-based Rust bindings of the NumPy C-API"
 documentation = "https://docs.rs/numpy"
@@ -26,11 +26,22 @@ pyo3 = { version = "0.25.0", default-features = false, features = ["macros"] }
 rustc-hash = "2.0"
 
 [dev-dependencies]
-pyo3 = { version = "0.25", default-features = false, features = ["auto-initialize"] }
-nalgebra = { version = ">=0.30, <0.34", default-features = false, features = ["std"] }
+pyo3 = { version = "0.25", default-features = false, features = [
+    "auto-initialize",
+] }
+nalgebra = { version = ">=0.30, <0.34", default-features = false, features = [
+    "std",
+] }
 
 [build-dependencies]
 pyo3-build-config = { version = "0.25", features = ["resolve-config"] }
 
 [package.metadata.docs.rs]
 all-features = true
+
+[lints.rust]
+# We usually want to make the GIL lifetime explicit.
+elided-lifetimes-in-paths = "deny"
+
+[lints.clippy]
+needless-lifetimes = "allow"
