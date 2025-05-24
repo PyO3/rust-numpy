@@ -23,7 +23,7 @@ num-integer = "0.1"
 num-traits = "0.2"
 ndarray = ">= 0.15, < 0.17"
 pyo3 = { version = "0.25.0", default-features = false, features = ["macros"] }
-rustc-hash = "2.1"
+rustc-hash = "2"
 
 [dev-dependencies]
 pyo3 = { version = "0.25", default-features = false, features = [
