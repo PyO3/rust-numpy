@@ -149,7 +149,7 @@ where
 
         let py = ob.py();
 
-        if matches!(D::NDIM, None | Some(1)) {
+        if matches!(D::NDIM, Some(1)) {
             if let Ok(vec) = ob.extract::<Vec<T>>() {
                 let array = Array1::from(vec)
                     .into_dimensionality()
