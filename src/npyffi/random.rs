@@ -3,7 +3,7 @@ use std::{ffi::c_void, ptr::NonNull};
 use pyo3::{exceptions::PyRuntimeError, prelude::*, types::PyCapsule};
 
 #[repr(C)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy)] // TODO: can it be Clone and/or Copy?
 pub struct npy_bitgen {
     pub state: *mut c_void,
     pub next_uint64: unsafe extern "C" fn(*mut c_void) -> super::npy_uint64, //nogil
