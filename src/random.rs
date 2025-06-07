@@ -48,6 +48,13 @@ impl<'py> BitGeneratorMethods<'py> for Bound<'py, BitGenerator> {
     }
 }
 
+impl<'py> TryFrom<&Bound<'py, BitGenerator>> for BitGen<'py> {
+    type Error = PyErr;
+    fn try_from(value: &Bound<'py, BitGenerator>) -> Result<Self, Self::Error> {
+        value.bit_gen()
+    }
+}
+
 /// Wrapper for [`npy_bitgen`]
 pub struct BitGen<'a>(&'a mut npy_bitgen);
 
