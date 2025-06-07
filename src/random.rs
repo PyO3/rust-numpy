@@ -77,18 +77,47 @@ impl<'py> BitGen<'py> {
     }
 }
 
+#[cfg(feature = "rand")]
+impl rand::RngCore for BitGen<'_> {
+    fn next_u32(&mut self) -> u32 {
+        self.next_uint32()
+    }
+    fn next_u64(&mut self) -> u64 {
+        self.next_uint64()
+    }
+    fn fill_bytes(&mut self, dst: &mut [u8]) {
+        rand::rand_core::impls::fill_bytes_via_next(self, dst)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     
+    fn get_bit_generator<'py>(py: Python<'py>) -> PyResult<Bound<'py, BitGenerator>> {
+        let default_rng = py.import("numpy.random")?.getattr("default_rng")?;
+        let bit_generator = default_rng.call0()?.getattr("bit_generator")?.downcast_into::<BitGenerator>()?;
+        Ok(bit_generator)
+    }
+    
     #[test]
-    fn test_bitgen() -> PyResult<()> {
+    fn bitgen() -> PyResult<()> {
         Python::with_gil(|py| {
-            let default_rng = py.import("numpy.random")?.getattr("default_rng")?;
-            let bitgen = default_rng.call0()?.getattr("bit_generator")?.downcast_into::<BitGenerator>()?.bit_gen()?;
-            let res = bitgen.next_raw();
-            dbg!(res);
+            let bitgen = get_bit_generator(py)?.bit_gen()?;
+            let _ = bitgen.next_raw();
             Ok(())
         })
-    }   
+    }
+
+    #[cfg(feature = "rand")]
+    #[test]
+    fn rand() -> PyResult<()> {
+        use rand::Rng as _;
+    
+        Python::with_gil(|py| {
+            let mut bitgen = get_bit_generator(py)?.bit_gen()?;
+            let _ = bitgen.random_ratio(2, 3);
+            Ok(())
+        })
+    }
 }
