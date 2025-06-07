@@ -1,10 +1,10 @@
 //! Safe interface for NumPy's random [`BitGenerator`]
 
-use pyo3::{ffi, prelude::*, sync::GILOnceCell, types::PyType, PyTypeInfo};
+use pyo3::{ffi, prelude::*, sync::GILOnceCell, types::{PyCapsule, PyType}, PyTypeInfo, exceptions::PyRuntimeError};
 
-use crate::npyffi::get_bitgen_api;
+use crate::npyffi::npy_bitgen;
 
-///! Wrapper for NumPy's random [`BitGenerator`][bg]
+///! Wrapper for [`np.random.BitGenerator`][bg]
 ///!
 ///! [bg]: https://numpy.org/doc/stable//reference/random/bit_generators/generated/numpy.random.BitGenerator.html
 #[repr(transparent)]
@@ -32,7 +32,27 @@ unsafe impl PyTypeInfo for BitGenerator {
 }
 
 /// Methods for [`BitGenerator`]
-pub trait BitGeneratorMethods {
+pub trait BitGeneratorMethods<'py> {
+    /// Returns a new [`BitGen`]
+    fn bit_gen(&self) -> PyResult<BitGen<'py>>;
+}
+
+impl<'py> BitGeneratorMethods<'py> for Bound<'py, BitGenerator> {
+    fn bit_gen(&self) -> PyResult<BitGen<'py>> {
+        let capsule = self.as_any().getattr("capsule")?.downcast_into::<PyCapsule>()?;
+        assert_eq!(capsule.name()?, Some(c"BitGenerator"));
+        let ptr = capsule.pointer() as *mut npy_bitgen;
+        // SAFETY: the lifetime of `ptr` is derived from the lifetime of `self`
+        let ref_ = unsafe { ptr.as_mut::<'py>() }.ok_or_else(|| PyRuntimeError::new_err("Invalid BitGenerator capsule"))?;
+        Ok(BitGen(ref_))
+    }
+}
+
+/// Wrapper for [`npy_bitgen`]
+pub struct BitGen<'a>(&'a mut npy_bitgen);
+
+/// Methods for [`BitGen`]
+pub trait BitGenMethods {
     /// Returns the next random unsigned 64 bit integer
     fn next_uint64(&self) -> u64;
     /// Returns the next random unsigned 32 bit integer
@@ -43,23 +63,18 @@ pub trait BitGeneratorMethods {
     fn next_raw(&self) -> u64;
 }
 
-// TODO: cache npy_bitgen pointer
-impl<'py> BitGeneratorMethods for Bound<'py, BitGenerator> {
+impl<'py> BitGenMethods for BitGen<'py> {
     fn next_uint64(&self) -> u64 {
-        todo!()
+        unsafe { (self.0.next_uint64)(self.0.state) }
     }
     fn next_uint32(&self) -> u32 {
-        todo!()
+        unsafe { (self.0.next_uint32)(self.0.state) }
     }
     fn next_double(&self) -> libc::c_double {
-        todo!()
+        unsafe { (self.0.next_double)(self.0.state) }
     }
     fn next_raw(&self) -> u64 {
-        let mut api = get_bitgen_api(self.as_any()).expect("Could not get bitgen");
-        unsafe {
-            let api = api.as_mut();
-            (api.next_raw)(api.state)
-        }
+        unsafe { (self.0.next_raw)(self.0.state) }
     }
 }
 
@@ -71,7 +86,7 @@ mod tests {
     fn test_bitgen() -> PyResult<()> {
         Python::with_gil(|py| {
             let default_rng = py.import("numpy.random")?.getattr("default_rng")?;
-            let bitgen = default_rng.call0()?.getattr("bit_generator")?.downcast_into::<BitGenerator>()?;
+            let bitgen = default_rng.call0()?.getattr("bit_generator")?.downcast_into::<BitGenerator>()?.bit_gen()?;
             let res = bitgen.next_raw();
             dbg!(res);
             Ok(())
