@@ -1,6 +1,13 @@
 //! Safe interface for NumPy's random [`BitGenerator`]
 
-use pyo3::{ffi, prelude::*, sync::GILOnceCell, types::{PyCapsule, PyType}, PyTypeInfo, exceptions::PyRuntimeError};
+use pyo3::{
+    exceptions::PyRuntimeError,
+    ffi,
+    prelude::*,
+    sync::GILOnceCell,
+    types::{PyCapsule, PyType},
+    PyTypeInfo,
+};
 
 use crate::npyffi::npy_bitgen;
 
@@ -39,11 +46,15 @@ pub trait BitGeneratorMethods<'py> {
 
 impl<'py> BitGeneratorMethods<'py> for Bound<'py, BitGenerator> {
     fn bit_gen(&self) -> PyResult<BitGen<'py>> {
-        let capsule = self.as_any().getattr("capsule")?.downcast_into::<PyCapsule>()?;
+        let capsule = self
+            .as_any()
+            .getattr("capsule")?
+            .downcast_into::<PyCapsule>()?;
         assert_eq!(capsule.name()?, Some(c"BitGenerator"));
         let ptr = capsule.pointer() as *mut npy_bitgen;
         // SAFETY: the lifetime of `ptr` is derived from the lifetime of `self`
-        let ref_ = unsafe { ptr.as_mut::<'py>() }.ok_or_else(|| PyRuntimeError::new_err("Invalid BitGenerator capsule"))?;
+        let ref_ = unsafe { ptr.as_mut::<'py>() }
+            .ok_or_else(|| PyRuntimeError::new_err("Invalid BitGenerator capsule"))?;
         Ok(BitGen(ref_))
     }
 }
@@ -93,13 +104,16 @@ impl rand::RngCore for BitGen<'_> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     fn get_bit_generator<'py>(py: Python<'py>) -> PyResult<Bound<'py, BitGenerator>> {
         let default_rng = py.import("numpy.random")?.getattr("default_rng")?;
-        let bit_generator = default_rng.call0()?.getattr("bit_generator")?.downcast_into::<BitGenerator>()?;
+        let bit_generator = default_rng
+            .call0()?
+            .getattr("bit_generator")?
+            .downcast_into::<BitGenerator>()?;
         Ok(bit_generator)
     }
-    
+
     #[test]
     fn bitgen() -> PyResult<()> {
         Python::with_gil(|py| {
@@ -113,7 +127,7 @@ mod tests {
     #[test]
     fn rand() -> PyResult<()> {
         use rand::Rng as _;
-    
+
         Python::with_gil(|py| {
             let mut bitgen = get_bit_generator(py)?.bit_gen()?;
             let _ = bitgen.random_ratio(2, 3);
