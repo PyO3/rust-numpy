@@ -51,29 +51,21 @@ impl<'py> BitGeneratorMethods<'py> for Bound<'py, BitGenerator> {
 /// Wrapper for [`npy_bitgen`]
 pub struct BitGen<'a>(&'a mut npy_bitgen);
 
-/// Methods for [`BitGen`]
-pub trait BitGenMethods {
+impl<'py> BitGen<'py> {
     /// Returns the next random unsigned 64 bit integer
-    fn next_uint64(&self) -> u64;
-    /// Returns the next random unsigned 32 bit integer
-    fn next_uint32(&self) -> u32;
-    /// Returns the next random double
-    fn next_double(&self) -> libc::c_double;
-    /// Returns the next raw value (can be used for testing)
-    fn next_raw(&self) -> u64;
-}
-
-impl<'py> BitGenMethods for BitGen<'py> {
-    fn next_uint64(&self) -> u64 {
+    pub fn next_uint64(&self) -> u64 {
         unsafe { (self.0.next_uint64)(self.0.state) }
     }
-    fn next_uint32(&self) -> u32 {
+    /// Returns the next random unsigned 32 bit integer
+    pub fn next_uint32(&self) -> u32 {
         unsafe { (self.0.next_uint32)(self.0.state) }
     }
-    fn next_double(&self) -> libc::c_double {
+    /// Returns the next random double
+    pub fn next_double(&self) -> libc::c_double {
         unsafe { (self.0.next_double)(self.0.state) }
     }
-    fn next_raw(&self) -> u64 {
+    /// Returns the next raw value (can be used for testing)
+    pub fn next_raw(&self) -> u64 {
         unsafe { (self.0.next_raw)(self.0.state) }
     }
 }
