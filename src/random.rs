@@ -5,7 +5,7 @@ use pyo3::{
     ffi,
     prelude::*,
     sync::GILOnceCell,
-    types::{PyCapsule, PyType},
+    types::{DerefToPyAny, PyCapsule, PyType},
     PyTypeInfo,
 };
 
@@ -15,10 +15,10 @@ use crate::npyffi::npy_bitgen;
 ///!
 ///! [bg]: https://numpy.org/doc/stable//reference/random/bit_generators/generated/numpy.random.BitGenerator.html
 #[repr(transparent)]
-pub struct BitGenerator(PyAny);
+pub struct PyBitGenerator(PyAny);
 
-unsafe impl PyTypeInfo for BitGenerator {
-    const NAME: &'static str = "BitGenerator";
+unsafe impl PyTypeInfo for PyBitGenerator {
+    const NAME: &'static str = "PyBitGenerator";
     const MODULE: Option<&'static str> = Some("numpy.random");
 
     fn type_object_raw<'py>(py: Python<'py>) -> *mut ffi::PyTypeObject {
@@ -38,18 +38,17 @@ unsafe impl PyTypeInfo for BitGenerator {
     }
 }
 
+impl DerefToPyAny for PyBitGenerator {}
+
 /// Methods for [`BitGenerator`]
 pub trait BitGeneratorMethods<'py> {
     /// Returns a new [`BitGen`]
     fn bit_gen(&self) -> PyResult<BitGen<'py>>;
 }
 
-impl<'py> BitGeneratorMethods<'py> for Bound<'py, BitGenerator> {
+impl<'py> BitGeneratorMethods<'py> for Bound<'py, PyBitGenerator> {
     fn bit_gen(&self) -> PyResult<BitGen<'py>> {
-        let capsule = self
-            .as_any()
-            .getattr("capsule")?
-            .downcast_into::<PyCapsule>()?;
+        let capsule = self.getattr("capsule")?.downcast_into::<PyCapsule>()?;
         assert_eq!(capsule.name()?, Some(c"BitGenerator"));
         let ptr = capsule.pointer() as *mut npy_bitgen;
         // SAFETY: the lifetime of `ptr` is derived from the lifetime of `self`
@@ -59,9 +58,9 @@ impl<'py> BitGeneratorMethods<'py> for Bound<'py, BitGenerator> {
     }
 }
 
-impl<'py> TryFrom<&Bound<'py, BitGenerator>> for BitGen<'py> {
+impl<'py> TryFrom<&Bound<'py, PyBitGenerator>> for BitGen<'py> {
     type Error = PyErr;
-    fn try_from(value: &Bound<'py, BitGenerator>) -> Result<Self, Self::Error> {
+    fn try_from(value: &Bound<'py, PyBitGenerator>) -> Result<Self, Self::Error> {
         value.bit_gen()
     }
 }
@@ -105,12 +104,12 @@ impl rand::RngCore for BitGen<'_> {
 mod tests {
     use super::*;
 
-    fn get_bit_generator<'py>(py: Python<'py>) -> PyResult<Bound<'py, BitGenerator>> {
+    fn get_bit_generator<'py>(py: Python<'py>) -> PyResult<Bound<'py, PyBitGenerator>> {
         let default_rng = py.import("numpy.random")?.getattr("default_rng")?;
         let bit_generator = default_rng
             .call0()?
             .getattr("bit_generator")?
-            .downcast_into::<BitGenerator>()?;
+            .downcast_into::<PyBitGenerator>()?;
         Ok(bit_generator)
     }
 
