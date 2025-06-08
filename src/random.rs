@@ -44,6 +44,8 @@ use crate::npyffi::npy_bitgen;
 
 /// Wrapper for [`np.random.BitGenerator`][bg].
 ///
+/// See also [`PyBitGeneratorMethods`].
+///
 /// [bg]: https://numpy.org/doc/stable//reference/random/bit_generators/generated/numpy.random.BitGenerator.html
 #[repr(transparent)]
 pub struct PyBitGenerator(PyAny);
