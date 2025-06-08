@@ -17,6 +17,8 @@ use crate::npyffi::npy_bitgen;
 #[repr(transparent)]
 pub struct PyBitGenerator(PyAny);
 
+impl DerefToPyAny for PyBitGenerator {}
+
 unsafe impl PyTypeInfo for PyBitGenerator {
     const NAME: &'static str = "PyBitGenerator";
     const MODULE: Option<&'static str> = Some("numpy.random");
@@ -37,8 +39,6 @@ unsafe impl PyTypeInfo for PyBitGenerator {
         cls.as_type_ptr()
     }
 }
-
-impl DerefToPyAny for PyBitGenerator {}
 
 /// Methods for [`BitGenerator`]
 pub trait BitGeneratorMethods<'py> {
