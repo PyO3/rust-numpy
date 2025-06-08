@@ -9,7 +9,7 @@
 //! use numpy::random::{PyBitGenerator, PyBitGeneratorMethods as _};
 //!
 //! let mut bitgen = Python::with_gil(|py| -> PyResult<_> {
-//!     let default_rng = py.import("numpy.random")?.getattr("default_rng")?.call0()?;
+//!     let default_rng = py.import("numpy.random")?.call_method0("default_rng")?;
 //!     let bit_generator = default_rng.getattr("bit_generator")?.downcast_into::<PyBitGenerator>()?;
 //!     bit_generator.lock()
 //! })?;
@@ -83,17 +83,17 @@ impl<'py> PyBitGeneratorMethods for Bound<'py, PyBitGenerator> {
     fn lock(&self) -> PyResult<PyBitGeneratorGuard> {
         let capsule = self.getattr("capsule")?.downcast_into::<PyCapsule>()?;
         let lock = self.getattr("lock")?;
-        if lock.getattr("locked")?.call0()?.extract()? {
+        if lock.call_method0("locked")?.extract()? {
             return Err(PyRuntimeError::new_err("BitGenerator is already locked"));
         }
-        lock.getattr("acquire")?.call0()?;
+        lock.call_method0("acquire")?;
 
         assert_eq!(capsule.name()?, Some(c"BitGenerator"));
         let ptr = capsule.pointer() as *mut npy_bitgen;
         let non_null = match NonNull::new(ptr) {
             Some(non_null) => non_null,
             None => {
-                lock.getattr("release")?.call0()?;
+                lock.call_method0("release")?;
                 return Err(PyRuntimeError::new_err("Invalid BitGenerator capsule"));
             }
         };
@@ -153,7 +153,7 @@ impl PyBitGeneratorGuard {
 impl Drop for PyBitGeneratorGuard {
     fn drop(&mut self) {
         let r = Python::with_gil(|py| -> PyResult<()> {
-            self.lock.bind(py).getattr("release")?.call0()?;
+            self.lock.bind(py).call_method0("release")?;
             Ok(())
         });
         if let Err(e) = r {
@@ -180,7 +180,7 @@ mod tests {
     use super::*;
 
     fn get_bit_generator<'py>(py: Python<'py>) -> PyResult<Bound<'py, PyBitGenerator>> {
-        let default_rng = py.import("numpy.random")?.getattr("default_rng")?.call0()?;
+        let default_rng = py.import("numpy.random")?.call_method0("default_rng")?;
         let bit_generator = default_rng
             .getattr("bit_generator")?
             .downcast_into::<PyBitGenerator>()?;
@@ -218,8 +218,7 @@ mod tests {
             std::mem::drop(bitgen);
             assert!(!generator
                 .getattr("lock")?
-                .getattr("locked")?
-                .call0()?
+                .call_method0("locked")?
                 .extract()?);
             Ok(())
         })
