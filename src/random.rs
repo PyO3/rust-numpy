@@ -74,13 +74,13 @@ unsafe impl PyTypeInfo for PyBitGenerator {
 }
 
 /// Methods for [`PyBitGenerator`].
-pub trait PyBitGeneratorMethods {
+pub trait PyBitGeneratorMethods<'py> {
     /// Acquire a lock on the BitGenerator to allow calling its methods in.
-    fn lock(&self) -> PyResult<PyBitGeneratorGuard>;
+    fn lock(&self) -> PyResult<PyBitGeneratorGuard<'py>>;
 }
 
-impl<'py> PyBitGeneratorMethods for Bound<'py, PyBitGenerator> {
-    fn lock(&self) -> PyResult<PyBitGeneratorGuard> {
+impl<'py> PyBitGeneratorMethods<'py> for Bound<'py, PyBitGenerator> {
+    fn lock(&self) -> PyResult<PyBitGeneratorGuard<'py>> {
         let capsule = self.getattr("capsule")?.downcast_into::<PyCapsule>()?;
         let lock = self.getattr("lock")?;
         if lock.call_method0("locked")?.extract()? {
@@ -99,12 +99,13 @@ impl<'py> PyBitGeneratorMethods for Bound<'py, PyBitGenerator> {
         };
         Ok(PyBitGeneratorGuard {
             raw_bitgen: non_null,
-            lock: lock.unbind(),
+            capsule,
+            lock,
         })
     }
 }
 
-impl<'py> TryFrom<&Bound<'py, PyBitGenerator>> for PyBitGeneratorGuard {
+impl<'py> TryFrom<&Bound<'py, PyBitGenerator>> for PyBitGeneratorGuard<'py> {
     type Error = PyErr;
     fn try_from(value: &Bound<'py, PyBitGenerator>) -> Result<Self, Self::Error> {
         value.lock()
@@ -112,14 +113,30 @@ impl<'py> TryFrom<&Bound<'py, PyBitGenerator>> for PyBitGeneratorGuard {
 }
 
 /// [`PyBitGenerator`] lock allowing to access its methods without holding the GIL.
-pub struct PyBitGeneratorGuard {
+pub struct PyBitGeneratorGuard<'py> {
     raw_bitgen: NonNull<npy_bitgen>,
-    lock: Py<PyAny>,
+    capsule: Bound<'py, PyCapsule>,
+    lock: Bound<'py, PyAny>,
+}
+
+unsafe impl Send for PyBitGeneratorGuard<'_> {}
+
+impl Drop for PyBitGeneratorGuard<'_> {
+    fn drop(&mut self) {
+        // ignore errors. This includes when `try_drop` was called manually
+        let _ = self.lock.call_method0("release");
+    }
 }
 
 // SAFETY: We hold the `BitGenerator.lock`,
 // so nothing apart from us is allowed to change its state.
-impl PyBitGeneratorGuard {
+impl PyBitGeneratorGuard<'_> {
+    /// Drop the lock, allowing access to.
+    pub fn try_drop(self) -> PyResult<()> {
+        self.lock.call_method0("release")?;
+        Ok(())
+    }
+
     /// Returns the next random unsigned 64 bit integer.
     pub fn next_uint64(&mut self) -> u64 {
         unsafe {
@@ -150,20 +167,8 @@ impl PyBitGeneratorGuard {
     }
 }
 
-impl Drop for PyBitGeneratorGuard {
-    fn drop(&mut self) {
-        let r = Python::with_gil(|py| -> PyResult<()> {
-            self.lock.bind(py).call_method0("release")?;
-            Ok(())
-        });
-        if let Err(e) = r {
-            eprintln!("Failed to release BitGenerator lock: {e}");
-        }
-    }
-}
-
 #[cfg(feature = "rand")]
-impl rand::RngCore for PyBitGeneratorGuard {
+impl rand::RngCore for PyBitGeneratorGuard<'_> {
     fn next_u32(&mut self) -> u32 {
         self.next_uint32()
     }
@@ -190,10 +195,14 @@ mod tests {
     /// Test the primary use case: acquire the lock, release the GIL, then use the lock
     #[test]
     fn use_outside_gil() -> PyResult<()> {
-        let mut bitgen = Python::with_gil(|py| get_bit_generator(py)?.lock())?;
-        let _ = bitgen.next_raw();
-        std::mem::drop(bitgen);
-        Ok(())
+        Python::with_gil(|py| {
+            let mut bitgen = get_bit_generator(py)?.lock()?;
+            py.allow_threads(|| {
+                let _ = bitgen.next_raw();
+            });
+            assert!(bitgen.try_drop().is_ok());
+            Ok(())
+        })
     }
 
     /// Test that the `rand::Rng` APIs work
@@ -202,11 +211,15 @@ mod tests {
     fn rand() -> PyResult<()> {
         use rand::Rng as _;
 
-        let mut bitgen = Python::with_gil(|py| get_bit_generator(py)?.lock())?;
-        assert!(bitgen.random_ratio(1, 1));
-        assert!(!bitgen.random_ratio(0, 1));
-        std::mem::drop(bitgen);
-        Ok(())
+        Python::with_gil(|py| {
+            let mut bitgen = get_bit_generator(py)?.lock()?;
+            py.allow_threads(|| {
+                assert!(bitgen.random_ratio(1, 1));
+                assert!(!bitgen.random_ratio(0, 1));
+            });
+            assert!(bitgen.try_drop().is_ok());
+            Ok(())
+        })
     }
 
     /// Test that releasing the lock works while holding the GIL
@@ -216,11 +229,7 @@ mod tests {
             let generator = get_bit_generator(py)?;
             let mut bitgen = generator.lock()?;
             let _ = bitgen.next_raw();
-            std::mem::drop(bitgen);
-            assert!(!generator
-                .getattr("lock")?
-                .call_method0("locked")?
-                .extract()?);
+            assert!(bitgen.try_drop().is_ok());
             Ok(())
         })
     }
@@ -229,9 +238,9 @@ mod tests {
     fn double_lock_fails() -> PyResult<()> {
         Python::with_gil(|py| {
             let generator = get_bit_generator(py)?;
-            let d1 = generator.lock()?;
+            let bitgen = generator.lock()?;
             assert!(generator.lock().is_err());
-            std::mem::drop(d1);
+            assert!(bitgen.try_drop().is_ok());
             Ok(())
         })
     }
