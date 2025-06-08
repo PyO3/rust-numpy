@@ -187,8 +187,9 @@ mod tests {
         Ok(bit_generator)
     }
 
+    /// Test the primary use case: acquire the lock, release the GIL, then use the lock
     #[test]
-    fn bitgen() -> PyResult<()> {
+    fn use_outside_gil() -> PyResult<()> {
         let mut bitgen = Python::with_gil(|py| get_bit_generator(py)?.lock())?;
         let _ = bitgen.next_raw();
         std::mem::drop(bitgen);
