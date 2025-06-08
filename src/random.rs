@@ -16,7 +16,8 @@
 //!
 //! let random_number = Python::with_gil(|py| -> PyResult<_> {
 //!     let mut bitgen = default_bit_gen(py)?.lock()?;
-//!     Ok(bitgen.next_uint64())
+//!     // use bitgen without holding the GIL
+//!     Ok(py.allow_threads(|| bitgen.next_uint64()))
 //! })?;
 //! # Ok::<(), PyErr>(())
 //! ```
