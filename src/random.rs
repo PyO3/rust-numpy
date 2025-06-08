@@ -4,26 +4,44 @@
 //! you can generate random numbers without holding the GIL,
 //! by [acquiring][`PyBitGeneratorMethods::lock`] a lock [guard][`PyBitGeneratorGuard`] for the [`PyBitGenerator`]:
 //!
-//! ```rust
+//! ```
 //! use pyo3::prelude::*;
 //! use numpy::random::{PyBitGenerator, PyBitGeneratorMethods as _};
 //!
-//! let mut bitgen = Python::with_gil(|py| -> PyResult<_> {
+//! fn default_bit_gen<'py>(py: Python<'py>) -> PyResult<Bound<'py, PyBitGenerator>> {
 //!     let default_rng = py.import("numpy.random")?.call_method0("default_rng")?;
-//!     let bit_generator = default_rng.getattr("bit_generator")?.downcast_into::<PyBitGenerator>()?;
-//!     bit_generator.lock()
+//!     let bit_generator = default_rng.getattr("bit_generator")?.downcast_into()?;
+//!     Ok(bit_generator)
+//! }
+//!
+//! let random_number = Python::with_gil(|py| -> PyResult<_> {
+//!     let mut bitgen = default_bit_gen(py)?.lock()?;
+//!     Ok(bitgen.next_uint64())
 //! })?;
-//! let random_number = bitgen.next_u64();
+//! # Ok::<(), PyErr>(())
 //! ```
 //!
 //! With the [`rand`] crate installed, you can also use the [`rand::Rng`] APIs from the [`PyBitGeneratorGuard`]:
 //!
-//! ```rust
+//! ```
+//! use pyo3::prelude::*;
 //! use rand::Rng as _;
+//! use numpy::random::{PyBitGenerator, PyBitGeneratorMethods as _};
+//! # // TODO: reuse function definition from above?
+//! # fn default_bit_gen<'py>(py: Python<'py>) -> PyResult<Bound<'py, PyBitGenerator>> {
+//! #     let default_rng = py.import("numpy.random")?.call_method0("default_rng")?;
+//! #     let bit_generator = default_rng.getattr("bit_generator")?.downcast_into()?;
+//! #     Ok(bit_generator)
+//! # }
 //!
-//! if bitgen.random_ratio(1, 1_000_000) {
-//!     println!("a sure thing");
-//! }
+//! Python::with_gil(|py| -> PyResult<_> {
+//!     let mut bitgen = default_bit_gen(py)?.lock()?;
+//!     if bitgen.random_ratio(1, 1_000_000) {
+//!         println!("a sure thing");
+//!     }
+//!     Ok(())
+//! })?;
+//! # Ok::<(), PyErr>(())
 //! ```
 //!
 //! [bg]: https://numpy.org/doc/stable//reference/random/bit_generators/generated/numpy.random.BitGenerator.html
@@ -99,7 +117,7 @@ impl<'py> PyBitGeneratorMethods<'py> for Bound<'py, PyBitGenerator> {
         };
         Ok(PyBitGeneratorGuard {
             raw_bitgen: non_null,
-            capsule,
+            _capsule: capsule,
             lock,
         })
     }
@@ -115,7 +133,7 @@ impl<'py> TryFrom<&Bound<'py, PyBitGenerator>> for PyBitGeneratorGuard<'py> {
 /// [`PyBitGenerator`] lock allowing to access its methods without holding the GIL.
 pub struct PyBitGeneratorGuard<'py> {
     raw_bitgen: NonNull<npy_bitgen>,
-    capsule: Bound<'py, PyCapsule>,
+    _capsule: Bound<'py, PyCapsule>,
     lock: Bound<'py, PyAny>,
 }
 
@@ -140,28 +158,28 @@ impl PyBitGeneratorGuard<'_> {
     /// Returns the next random unsigned 64 bit integer.
     pub fn next_uint64(&mut self) -> u64 {
         unsafe {
-            let bitgen = self.raw_bitgen.as_mut();
+            let bitgen = *self.raw_bitgen.as_ptr();
             (bitgen.next_uint64)(bitgen.state)
         }
     }
     /// Returns the next random unsigned 32 bit integer.
     pub fn next_uint32(&mut self) -> u32 {
         unsafe {
-            let bitgen = self.raw_bitgen.as_mut();
+            let bitgen = *self.raw_bitgen.as_ptr();
             (bitgen.next_uint32)(bitgen.state)
         }
     }
     /// Returns the next random double.
     pub fn next_double(&mut self) -> libc::c_double {
         unsafe {
-            let bitgen = self.raw_bitgen.as_mut();
+            let bitgen = *self.raw_bitgen.as_ptr();
             (bitgen.next_double)(bitgen.state)
         }
     }
     /// Returns the next raw value (can be used for testing).
     pub fn next_raw(&mut self) -> u64 {
         unsafe {
-            let bitgen = self.raw_bitgen.as_mut();
+            let bitgen = *self.raw_bitgen.as_ptr();
             (bitgen.next_raw)(bitgen.state)
         }
     }
