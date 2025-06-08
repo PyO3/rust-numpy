@@ -118,8 +118,9 @@ impl<'py> PyBitGeneratorMethods<'py> for Bound<'py, PyBitGenerator> {
         };
         Ok(PyBitGeneratorGuard {
             raw_bitgen: non_null,
-            _capsule: capsule,
-            lock,
+            _capsule: capsule.unbind(),
+            lock: lock.unbind(),
+            py: self.py(),
         })
     }
 }
@@ -134,8 +135,14 @@ impl<'py> TryFrom<&Bound<'py, PyBitGenerator>> for PyBitGeneratorGuard<'py> {
 /// [`PyBitGenerator`] lock allowing to access its methods without holding the GIL.
 pub struct PyBitGeneratorGuard<'py> {
     raw_bitgen: NonNull<npy_bitgen>,
-    _capsule: Bound<'py, PyCapsule>,
-    lock: Bound<'py, PyAny>,
+    /// This field makes sure the `raw_bitgen` inside the capsule doesn’t get deallocated.
+    _capsule: Py<PyCapsule>,
+    /// This lock makes sure no other threads try to use the BitGenerator while we do.
+    lock: Py<PyAny>,
+    /// This should be an unsafe field (https://github.com/rust-lang/rust/issues/132922)
+    ///
+    /// SAFETY: only use this in `Drop::drop` (when we are sure the GIL is held).
+    py: Python<'py>,
 }
 
 // SAFETY: we can’t have public APIs that access the Python objects,
@@ -145,18 +152,17 @@ unsafe impl Send for PyBitGeneratorGuard<'_> {}
 impl Drop for PyBitGeneratorGuard<'_> {
     fn drop(&mut self) {
         // ignore errors. This includes when `try_drop` was called manually
-        let _ = self.lock.call_method0("release");
+        let _ = self.lock.bind(self.py).call_method0("release");
     }
 }
 
 // SAFETY: We hold the `BitGenerator.lock`,
 // so nothing apart from us is allowed to change its state.
-impl PyBitGeneratorGuard<'_> {
+impl<'py> PyBitGeneratorGuard<'py> {
     /// Drop the lock manually before `Drop::drop` tries to do it (used for testing).
-    /// SAFETY: Can’t be used inside of a `Python::allow_threads` block.
     #[allow(dead_code)]
-    unsafe fn try_drop(self) -> PyResult<()> {
-        self.lock.call_method0("release")?;
+    fn try_drop(self, py: Python<'py>) -> PyResult<()> {
+        self.lock.bind(py).call_method0("release")?;
         Ok(())
     }
 
@@ -223,7 +229,7 @@ mod tests {
             py.allow_threads(|| {
                 let _ = bitgen.next_raw();
             });
-            assert!(unsafe { bitgen.try_drop() }.is_ok());
+            assert!(bitgen.try_drop(py).is_ok());
             Ok(())
         })
     }
@@ -240,7 +246,7 @@ mod tests {
                 assert!(bitgen.random_ratio(1, 1));
                 assert!(!bitgen.random_ratio(0, 1));
             });
-            assert!(unsafe { bitgen.try_drop() }.is_ok());
+            assert!(bitgen.try_drop(py).is_ok());
             Ok(())
         })
     }
@@ -251,7 +257,7 @@ mod tests {
             let generator = get_bit_generator(py)?;
             let bitgen = generator.lock()?;
             assert!(generator.lock().is_err());
-            assert!(unsafe { bitgen.try_drop() }.is_ok());
+            assert!(bitgen.try_drop(py).is_ok());
             Ok(())
         })
     }
