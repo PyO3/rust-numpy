@@ -153,7 +153,7 @@ impl Drop for PyBitGeneratorGuard<'_> {
 // so nothing apart from us is allowed to change its state.
 impl PyBitGeneratorGuard<'_> {
     /// Drop the lock manually before `Drop::drop` tries to do it (used for testing).
-    /// SAFETY: Can’t be used inside of a
+    /// SAFETY: Can’t be used inside of a `Python::allow_threads` block.
     #[allow(dead_code)]
     unsafe fn try_drop(self) -> PyResult<()> {
         self.lock.call_method0("release")?;
