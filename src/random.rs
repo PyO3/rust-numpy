@@ -24,9 +24,9 @@
 //! With the [`rand`] crate installed, you can also use the [`rand::Rng`] APIs from the [`PyBitGeneratorGuard`]:
 //!
 //! ```
-//! use pyo3::prelude::*;
+//! # use pyo3::prelude::*;
 //! use rand::Rng as _;
-//! use numpy::random::{PyBitGenerator, PyBitGeneratorMethods as _};
+//! # use numpy::random::{PyBitGenerator, PyBitGeneratorMethods as _};
 //! # // TODO: reuse function definition from above?
 //! # fn default_bit_gen<'py>(py: Python<'py>) -> PyResult<Bound<'py, PyBitGenerator>> {
 //! #     let default_rng = py.import("numpy.random")?.call_method0("default_rng")?;
