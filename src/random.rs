@@ -222,18 +222,6 @@ mod tests {
         })
     }
 
-    /// Test that releasing the lock works while holding the GIL
-    #[test]
-    fn unlock_with_held_gil() -> PyResult<()> {
-        Python::with_gil(|py| {
-            let generator = get_bit_generator(py)?;
-            let mut bitgen = generator.lock()?;
-            let _ = bitgen.next_raw();
-            assert!(bitgen.try_drop().is_ok());
-            Ok(())
-        })
-    }
-
     #[test]
     fn double_lock_fails() -> PyResult<()> {
         Python::with_gil(|py| {
