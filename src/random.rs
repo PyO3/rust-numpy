@@ -138,6 +138,8 @@ pub struct PyBitGeneratorGuard<'py> {
     lock: Bound<'py, PyAny>,
 }
 
+// SAFETY: we can’t have public APIs that access the Python objects,
+// only the `raw_bitgen` pointer.
 unsafe impl Send for PyBitGeneratorGuard<'_> {}
 
 impl Drop for PyBitGeneratorGuard<'_> {
@@ -150,8 +152,10 @@ impl Drop for PyBitGeneratorGuard<'_> {
 // SAFETY: We hold the `BitGenerator.lock`,
 // so nothing apart from us is allowed to change its state.
 impl PyBitGeneratorGuard<'_> {
-    /// Drop the lock, allowing access to.
-    pub fn try_drop(self) -> PyResult<()> {
+    /// Drop the lock manually before `Drop::drop` tries to do it (used for testing).
+    /// SAFETY: Can’t be used inside of a
+    #[allow(dead_code)]
+    unsafe fn try_drop(self) -> PyResult<()> {
         self.lock.call_method0("release")?;
         Ok(())
     }
@@ -219,7 +223,7 @@ mod tests {
             py.allow_threads(|| {
                 let _ = bitgen.next_raw();
             });
-            assert!(bitgen.try_drop().is_ok());
+            assert!(unsafe { bitgen.try_drop() }.is_ok());
             Ok(())
         })
     }
@@ -236,7 +240,7 @@ mod tests {
                 assert!(bitgen.random_ratio(1, 1));
                 assert!(!bitgen.random_ratio(0, 1));
             });
-            assert!(bitgen.try_drop().is_ok());
+            assert!(unsafe { bitgen.try_drop() }.is_ok());
             Ok(())
         })
     }
@@ -247,7 +251,7 @@ mod tests {
             let generator = get_bit_generator(py)?;
             let bitgen = generator.lock()?;
             assert!(generator.lock().is_err());
-            assert!(bitgen.try_drop().is_ok());
+            assert!(unsafe { bitgen.try_drop() }.is_ok());
             Ok(())
         })
     }
