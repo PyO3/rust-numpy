@@ -234,6 +234,38 @@ mod tests {
         })
     }
 
+    /// More complex version of primary use case: use from multiple threads
+    #[cfg(feature = "rand")]
+    #[test]
+    fn use_parallel() -> PyResult<()> {
+        use crate::array::{PyArray2, PyArrayMethods as _};
+        use ndarray::Dimension;
+        use rand::Rng;
+        use std::sync::{Arc, Mutex};
+
+        Python::with_gil(|py| -> PyResult<_> {
+            let mut arr = PyArray2::<u32>::zeros(py, (2, 300), false).readwrite();
+            let bitgen = get_bit_generator(py)?.lock()?;
+            let bitgen = Arc::new(Mutex::new(bitgen));
+
+            let (_n_threads, chunk_size) = arr.dims().into_pattern();
+            let slice = arr.as_slice_mut()?;
+
+            Python::allow_threads(py, || {
+                std::thread::scope(|s| {
+                    for chunk in slice.chunks_exact_mut(chunk_size) {
+                        let bitgen = Arc::clone(&bitgen);
+                        s.spawn(move || {
+                            let mut bitgen = bitgen.lock().unwrap();
+                            chunk.fill_with(|| bitgen.random_range(10..200));
+                        });
+                    }
+                })
+            });
+            Ok(())
+        })
+    }
+
     /// Test that the `rand::Rng` APIs work
     #[cfg(feature = "rand")]
     #[test]
