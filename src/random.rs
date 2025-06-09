@@ -102,6 +102,7 @@ impl<'py> PyBitGeneratorMethods<'py> for Bound<'py, PyBitGenerator> {
     fn lock(&self) -> PyResult<PyBitGeneratorGuard> {
         let capsule = self.getattr("capsule")?.downcast_into::<PyCapsule>()?;
         let lock = self.getattr("lock")?;
+        // we’re holding the GIL, so there’s no race condition checking the lock and acquiring it later.
         if lock.call_method0("locked")?.extract()? {
             return Err(PyRuntimeError::new_err("BitGenerator is already locked"));
         }
@@ -109,12 +110,9 @@ impl<'py> PyBitGeneratorMethods<'py> for Bound<'py, PyBitGenerator> {
 
         assert_eq!(capsule.name()?, Some(c"BitGenerator"));
         let ptr = capsule.pointer() as *mut npy_bitgen;
-        let non_null = match NonNull::new(ptr) {
-            Some(non_null) => non_null,
-            None => {
-                lock.call_method0("release")?;
-                return Err(PyRuntimeError::new_err("Invalid BitGenerator capsule"));
-            }
+        let Some(non_null) = NonNull::new(ptr) else {
+            lock.call_method0("release")?;
+            return Err(PyRuntimeError::new_err("Invalid BitGenerator capsule"));
         };
         Ok(PyBitGeneratorGuard {
             raw_bitgen: non_null,
@@ -140,8 +138,8 @@ pub struct PyBitGeneratorGuard {
     lock: Py<PyAny>,
 }
 
-// SAFETY: we can’t have public APIs that access the Python objects,
-// only the `raw_bitgen` pointer.
+// SAFETY: 1. We don’t hold the GIL, so we can’t access the Python objects.
+//         2. We only access `raw_bitgen` from `&mut self`, which protects it from parallel access.
 unsafe impl Send for PyBitGeneratorGuard {}
 
 impl Drop for PyBitGeneratorGuard {
@@ -154,11 +152,10 @@ impl Drop for PyBitGeneratorGuard {
     }
 }
 
-// SAFETY: We hold the `BitGenerator.lock`,
-// so nothing apart from us is allowed to change its state.
+// SAFETY: 1. We hold the `BitGenerator.lock`, so nothing apart from us is allowed to change its state.
+//         2. We hold the `BitGenerator.capsule`, so it can’t be deallocated.
 impl<'py> PyBitGeneratorGuard {
     /// Release the lock, allowing for checking for errors.
-    #[allow(dead_code)]
     pub fn try_release(self, py: Python<'py>) -> PyResult<()> {
         self.lock.bind(py).call_method0("release")?;
         Ok(())
@@ -249,7 +246,7 @@ mod tests {
             let (_n_threads, chunk_size) = arr.dims().into_pattern();
             let slice = arr.as_slice_mut()?;
 
-            Python::allow_threads(py, || {
+            py.allow_threads(|| {
                 std::thread::scope(|s| {
                     for chunk in slice.chunks_exact_mut(chunk_size) {
                         let bitgen = Arc::clone(&bitgen);
@@ -260,6 +257,8 @@ mod tests {
                     }
                 })
             });
+
+            std::mem::drop(bitgen);
             Ok(())
         })
     }
