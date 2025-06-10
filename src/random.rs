@@ -162,30 +162,31 @@ impl<'py> PyBitGeneratorGuard {
     }
 
     /// Returns the next random unsigned 64 bit integer.
-    pub fn next_uint64(&mut self) -> u64 {
+    pub fn next_u64(&mut self) -> u64 {
         unsafe {
-            let bitgen = *self.raw_bitgen.as_ptr();
+            // TODO: maybe use pointer offsets instead of `mut`
+            let bitgen = self.raw_bitgen.as_mut();
             (bitgen.next_uint64)(bitgen.state)
         }
     }
     /// Returns the next random unsigned 32 bit integer.
-    pub fn next_uint32(&mut self) -> u32 {
+    pub fn next_u32(&mut self) -> u32 {
         unsafe {
-            let bitgen = *self.raw_bitgen.as_ptr();
+            let bitgen = self.raw_bitgen.as_mut();
             (bitgen.next_uint32)(bitgen.state)
         }
     }
     /// Returns the next random double.
     pub fn next_double(&mut self) -> libc::c_double {
         unsafe {
-            let bitgen = *self.raw_bitgen.as_ptr();
+            let bitgen = self.raw_bitgen.as_mut();
             (bitgen.next_double)(bitgen.state)
         }
     }
     /// Returns the next raw value (can be used for testing).
     pub fn next_raw(&mut self) -> u64 {
         unsafe {
-            let bitgen = *self.raw_bitgen.as_ptr();
+            let bitgen = self.raw_bitgen.as_mut();
             (bitgen.next_raw)(bitgen.state)
         }
     }
@@ -194,10 +195,10 @@ impl<'py> PyBitGeneratorGuard {
 #[cfg(feature = "rand")]
 impl rand::RngCore for PyBitGeneratorGuard {
     fn next_u32(&mut self) -> u32 {
-        self.next_uint32()
+        self.next_u32()
     }
     fn next_u64(&mut self) -> u64 {
-        self.next_uint64()
+        self.next_u64()
     }
     fn fill_bytes(&mut self, dst: &mut [u8]) {
         rand::rand_core::impls::fill_bytes_via_next(self, dst)
