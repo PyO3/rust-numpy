@@ -82,16 +82,8 @@ unsafe impl PyTypeInfo for PyBitGenerator {
     fn type_object_raw<'py>(py: Python<'py>) -> *mut ffi::PyTypeObject {
         static CLS: GILOnceCell<Py<PyType>> = GILOnceCell::new();
         let cls = CLS
-            .get_or_try_init::<_, PyErr>(py, || {
-                Ok(py
-                    .import("numpy.random")?
-                    .getattr("BitGenerator")?
-                    .downcast_into::<PyType>()?
-                    .unbind())
-            })
-            .expect("Failed to get BitGenerator type object")
-            .clone_ref(py)
-            .into_bound(py);
+            .import(py, "numpy.random", "BitGenerator")
+            .expect("Failed to get BitGenerator type object");
         cls.as_type_ptr()
     }
 }
