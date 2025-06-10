@@ -118,6 +118,7 @@ impl<'py> PyBitGeneratorMethods for Bound<'py, PyBitGenerator> {
         };
         Ok(PyBitGeneratorGuard {
             raw_bitgen: non_null,
+            released: false,
             _capsule: capsule.unbind(),
             lock: lock.unbind(),
         })
@@ -137,6 +138,8 @@ impl<'py> TryFrom<&Bound<'py, PyBitGenerator>> for PyBitGeneratorGuard {
 /// prefer to call [`release`][`PyBitGeneratorGuard::release`] manually to release the lock.
 pub struct PyBitGeneratorGuard {
     raw_bitgen: NonNull<bitgen_t>,
+    /// Whether this guard has been manually released.
+    released: bool,
     /// This field makes sure the `raw_bitgen` inside the capsule doesn’t get deallocated.
     _capsule: Py<PyCapsule>,
     /// This lock makes sure no other threads try to use the BitGenerator while we do.
@@ -149,7 +152,10 @@ unsafe impl Send for PyBitGeneratorGuard {}
 
 impl Drop for PyBitGeneratorGuard {
     fn drop(&mut self) {
-        // ignore errors. This includes when `release` was called manually.
+        if self.released {
+            return;
+        }
+        // ignore errors because `drop` can’t fail
         let _ = Python::with_gil(|py| -> PyResult<_> {
             self.lock.bind(py).call_method0(intern!(py, "release"))?;
             Ok(())
@@ -161,7 +167,8 @@ impl Drop for PyBitGeneratorGuard {
 //         2. We hold the `BitGenerator.capsule`, so it can’t be deallocated.
 impl<'py> PyBitGeneratorGuard {
     /// Release the lock, allowing for checking for errors.
-    pub fn release(self, py: Python<'py>) -> PyResult<()> {
+    pub fn release(mut self, py: Python<'py>) -> PyResult<()> {
+        self.released = true; // only ever read by drop at the end of a scope (like this one).
         self.lock.bind(py).call_method0(intern!(py, "release"))?;
         Ok(())
     }
@@ -267,7 +274,11 @@ mod tests {
                 })
             });
 
-            std::mem::drop(bitgen);
+            Arc::into_inner(bitgen)
+                .unwrap()
+                .into_inner()
+                .unwrap()
+                .release(py)?;
             Ok(())
         })
     }
