@@ -17,7 +17,7 @@
 //! let random_number = Python::with_gil(|py| -> PyResult<_> {
 //!     let mut bitgen = default_bit_gen(py)?.lock()?;
 //!     // use bitgen without holding the GIL
-//!     let r = py.allow_threads(|| bitgen.next_uint64())?;
+//!     let r = py.allow_threads(|| bitgen.next_u64());
 //!     // release the lock manually while holding the GIL again
 //!     bitgen.release(py)?;
 //!     Ok(r)
@@ -175,6 +175,7 @@ impl<'py> PyBitGeneratorGuard {
     pub fn next_u64(&mut self) -> u64 {
         unsafe {
             let bitgen = self.raw_bitgen.as_ptr();
+            debug_assert_ne!((*bitgen).state, std::ptr::null_mut());
             ((*bitgen).next_uint64)((*bitgen).state)
         }
     }
@@ -182,6 +183,7 @@ impl<'py> PyBitGeneratorGuard {
     pub fn next_u32(&mut self) -> u32 {
         unsafe {
             let bitgen = self.raw_bitgen.as_ptr();
+            debug_assert_ne!((*bitgen).state, std::ptr::null_mut());
             ((*bitgen).next_uint32)((*bitgen).state)
         }
     }
@@ -189,6 +191,7 @@ impl<'py> PyBitGeneratorGuard {
     pub fn next_double(&mut self) -> libc::c_double {
         unsafe {
             let bitgen = self.raw_bitgen.as_ptr();
+            debug_assert_ne!((*bitgen).state, std::ptr::null_mut());
             ((*bitgen).next_double)((*bitgen).state)
         }
     }
@@ -196,6 +199,7 @@ impl<'py> PyBitGeneratorGuard {
     pub fn next_raw(&mut self) -> u64 {
         unsafe {
             let bitgen = self.raw_bitgen.as_ptr();
+            debug_assert_ne!((*bitgen).state, std::ptr::null_mut());
             ((*bitgen).next_raw)((*bitgen).state)
         }
     }
@@ -226,7 +230,6 @@ mod tests {
         Ok(bit_generator)
     }
 
-    /*
     /// Test the primary use case: acquire the lock, release the GIL, then use the lock
     #[test]
     fn use_outside_gil() -> PyResult<()> {
@@ -239,9 +242,9 @@ mod tests {
             Ok(())
         })
     }
-    */
 
     /// More complex version of primary use case: use from multiple threads
+    #[cfg(feature = "rand_core")]
     #[test]
     fn use_parallel() -> PyResult<()> {
         use crate::array::{PyArray2, PyArrayMethods as _};
@@ -274,8 +277,8 @@ mod tests {
         })
     }
 
-    /*
     /// Test that the `rand::Rng` APIs work
+    #[cfg(feature = "rand_core")]
     #[test]
     fn rand() -> PyResult<()> {
         use rand::Rng as _;
@@ -301,5 +304,4 @@ mod tests {
             Ok(())
         })
     }
-    */
 }
