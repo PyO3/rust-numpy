@@ -108,7 +108,7 @@ impl<'py> PyBitGeneratorMethods for Bound<'py, PyBitGenerator> {
         }
         lock.call_method0("acquire")?;
 
-        assert_eq!(capsule.name()?, Some(c"BitGenerator"));
+        assert_eq!(capsule.name()?, Some(ffi::c_str!("BitGenerator")));
         let ptr = capsule.pointer() as *mut bitgen_t;
         let Some(non_null) = NonNull::new(ptr) else {
             lock.call_method0("release")?;
