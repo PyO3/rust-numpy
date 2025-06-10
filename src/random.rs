@@ -194,10 +194,10 @@ impl<'py> PyBitGeneratorGuard {
 #[cfg(feature = "rand")]
 impl rand::RngCore for PyBitGeneratorGuard {
     fn next_u32(&mut self) -> u32 {
-        self.next_u32()
+        PyBitGeneratorGuard::next_u32(self)
     }
     fn next_u64(&mut self) -> u64 {
-        self.next_u64()
+        PyBitGeneratorGuard::next_u64(self)
     }
     fn fill_bytes(&mut self, dst: &mut [u8]) {
         rand::rand_core::impls::fill_bytes_via_next(self, dst)
