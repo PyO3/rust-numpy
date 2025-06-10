@@ -190,7 +190,7 @@ impl<'py> PyBitGeneratorGuard {
         }
     }
     /// Returns the next random double.
-    pub fn next_double(&mut self) -> libc::c_double {
+    pub fn next_double(&mut self) -> f64 {
         unsafe {
             let bitgen = self.raw_bitgen.as_ptr();
             debug_assert_ne!((*bitgen).state, std::ptr::null_mut());
