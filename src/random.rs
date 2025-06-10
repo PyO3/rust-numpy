@@ -59,7 +59,7 @@ use pyo3::{
     PyTypeInfo,
 };
 
-use crate::npyffi::npy_bitgen;
+use crate::npyffi::bitgen_t;
 
 /// Wrapper for [`np.random.BitGenerator`][bg].
 ///
@@ -109,7 +109,7 @@ impl<'py> PyBitGeneratorMethods for Bound<'py, PyBitGenerator> {
         lock.call_method0("acquire")?;
 
         assert_eq!(capsule.name()?, Some(c"BitGenerator"));
-        let ptr = capsule.pointer() as *mut npy_bitgen;
+        let ptr = capsule.pointer() as *mut bitgen_t;
         let Some(non_null) = NonNull::new(ptr) else {
             lock.call_method0("release")?;
             return Err(PyRuntimeError::new_err("Invalid BitGenerator capsule"));
@@ -131,7 +131,7 @@ impl<'py> TryFrom<&Bound<'py, PyBitGenerator>> for PyBitGeneratorGuard {
 
 /// [`PyBitGenerator`] lock allowing to access its methods without holding the GIL.
 pub struct PyBitGeneratorGuard {
-    raw_bitgen: NonNull<npy_bitgen>,
+    raw_bitgen: NonNull<bitgen_t>,
     /// This field makes sure the `raw_bitgen` inside the capsule doesn’t get deallocated.
     _capsule: Py<PyCapsule>,
     /// This lock makes sure no other threads try to use the BitGenerator while we do.
