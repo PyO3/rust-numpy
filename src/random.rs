@@ -164,30 +164,29 @@ impl<'py> PyBitGeneratorGuard {
     /// Returns the next random unsigned 64 bit integer.
     pub fn next_u64(&mut self) -> u64 {
         unsafe {
-            // TODO: maybe use pointer offsets instead of `mut`
-            let bitgen = self.raw_bitgen.as_mut();
-            (bitgen.next_uint64)(bitgen.state)
+            let bitgen = self.raw_bitgen.as_ptr();
+            ((*bitgen).next_uint64)((*bitgen).state)
         }
     }
     /// Returns the next random unsigned 32 bit integer.
     pub fn next_u32(&mut self) -> u32 {
         unsafe {
-            let bitgen = self.raw_bitgen.as_mut();
-            (bitgen.next_uint32)(bitgen.state)
+            let bitgen = self.raw_bitgen.as_ptr();
+            ((*bitgen).next_uint32)((*bitgen).state)
         }
     }
     /// Returns the next random double.
     pub fn next_double(&mut self) -> libc::c_double {
         unsafe {
-            let bitgen = self.raw_bitgen.as_mut();
-            (bitgen.next_double)(bitgen.state)
+            let bitgen = self.raw_bitgen.as_ptr();
+            ((*bitgen).next_double)((*bitgen).state)
         }
     }
     /// Returns the next raw value (can be used for testing).
     pub fn next_raw(&mut self) -> u64 {
         unsafe {
-            let bitgen = self.raw_bitgen.as_mut();
-            (bitgen.next_raw)(bitgen.state)
+            let bitgen = self.raw_bitgen.as_ptr();
+            ((*bitgen).next_raw)((*bitgen).state)
         }
     }
 }
