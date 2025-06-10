@@ -52,7 +52,7 @@ use std::ptr::NonNull;
 
 use pyo3::{
     exceptions::PyRuntimeError,
-    ffi,
+    ffi, intern,
     prelude::*,
     sync::GILOnceCell,
     types::{DerefToPyAny, PyCapsule, PyType},
@@ -100,18 +100,21 @@ pub trait PyBitGeneratorMethods {
 
 impl<'py> PyBitGeneratorMethods for Bound<'py, PyBitGenerator> {
     fn lock(&self) -> PyResult<PyBitGeneratorGuard> {
-        let capsule = self.getattr("capsule")?.downcast_into::<PyCapsule>()?;
-        let lock = self.getattr("lock")?;
+        let py = self.py();
+        let capsule = self
+            .getattr(intern!(py, "capsule"))?
+            .downcast_into::<PyCapsule>()?;
+        let lock = self.getattr(intern!(py, "lock"))?;
         // we’re holding the GIL, so there’s no race condition checking the lock and acquiring it later.
-        if lock.call_method0("locked")?.extract()? {
+        if lock.call_method0(intern!(py, "locked"))?.extract()? {
             return Err(PyRuntimeError::new_err("BitGenerator is already locked"));
         }
-        lock.call_method0("acquire")?;
+        lock.call_method0(intern!(py, "acquire"))?;
 
         assert_eq!(capsule.name()?, Some(ffi::c_str!("BitGenerator")));
         let ptr = capsule.pointer() as *mut bitgen_t;
         let Some(non_null) = NonNull::new(ptr) else {
-            lock.call_method0("release")?;
+            lock.call_method0(intern!(py, "release"))?;
             return Err(PyRuntimeError::new_err("Invalid BitGenerator capsule"));
         };
         Ok(PyBitGeneratorGuard {
@@ -146,7 +149,7 @@ impl Drop for PyBitGeneratorGuard {
     fn drop(&mut self) {
         // ignore errors. This includes when `try_release` was called manually.
         let _ = Python::with_gil(|py| -> PyResult<_> {
-            self.lock.bind(py).call_method0("release")?;
+            self.lock.bind(py).call_method0(intern!(py, "release"))?;
             Ok(())
         });
     }
@@ -157,7 +160,7 @@ impl Drop for PyBitGeneratorGuard {
 impl<'py> PyBitGeneratorGuard {
     /// Release the lock, allowing for checking for errors.
     pub fn release(self, py: Python<'py>) -> PyResult<()> {
-        self.lock.bind(py).call_method0("release")?;
+        self.lock.bind(py).call_method0(intern!(py, "release"))?;
         Ok(())
     }
 
