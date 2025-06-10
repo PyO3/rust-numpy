@@ -17,7 +17,10 @@
 //! let random_number = Python::with_gil(|py| -> PyResult<_> {
 //!     let mut bitgen = default_bit_gen(py)?.lock()?;
 //!     // use bitgen without holding the GIL
-//!     Ok(py.allow_threads(|| bitgen.next_uint64()))
+//!     let r = py.allow_threads(|| bitgen.next_uint64())?;
+//!     // release the lock manually while holding the GIL again
+//!     bitgen.release(py)?;
+//!     Ok(r)
 //! })?;
 //! # Ok::<(), PyErr>(())
 //! ```
@@ -40,6 +43,7 @@
 //!     if bitgen.random_ratio(1, 1_000_000) {
 //!         println!("a sure thing");
 //!     }
+//!     bitgen.release(py)?;
 //!     Ok(())
 //! })?;
 //! # Ok::<(), PyErr>(())
