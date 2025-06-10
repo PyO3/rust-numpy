@@ -156,7 +156,7 @@ impl Drop for PyBitGeneratorGuard {
 //         2. We hold the `BitGenerator.capsule`, so it can’t be deallocated.
 impl<'py> PyBitGeneratorGuard {
     /// Release the lock, allowing for checking for errors.
-    pub fn try_release(self, py: Python<'py>) -> PyResult<()> {
+    pub fn release(self, py: Python<'py>) -> PyResult<()> {
         self.lock.bind(py).call_method0("release")?;
         Ok(())
     }
@@ -225,7 +225,7 @@ mod tests {
             py.allow_threads(|| {
                 let _ = bitgen.next_raw();
             });
-            assert!(bitgen.try_release(py).is_ok());
+            assert!(bitgen.release(py).is_ok());
             Ok(())
         })
     }
@@ -276,7 +276,7 @@ mod tests {
                 assert!(bitgen.random_ratio(1, 1));
                 assert!(!bitgen.random_ratio(0, 1));
             });
-            assert!(bitgen.try_release(py).is_ok());
+            assert!(bitgen.release(py).is_ok());
             Ok(())
         })
     }
@@ -287,7 +287,7 @@ mod tests {
             let generator = get_bit_generator(py)?;
             let bitgen = generator.lock()?;
             assert!(generator.lock().is_err());
-            assert!(bitgen.try_release(py).is_ok());
+            assert!(bitgen.release(py).is_ok());
             Ok(())
         })
     }
