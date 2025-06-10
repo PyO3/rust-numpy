@@ -76,7 +76,7 @@ unsafe impl PyTypeInfo for PyBitGenerator {
     const MODULE: Option<&'static str> = Some("numpy.random");
 
     fn type_object_raw<'py>(py: Python<'py>) -> *mut ffi::PyTypeObject {
-        const CLS: GILOnceCell<Py<PyType>> = GILOnceCell::new();
+        static CLS: GILOnceCell<Py<PyType>> = GILOnceCell::new();
         let cls = CLS
             .get_or_try_init::<_, PyErr>(py, || {
                 Ok(py
