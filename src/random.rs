@@ -93,12 +93,12 @@ unsafe impl PyTypeInfo for PyBitGenerator {
 }
 
 /// Methods for [`PyBitGenerator`].
-pub trait PyBitGeneratorMethods<'py> {
+pub trait PyBitGeneratorMethods {
     /// Acquire a lock on the BitGenerator to allow calling its methods in.
     fn lock(&self) -> PyResult<PyBitGeneratorGuard>;
 }
 
-impl<'py> PyBitGeneratorMethods<'py> for Bound<'py, PyBitGenerator> {
+impl<'py> PyBitGeneratorMethods for Bound<'py, PyBitGenerator> {
     fn lock(&self) -> PyResult<PyBitGeneratorGuard> {
         let capsule = self.getattr("capsule")?.downcast_into::<PyCapsule>()?;
         let lock = self.getattr("lock")?;
