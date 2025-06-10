@@ -191,8 +191,8 @@ impl<'py> PyBitGeneratorGuard {
     }
 }
 
-#[cfg(feature = "rand")]
-impl rand::RngCore for PyBitGeneratorGuard {
+#[cfg(feature = "rand_core")]
+impl rand_core::RngCore for PyBitGeneratorGuard {
     fn next_u32(&mut self) -> u32 {
         PyBitGeneratorGuard::next_u32(self)
     }
@@ -200,7 +200,7 @@ impl rand::RngCore for PyBitGeneratorGuard {
         PyBitGeneratorGuard::next_u64(self)
     }
     fn fill_bytes(&mut self, dst: &mut [u8]) {
-        rand::rand_core::impls::fill_bytes_via_next(self, dst)
+        rand_core::impls::fill_bytes_via_next(self, dst)
     }
 }
 
@@ -230,7 +230,6 @@ mod tests {
     }
 
     /// More complex version of primary use case: use from multiple threads
-    #[cfg(feature = "rand")]
     #[test]
     fn use_parallel() -> PyResult<()> {
         use crate::array::{PyArray2, PyArrayMethods as _};
@@ -264,7 +263,6 @@ mod tests {
     }
 
     /// Test that the `rand::Rng` APIs work
-    #[cfg(feature = "rand")]
     #[test]
     fn rand() -> PyResult<()> {
         use rand::Rng as _;

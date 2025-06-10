@@ -23,7 +23,7 @@ num-integer = "0.1"
 num-traits = "0.2"
 ndarray = ">= 0.15, < 0.17"
 pyo3 = { version = "0.25.0", default-features = false, features = ["macros"] }
-rand = { version = "0.9.1", default-features = false, optional = true }
+rand_core = { version = "0.9.3", default-features = false, optional = true }
 rustc-hash = "2.0"
 
 [dev-dependencies]
@@ -33,6 +33,7 @@ pyo3 = { version = "0.25", default-features = false, features = [
 nalgebra = { version = ">=0.30, <0.34", default-features = false, features = [
     "std",
 ] }
+rand = { version = "0.9.1", default-features = false }
 
 [build-dependencies]
 pyo3-build-config = { version = "0.25", features = ["resolve-config"] }
