@@ -117,9 +117,12 @@ impl<'py> PyBitGeneratorMethods for Bound<'py, PyBitGenerator> {
 
         assert_eq!(capsule.name()?, Some(ffi::c_str!("BitGenerator")));
         let ptr = capsule.pointer() as *mut bitgen_t;
-        let Some(non_null) = NonNull::new(ptr) else {
-            lock.call_method0(intern!(py, "release"))?;
-            return Err(PyRuntimeError::new_err("Invalid BitGenerator capsule"));
+        let non_null = match NonNull::new(ptr) {
+            Some(non_null) => non_null,
+            None => {
+                lock.call_method0(intern!(py, "release"))?;
+                return Err(PyRuntimeError::new_err("Invalid BitGenerator capsule"));
+            }
         };
         Ok(PyBitGeneratorGuard {
             raw_bitgen: non_null,
