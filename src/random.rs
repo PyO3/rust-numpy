@@ -100,14 +100,18 @@ impl<'py> PyBitGeneratorMethods for Bound<'py, PyBitGenerator> {
         let capsule = self
             .getattr(intern!(py, "capsule"))?
             .downcast_into::<PyCapsule>()?;
-        let lock = self.getattr(intern!(py, "lock"))?;
-        // we’re holding the GIL, so there’s no race condition checking the lock and acquiring it later.
-        if lock.call_method0(intern!(py, "locked"))?.extract()? {
-            return Err(PyRuntimeError::new_err("BitGenerator is already locked"));
-        }
-        lock.call_method0(intern!(py, "acquire"))?;
-
         assert_eq!(capsule.name()?, Some(ffi::c_str!("BitGenerator")));
+        let lock = self.getattr(intern!(py, "lock"))?;
+        // Acquire the lock in non-blocking mode or return an error
+        if !lock
+            .call_method(intern!(py, "acquire"), (false,), None)?
+            .extract()?
+        {
+            return Err(PyRuntimeError::new_err(
+                "Failed to acquire BitGenerator lock",
+            ));
+        }
+        // Return the guard or release the lock if the capsule is invalid
         let ptr = capsule.pointer() as *mut bitgen_t;
         let non_null = match NonNull::new(ptr) {
             Some(non_null) => non_null,
