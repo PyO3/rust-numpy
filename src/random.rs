@@ -113,7 +113,7 @@ impl<'py> PyBitGeneratorMethods for Bound<'py, PyBitGenerator> {
         }
         // Return the guard or release the lock if the capsule is invalid
         let ptr = capsule.pointer() as *mut bitgen_t;
-        let non_null = match NonNull::new(ptr) {
+        let raw_bitgen = match NonNull::new(ptr) {
             Some(non_null) => non_null,
             None => {
                 lock.call_method0(intern!(py, "release"))?;
@@ -121,7 +121,7 @@ impl<'py> PyBitGeneratorMethods for Bound<'py, PyBitGenerator> {
             }
         };
         Ok(PyBitGeneratorGuard {
-            raw_bitgen: non_null,
+            raw_bitgen,
             released: false,
             _capsule: capsule.unbind(),
             lock: lock.unbind(),
@@ -310,6 +310,28 @@ mod tests {
             let generator = get_bit_generator(py)?;
             let bitgen = generator.lock()?;
             assert!(generator.lock().is_err());
+            assert!(bitgen.release(py).is_ok());
+            Ok(())
+        })
+    }
+
+    #[test]
+    fn double_lock_fails_2() -> PyResult<()> {
+        Python::with_gil(|py| {
+            let generator1 = get_bit_generator(py)?;
+            let generator2 = generator1.clone();
+            assert_eq!(
+                generator1
+                    .getattr("capsule")?
+                    .downcast::<PyCapsule>()?
+                    .pointer(),
+                generator2
+                    .getattr("capsule")?
+                    .downcast::<PyCapsule>()?
+                    .pointer()
+            );
+            let bitgen = generator1.lock()?;
+            assert!(generator2.lock().is_err());
             assert!(bitgen.release(py).is_ok());
             Ok(())
         })
