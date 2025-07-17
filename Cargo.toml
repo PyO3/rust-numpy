@@ -17,7 +17,7 @@ license = "BSD-2-Clause"
 [dependencies]
 half = { version = "2.0", default-features = false, optional = true }
 libc = "0.2"
-nalgebra = { version = ">=0.30, <0.34", default-features = false, optional = true }
+nalgebra = { version = ">=0.30, <0.35", default-features = false, optional = true }
 num-complex = ">= 0.2, < 0.5"
 num-integer = "0.1"
 num-traits = "0.2"
@@ -29,7 +29,7 @@ rustc-hash = "2.0"
 pyo3 = { version = "0.25", default-features = false, features = [
     "auto-initialize",
 ] }
-nalgebra = { version = ">=0.30, <0.34", default-features = false, features = [
+nalgebra = { version = ">=0.30, <0.35", default-features = false, features = [
     "std",
 ] }
 
