@@ -510,7 +510,7 @@ fn npy_int_type_lookup<T, T0, T1, T2>(npy_types: [NPY_TYPES; 3]) -> NPY_TYPES {
         x if x == size_of::<T0>() => npy_types[0],
         x if x == size_of::<T1>() => npy_types[1],
         x if x == size_of::<T2>() => npy_types[2],
-        _ => panic!("Unable to match integer type descriptor: {:?}", npy_types),
+        _ => panic!("Unable to match integer type descriptor: {npy_types:?}"),
     }
 }
 
