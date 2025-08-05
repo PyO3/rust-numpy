@@ -756,6 +756,7 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> {
     /// or concurrently modified by Python or other native code.
     ///
     /// Please consider the safe alternative [`PyReadwriteArray::as_slice_mut`].
+    #[allow(clippy::mut_from_ref)]
     unsafe fn as_slice_mut(&self) -> Result<&mut [T], NotContiguousError>
     where
         T: Element,
@@ -821,6 +822,7 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> {
     ///     assert_eq!(unsafe { *pyarray.get([1, 0, 3]).unwrap() }, 42);
     /// });
     /// ```
+    #[allow(clippy::mut_from_ref)]
     unsafe fn get_mut(&self, index: impl NpyIndex<Dim = D>) -> Option<&mut T>
     where
         T: Element,
