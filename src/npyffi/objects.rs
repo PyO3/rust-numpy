@@ -1,4 +1,4 @@
-//! Low-Lebel binding for NumPy C API C-objects
+//! Low-Level binding for NumPy C API C-objects
 //!
 //! <https://numpy.org/doc/stable/reference/c-api/types-and-structures.html>
 #![allow(non_camel_case_types)]
