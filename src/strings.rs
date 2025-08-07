@@ -50,7 +50,7 @@ use crate::npyffi::NPY_TYPES;
 /// # use pyo3::Python;
 /// use numpy::{PyArray1, PyUntypedArrayMethods, PyFixedString};
 ///
-/// # Python::with_gil(|py| {
+/// # Python::attach(|py| {
 /// let array = PyArray1::<PyFixedString<3>>::from_vec(py, vec![[b'f', b'o', b'o'].into()]);
 ///
 /// assert!(array.dtype().to_string().contains("S3"));
@@ -115,7 +115,7 @@ unsafe impl<const N: usize> Element for PyFixedString<N> {
 /// # use pyo3::Python;
 /// use numpy::{PyArray1, PyUntypedArrayMethods, PyFixedUnicode};
 ///
-/// # Python::with_gil(|py| {
+/// # Python::attach(|py| {
 /// let array = PyArray1::<PyFixedUnicode<3>>::from_vec(py, vec![[b'b' as _, b'a' as _, b'r' as _].into()]);
 ///
 /// assert!(array.dtype().to_string().contains("U3"));

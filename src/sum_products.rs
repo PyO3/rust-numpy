@@ -34,7 +34,7 @@ impl<'py, T> ArrayOrScalar<'py, T> for T where T: Element + FromPyObject<'py> {}
 /// use pyo3::Python;
 /// use numpy::{inner, pyarray, PyArray0};
 ///
-/// Python::with_gil(|py| {
+/// Python::attach(|py| {
 ///     let vector = pyarray![py, 1.0, 2.0, 3.0];
 ///     let result: f64 = inner(&vector, &vector).unwrap();
 ///     assert_eq!(result, 14.0);
@@ -48,7 +48,7 @@ impl<'py, T> ArrayOrScalar<'py, T> for T where T: Element + FromPyObject<'py> {}
 /// use numpy::prelude::*;
 /// use numpy::{inner, pyarray, PyArray0};
 ///
-/// Python::with_gil(|py| {
+/// Python::attach(|py| {
 ///     let vector = pyarray![py, 1, 2, 3];
 ///     let result: Bound<'_, PyArray0<_>> = inner(&vector, &vector).unwrap();
 ///     assert_eq!(result.item(), 14);
@@ -87,7 +87,7 @@ where
 /// use ndarray::array;
 /// use numpy::{dot, pyarray, PyArray2, PyArrayMethods};
 ///
-/// Python::with_gil(|py| {
+/// Python::attach(|py| {
 ///     let matrix = pyarray![py, [1, 0], [0, 1]];
 ///     let another_matrix = pyarray![py, [4, 1], [2, 2]];
 ///
@@ -106,7 +106,7 @@ where
 /// use pyo3::Python;
 /// use numpy::{dot, pyarray, PyArray0};
 ///
-/// Python::with_gil(|py| {
+/// Python::attach(|py| {
 ///     let vector = pyarray![py, 1.0, 2.0, 3.0];
 ///     let result: f64 = dot(&vector, &vector).unwrap();
 ///     assert_eq!(result, 14.0);
@@ -177,7 +177,7 @@ where
 /// use ndarray::array;
 /// use numpy::{einsum, pyarray, PyArray, PyArray2, PyArrayMethods};
 ///
-/// Python::with_gil(|py| {
+/// Python::attach(|py| {
 ///     let tensor = PyArray::arange(py, 0, 2 * 3 * 4, 1).reshape([2, 3, 4]).unwrap();
 ///     let another_tensor = pyarray![py, [20, 30], [40, 50], [60, 70]];
 ///

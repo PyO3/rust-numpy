@@ -2,6 +2,7 @@
 - v0.26.0
   - bump MSRV to 1.74, matching PyO3 ([#504](https://github.com/PyO3/rust-numpy/pull/504))
   - extend supported `nalgebra` version to `0.34` ([#503](https://github.com/PyO3/rust-numpy/pull/503))
+  - Bump PyO3 dependency to v0.26.0. ([#506](https://github.com/PyO3/rust-numpy/pull/506))
 
 - v0.25.0,
   - Bump PyO3 dependency to v0.25.0. ([#492](https://github.com/PyO3/rust-numpy/pull/492))

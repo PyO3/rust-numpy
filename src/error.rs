@@ -4,7 +4,7 @@ use std::error::Error;
 use std::fmt;
 
 use pyo3::{
-    conversion::IntoPyObject, exceptions::PyTypeError, Bound, Py, PyErr, PyErrArguments, PyObject,
+    conversion::IntoPyObject, exceptions::PyTypeError, Bound, Py, PyAny, PyErr, PyErrArguments,
     Python,
 };
 
@@ -22,7 +22,7 @@ macro_rules! impl_pyerr {
         impl Error for $err_type {}
 
         impl PyErrArguments for $err_type {
-            fn arguments<'py>(self, py: Python<'py>) -> PyObject {
+            fn arguments<'py>(self, py: Python<'py>) -> Py<PyAny> {
                 self.to_string()
                     .into_pyobject(py)
                     .unwrap()
@@ -91,7 +91,7 @@ struct TypeErrorArguments {
 }
 
 impl PyErrArguments for TypeErrorArguments {
-    fn arguments<'py>(self, py: Python<'py>) -> PyObject {
+    fn arguments<'py>(self, py: Python<'py>) -> Py<PyAny> {
         let err = TypeError {
             from: self.from.into_bound(py),
             to: self.to.into_bound(py),
