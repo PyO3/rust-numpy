@@ -674,7 +674,7 @@ mod tests {
                 let shared = array.readonly();
 
                 assert_eq!(
-                    format!("{:?}", shared),
+                    format!("{shared:?}"),
                     "PyReadonlyArray<f64, ndarray::dimension::dim::Dim<[usize; 3]>>"
                 );
             }
@@ -683,7 +683,7 @@ mod tests {
                 let exclusive = array.readwrite();
 
                 assert_eq!(
-                    format!("{:?}", exclusive),
+                    format!("{exclusive:?}"),
                     "PyReadwriteArray<f64, ndarray::dimension::dim::Dim<[usize; 3]>>"
                 );
             }

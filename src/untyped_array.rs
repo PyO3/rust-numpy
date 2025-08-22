@@ -241,7 +241,7 @@ pub trait PyUntypedArrayMethods<'py>: Sealed {
 
     /// Returns `true` if the there are no elements in the array.
     fn is_empty(&self) -> bool {
-        self.shape().iter().any(|dim| *dim == 0)
+        self.shape().contains(&0)
     }
 }
 

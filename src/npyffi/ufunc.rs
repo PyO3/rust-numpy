@@ -11,7 +11,7 @@ fn mod_name(py: Python<'_>) -> PyResult<&'static str> {
     MOD_NAME
         .get_or_try_init(py, || {
             let numpy_core = super::array::numpy_core_name(py)?;
-            Ok(format!("{}.umath", numpy_core))
+            Ok(format!("{numpy_core}.umath"))
         })
         .map(String::as_str)
 }

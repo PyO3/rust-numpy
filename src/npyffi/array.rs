@@ -46,7 +46,7 @@ pub(crate) fn mod_name(py: Python<'_>) -> PyResult<&'static str> {
     MOD_NAME
         .get_or_try_init(py, || {
             let numpy_core = numpy_core_name(py)?;
-            Ok(format!("{}.multiarray", numpy_core))
+            Ok(format!("{numpy_core}.multiarray"))
         })
         .map(String::as_str)
 }

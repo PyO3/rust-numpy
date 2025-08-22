@@ -1,6 +1,14 @@
 # Changelog
+- v0.26.0
+  - bump MSRV to 1.74, matching PyO3 ([#504](https://github.com/PyO3/rust-numpy/pull/504))
+  - extend supported `nalgebra` version to `0.34` ([#503](https://github.com/PyO3/rust-numpy/pull/503))
+
+- v0.25.0,
+  - Bump PyO3 dependency to v0.25.0. ([#492](https://github.com/PyO3/rust-numpy/pull/492))
+
 - v0.24.0
-  - Support Python 3.13t "free-threaded" Python. ([#471](https://github.com/PyO3/rust-numpy/pull/471)
+  - Bump PyO3 dependency to v0.24.0. ([#483](https://github.com/PyO3/rust-numpy/pull/483))
+  - Support Python 3.13t "free-threaded" Python. ([#471](https://github.com/PyO3/rust-numpy/pull/471))
 
 - v0.23.0
   - Drop support for PyPy 3.7 and 3.8. ([#470](https://github.com/PyO3/rust-numpy/pull/470))

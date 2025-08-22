@@ -1,14 +1,14 @@
 [package]
 name = "numpy"
-version = "0.23.0"
+version = "0.25.0"
 authors = [
     "The rust-numpy Project Developers",
-    "PyO3 Project and Contributors <https://github.com/PyO3>"
+    "PyO3 Project and Contributors <https://github.com/PyO3>",
 ]
 description = "PyO3-based Rust bindings of the NumPy C-API"
 documentation = "https://docs.rs/numpy"
 edition = "2021"
-rust-version = "1.63"
+rust-version = "1.74"
 repository = "https://github.com/PyO3/rust-numpy"
 categories = ["api-bindings", "development-tools::ffi", "science"]
 keywords = ["python", "numpy", "ffi", "pyo3"]
@@ -17,24 +17,35 @@ license = "BSD-2-Clause"
 [dependencies]
 half = { version = "2.0", default-features = false, optional = true }
 libc = "0.2"
-nalgebra = { version = ">=0.30, <0.34", default-features = false, optional = true }
+nalgebra = { version = ">=0.30, <0.35", default-features = false, optional = true }
 faer = { version = "0.21.9", optional = true }
 num-complex = ">= 0.2, < 0.5"
 num-integer = "0.1"
 num-traits = "0.2"
 ndarray = ">= 0.15, < 0.17"
-pyo3 = { version = "0.24", default-features = false, features = ["macros"] }
+pyo3 = { version = "0.25.0", default-features = false, features = ["macros"] }
 rustc-hash = "2.0"
 
 [features]
 faer = ["dep:faer"]
 
 [dev-dependencies]
-pyo3 = { version = "0.24", default-features = false, features = ["auto-initialize"] }
-nalgebra = { version = ">=0.30, <0.34", default-features = false, features = ["std"] }
+pyo3 = { version = "0.25", default-features = false, features = [
+    "auto-initialize",
+] }
+nalgebra = { version = ">=0.30, <0.35", default-features = false, features = [
+    "std",
+] }
 
 [build-dependencies]
-pyo3-build-config = { version = "0.24", features = ["resolve-config"] }
+pyo3-build-config = { version = "0.25", features = ["resolve-config"] }
 
 [package.metadata.docs.rs]
 all-features = true
+
+[lints.rust]
+# We usually want to make the GIL lifetime explicit.
+elided-lifetimes-in-paths = "deny"
+
+[lints.clippy]
+needless-lifetimes = "allow"

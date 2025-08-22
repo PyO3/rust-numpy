@@ -74,22 +74,6 @@ where
     obj.extract()
 }
 
-/// Deprecated name for [`inner`].
-#[deprecated(since = "0.23.0", note = "renamed to `inner`")]
-#[inline]
-pub fn inner_bound<'py, T, DIN1, DIN2, OUT>(
-    array1: &Bound<'py, PyArray<T, DIN1>>,
-    array2: &Bound<'py, PyArray<T, DIN2>>,
-) -> PyResult<OUT>
-where
-    T: Element,
-    DIN1: Dimension,
-    DIN2: Dimension,
-    OUT: ArrayOrScalar<'py, T>,
-{
-    inner(array1, array2)
-}
-
 /// Return the dot product of two arrays.
 ///
 /// [NumPy's documentation][dot] has the details.
@@ -148,22 +132,6 @@ where
     obj.extract()
 }
 
-/// Deprecated name for [`dot`].
-#[deprecated(since = "0.23.0", note = "renamed to `dot`")]
-#[inline]
-pub fn dot_bound<'py, T, DIN1, DIN2, OUT>(
-    array1: &Bound<'py, PyArray<T, DIN1>>,
-    array2: &Bound<'py, PyArray<T, DIN2>>,
-) -> PyResult<OUT>
-where
-    T: Element,
-    DIN1: Dimension,
-    DIN2: Dimension,
-    OUT: ArrayOrScalar<'py, T>,
-{
-    dot(array1, array2)
-}
-
 /// Return the Einstein summation convention of given tensors.
 ///
 /// This is usually invoked via the the [`einsum!`][crate::einsum!] macro.
@@ -197,20 +165,6 @@ where
     obj.extract()
 }
 
-/// Deprecated name for [`einsum`].
-#[deprecated(since = "0.23.0", note = "renamed to `einsum`")]
-#[inline]
-pub fn einsum_bound<'py, T, OUT>(
-    subscripts: &str,
-    arrays: &[Borrowed<'_, 'py, PyArray<T, IxDyn>>],
-) -> PyResult<OUT>
-where
-    T: Element,
-    OUT: ArrayOrScalar<'py, T>,
-{
-    einsum(subscripts, arrays)
-}
-
 /// Return the Einstein summation convention of given tensors.
 ///
 /// For more about the Einstein summation convention, please refer to
@@ -239,16 +193,6 @@ where
 /// [einsum]: https://numpy.org/doc/stable/reference/generated/numpy.einsum.html
 #[macro_export]
 macro_rules! einsum {
-    ($subscripts:literal $(,$array:ident)+ $(,)*) => {{
-        let arrays = [$($array.to_dyn().as_borrowed(),)+];
-        $crate::einsum(concat!($subscripts, "\0"), &arrays)
-    }};
-}
-
-/// Deprecated name for [`einsum!`].
-#[deprecated(since = "0.23.0", note = "renamed to `einsum!`")]
-#[macro_export]
-macro_rules! einsum_bound {
     ($subscripts:literal $(,$array:ident)+ $(,)*) => {{
         let arrays = [$($array.to_dyn().as_borrowed(),)+];
         $crate::einsum(concat!($subscripts, "\0"), &arrays)

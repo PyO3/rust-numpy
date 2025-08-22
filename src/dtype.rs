@@ -68,13 +68,6 @@ pub fn dtype<'py, T: Element>(py: Python<'py>) -> Bound<'py, PyArrayDescr> {
     T::get_dtype(py)
 }
 
-/// Deprecated name for [`dtype`].
-#[deprecated(since = "0.23.0", note = "renamed to `dtype`")]
-#[inline]
-pub fn dtype_bound<'py, T: Element>(py: Python<'py>) -> Bound<'py, PyArrayDescr> {
-    dtype::<T>(py)
-}
-
 impl PyArrayDescr {
     /// Creates a new type descriptor ("dtype") object from an arbitrary object.
     ///
@@ -108,41 +101,16 @@ impl PyArrayDescr {
         )
     }
 
-    /// Deprecated name for [`PyArrayDescr::new`].
-    #[deprecated(since = "0.23.0", note = "renamed to `PyArrayDescr::new`")]
-    #[allow(deprecated)]
-    #[inline]
-    pub fn new_bound<'py, T: pyo3::ToPyObject + ?Sized>(
-        py: Python<'py>,
-        ob: &T,
-    ) -> PyResult<Bound<'py, Self>> {
-        Self::new(py, ob.to_object(py))
-    }
-
     /// Shortcut for creating a type descriptor of `object` type.
     #[inline]
     pub fn object(py: Python<'_>) -> Bound<'_, Self> {
         Self::from_npy_type(py, NPY_TYPES::NPY_OBJECT)
     }
 
-    /// Deprecated name for [`PyArrayDescr::object`].
-    #[deprecated(since = "0.23.0", note = "renamed to `PyArrayDescr::object`")]
-    #[inline]
-    pub fn object_bound(py: Python<'_>) -> Bound<'_, Self> {
-        Self::object(py)
-    }
-
     /// Returns the type descriptor for a registered type.
     #[inline]
     pub fn of<'py, T: Element>(py: Python<'py>) -> Bound<'py, Self> {
         T::get_dtype(py)
-    }
-
-    /// Deprecated name for [`PyArrayDescr::of`].
-    #[deprecated(since = "0.23.0", note = "renamed to `PyArrayDescr::of`")]
-    #[inline]
-    pub fn of_bound<'py, T: Element>(py: Python<'py>) -> Bound<'py, Self> {
-        Self::of::<T>(py)
     }
 
     fn from_npy_type<'py>(py: Python<'py>, npy_type: NPY_TYPES) -> Bound<'py, Self> {
@@ -506,13 +474,6 @@ pub unsafe trait Element: Sized + Send + Sync {
     /// Returns the associated type descriptor ("dtype") for the given element type.
     fn get_dtype(py: Python<'_>) -> Bound<'_, PyArrayDescr>;
 
-    /// Deprecated name for [`Element::get_dtype`].
-    #[deprecated(since = "0.23.0", note = "renamed to `Element::get_dtype`")]
-    #[inline]
-    fn get_dtype_bound(py: Python<'_>) -> Bound<'_, PyArrayDescr> {
-        Self::get_dtype(py)
-    }
-
     /// Create a clone of the value while the GIL is guaranteed to be held.
     fn clone_ref(&self, py: Python<'_>) -> Self;
 
@@ -549,7 +510,7 @@ fn npy_int_type_lookup<T, T0, T1, T2>(npy_types: [NPY_TYPES; 3]) -> NPY_TYPES {
         x if x == size_of::<T0>() => npy_types[0],
         x if x == size_of::<T1>() => npy_types[1],
         x if x == size_of::<T2>() => npy_types[2],
-        _ => panic!("Unable to match integer type descriptor: {:?}", npy_types),
+        _ => panic!("Unable to match integer type descriptor: {npy_types:?}"),
     }
 }
 
@@ -700,13 +661,13 @@ mod tests {
         Python::with_gil(|py| {
             assert!(PyArrayDescr::new(py, "float64")
                 .unwrap()
-                .is(&dtype::<f64>(py)));
+                .is(dtype::<f64>(py)));
 
             let dt = PyArrayDescr::new(py, [("a", "O"), ("b", "?")].as_ref()).unwrap();
             assert_eq!(dt.names(), Some(vec!["a".to_owned(), "b".to_owned()]));
             assert!(dt.has_object());
-            assert!(dt.get_field("a").unwrap().0.is(&dtype::<PyObject>(py)));
-            assert!(dt.get_field("b").unwrap().0.is(&dtype::<bool>(py)));
+            assert!(dt.get_field("a").unwrap().0.is(dtype::<PyObject>(py)));
+            assert!(dt.get_field("b").unwrap().0.is(dtype::<bool>(py)));
 
             assert!(PyArrayDescr::new(py, 123_usize).is_err());
         });

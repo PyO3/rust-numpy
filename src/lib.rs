@@ -105,15 +105,11 @@ pub use crate::borrow::{
     PyReadwriteArray5, PyReadwriteArray6, PyReadwriteArrayDyn,
 };
 pub use crate::convert::{IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
-#[allow(deprecated)]
-pub use crate::dtype::dtype_bound;
 pub use crate::dtype::{dtype, Complex32, Complex64, Element, PyArrayDescr, PyArrayDescrMethods};
 pub use crate::error::{BorrowError, FromVecError, NotContiguousError};
 pub use crate::npyffi::{PY_ARRAY_API, PY_UFUNC_API};
 pub use crate::strings::{PyFixedString, PyFixedUnicode};
 pub use crate::sum_products::{dot, einsum, inner};
-#[allow(deprecated)]
-pub use crate::sum_products::{dot_bound, einsum_bound, inner_bound};
 pub use crate::untyped_array::{PyUntypedArray, PyUntypedArrayMethods};
 
 pub use ndarray::{array, Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};
@@ -170,21 +166,6 @@ fn cold() {}
 /// });
 #[macro_export]
 macro_rules! pyarray {
-    ($py: ident, $([$([$($x:expr),* $(,)*]),+ $(,)*]),+ $(,)*) => {{
-        $crate::IntoPyArray::into_pyarray($crate::array![$([$([$($x,)*],)*],)*], $py)
-    }};
-    ($py: ident, $([$($x:expr),* $(,)*]),+ $(,)*) => {{
-        $crate::IntoPyArray::into_pyarray($crate::array![$([$($x,)*],)*], $py)
-    }};
-    ($py: ident, $($x:expr),* $(,)*) => {{
-        $crate::IntoPyArray::into_pyarray($crate::array![$($x,)*], $py)
-    }};
-}
-
-/// Deprecated name for [`pyarray`].
-#[deprecated(since = "0.23.0", note = "renamed to `pyarray`")]
-#[macro_export]
-macro_rules! pyarray_bound {
     ($py: ident, $([$([$($x:expr),* $(,)*]),+ $(,)*]),+ $(,)*) => {{
         $crate::IntoPyArray::into_pyarray($crate::array![$([$([$($x,)*],)*],)*], $py)
     }};

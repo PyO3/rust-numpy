@@ -151,8 +151,7 @@ fn insert_shared<'py>(py: Python<'py>) -> PyResult<*const Shared> {
     let version = unsafe { *capsule.pointer().cast::<u64>() };
     if version < 1 {
         return Err(PyTypeError::new_err(format!(
-            "Version {} of borrow checking API is not supported by this version of rust-numpy",
-            version
+            "Version {version} of borrow checking API is not supported by this version of rust-numpy"
         )));
     }
 
@@ -175,7 +174,7 @@ pub fn acquire<'py>(py: Python<'py>, array: *mut PyArrayObject) -> Result<(), Bo
     match rc {
         0 => Ok(()),
         -1 => Err(BorrowError::AlreadyBorrowed),
-        rc => panic!("Unexpected return code {} from borrow checking API", rc),
+        rc => panic!("Unexpected return code {rc} from borrow checking API"),
     }
 }
 
@@ -188,7 +187,7 @@ pub fn acquire_mut<'py>(py: Python<'py>, array: *mut PyArrayObject) -> Result<()
         0 => Ok(()),
         -1 => Err(BorrowError::AlreadyBorrowed),
         -2 => Err(BorrowError::NotWriteable),
-        rc => panic!("Unexpected return code {} from borrow checking API", rc),
+        rc => panic!("Unexpected return code {rc} from borrow checking API"),
     }
 }
 
