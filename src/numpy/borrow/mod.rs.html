@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/borrow/mod.rs`."><title>mod.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-1a91846b.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="numpy" data-themes="" data-resource-suffix="" data-rustdoc-version="1.88.0 (6b00bc388 2025-06-23)" data-channel="1.88.0" data-search-js="search-f7877310.js" data-settings-js="settings-5514c975.js" ><script src="../../../static.files/storage-4e99c027.js"></script><script defer src="../../../static.files/src-script-63605ae7.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-7ef8a74a.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">numpy/borrow/</div>mod.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="doccomment">//! Types to safely create references into NumPy arrays
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/borrow/mod.rs`."><title>mod.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-84e720fa.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="numpy" data-themes="" data-resource-suffix="" data-rustdoc-version="1.89.0 (29483883e 2025-08-04)" data-channel="1.89.0" data-search-js="search-92309212.js" data-settings-js="settings-5514c975.js" ><script src="../../../static.files/storage-4e99c027.js"></script><script defer src="../../../static.files/src-script-813739b1.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-fd3af306.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">numpy/borrow/</div>mod.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="doccomment">//! Types to safely create references into NumPy arrays
 <a href=#2 id=2 data-nosnippet>2</a>//!
 <a href=#3 id=3 data-nosnippet>3</a>//! It is assumed that unchecked code - which includes unsafe Rust and Python - is validated by its author
 <a href=#4 id=4 data-nosnippet>4</a>//! which together with the dynamic borrow checking performed by this crate ensures that
@@ -40,7 +40,7 @@
 <a href=#40 id=40 data-nosnippet>40</a>//!     assert!(res.is_err());
 <a href=#41 id=41 data-nosnippet>41</a>//! }
 <a href=#42 id=42 data-nosnippet>42</a>//!
-<a href=#43 id=43 data-nosnippet>43</a>//! Python::with_gil(|py| {
+<a href=#43 id=43 data-nosnippet>43</a>//! Python::attach(|py| {
 <a href=#44 id=44 data-nosnippet>44</a>//!     let x = PyArray1::&lt;f64&gt;::zeros(py, 42, false);
 <a href=#45 id=45 data-nosnippet>45</a>//!     let y = PyArray1::&lt;f64&gt;::zeros(py, 42, false);
 <a href=#46 id=46 data-nosnippet>46</a>//!     let z = PyArray1::&lt;f64&gt;::zeros(py, 42, false);
@@ -66,14 +66,14 @@
 <a href=#66 id=66 data-nosnippet>66</a>//! use pyo3::{types::{IntoPyDict, PyAnyMethods}, Python, ffi::c_str};
 <a href=#67 id=67 data-nosnippet>67</a>//!
 <a href=#68 id=68 data-nosnippet>68</a>//! # fn main() -&gt; pyo3::PyResult&lt;()&gt; {
-<a href=#69 id=69 data-nosnippet>69</a>//! Python::with_gil(|py| {
+<a href=#69 id=69 data-nosnippet>69</a>//! Python::attach(|py| {
 <a href=#70 id=70 data-nosnippet>70</a>//!     let array = PyArray1::arange(py, 0.0, 10.0, 1.0);
 <a href=#71 id=71 data-nosnippet>71</a>//!     let locals = [("array", array)].into_py_dict(py)?;
 <a href=#72 id=72 data-nosnippet>72</a>//!
-<a href=#73 id=73 data-nosnippet>73</a>//!     let view1 = py.eval(c_str!("array[:5]"), None, Some(&amp;locals))?.downcast_into::&lt;PyArray1&lt;f64&gt;&gt;()?;
-<a href=#74 id=74 data-nosnippet>74</a>//!     let view2 = py.eval(c_str!("array[5:]"), None, Some(&amp;locals))?.downcast_into::&lt;PyArray1&lt;f64&gt;&gt;()?;
-<a href=#75 id=75 data-nosnippet>75</a>//!     let view3 = py.eval(c_str!("array[::2]"), None, Some(&amp;locals))?.downcast_into::&lt;PyArray1&lt;f64&gt;&gt;()?;
-<a href=#76 id=76 data-nosnippet>76</a>//!     let view4 = py.eval(c_str!("array[1::2]"), None, Some(&amp;locals))?.downcast_into::&lt;PyArray1&lt;f64&gt;&gt;()?;
+<a href=#73 id=73 data-nosnippet>73</a>//!     let view1 = py.eval(c_str!("array[:5]"), None, Some(&amp;locals))?.cast_into::&lt;PyArray1&lt;f64&gt;&gt;()?;
+<a href=#74 id=74 data-nosnippet>74</a>//!     let view2 = py.eval(c_str!("array[5:]"), None, Some(&amp;locals))?.cast_into::&lt;PyArray1&lt;f64&gt;&gt;()?;
+<a href=#75 id=75 data-nosnippet>75</a>//!     let view3 = py.eval(c_str!("array[::2]"), None, Some(&amp;locals))?.cast_into::&lt;PyArray1&lt;f64&gt;&gt;()?;
+<a href=#76 id=76 data-nosnippet>76</a>//!     let view4 = py.eval(c_str!("array[1::2]"), None, Some(&amp;locals))?.cast_into::&lt;PyArray1&lt;f64&gt;&gt;()?;
 <a href=#77 id=77 data-nosnippet>77</a>//!
 <a href=#78 id=78 data-nosnippet>78</a>//!     {
 <a href=#79 id=79 data-nosnippet>79</a>//!         let _view1 = view1.readwrite();
@@ -98,12 +98,12 @@
 <a href=#98 id=98 data-nosnippet>98</a>//! use pyo3::{types::{IntoPyDict, PyAnyMethods}, Python, ffi::c_str};
 <a href=#99 id=99 data-nosnippet>99</a>//!
 <a href=#100 id=100 data-nosnippet>100</a>//! # fn main() -&gt; pyo3::PyResult&lt;()&gt; {
-<a href=#101 id=101 data-nosnippet>101</a>//! Python::with_gil(|py| {
+<a href=#101 id=101 data-nosnippet>101</a>//! Python::attach(|py| {
 <a href=#102 id=102 data-nosnippet>102</a>//!     let array = PyArray2::&lt;f64&gt;::zeros(py, (10, 10), false);
 <a href=#103 id=103 data-nosnippet>103</a>//!     let locals = [("array", array)].into_py_dict(py)?;
 <a href=#104 id=104 data-nosnippet>104</a>//!
-<a href=#105 id=105 data-nosnippet>105</a>//!     let view1 = py.eval(c_str!("array[:, ::3]"), None, Some(&amp;locals))?.downcast_into::&lt;PyArray2&lt;f64&gt;&gt;()?;
-<a href=#106 id=106 data-nosnippet>106</a>//!     let view2 = py.eval(c_str!("array[:, 1::3]"), None, Some(&amp;locals))?.downcast_into::&lt;PyArray2&lt;f64&gt;&gt;()?;
+<a href=#105 id=105 data-nosnippet>105</a>//!     let view1 = py.eval(c_str!("array[:, ::3]"), None, Some(&amp;locals))?.cast_into::&lt;PyArray2&lt;f64&gt;&gt;()?;
+<a href=#106 id=106 data-nosnippet>106</a>//!     let view2 = py.eval(c_str!("array[:, 1::3]"), None, Some(&amp;locals))?.cast_into::&lt;PyArray2&lt;f64&gt;&gt;()?;
 <a href=#107 id=107 data-nosnippet>107</a>//!
 <a href=#108 id=108 data-nosnippet>108</a>//!     // A false conflict as the views do not actually share any elements.
 <a href=#109 id=109 data-nosnippet>109</a>//!     let res = catch_unwind(AssertUnwindSafe(|| {
@@ -140,7 +140,7 @@
 <a href=#140 id=140 data-nosnippet>140</a>//! which does not require aliasing discipline.
 <a href=#141 id=141 data-nosnippet>141</a>//!
 <a href=#142 id=142 data-nosnippet>142</a>//! Concerning multi-threading in particular: While the GIL needs to be acquired to create borrows, they are not bound to the GIL
-<a href=#143 id=143 data-nosnippet>143</a>//! and will stay active after the GIL is released, for example by calling [`allow_threads`][pyo3::Python::allow_threads].
+<a href=#143 id=143 data-nosnippet>143</a>//! and will stay active after the GIL is released, for example by calling [`detach`][pyo3::Python::detach].
 <a href=#144 id=144 data-nosnippet>144</a>//! Borrows also do not provide synchronization, i.e. multiple threads borrowing the same array will lead to runtime panics,
 <a href=#145 id=145 data-nosnippet>145</a>//! it will not block those threads until already active borrows are released.
 <a href=#146 id=146 data-nosnippet>146</a>//!
@@ -175,7 +175,7 @@
 <a href=#175 id=175 data-nosnippet>175</a><span class="kw">use </span>ndarray::{
 <a href=#176 id=176 data-nosnippet>176</a>    ArrayView, ArrayViewMut, Dimension, IntoDimension, Ix0, Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn,
 <a href=#177 id=177 data-nosnippet>177</a>};
-<a href=#178 id=178 data-nosnippet>178</a><span class="kw">use </span>pyo3::{types::PyAnyMethods, Bound, FromPyObject, PyAny, PyResult};
+<a href=#178 id=178 data-nosnippet>178</a><span class="kw">use </span>pyo3::{Bound, FromPyObject, PyAny, PyResult};
 <a href=#179 id=179 data-nosnippet>179</a>
 <a href=#180 id=180 data-nosnippet>180</a><span class="kw">use </span><span class="kw">crate</span>::array::{PyArray, PyArrayMethods};
 <a href=#181 id=181 data-nosnippet>181</a><span class="kw">use </span><span class="kw">crate</span>::convert::NpyIndex;
@@ -239,7 +239,7 @@
 <a href=#239 id=239 data-nosnippet>239</a>
 <a href=#240 id=240 data-nosnippet>240</a><span class="kw">impl</span>&lt;<span class="lifetime">'py</span>, T: Element, D: Dimension&gt; FromPyObject&lt;<span class="lifetime">'py</span>&gt; <span class="kw">for </span>PyReadonlyArray&lt;<span class="lifetime">'py</span>, T, D&gt; {
 <a href=#241 id=241 data-nosnippet>241</a>    <span class="kw">fn </span>extract_bound(obj: <span class="kw-2">&amp;</span>Bound&lt;<span class="lifetime">'py</span>, PyAny&gt;) -&gt; PyResult&lt;<span class="self">Self</span>&gt; {
-<a href=#242 id=242 data-nosnippet>242</a>        <span class="kw">let </span>array = obj.downcast::&lt;PyArray&lt;T, D&gt;&gt;()<span class="question-mark">?</span>;
+<a href=#242 id=242 data-nosnippet>242</a>        <span class="kw">let </span>array = obj.cast::&lt;PyArray&lt;T, D&gt;&gt;()<span class="question-mark">?</span>;
 <a href=#243 id=243 data-nosnippet>243</a>        <span class="prelude-val">Ok</span>(array.readonly())
 <a href=#244 id=244 data-nosnippet>244</a>    }
 <a href=#245 id=245 data-nosnippet>245</a>}
@@ -312,7 +312,7 @@
 <a href=#312 id=312 data-nosnippet>312</a>    /// }
 <a href=#313 id=313 data-nosnippet>313</a>    ///
 <a href=#314 id=314 data-nosnippet>314</a>    /// # fn main() -&gt; pyo3::PyResult&lt;()&gt; {
-<a href=#315 id=315 data-nosnippet>315</a>    /// Python::with_gil(|py| {
+<a href=#315 id=315 data-nosnippet>315</a>    /// Python::attach(|py| {
 <a href=#316 id=316 data-nosnippet>316</a>    ///     let np = py.eval(c_str!("__import__('numpy')"), None, None)?;
 <a href=#317 id=317 data-nosnippet>317</a>    ///     let sum_standard_layout = wrap_pyfunction!(sum_standard_layout)(py)?;
 <a href=#318 id=318 data-nosnippet>318</a>    ///     let sum_dynamic_strides = wrap_pyfunction!(sum_dynamic_strides)(py)?;
@@ -478,7 +478,7 @@
 <a href=#478 id=478 data-nosnippet>478</a>
 <a href=#479 id=479 data-nosnippet>479</a><span class="kw">impl</span>&lt;<span class="lifetime">'py</span>, T: Element, D: Dimension&gt; FromPyObject&lt;<span class="lifetime">'py</span>&gt; <span class="kw">for </span>PyReadwriteArray&lt;<span class="lifetime">'py</span>, T, D&gt; {
 <a href=#480 id=480 data-nosnippet>480</a>    <span class="kw">fn </span>extract_bound(obj: <span class="kw-2">&amp;</span>Bound&lt;<span class="lifetime">'py</span>, PyAny&gt;) -&gt; PyResult&lt;<span class="self">Self</span>&gt; {
-<a href=#481 id=481 data-nosnippet>481</a>        <span class="kw">let </span>array = obj.downcast::&lt;PyArray&lt;T, D&gt;&gt;()<span class="question-mark">?</span>;
+<a href=#481 id=481 data-nosnippet>481</a>        <span class="kw">let </span>array = obj.cast::&lt;PyArray&lt;T, D&gt;&gt;()<span class="question-mark">?</span>;
 <a href=#482 id=482 data-nosnippet>482</a>        <span class="prelude-val">Ok</span>(array.readwrite())
 <a href=#483 id=483 data-nosnippet>483</a>    }
 <a href=#484 id=484 data-nosnippet>484</a>}
@@ -604,7 +604,7 @@
 <a href=#604 id=604 data-nosnippet>604</a>    /// use numpy::{PyArray, PyArrayMethods, PyUntypedArrayMethods};
 <a href=#605 id=605 data-nosnippet>605</a>    /// use pyo3::Python;
 <a href=#606 id=606 data-nosnippet>606</a>    ///
-<a href=#607 id=607 data-nosnippet>607</a>    /// Python::with_gil(|py| {
+<a href=#607 id=607 data-nosnippet>607</a>    /// Python::attach(|py| {
 <a href=#608 id=608 data-nosnippet>608</a>    ///     let pyarray = PyArray::arange(py, 0, 10, 1);
 <a href=#609 id=609 data-nosnippet>609</a>    ///     assert_eq!(pyarray.len(), 10);
 <a href=#610 id=610 data-nosnippet>610</a>    ///
@@ -667,7 +667,7 @@
 <a href=#667 id=667 data-nosnippet>667</a>
 <a href=#668 id=668 data-nosnippet>668</a>    <span class="attr">#[test]
 <a href=#669 id=669 data-nosnippet>669</a>    </span><span class="kw">fn </span>test_debug_formatting() {
-<a href=#670 id=670 data-nosnippet>670</a>        Python::with_gil(|py| {
+<a href=#670 id=670 data-nosnippet>670</a>        Python::attach(|py| {
 <a href=#671 id=671 data-nosnippet>671</a>            <span class="kw">let </span>array = PyArray::&lt;f64, <span class="kw">_</span>&gt;::zeros(py, (<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>), <span class="bool-val">false</span>);
 <a href=#672 id=672 data-nosnippet>672</a>
 <a href=#673 id=673 data-nosnippet>673</a>            {
@@ -693,7 +693,7 @@
 <a href=#693 id=693 data-nosnippet>693</a>    <span class="attr">#[test]
 <a href=#694 id=694 data-nosnippet>694</a>    #[should_panic(expected = <span class="string">"AlreadyBorrowed"</span>)]
 <a href=#695 id=695 data-nosnippet>695</a>    </span><span class="kw">fn </span>cannot_clone_exclusive_borrow_via_deref() {
-<a href=#696 id=696 data-nosnippet>696</a>        Python::with_gil(|py| {
+<a href=#696 id=696 data-nosnippet>696</a>        Python::attach(|py| {
 <a href=#697 id=697 data-nosnippet>697</a>            <span class="kw">let </span>array = PyArray::&lt;f64, <span class="kw">_</span>&gt;::zeros(py, (<span class="number">3</span>, <span class="number">2</span>, <span class="number">1</span>), <span class="bool-val">false</span>);
 <a href=#698 id=698 data-nosnippet>698</a>
 <a href=#699 id=699 data-nosnippet>699</a>            <span class="kw">let </span>exclusive = array.readwrite();
@@ -703,7 +703,7 @@
 <a href=#703 id=703 data-nosnippet>703</a>
 <a href=#704 id=704 data-nosnippet>704</a>    <span class="attr">#[test]
 <a href=#705 id=705 data-nosnippet>705</a>    </span><span class="kw">fn </span>failed_resize_does_not_double_release() {
-<a href=#706 id=706 data-nosnippet>706</a>        Python::with_gil(|py| {
+<a href=#706 id=706 data-nosnippet>706</a>        Python::attach(|py| {
 <a href=#707 id=707 data-nosnippet>707</a>            <span class="kw">let </span>array = PyArray::&lt;f64, <span class="kw">_</span>&gt;::zeros(py, <span class="number">10</span>, <span class="bool-val">false</span>);
 <a href=#708 id=708 data-nosnippet>708</a>
 <a href=#709 id=709 data-nosnippet>709</a>            <span class="comment">// The view will make the internal reference check of `PyArray_Resize` fail.
@@ -711,7 +711,7 @@
 <a href=#711 id=711 data-nosnippet>711</a>            <span class="kw">let </span>_view = py
 <a href=#712 id=712 data-nosnippet>712</a>                .eval(<span class="macro">c_str!</span>(<span class="string">"array[:]"</span>), <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>locals))
 <a href=#713 id=713 data-nosnippet>713</a>                .unwrap()
-<a href=#714 id=714 data-nosnippet>714</a>                .downcast_into::&lt;PyArray1&lt;f64&gt;&gt;()
+<a href=#714 id=714 data-nosnippet>714</a>                .cast_into::&lt;PyArray1&lt;f64&gt;&gt;()
 <a href=#715 id=715 data-nosnippet>715</a>                .unwrap();
 <a href=#716 id=716 data-nosnippet>716</a>
 <a href=#717 id=717 data-nosnippet>717</a>            <span class="kw">let </span>exclusive = array.readwrite();
@@ -721,7 +721,7 @@
 <a href=#721 id=721 data-nosnippet>721</a>
 <a href=#722 id=722 data-nosnippet>722</a>    <span class="attr">#[test]
 <a href=#723 id=723 data-nosnippet>723</a>    </span><span class="kw">fn </span>ineffective_resize_does_not_conflict() {
-<a href=#724 id=724 data-nosnippet>724</a>        Python::with_gil(|py| {
+<a href=#724 id=724 data-nosnippet>724</a>        Python::attach(|py| {
 <a href=#725 id=725 data-nosnippet>725</a>            <span class="kw">let </span>array = PyArray::&lt;f64, <span class="kw">_</span>&gt;::zeros(py, <span class="number">10</span>, <span class="bool-val">false</span>);
 <a href=#726 id=726 data-nosnippet>726</a>
 <a href=#727 id=727 data-nosnippet>727</a>            <span class="kw">let </span>exclusive = array.readwrite();
