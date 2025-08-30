@@ -4,7 +4,7 @@ use std::ops::Deref;
 use ndarray::{Array1, Dimension, Ix0, Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};
 use pyo3::{
     intern,
-    sync::GILOnceCell,
+    sync::PyOnceLock,
     types::{PyAnyMethods, PyDict},
     Bound, FromPyObject, Py, PyAny, PyResult,
 };
@@ -66,7 +66,7 @@ impl Coerce for AllowTypeChange {
 ///     array.as_array().sum()
 /// }
 ///
-/// Python::with_gil(|py| {
+/// Python::attach(|py| {
 ///     let np = get_array_module(py).unwrap();
 ///     let sum_up = wrap_pyfunction!(sum_up)(py).unwrap();
 ///
@@ -87,7 +87,7 @@ impl Coerce for AllowTypeChange {
 ///     array.as_array().sum()
 /// }
 ///
-/// Python::with_gil(|py| {
+/// Python::attach(|py| {
 ///     let np = get_array_module(py).unwrap();
 ///     let sum_up = wrap_pyfunction!(sum_up)(py).unwrap();
 ///
@@ -107,7 +107,7 @@ impl Coerce for AllowTypeChange {
 ///     array.as_array().sum()
 /// }
 ///
-/// Python::with_gil(|py| {
+/// Python::attach(|py| {
 ///     let np = get_array_module(py).unwrap();
 ///     let sum_up = wrap_pyfunction!(sum_up)(py).unwrap();
 ///
@@ -143,7 +143,7 @@ where
     Vec<T>: FromPyObject<'py>,
 {
     fn extract_bound(ob: &Bound<'py, PyAny>) -> PyResult<Self> {
-        if let Ok(array) = ob.downcast::<PyArray<T, D>>() {
+        if let Ok(array) = ob.cast::<PyArray<T, D>>() {
             return Ok(Self(array.readonly(), PhantomData));
         }
 
@@ -160,7 +160,7 @@ where
             }
         }
 
-        static AS_ARRAY: GILOnceCell<Py<PyAny>> = GILOnceCell::new();
+        static AS_ARRAY: PyOnceLock<Py<PyAny>> = PyOnceLock::new();
 
         let as_array = AS_ARRAY
             .get_or_try_init(py, || {

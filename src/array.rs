@@ -17,8 +17,8 @@ use ndarray::{
 use num_traits::AsPrimitive;
 use pyo3::{
     ffi,
-    types::{DerefToPyAny, PyAnyMethods, PyModule},
-    Bound, DowncastError, Py, PyAny, PyErr, PyObject, PyResult, PyTypeInfo, Python,
+    types::{DerefToPyAny, PyModule},
+    Bound, DowncastError, Py, PyAny, PyErr, PyResult, PyTypeInfo, Python,
 };
 
 use crate::borrow::{PyReadonlyArray, PyReadwriteArray};
@@ -83,7 +83,7 @@ use crate::untyped_array::{PyUntypedArray, PyUntypedArrayMethods};
 /// use ndarray::{array, Array};
 /// use pyo3::Python;
 ///
-/// Python::with_gil(|py| {
+/// Python::attach(|py| {
 ///     let pyarray = PyArray::arange(py, 0., 4., 1.).reshape([2, 2]).unwrap();
 ///     let array = array![[3., 4.], [5., 6.]];
 ///
@@ -146,7 +146,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
             if npyffi::PyArray_Check(ob.py(), ob.as_ptr()) == 0 {
                 return Err(DowncastError::new(ob, <Self as PyTypeInfo>::NAME).into());
             }
-            ob.downcast_unchecked::<Self>()
+            ob.cast_unchecked::<Self>()
         };
 
         // Check if the dimensionality matches `D`.
@@ -190,7 +190,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     /// use numpy::PyArray3;
     /// use pyo3::Python;
     ///
-    /// Python::with_gil(|py| {
+    /// Python::attach(|py| {
     ///     let arr = unsafe {
     ///         let arr = PyArray3::<i32>::new(py, [4, 5, 6], false);
     ///
@@ -238,7 +238,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
             ptr::null_mut(),          // obj
         );
 
-        Bound::from_owned_ptr(py, ptr).downcast_into_unchecked()
+        Bound::from_owned_ptr(py, ptr).cast_into_unchecked()
     }
 
     unsafe fn new_with_data<'py, ID>(
@@ -270,7 +270,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
             container as *mut ffi::PyObject,
         );
 
-        Bound::from_owned_ptr(py, ptr).downcast_into_unchecked()
+        Bound::from_owned_ptr(py, ptr).cast_into_unchecked()
     }
 
     pub(crate) unsafe fn from_raw_parts<'py>(
@@ -357,7 +357,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     /// use numpy::{PyArray2, PyArrayMethods};
     /// use pyo3::Python;
     ///
-    /// Python::with_gil(|py| {
+    /// Python::attach(|py| {
     ///     let pyarray = PyArray2::<usize>::zeros(py, [2, 2], true);
     ///
     ///     assert_eq!(pyarray.readonly().as_slice().unwrap(), [0; 4]);
@@ -379,7 +379,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
                 T::get_dtype(py).into_dtype_ptr(),
                 if is_fortran { -1 } else { 0 },
             );
-            Bound::from_owned_ptr(py, ptr).downcast_into_unchecked()
+            Bound::from_owned_ptr(py, ptr).cast_into_unchecked()
         }
     }
 
@@ -394,7 +394,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     /// use ndarray::array;
     /// use pyo3::Python;
     ///
-    /// Python::with_gil(|py| {
+    /// Python::attach(|py| {
     ///     let pyarray = PyArray::from_owned_array(py, array![[1, 2], [3, 4]]);
     ///
     ///     assert_eq!(pyarray.readonly().as_array(), array![[1, 2], [3, 4]]);
@@ -426,7 +426,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     /// use ndarray::array;
     /// use pyo3::Python;
     ///
-    /// Python::with_gil(|py| {
+    /// Python::attach(|py| {
     ///     let pyarray = PyArray::from_array(py, &array![[1, 2], [3, 4]]);
     ///
     ///     assert_eq!(pyarray.readonly().as_array(), array![[1, 2], [3, 4]]);
@@ -440,7 +440,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     }
 }
 
-impl<D: Dimension> PyArray<PyObject, D> {
+impl<D: Dimension> PyArray<Py<PyAny>, D> {
     /// Construct a NumPy array containing objects stored in a [`ndarray::Array`]
     ///
     /// This method uses the internal [`Vec`] of the [`ndarray::Array`] as the base object of the NumPy array.
@@ -459,7 +459,7 @@ impl<D: Dimension> PyArray<PyObject, D> {
     ///     bar: f64,
     /// }
     ///
-    /// Python::with_gil(|py| {
+    /// Python::attach(|py| {
     ///     let array = array![
     ///         Py::new(py, CustomElement {
     ///             foo: 1,
@@ -478,7 +478,7 @@ impl<D: Dimension> PyArray<PyObject, D> {
     /// ```
     pub fn from_owned_object_array<T>(py: Python<'_>, mut arr: Array<Py<T>, D>) -> Bound<'_, Self> {
         let (strides, dims) = (arr.npy_strides(), arr.raw_dim());
-        let data_ptr = arr.as_mut_ptr() as *const PyObject;
+        let data_ptr = arr.as_mut_ptr().cast::<Py<PyAny>>().cast_const();
         unsafe {
             Self::from_raw_parts(
                 py,
@@ -500,7 +500,7 @@ impl<T: Element> PyArray<T, Ix1> {
     /// use numpy::{PyArray, PyArrayMethods};
     /// use pyo3::Python;
     ///
-    /// Python::with_gil(|py| {
+    /// Python::attach(|py| {
     ///     let slice = &[1, 2, 3, 4, 5];
     ///     let pyarray = PyArray::from_slice(py, slice);
     ///     assert_eq!(pyarray.readonly().as_slice().unwrap(), &[1, 2, 3, 4, 5]);
@@ -523,7 +523,7 @@ impl<T: Element> PyArray<T, Ix1> {
     /// use numpy::{PyArray, PyArrayMethods};
     /// use pyo3::Python;
     ///
-    /// Python::with_gil(|py| {
+    /// Python::attach(|py| {
     ///     let vec = vec![1, 2, 3, 4, 5];
     ///     let pyarray = PyArray::from_vec(py, vec);
     ///     assert_eq!(pyarray.readonly().as_slice().unwrap(), &[1, 2, 3, 4, 5]);
@@ -545,7 +545,7 @@ impl<T: Element> PyArray<T, Ix1> {
     /// use numpy::{PyArray, PyArrayMethods};
     /// use pyo3::Python;
     ///
-    /// Python::with_gil(|py| {
+    /// Python::attach(|py| {
     ///     let pyarray = PyArray::from_iter(py, "abcde".chars().map(u32::from));
     ///     assert_eq!(pyarray.readonly().as_slice().unwrap(), &[97, 98, 99, 100, 101]);
     /// });
@@ -572,7 +572,7 @@ impl<T: Element> PyArray<T, Ix2> {
     /// use pyo3::Python;
     /// use ndarray::array;
     ///
-    /// Python::with_gil(|py| {
+    /// Python::attach(|py| {
     ///     let vec2 = vec![vec![11, 12], vec![21, 22]];
     ///     let pyarray = PyArray::from_vec2(py, &vec2).unwrap();
     ///     assert_eq!(pyarray.readonly().as_array(), array![[11, 12], [21, 22]]);
@@ -613,7 +613,7 @@ impl<T: Element> PyArray<T, Ix3> {
     /// use pyo3::Python;
     /// use ndarray::array;
     ///
-    /// Python::with_gil(|py| {
+    /// Python::attach(|py| {
     ///     let vec3 = vec![
     ///         vec![vec![111, 112], vec![121, 122]],
     ///         vec![vec![211, 212], vec![221, 222]],
@@ -671,7 +671,7 @@ impl<T: Element + AsPrimitive<f64>> PyArray<T, Ix1> {
     /// use numpy::{PyArray, PyArrayMethods};
     /// use pyo3::Python;
     ///
-    /// Python::with_gil(|py| {
+    /// Python::attach(|py| {
     ///     let pyarray = PyArray::arange(py, 2.0, 4.0, 0.5);
     ///     assert_eq!(pyarray.readonly().as_slice().unwrap(), &[2.0, 2.5, 3.0, 3.5]);
     ///
@@ -691,7 +691,7 @@ impl<T: Element + AsPrimitive<f64>> PyArray<T, Ix1> {
                 step.as_(),
                 T::get_dtype(py).num(),
             );
-            Bound::from_owned_ptr(py, ptr).downcast_into_unchecked()
+            Bound::from_owned_ptr(py, ptr).cast_into_unchecked()
         }
     }
 }
@@ -785,7 +785,7 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> {
     /// use numpy::{PyArray, PyArrayMethods};
     /// use pyo3::Python;
     ///
-    /// Python::with_gil(|py| {
+    /// Python::attach(|py| {
     ///     let pyarray = PyArray::arange(py, 0, 16, 1).reshape([2, 2, 4]).unwrap();
     ///
     ///     assert_eq!(unsafe { *pyarray.get([1, 0, 3]).unwrap() }, 11);
@@ -812,7 +812,7 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> {
     /// use numpy::{PyArray, PyArrayMethods};
     /// use pyo3::Python;
     ///
-    /// Python::with_gil(|py| {
+    /// Python::attach(|py| {
     ///     let pyarray = PyArray::arange(py, 0, 16, 1).reshape([2, 2, 4]).unwrap();
     ///
     ///     unsafe {
@@ -847,7 +847,7 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> {
     /// use numpy::{PyArray, PyArrayMethods};
     /// use pyo3::Python;
     ///
-    /// Python::with_gil(|py| {
+    /// Python::attach(|py| {
     ///     let pyarray = PyArray::arange(py, 0, 16, 1).reshape([2, 2, 4]).unwrap();
     ///
     ///     assert_eq!(unsafe { *pyarray.uget([1, 0, 3]) }, 11);
@@ -908,7 +908,7 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> {
     /// use numpy::{PyArray, PyArrayMethods};
     /// use pyo3::Python;
     ///
-    /// Python::with_gil(|py| {
+    /// Python::attach(|py| {
     ///     let pyarray = PyArray::arange(py, 0, 16, 1).reshape([2, 2, 4]).unwrap();
     ///
     ///     assert_eq!(pyarray.get_owned([1, 0, 3]), Some(11));
@@ -937,10 +937,10 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> {
     /// use pyo3::{Python, types::PyAnyMethods, ffi::c_str};
     ///
     /// # fn main() -> pyo3::PyResult<()> {
-    /// Python::with_gil(|py| {
+    /// Python::attach(|py| {
     ///     let pyarray= py
     ///         .eval(c_str!("__import__('numpy').array([[0, 1], [2, 3]], dtype='int64')"), None, None)?
-    ///         .downcast_into::<PyArray2<i64>>()?;
+    ///         .cast_into::<PyArray2<i64>>()?;
     ///
     ///     assert_eq!(pyarray.to_vec()?, vec![0, 1, 2, 3]);
     /// #   Ok(())
@@ -1042,7 +1042,7 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> {
     /// use ndarray::array;
     /// use pyo3::Python;
     ///
-    /// Python::with_gil(|py| {
+    /// Python::attach(|py| {
     ///     let pyarray = PyArray::arange(py, 0, 4, 1).reshape([2, 2]).unwrap();
     ///
     ///     assert_eq!(
@@ -1066,7 +1066,7 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> {
     /// use numpy::{PyArray, PyArrayMethods};
     /// use pyo3::Python;
     ///
-    /// Python::with_gil(|py| {
+    /// Python::attach(|py| {
     ///     let pyarray_f = PyArray::arange(py, 2.0, 5.0, 1.0);
     ///     let pyarray_i = unsafe { PyArray::<i64, _>::new(py, [3], false) };
     ///
@@ -1081,6 +1081,16 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> {
     where
         T: Element;
 
+    /// Deprecated version of [`cast_array`](PyArrayMethods::cast_array)
+    #[deprecated(since = "0.26.0", note = "use `cast_array` instead")]
+    #[inline]
+    fn cast<U: Element>(&self, is_fortran: bool) -> PyResult<Bound<'py, PyArray<U, D>>>
+    where
+        T: Element,
+    {
+        self.cast_array(is_fortran)
+    }
+
     /// Cast the `PyArray<T>` to `PyArray<U>`, by allocating a new array.
     ///
     /// See also [`PyArray_CastToType`][PyArray_CastToType].
@@ -1091,17 +1101,17 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> {
     /// use numpy::{PyArray, PyArrayMethods};
     /// use pyo3::Python;
     ///
-    /// Python::with_gil(|py| {
+    /// Python::attach(|py| {
     ///     let pyarray_f = PyArray::arange(py, 2.0, 5.0, 1.0);
     ///
-    ///     let pyarray_i = pyarray_f.cast::<i32>(false).unwrap();
+    ///     let pyarray_i = pyarray_f.cast_array::<i32>(false).unwrap();
     ///
     ///     assert_eq!(pyarray_i.readonly().as_slice().unwrap(), &[2, 3, 4]);
     /// });
     /// ```
     ///
     /// [PyArray_CastToType]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_CastToType
-    fn cast<U: Element>(&self, is_fortran: bool) -> PyResult<Bound<'py, PyArray<U, D>>>
+    fn cast_array<U: Element>(&self, is_fortran: bool) -> PyResult<Bound<'py, PyArray<U, D>>>
     where
         T: Element;
 
@@ -1119,7 +1129,7 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> {
     /// use pyo3::Python;
     /// use ndarray::array;
     ///
-    /// Python::with_gil(|py| {
+    /// Python::attach(|py| {
     ///     let array = array![[0, 1, 2], [3, 4, 5]].into_pyarray(py);
     ///
     ///     let array = array.permute(Some([1, 0])).unwrap();
@@ -1156,7 +1166,7 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> {
     /// use pyo3::Python;
     /// use ndarray::array;
     ///
-    /// Python::with_gil(|py| {
+    /// Python::attach(|py| {
     ///     let array =
     ///         PyArray::from_iter(py, 0..9).reshape_with_order([3, 3], NPY_ORDER::NPY_FORTRANORDER).unwrap();
     ///
@@ -1205,7 +1215,7 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> {
     /// use numpy::PyArray;
     /// use pyo3::Python;
     ///
-    /// Python::with_gil(|py| {
+    /// Python::attach(|py| {
     ///     let pyarray = PyArray::<f64, _>::zeros(py, (10, 10), false);
     ///     assert_eq!(pyarray.shape(), [10, 10]);
     ///
@@ -1402,7 +1412,7 @@ where
 impl<'py, T, D> PyArrayMethods<'py, T, D> for Bound<'py, PyArray<T, D>> {
     #[inline(always)]
     fn as_untyped(&self) -> &Bound<'py, PyUntypedArray> {
-        unsafe { self.downcast_unchecked() }
+        unsafe { self.cast_unchecked() }
     }
 
     #[inline(always)]
@@ -1441,7 +1451,7 @@ impl<'py, T, D> PyArrayMethods<'py, T, D> for Bound<'py, PyArray<T, D>> {
     }
 
     fn to_dyn(&self) -> &Bound<'py, PyArray<T, IxDyn>> {
-        unsafe { self.downcast_unchecked() }
+        unsafe { self.cast_unchecked() }
     }
 
     fn to_vec(&self) -> Result<Vec<T>, NotContiguousError>
@@ -1528,7 +1538,7 @@ impl<'py, T, D> PyArrayMethods<'py, T, D> for Bound<'py, PyArray<T, D>> {
         }
     }
 
-    fn cast<U: Element>(&self, is_fortran: bool) -> PyResult<Bound<'py, PyArray<U, D>>>
+    fn cast_array<U: Element>(&self, is_fortran: bool) -> PyResult<Bound<'py, PyArray<U, D>>>
     where
         T: Element,
     {
@@ -1540,9 +1550,7 @@ impl<'py, T, D> PyArrayMethods<'py, T, D> for Bound<'py, PyArray<T, D>> {
                 if is_fortran { -1 } else { 0 },
             )
         };
-        unsafe {
-            Bound::from_owned_ptr_or_err(self.py(), ptr).map(|ob| ob.downcast_into_unchecked())
-        }
+        unsafe { Bound::from_owned_ptr_or_err(self.py(), ptr).map(|ob| ob.cast_into_unchecked()) }
     }
 
     fn permute<ID: IntoDimension>(&self, axes: Option<ID>) -> PyResult<Bound<'py, PyArray<T, D>>> {
@@ -1554,7 +1562,7 @@ impl<'py, T, D> PyArrayMethods<'py, T, D> for Bound<'py, PyArray<T, D>> {
 
         let py = self.py();
         let ptr = unsafe { PY_ARRAY_API.PyArray_Transpose(py, self.as_array_ptr(), axes) };
-        unsafe { Bound::from_owned_ptr_or_err(py, ptr).map(|ob| ob.downcast_into_unchecked()) }
+        unsafe { Bound::from_owned_ptr_or_err(py, ptr).map(|ob| ob.cast_into_unchecked()) }
     }
 
     fn reshape_with_order<ID: IntoDimension>(
@@ -1577,7 +1585,7 @@ impl<'py, T, D> PyArrayMethods<'py, T, D> for Bound<'py, PyArray<T, D>> {
                 order,
             )
         };
-        unsafe { Bound::from_owned_ptr_or_err(py, ptr).map(|ob| ob.downcast_into_unchecked()) }
+        unsafe { Bound::from_owned_ptr_or_err(py, ptr).map(|ob| ob.cast_into_unchecked()) }
     }
 
     unsafe fn resize<ID: IntoDimension>(&self, newshape: ID) -> PyResult<()>
@@ -1653,7 +1661,7 @@ mod tests {
 
     #[test]
     fn test_dyn_to_owned_array() {
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             let array = PyArray::from_vec2(py, &[vec![1, 2], vec![3, 4]])
                 .unwrap()
                 .to_dyn()
@@ -1665,8 +1673,8 @@ mod tests {
 
     #[test]
     fn test_hasobject_flag() {
-        Python::with_gil(|py| {
-            let array: Bound<'_, PyArray<PyObject, _>> =
+        Python::attach(|py| {
+            let array: Bound<'_, PyArray<Py<PyAny>, _>> =
                 PyArray1::from_slice(py, &[PyList::empty(py).into()]);
 
             py_run!(py, array, "assert array.dtype.hasobject");

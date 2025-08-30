@@ -3,9 +3,7 @@
 //! [ndarray]: https://numpy.org/doc/stable/reference/arrays.ndarray.html
 use std::slice;
 
-use pyo3::{
-    ffi, pyobject_native_type_named, types::PyAnyMethods, Bound, PyAny, PyTypeInfo, Python,
-};
+use pyo3::{ffi, pyobject_native_type_named, Bound, PyAny, PyTypeInfo, Python};
 
 use crate::array::{PyArray, PyArrayMethods};
 use crate::cold;
@@ -41,11 +39,11 @@ use crate::npyffi;
 ///     let element_type = array.dtype();
 ///
 ///     if element_type.is_equiv_to(&dtype::<f32>(py)) {
-///         let array = array.downcast::<PyArray1<f32>>()?;
+///         let array = array.cast::<PyArray1<f32>>()?;
 ///
 ///         implementation(array)
 ///     } else if element_type.is_equiv_to(&dtype::<f64>(py)) {
-///         let array = array.downcast::<PyArray1<f64>>()?;
+///         let array = array.cast::<PyArray1<f64>>()?;
 ///
 ///         implementation(array)
 ///     } else {
@@ -53,7 +51,7 @@ use crate::npyffi;
 ///     }
 /// }
 /// #
-/// # Python::with_gil(|py| {
+/// # Python::attach(|py| {
 /// #   let array = PyArray1::<f64>::zeros(py, 42, false);
 /// #   entry_point(py, array.as_untyped())
 /// # }).unwrap();
@@ -93,7 +91,7 @@ pub trait PyUntypedArrayMethods<'py>: Sealed {
     /// use numpy::{dtype, PyArray};
     /// use pyo3::Python;
     ///
-    /// Python::with_gil(|py| {
+    /// Python::attach(|py| {
     ///    let array = PyArray::from_vec(py, vec![1_i32, 2, 3]);
     ///
     ///    assert!(array.dtype().is_equiv_to(&dtype::<i32>(py)));
@@ -114,13 +112,13 @@ pub trait PyUntypedArrayMethods<'py>: Sealed {
     /// use pyo3::{types::{IntoPyDict, PyAnyMethods}, Python, ffi::c_str};
     ///
     /// # fn main() -> pyo3::PyResult<()> {
-    /// Python::with_gil(|py| {
+    /// Python::attach(|py| {
     ///     let array = PyArray1::arange(py, 0, 10, 1);
     ///     assert!(array.is_contiguous());
     ///
     ///     let view = py
     ///         .eval(c_str!("array[::2]"), None, Some(&[("array", array)].into_py_dict(py)?))?
-    ///         .downcast_into::<PyArray1<i32>>()?;
+    ///         .cast_into::<PyArray1<i32>>()?;
     ///     assert!(!view.is_contiguous());
     /// #   Ok(())
     /// })
@@ -155,7 +153,7 @@ pub trait PyUntypedArrayMethods<'py>: Sealed {
     /// use numpy::{PyArray3, PyUntypedArrayMethods};
     /// use pyo3::Python;
     ///
-    /// Python::with_gil(|py| {
+    /// Python::attach(|py| {
     ///     let arr = PyArray3::<f64>::zeros(py, [4, 5, 6], false);
     ///
     ///     assert_eq!(arr.ndim(), 3);
@@ -179,7 +177,7 @@ pub trait PyUntypedArrayMethods<'py>: Sealed {
     /// use numpy::{PyArray3, PyUntypedArrayMethods};
     /// use pyo3::Python;
     ///
-    /// Python::with_gil(|py| {
+    /// Python::attach(|py| {
     ///     let arr = PyArray3::<f64>::zeros(py, [4, 5, 6], false);
     ///
     ///     assert_eq!(arr.strides(), &[240, 48, 8]);
@@ -211,7 +209,7 @@ pub trait PyUntypedArrayMethods<'py>: Sealed {
     /// use numpy::{PyArray3, PyUntypedArrayMethods};
     /// use pyo3::Python;
     ///
-    /// Python::with_gil(|py| {
+    /// Python::attach(|py| {
     ///     let arr = PyArray3::<f64>::zeros(py, [4, 5, 6], false);
     ///
     ///     assert_eq!(arr.shape(), &[4, 5, 6]);
@@ -264,7 +262,7 @@ impl<'py> PyUntypedArrayMethods<'py> for Bound<'py, PyUntypedArray> {
     fn dtype(&self) -> Bound<'py, PyArrayDescr> {
         unsafe {
             let descr_ptr = (*self.as_array_ptr()).descr;
-            Bound::from_borrowed_ptr(self.py(), descr_ptr.cast()).downcast_into_unchecked()
+            Bound::from_borrowed_ptr(self.py(), descr_ptr.cast()).cast_into_unchecked()
         }
     }
 }

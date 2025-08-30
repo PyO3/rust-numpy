@@ -40,7 +40,7 @@
 //!     assert!(res.is_err());
 //! }
 //!
-//! Python::with_gil(|py| {
+//! Python::attach(|py| {
 //!     let x = PyArray1::<f64>::zeros(py, 42, false);
 //!     let y = PyArray1::<f64>::zeros(py, 42, false);
 //!     let z = PyArray1::<f64>::zeros(py, 42, false);
@@ -66,14 +66,14 @@
 //! use pyo3::{types::{IntoPyDict, PyAnyMethods}, Python, ffi::c_str};
 //!
 //! # fn main() -> pyo3::PyResult<()> {
-//! Python::with_gil(|py| {
+//! Python::attach(|py| {
 //!     let array = PyArray1::arange(py, 0.0, 10.0, 1.0);
 //!     let locals = [("array", array)].into_py_dict(py)?;
 //!
-//!     let view1 = py.eval(c_str!("array[:5]"), None, Some(&locals))?.downcast_into::<PyArray1<f64>>()?;
-//!     let view2 = py.eval(c_str!("array[5:]"), None, Some(&locals))?.downcast_into::<PyArray1<f64>>()?;
-//!     let view3 = py.eval(c_str!("array[::2]"), None, Some(&locals))?.downcast_into::<PyArray1<f64>>()?;
-//!     let view4 = py.eval(c_str!("array[1::2]"), None, Some(&locals))?.downcast_into::<PyArray1<f64>>()?;
+//!     let view1 = py.eval(c_str!("array[:5]"), None, Some(&locals))?.cast_into::<PyArray1<f64>>()?;
+//!     let view2 = py.eval(c_str!("array[5:]"), None, Some(&locals))?.cast_into::<PyArray1<f64>>()?;
+//!     let view3 = py.eval(c_str!("array[::2]"), None, Some(&locals))?.cast_into::<PyArray1<f64>>()?;
+//!     let view4 = py.eval(c_str!("array[1::2]"), None, Some(&locals))?.cast_into::<PyArray1<f64>>()?;
 //!
 //!     {
 //!         let _view1 = view1.readwrite();
@@ -98,12 +98,12 @@
 //! use pyo3::{types::{IntoPyDict, PyAnyMethods}, Python, ffi::c_str};
 //!
 //! # fn main() -> pyo3::PyResult<()> {
-//! Python::with_gil(|py| {
+//! Python::attach(|py| {
 //!     let array = PyArray2::<f64>::zeros(py, (10, 10), false);
 //!     let locals = [("array", array)].into_py_dict(py)?;
 //!
-//!     let view1 = py.eval(c_str!("array[:, ::3]"), None, Some(&locals))?.downcast_into::<PyArray2<f64>>()?;
-//!     let view2 = py.eval(c_str!("array[:, 1::3]"), None, Some(&locals))?.downcast_into::<PyArray2<f64>>()?;
+//!     let view1 = py.eval(c_str!("array[:, ::3]"), None, Some(&locals))?.cast_into::<PyArray2<f64>>()?;
+//!     let view2 = py.eval(c_str!("array[:, 1::3]"), None, Some(&locals))?.cast_into::<PyArray2<f64>>()?;
 //!
 //!     // A false conflict as the views do not actually share any elements.
 //!     let res = catch_unwind(AssertUnwindSafe(|| {
@@ -140,7 +140,7 @@
 //! which does not require aliasing discipline.
 //!
 //! Concerning multi-threading in particular: While the GIL needs to be acquired to create borrows, they are not bound to the GIL
-//! and will stay active after the GIL is released, for example by calling [`allow_threads`][pyo3::Python::allow_threads].
+//! and will stay active after the GIL is released, for example by calling [`detach`][pyo3::Python::detach].
 //! Borrows also do not provide synchronization, i.e. multiple threads borrowing the same array will lead to runtime panics,
 //! it will not block those threads until already active borrows are released.
 //!
@@ -175,7 +175,7 @@ use std::ops::Deref;
 use ndarray::{
     ArrayView, ArrayViewMut, Dimension, IntoDimension, Ix0, Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn,
 };
-use pyo3::{types::PyAnyMethods, Bound, FromPyObject, PyAny, PyResult};
+use pyo3::{Bound, FromPyObject, PyAny, PyResult};
 
 use crate::array::{PyArray, PyArrayMethods};
 use crate::convert::NpyIndex;
@@ -239,7 +239,7 @@ where
 
 impl<'py, T: Element, D: Dimension> FromPyObject<'py> for PyReadonlyArray<'py, T, D> {
     fn extract_bound(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        let array = obj.downcast::<PyArray<T, D>>()?;
+        let array = obj.cast::<PyArray<T, D>>()?;
         Ok(array.readonly())
     }
 }
@@ -312,7 +312,7 @@ where
     /// }
     ///
     /// # fn main() -> pyo3::PyResult<()> {
-    /// Python::with_gil(|py| {
+    /// Python::attach(|py| {
     ///     let np = py.eval(c_str!("__import__('numpy')"), None, None)?;
     ///     let sum_standard_layout = wrap_pyfunction!(sum_standard_layout)(py)?;
     ///     let sum_dynamic_strides = wrap_pyfunction!(sum_dynamic_strides)(py)?;
@@ -478,7 +478,7 @@ where
 
 impl<'py, T: Element, D: Dimension> FromPyObject<'py> for PyReadwriteArray<'py, T, D> {
     fn extract_bound(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        let array = obj.downcast::<PyArray<T, D>>()?;
+        let array = obj.cast::<PyArray<T, D>>()?;
         Ok(array.readwrite())
     }
 }
@@ -604,7 +604,7 @@ where
     /// use numpy::{PyArray, PyArrayMethods, PyUntypedArrayMethods};
     /// use pyo3::Python;
     ///
-    /// Python::with_gil(|py| {
+    /// Python::attach(|py| {
     ///     let pyarray = PyArray::arange(py, 0, 10, 1);
     ///     assert_eq!(pyarray.len(), 10);
     ///
@@ -667,7 +667,7 @@ mod tests {
 
     #[test]
     fn test_debug_formatting() {
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             let array = PyArray::<f64, _>::zeros(py, (1, 2, 3), false);
 
             {
@@ -693,7 +693,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "AlreadyBorrowed")]
     fn cannot_clone_exclusive_borrow_via_deref() {
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             let array = PyArray::<f64, _>::zeros(py, (3, 2, 1), false);
 
             let exclusive = array.readwrite();
@@ -703,7 +703,7 @@ mod tests {
 
     #[test]
     fn failed_resize_does_not_double_release() {
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             let array = PyArray::<f64, _>::zeros(py, 10, false);
 
             // The view will make the internal reference check of `PyArray_Resize` fail.
@@ -711,7 +711,7 @@ mod tests {
             let _view = py
                 .eval(c_str!("array[:]"), None, Some(&locals))
                 .unwrap()
-                .downcast_into::<PyArray1<f64>>()
+                .cast_into::<PyArray1<f64>>()
                 .unwrap();
 
             let exclusive = array.readwrite();
@@ -721,7 +721,7 @@ mod tests {
 
     #[test]
     fn ineffective_resize_does_not_conflict() {
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             let array = PyArray::<f64, _>::zeros(py, 10, false);
 
             let exclusive = array.readwrite();

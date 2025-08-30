@@ -25,7 +25,7 @@ as well as the [`PyReadonlyArray::try_as_matrix`] and [`PyReadwriteArray::try_as
 //! use numpy::ndarray::array;
 //! use numpy::{ToPyArray, PyArray, PyArrayMethods};
 //!
-//! Python::with_gil(|py| {
+//! Python::attach(|py| {
 //!     let py_array = array![[1i64, 2], [3, 4]].to_pyarray(py);
 //!
 //!     assert_eq!(
@@ -41,7 +41,7 @@ as well as the [`PyReadonlyArray::try_as_matrix`] and [`PyReadwriteArray::try_as
 //! use numpy::nalgebra::Matrix3;
 //! use numpy::{pyarray, ToPyArray, PyArrayMethods};
 //!
-//! Python::with_gil(|py| {
+//! Python::attach(|py| {
 //!     let py_array = pyarray![py, [0, 1, 2], [3, 4, 5], [6, 7, 8]];
 //!
 //!     let py_array_square;
@@ -156,7 +156,7 @@ fn cold() {}
 /// use numpy::ndarray::array;
 /// use numpy::{pyarray, PyArrayMethods};
 ///
-/// Python::with_gil(|py| {
+/// Python::attach(|py| {
 ///     let array = pyarray![py, [1, 2], [3, 4]];
 ///
 ///     assert_eq!(

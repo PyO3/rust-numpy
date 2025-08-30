@@ -4,7 +4,7 @@ use pyo3::{Bound, Python};
 
 #[test]
 fn test_dot() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let a = pyarray![py, [1, 0], [0, 1]];
         let b = pyarray![py, [4, 1], [2, 2]];
         let c: Bound<'_, PyArray2<_>> = dot(&a, &b).unwrap();
@@ -30,7 +30,7 @@ fn test_dot() {
 
 #[test]
 fn test_inner() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let a = pyarray![py, 1, 2, 3];
         let b = pyarray![py, 0, 1, 0];
         let c: Bound<'_, PyArray0<_>> = inner(&a, &b).unwrap();
@@ -56,7 +56,7 @@ fn test_inner() {
 
 #[test]
 fn test_einsum() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let a = PyArray1::<i32>::arange(py, 0, 25, 1)
             .reshape([5, 5])
             .unwrap();

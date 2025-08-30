@@ -6,14 +6,14 @@ use std::ptr;
 use half::{bf16, f16};
 use num_traits::{Bounded, Zero};
 #[cfg(feature = "half")]
-use pyo3::sync::GILOnceCell;
+use pyo3::sync::PyOnceLock;
 use pyo3::{
     conversion::IntoPyObject,
     exceptions::{PyIndexError, PyValueError},
     ffi::{self, PyTuple_Size},
     pyobject_native_type_named,
     types::{PyAnyMethods, PyDict, PyDictMethods, PyTuple, PyType},
-    Borrowed, Bound, Py, PyAny, PyObject, PyResult, PyTypeInfo, Python,
+    Borrowed, Bound, Py, PyAny, PyResult, PyTypeInfo, Python,
 };
 
 use crate::npyffi::{
@@ -33,12 +33,12 @@ pub use num_complex::{Complex32, Complex64};
 /// use numpy::pyo3::{types::{IntoPyDict, PyAnyMethods}, Python, ffi::c_str};
 ///
 /// # fn main() -> pyo3::PyResult<()> {
-/// Python::with_gil(|py| {
+/// Python::attach(|py| {
 ///     let locals = [("np", get_array_module(py)?)].into_py_dict(py)?;
 ///
 ///     let dt = py
 ///         .eval(c_str!("np.array([1, 2, 3.0]).dtype"), Some(&locals), None)?
-///         .downcast_into::<PyArrayDescr>()?;
+///         .cast_into::<PyArrayDescr>()?;
 ///
 ///     assert!(dt.is_equiv_to(&dtype::<f64>(py)));
 /// #   Ok(())
@@ -87,8 +87,7 @@ impl PyArrayDescr {
             unsafe {
                 // None is an invalid input here and is not converted to NPY_DEFAULT_TYPE
                 PY_ARRAY_API.PyArray_DescrConverter2(py, obj.as_ptr(), &mut descr);
-                Bound::from_owned_ptr_or_err(py, descr.cast())
-                    .map(|any| any.downcast_into_unchecked())
+                Bound::from_owned_ptr_or_err(py, descr.cast()).map(|any| any.cast_into_unchecked())
             }
         }
 
@@ -116,14 +115,14 @@ impl PyArrayDescr {
     fn from_npy_type<'py>(py: Python<'py>, npy_type: NPY_TYPES) -> Bound<'py, Self> {
         unsafe {
             let descr = PY_ARRAY_API.PyArray_DescrFromType(py, npy_type as _);
-            Bound::from_owned_ptr(py, descr.cast()).downcast_into_unchecked()
+            Bound::from_owned_ptr(py, descr.cast()).cast_into_unchecked()
         }
     }
 
     pub(crate) fn new_from_npy_type<'py>(py: Python<'py>, npy_type: NPY_TYPES) -> Bound<'py, Self> {
         unsafe {
             let descr = PY_ARRAY_API.PyArray_DescrNewFromType(py, npy_type as _);
-            Bound::from_owned_ptr(py, descr.cast()).downcast_into_unchecked()
+            Bound::from_owned_ptr(py, descr.cast()).cast_into_unchecked()
         }
     }
 }
@@ -360,7 +359,7 @@ impl<'py> PyArrayDescrMethods<'py> for Bound<'py, PyArrayDescr> {
         match subarray {
             None => self.clone(),
             Some(subarray) => unsafe {
-                Bound::from_borrowed_ptr(self.py(), subarray.base.cast()).downcast_into_unchecked()
+                Bound::from_borrowed_ptr(self.py(), subarray.base.cast()).cast_into_unchecked()
             },
         }
     }
@@ -404,18 +403,18 @@ impl<'py> PyArrayDescrMethods<'py> for Bound<'py, PyArrayDescr> {
         let dict = unsafe {
             Borrowed::from_ptr(self.py(), PyDataType_FIELDS(self.py(), self.as_dtype_ptr()))
         };
-        let dict = unsafe { dict.downcast_unchecked::<PyDict>() };
+        let dict = unsafe { dict.cast_unchecked::<PyDict>() };
         // NumPy guarantees that fields are tuples of proper size and type, so this should never panic.
         let tuple = dict
             .get_item(name)?
             .ok_or_else(|| PyIndexError::new_err(name.to_owned()))?
-            .downcast_into::<PyTuple>()
+            .cast_into::<PyTuple>()
             .unwrap();
         // Note that we cannot just extract the entire tuple since the third element can be a title.
         let dtype = tuple
             .get_item(0)
             .unwrap()
-            .downcast_into::<PyArrayDescr>()
+            .cast_into::<PyArrayDescr>()
             .unwrap();
         let offset = tuple.get_item(1).unwrap().extract().unwrap();
         Ok((dtype, offset))
@@ -613,7 +612,7 @@ unsafe impl Element for bf16 {
     const IS_COPY: bool = true;
 
     fn get_dtype(py: Python<'_>) -> Bound<'_, PyArrayDescr> {
-        static DTYPE: GILOnceCell<Py<PyArrayDescr>> = GILOnceCell::new();
+        static DTYPE: PyOnceLock<Py<PyArrayDescr>> = PyOnceLock::new();
 
         DTYPE
             .get_or_init(py, || {
@@ -634,7 +633,7 @@ impl_element_scalar!(Complex64 => NPY_CDOUBLE,
 #[cfg(any(target_pointer_width = "32", target_pointer_width = "64"))]
 impl_element_scalar!(usize, isize);
 
-unsafe impl Element for PyObject {
+unsafe impl Element for Py<PyAny> {
     const IS_COPY: bool = false;
 
     fn get_dtype(py: Python<'_>) -> Bound<'_, PyArrayDescr> {
@@ -658,7 +657,7 @@ mod tests {
 
     #[test]
     fn test_dtype_new() {
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             assert!(PyArrayDescr::new(py, "float64")
                 .unwrap()
                 .is(dtype::<f64>(py)));
@@ -666,7 +665,7 @@ mod tests {
             let dt = PyArrayDescr::new(py, [("a", "O"), ("b", "?")].as_ref()).unwrap();
             assert_eq!(dt.names(), Some(vec!["a".to_owned(), "b".to_owned()]));
             assert!(dt.has_object());
-            assert!(dt.get_field("a").unwrap().0.is(dtype::<PyObject>(py)));
+            assert!(dt.get_field("a").unwrap().0.is(dtype::<Py<PyAny>>(py)));
             assert!(dt.get_field("b").unwrap().0.is(dtype::<bool>(py)));
 
             assert!(PyArrayDescr::new(py, 123_usize).is_err());
@@ -678,7 +677,7 @@ mod tests {
         fn type_name<T: Element>(py: Python<'_>) -> Bound<'_, PyString> {
             dtype::<T>(py).typeobj().qualname().unwrap()
         }
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             if is_numpy_2(py) {
                 assert_eq!(type_name::<bool>(py), "bool");
             } else {
@@ -715,7 +714,7 @@ mod tests {
 
     #[test]
     fn test_dtype_methods_scalar() {
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             let dt = dtype::<f64>(py);
 
             assert_eq!(dt.num(), NPY_TYPES::NPY_DOUBLE as c_int);
@@ -740,7 +739,7 @@ mod tests {
 
     #[test]
     fn test_dtype_methods_subarray() {
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             let locals = PyDict::new(py);
             py_run!(
                 py,
@@ -751,7 +750,7 @@ mod tests {
                 .get_item("dtype")
                 .unwrap()
                 .unwrap()
-                .downcast_into::<PyArrayDescr>()
+                .cast_into::<PyArrayDescr>()
                 .unwrap();
 
             assert_eq!(dt.num(), NPY_TYPES::NPY_VOID as c_int);
@@ -776,7 +775,7 @@ mod tests {
 
     #[test]
     fn test_dtype_methods_record() {
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             let locals = PyDict::new(py);
             py_run!(
                 py,
@@ -787,7 +786,7 @@ mod tests {
                 .get_item("dtype")
                 .unwrap()
                 .unwrap()
-                .downcast_into::<PyArrayDescr>()
+                .cast_into::<PyArrayDescr>()
                 .unwrap();
 
             assert_eq!(dt.num(), NPY_TYPES::NPY_VOID as c_int);
@@ -819,7 +818,7 @@ mod tests {
             assert!(y.0.is_equiv_to(&dtype::<f64>(py)));
             assert_eq!(y.1, 8);
             let z = dt.get_field("z").unwrap();
-            assert!(z.0.is_equiv_to(&dtype::<PyObject>(py)));
+            assert!(z.0.is_equiv_to(&dtype::<Py<PyAny>>(py)));
             assert_eq!(z.1, 16);
         });
     }

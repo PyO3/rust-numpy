@@ -9,13 +9,13 @@ use std::os::raw::*;
 use libc::FILE;
 use pyo3::{
     ffi::{self, PyObject, PyTypeObject},
-    sync::GILOnceCell,
+    sync::PyOnceLock,
 };
 
 use crate::npyffi::*;
 
 pub(crate) fn numpy_core_name(py: Python<'_>) -> PyResult<&'static str> {
-    static MOD_NAME: GILOnceCell<&'static str> = GILOnceCell::new();
+    static MOD_NAME: PyOnceLock<&'static str> = PyOnceLock::new();
 
     MOD_NAME
         .get_or_try_init(py, || {
@@ -42,7 +42,7 @@ pub(crate) fn numpy_core_name(py: Python<'_>) -> PyResult<&'static str> {
 }
 
 pub(crate) fn mod_name(py: Python<'_>) -> PyResult<&'static str> {
-    static MOD_NAME: GILOnceCell<String> = GILOnceCell::new();
+    static MOD_NAME: PyOnceLock<String> = PyOnceLock::new();
     MOD_NAME
         .get_or_try_init(py, || {
             let numpy_core = numpy_core_name(py)?;
@@ -64,7 +64,7 @@ const CAPSULE_NAME: &str = "_ARRAY_API";
 /// ```
 /// use numpy::prelude::*;
 /// use numpy::{PyArray, npyffi::types::NPY_SORTKIND, PY_ARRAY_API};
-/// pyo3::Python::with_gil(|py| {
+/// pyo3::Python::attach(|py| {
 ///     let array = PyArray::from_slice(py, &[3, 2, 4]);
 ///     unsafe {
 ///         PY_ARRAY_API.PyArray_Sort(py, array.as_array_ptr(), 0, NPY_SORTKIND::NPY_QUICKSORT);
@@ -72,10 +72,10 @@ const CAPSULE_NAME: &str = "_ARRAY_API";
 ///     assert_eq!(array.readonly().as_slice().unwrap(), &[2, 3, 4]);
 /// })
 /// ```
-pub static PY_ARRAY_API: PyArrayAPI = PyArrayAPI(GILOnceCell::new());
+pub static PY_ARRAY_API: PyArrayAPI = PyArrayAPI(PyOnceLock::new());
 
 /// See [PY_ARRAY_API] for more.
-pub struct PyArrayAPI(GILOnceCell<*const *const c_void>);
+pub struct PyArrayAPI(PyOnceLock<*const *const c_void>);
 
 unsafe impl Send for PyArrayAPI {}
 
@@ -476,7 +476,7 @@ mod tests {
 
     #[test]
     fn call_api() {
-        Python::with_gil(|py| unsafe {
+        Python::attach(|py| unsafe {
             assert_eq!(
                 PY_ARRAY_API.PyArray_MultiplyIntList(py, [1, 2, 3].as_mut_ptr(), 3),
                 6

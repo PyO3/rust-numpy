@@ -8,7 +8,7 @@ use pyo3::Python;
 
 #[bench]
 fn initial_shared_borrow(bencher: &mut Bencher) {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let array = PyArray::<f64, _>::zeros(py, (6, 5, 4, 3, 2, 1), false);
 
         bencher.iter(|| {
@@ -21,7 +21,7 @@ fn initial_shared_borrow(bencher: &mut Bencher) {
 
 #[bench]
 fn additional_shared_borrow(bencher: &mut Bencher) {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let array = PyArray::<f64, _>::zeros(py, (6, 5, 4, 3, 2, 1), false);
 
         let _shared = (0..128).map(|_| array.readonly()).collect::<Vec<_>>();
@@ -36,7 +36,7 @@ fn additional_shared_borrow(bencher: &mut Bencher) {
 
 #[bench]
 fn exclusive_borrow(bencher: &mut Bencher) {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let array = PyArray::<f64, _>::zeros(py, (6, 5, 4, 3, 2, 1), false);
 
         bencher.iter(|| {

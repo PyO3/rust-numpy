@@ -9,14 +9,14 @@ use numpy::{
 use pyo3::{
     exceptions::PyIndexError,
     pymodule,
-    types::{PyAnyMethods, PyDict, PyDictMethods, PyModule},
-    Bound, FromPyObject, PyAny, PyObject, PyResult, Python,
+    types::{PyDict, PyDictMethods, PyModule},
+    Bound, FromPyObject, Py, PyAny, PyResult, Python,
 };
 
 #[pymodule]
 fn rust_ext<'py>(m: &Bound<'py, PyModule>) -> PyResult<()> {
-    // example using generic PyObject
-    fn head(py: Python<'_>, x: ArrayViewD<'_, PyObject>) -> PyResult<PyObject> {
+    // example using generic Py<PyAny>
+    fn head(py: Python<'_>, x: ArrayViewD<'_, Py<PyAny>>) -> PyResult<Py<PyAny>> {
         x.get(0)
             .map(|obj| obj.clone_ref(py))
             .ok_or_else(|| PyIndexError::new_err("array index out of range"))
@@ -48,7 +48,7 @@ fn rust_ext<'py>(m: &Bound<'py, PyModule>) -> PyResult<()> {
     // wrapper of `head`
     #[pyfn(m)]
     #[pyo3(name = "head")]
-    fn head_py<'py>(x: PyReadonlyArrayDyn<'py, PyObject>) -> PyResult<PyObject> {
+    fn head_py<'py>(x: PyReadonlyArrayDyn<'py, Py<PyAny>>) -> PyResult<Py<PyAny>> {
         head(x.py(), x.as_array())
     }
 
@@ -92,7 +92,7 @@ fn rust_ext<'py>(m: &Bound<'py, PyModule>) -> PyResult<()> {
             .get_item("x")
             .unwrap()
             .unwrap()
-            .downcast_into::<PyArray1<f64>>()
+            .cast_into::<PyArray1<f64>>()
             .unwrap();
 
         x.readonly().as_array().sum()
@@ -141,7 +141,7 @@ fn rust_ext<'py>(m: &Bound<'py, PyModule>) -> PyResult<()> {
             .into_any()),
             (SupportedArray::F64(x), SupportedArray::I64(y))
             | (SupportedArray::I64(y), SupportedArray::F64(x)) => {
-                let y = y.cast::<f64>(false)?;
+                let y = y.cast_array::<f64>(false)?;
 
                 Ok(
                     generic_add(x.readonly().as_array(), y.readonly().as_array())

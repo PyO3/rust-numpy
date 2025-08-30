@@ -13,14 +13,14 @@ use std::mem::forget;
 use std::os::raw::{c_uint, c_void};
 
 use pyo3::{
-    sync::GILOnceCell,
+    sync::PyOnceLock,
     types::{PyAnyMethods, PyCapsule, PyCapsuleMethods, PyModule},
     PyResult, Python,
 };
 
 pub const API_VERSION_2_0: c_uint = 0x00000012;
 
-static API_VERSION: GILOnceCell<c_uint> = GILOnceCell::new();
+static API_VERSION: PyOnceLock<c_uint> = PyOnceLock::new();
 
 fn get_numpy_api<'py>(
     py: Python<'py>,
@@ -28,7 +28,7 @@ fn get_numpy_api<'py>(
     capsule: &str,
 ) -> PyResult<*const *const c_void> {
     let module = PyModule::import(py, module)?;
-    let capsule = module.getattr(capsule)?.downcast_into::<PyCapsule>()?;
+    let capsule = module.getattr(capsule)?.cast_into::<PyCapsule>()?;
 
     let api = capsule.pointer() as *const *const c_void;
 

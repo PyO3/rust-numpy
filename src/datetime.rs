@@ -15,10 +15,10 @@
 //! # use pyo3::types::PyDict;
 //!
 //! # fn main() -> pyo3::PyResult<()> {
-//! Python::with_gil(|py| {
+//! Python::attach(|py| {
 //! #    let locals = py
 //! #        .eval(c_str!("{ 'np': __import__('numpy') }"), None, None)?
-//! #        .downcast_into::<PyDict>()?;
+//! #        .cast_into::<PyDict>()?;
 //! #
 //!     let array = py
 //!         .eval(
@@ -26,7 +26,7 @@
 //!             None,
 //!             Some(&locals),
 //!         )?
-//!         .downcast_into::<PyArray1<Datetime<units::Days>>>()?;
+//!         .cast_into::<PyArray1<Datetime<units::Days>>>()?;
 //!
 //!     assert_eq!(
 //!         array.get_owned(0).unwrap(),
@@ -39,7 +39,7 @@
 //!             None,
 //!             Some(&locals),
 //!         )?
-//!         .downcast_into::<PyArray1<Timedelta<units::Days>>>()?;
+//!         .cast_into::<PyArray1<Timedelta<units::Days>>>()?;
 //!
 //!     assert_eq!(
 //!         array.get_owned(0).unwrap(),
@@ -258,18 +258,18 @@ mod tests {
     use pyo3::{
         ffi::c_str,
         py_run,
-        types::{PyAnyMethods, PyDict, PyModule},
+        types::{PyDict, PyModule},
     };
 
     use crate::array::{PyArray1, PyArrayMethods};
 
     #[test]
     fn from_python_to_rust() {
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             let locals = py
                 .eval(c_str!("{ 'np': __import__('numpy') }"), None, None)
                 .unwrap()
-                .downcast_into::<PyDict>()
+                .cast_into::<PyDict>()
                 .unwrap();
 
             let array = py
@@ -279,7 +279,7 @@ mod tests {
                     Some(&locals),
                 )
                 .unwrap()
-                .downcast_into::<PyArray1<Datetime<units::Days>>>()
+                .cast_into::<PyArray1<Datetime<units::Days>>>()
                 .unwrap();
 
             let value: i64 = array.get_owned(0).unwrap().into();
@@ -289,7 +289,7 @@ mod tests {
 
     #[test]
     fn from_rust_to_python() {
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             let array = PyArray1::<Timedelta<units::Minutes>>::zeros(py, 1, false);
 
             *array.readwrite().get_mut(0).unwrap() = Timedelta::<units::Minutes>::from(5);
@@ -297,7 +297,7 @@ mod tests {
             let np = py
                 .eval(c_str!("__import__('numpy')"), None, None)
                 .unwrap()
-                .downcast_into::<PyModule>()
+                .cast_into::<PyModule>()
                 .unwrap();
 
             py_run!(py, array np, "assert array.dtype == np.dtype('timedelta64[m]')");
@@ -323,13 +323,13 @@ mod tests {
         #[track_caller]
         fn convert<'py, S: Unit, D: Unit>(py: Python<'py>, expected_value: i64) {
             let array = PyArray1::<Timedelta<S>>::from_slice(py, &[Timedelta::<S>::from(1)]);
-            let array = array.cast::<Timedelta<D>>(false).unwrap();
+            let array = array.cast_array::<Timedelta<D>>(false).unwrap();
 
             let value: i64 = array.get_owned(0).unwrap().into();
             assert_eq!(value, expected_value);
         }
 
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             convert::<units::Years, units::Days>(py, (97 + 400 * 365) / 400);
             convert::<units::Months, units::Days>(py, (97 + 400 * 365) / 400 / 12);
 

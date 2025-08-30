@@ -2,12 +2,12 @@
 
 use std::os::raw::*;
 
-use pyo3::{ffi::PyObject, sync::GILOnceCell};
+use pyo3::{ffi::PyObject, sync::PyOnceLock};
 
 use crate::npyffi::*;
 
 fn mod_name(py: Python<'_>) -> PyResult<&'static str> {
-    static MOD_NAME: GILOnceCell<String> = GILOnceCell::new();
+    static MOD_NAME: PyOnceLock<String> = PyOnceLock::new();
     MOD_NAME
         .get_or_try_init(py, || {
             let numpy_core = super::array::numpy_core_name(py)?;
@@ -20,9 +20,9 @@ const CAPSULE_NAME: &str = "_UFUNC_API";
 
 /// A global variable which stores a ['capsule'](https://docs.python.org/3/c-api/capsule.html)
 /// pointer to [Numpy UFunc API](https://numpy.org/doc/stable/reference/c-api/ufunc.html).
-pub static PY_UFUNC_API: PyUFuncAPI = PyUFuncAPI(GILOnceCell::new());
+pub static PY_UFUNC_API: PyUFuncAPI = PyUFuncAPI(PyOnceLock::new());
 
-pub struct PyUFuncAPI(GILOnceCell<*const *const c_void>);
+pub struct PyUFuncAPI(PyOnceLock<*const *const c_void>);
 
 unsafe impl Send for PyUFuncAPI {}
 

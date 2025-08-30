@@ -28,13 +28,13 @@ fn not_contiguous_array(py: Python<'_>) -> Bound<'_, PyArray1<i32>> {
         Some(&get_np_locals(py)),
     )
     .unwrap()
-    .downcast_into()
+    .cast_into()
     .unwrap()
 }
 
 #[test]
 fn new_c_order() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let dims = [3, 5];
 
         let arr = PyArray::<f64, _>::zeros(py, dims, false);
@@ -56,7 +56,7 @@ fn new_c_order() {
 
 #[test]
 fn new_fortran_order() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let dims = [3, 5];
 
         let arr = PyArray::<f64, _>::zeros(py, dims, true);
@@ -78,7 +78,7 @@ fn new_fortran_order() {
 
 #[test]
 fn tuple_as_dim() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let dims = (3, 5);
 
         let arr = PyArray::<f64, _>::zeros(py, dims, false);
@@ -90,7 +90,7 @@ fn tuple_as_dim() {
 
 #[test]
 fn rank_zero_array_has_invalid_strides_dimensions() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let arr = PyArray::<f64, _>::zeros(py, (), false);
 
         assert_eq!(arr.ndim(), 0);
@@ -106,7 +106,7 @@ fn rank_zero_array_has_invalid_strides_dimensions() {
 
 #[test]
 fn zeros() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let dims = [3, 4];
 
         let arr = PyArray::<f64, _>::zeros(py, dims, false);
@@ -129,7 +129,7 @@ fn zeros() {
 
 #[test]
 fn arange() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let arr = PyArray::<f64, _>::arange(py, 0.0, 1.0, 0.1);
 
         assert_eq!(arr.ndim(), 1);
@@ -139,7 +139,7 @@ fn arange() {
 
 #[test]
 fn as_array() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let pyarr = PyArray::<f64, _>::zeros(py, [3, 2, 4], false).readonly();
         let arr = pyarr.as_array();
 
@@ -160,7 +160,7 @@ fn as_array() {
 
 #[test]
 fn as_raw_array() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let not_contiguous = not_contiguous_array(py);
 
         let raw_array_view = not_contiguous.as_raw_array();
@@ -173,7 +173,7 @@ fn as_raw_array() {
 
 #[test]
 fn as_slice() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let arr = PyArray::<i32, _>::zeros(py, [3, 2, 4], false);
         assert_eq!(arr.readonly().as_slice().unwrap().len(), 3 * 2 * 4);
 
@@ -185,7 +185,7 @@ fn as_slice() {
 
 #[test]
 fn is_instance() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let arr = PyArray2::<f64>::zeros(py, [3, 5], false);
 
         assert!(arr.is_instance_of::<PyArray2<f64>>());
@@ -195,7 +195,7 @@ fn is_instance() {
 
 #[test]
 fn from_vec2() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let pyarray = PyArray::from_vec2(py, &[vec![1, 2, 3], vec![4, 5, 6]]).unwrap();
 
         assert_eq!(pyarray.readonly().as_array(), array![[1, 2, 3], [4, 5, 6]]);
@@ -204,7 +204,7 @@ fn from_vec2() {
 
 #[test]
 fn from_vec2_ragged() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let pyarray = PyArray::from_vec2(py, &[vec![1, 2, 3], vec![4, 5]]);
 
         let err = pyarray.unwrap_err();
@@ -214,7 +214,7 @@ fn from_vec2_ragged() {
 
 #[test]
 fn from_vec3() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let pyarray = PyArray::from_vec3(
             py,
             &[
@@ -234,7 +234,7 @@ fn from_vec3() {
 
 #[test]
 fn from_vec3_ragged() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let pyarray = PyArray::from_vec3(
             py,
             &[
@@ -263,9 +263,9 @@ fn from_vec3_ragged() {
 
 #[test]
 fn array_cast() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let arr_f64 = pyarray![py, [1.5, 2.5, 3.5], [1.5, 2.5, 3.5]];
-        let arr_i32 = arr_f64.cast::<i32>(false).unwrap();
+        let arr_i32 = arr_f64.cast_array::<i32>(false).unwrap();
 
         assert_eq!(arr_i32.readonly().as_array(), array![[1, 2, 3], [1, 2, 3]]);
     });
@@ -273,7 +273,7 @@ fn array_cast() {
 
 #[test]
 fn handle_negative_strides() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let arr = array![[2, 3], [4, 5u32]];
         let pyarr = arr.to_pyarray(py);
 
@@ -284,7 +284,7 @@ fn handle_negative_strides() {
                 None,
             )
             .unwrap()
-            .downcast_into::<PyArray2<u32>>()
+            .cast_into::<PyArray2<u32>>()
             .unwrap();
 
         assert_eq!(
@@ -296,7 +296,7 @@ fn handle_negative_strides() {
 
 #[test]
 fn dtype_via_python_attribute() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let arr = array![[2, 3], [4, 5u32]];
         let pyarr = arr.to_pyarray(py);
 
@@ -307,7 +307,7 @@ fn dtype_via_python_attribute() {
                 None,
             )
             .unwrap()
-            .downcast_into::<PyArrayDescr>()
+            .cast_into::<PyArrayDescr>()
             .unwrap();
 
         assert!(dt.is_equiv_to(&dtype::<u32>(py)));
@@ -331,7 +331,7 @@ impl Owner {
 
 #[test]
 fn borrow_from_array_works() {
-    let array = Python::with_gil(|py| {
+    let array = Python::attach(|py| {
         let owner = Py::new(
             py,
             Owner {
@@ -343,47 +343,47 @@ fn borrow_from_array_works() {
         owner.getattr(py, "array").unwrap()
     });
 
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         py_run!(py, array, "assert array.shape == (10,)");
     });
 }
 
 #[test]
-fn downcasting_works() {
-    Python::with_gil(|py| {
+fn casting_works() {
+    Python::attach(|py| {
         let ob = PyArray::from_slice(py, &[1_i32, 2, 3]).into_any();
 
-        assert!(ob.downcast::<PyArray1<i32>>().is_ok());
+        assert!(ob.cast::<PyArray1<i32>>().is_ok());
     });
 }
 
 #[test]
-fn downcasting_respects_element_type() {
-    Python::with_gil(|py| {
+fn casting_respects_element_type() {
+    Python::attach(|py| {
         let ob = PyArray::from_slice(py, &[1_i32, 2, 3]).into_any();
 
-        assert!(ob.downcast::<PyArray1<f64>>().is_err());
+        assert!(ob.cast::<PyArray1<f64>>().is_err());
     });
 }
 
 #[test]
-fn downcasting_respects_dimensionality() {
-    Python::with_gil(|py| {
+fn casting_respects_dimensionality() {
+    Python::attach(|py| {
         let ob = PyArray::from_slice(py, &[1_i32, 2, 3]).into_any();
 
-        assert!(ob.downcast::<PyArray2<i32>>().is_err());
+        assert!(ob.cast::<PyArray2<i32>>().is_err());
     });
 }
 
 #[test]
 fn unbind_works() {
-    let arr: Py<PyArray1<_>> = Python::with_gil(|py| {
+    let arr: Py<PyArray1<_>> = Python::attach(|py| {
         let arr = PyArray::from_slice(py, &[1_i32, 2, 3]);
 
         arr.unbind()
     });
 
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let arr = arr.bind(py);
 
         assert_eq!(arr.readonly().as_slice().unwrap(), &[1, 2, 3]);
@@ -392,7 +392,7 @@ fn unbind_works() {
 
 #[test]
 fn copy_to_works() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let arr1 = PyArray::arange(py, 2.0, 5.0, 1.0);
         let arr2 = unsafe { PyArray::<i64, _>::new(py, [3], false) };
 
@@ -404,7 +404,7 @@ fn copy_to_works() {
 
 #[test]
 fn get_works() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let array = pyarray![py, [[1, 2], [3, 4]], [[5, 6], [7, 8]], [[9, 10], [11, 12]]];
 
         unsafe {
@@ -423,7 +423,7 @@ fn get_works() {
 
 #[test]
 fn permute_and_transpose() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let array = array![[0, 1, 2], [3, 4, 5]].into_pyarray(py);
 
         let permuted = array.permute(Some([1, 0])).unwrap();
@@ -456,7 +456,7 @@ fn permute_and_transpose() {
 
 #[test]
 fn reshape() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let array = PyArray::from_iter(py, 0..9)
             .reshape_with_order([3, 3], NPY_ORDER::NPY_FORTRANORDER)
             .unwrap();
@@ -474,7 +474,7 @@ fn reshape() {
 #[cfg(feature = "half")]
 #[test]
 fn half_f16_works() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let np = py.eval(c_str!("__import__('numpy')"), None, None).unwrap();
         let locals = [("np", &np)].into_py_dict(py).unwrap();
 
@@ -485,7 +485,7 @@ fn half_f16_works() {
                 Some(&locals),
             )
             .unwrap()
-            .downcast_into::<PyArray2<f16>>()
+            .cast_into::<PyArray2<f16>>()
             .unwrap();
 
         assert_eq!(
@@ -512,7 +512,7 @@ fn half_f16_works() {
 #[cfg(feature = "half")]
 #[test]
 fn half_bf16_works() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let np = py.eval(c_str!("__import__('numpy')"), None, None).unwrap();
         // NumPy itself does not provide a `bfloat16` dtype itself,
         // so we import ml_dtypes which does register such a dtype.
@@ -528,7 +528,7 @@ fn half_bf16_works() {
                 Some(&locals),
             )
             .unwrap()
-            .downcast_into::<PyArray2<bf16>>()
+            .cast_into::<PyArray2<bf16>>()
             .unwrap();
 
         assert_eq!(
@@ -554,7 +554,7 @@ fn half_bf16_works() {
 
 #[test]
 fn ascii_strings_with_explicit_dtype_works() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let np = py.eval(c_str!("__import__('numpy')"), None, None).unwrap();
         let locals = [("np", &np)].into_py_dict(py).unwrap();
 
@@ -565,7 +565,7 @@ fn ascii_strings_with_explicit_dtype_works() {
                 Some(&locals),
             )
             .unwrap()
-            .downcast_into::<PyArray1<PyFixedString<6>>>()
+            .cast_into::<PyArray1<PyFixedString<6>>>()
             .unwrap();
 
         {
@@ -590,7 +590,7 @@ fn ascii_strings_with_explicit_dtype_works() {
 
 #[test]
 fn unicode_strings_with_explicit_dtype_works() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let np = py.eval(c_str!("__import__('numpy')"), None, None).unwrap();
         let locals = [("np", &np)].into_py_dict(py).unwrap();
 
@@ -601,7 +601,7 @@ fn unicode_strings_with_explicit_dtype_works() {
                 Some(&locals),
             )
             .unwrap()
-            .downcast_into::<PyArray1<PyFixedUnicode<6>>>()
+            .cast_into::<PyArray1<PyFixedUnicode<6>>>()
             .unwrap();
 
         {
@@ -636,7 +636,7 @@ fn unicode_strings_with_explicit_dtype_works() {
 
 #[test]
 fn ascii_strings_ignore_byteorder() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let np = py.eval(c_str!("__import__('numpy')"), None, None).unwrap();
         let locals = [("np", &np)].into_py_dict(py).unwrap();
 
@@ -647,7 +647,7 @@ fn ascii_strings_ignore_byteorder() {
                 Some(&locals),
             )
             .unwrap()
-            .downcast::<PyArray1<PyFixedString<3>>>()
+            .cast::<PyArray1<PyFixedString<3>>>()
             .is_ok();
 
         let little_endian_works = py
@@ -657,7 +657,7 @@ fn ascii_strings_ignore_byteorder() {
                 Some(&locals),
             )
             .unwrap()
-            .downcast::<PyArray1<PyFixedString<3>>>()
+            .cast::<PyArray1<PyFixedString<3>>>()
             .is_ok();
 
         let big_endian_works = py
@@ -667,7 +667,7 @@ fn ascii_strings_ignore_byteorder() {
                 Some(&locals),
             )
             .unwrap()
-            .downcast::<PyArray1<PyFixedString<3>>>()
+            .cast::<PyArray1<PyFixedString<3>>>()
             .is_ok();
 
         match (native_endian_works, little_endian_works, big_endian_works) {
@@ -679,7 +679,7 @@ fn ascii_strings_ignore_byteorder() {
 
 #[test]
 fn unicode_strings_respect_byteorder() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let np = py.eval(c_str!("__import__('numpy')"), None, None).unwrap();
         let locals = [("np", &np)].into_py_dict(py).unwrap();
 
@@ -690,7 +690,7 @@ fn unicode_strings_respect_byteorder() {
                 Some(&locals),
             )
             .unwrap()
-            .downcast::<PyArray1<PyFixedUnicode<3>>>()
+            .cast::<PyArray1<PyFixedUnicode<3>>>()
             .is_ok();
 
         let little_endian_works = py
@@ -700,7 +700,7 @@ fn unicode_strings_respect_byteorder() {
                 Some(&locals),
             )
             .unwrap()
-            .downcast::<PyArray1<PyFixedUnicode<3>>>()
+            .cast::<PyArray1<PyFixedUnicode<3>>>()
             .is_ok();
 
         let big_endian_works = py
@@ -710,7 +710,7 @@ fn unicode_strings_respect_byteorder() {
                 Some(&locals),
             )
             .unwrap()
-            .downcast::<PyArray1<PyFixedUnicode<3>>>()
+            .cast::<PyArray1<PyFixedUnicode<3>>>()
             .is_ok();
 
         match (native_endian_works, little_endian_works, big_endian_works) {

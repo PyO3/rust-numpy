@@ -10,7 +10,7 @@ use pyo3::{types::PyAnyMethods, Bound, IntoPyObjectExt, Python};
 
 #[bench]
 fn extract_success(bencher: &mut Bencher) {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let any = PyArray2::<f64>::zeros(py, (10, 10), false).into_any();
 
         bencher.iter(|| {
@@ -23,7 +23,7 @@ fn extract_success(bencher: &mut Bencher) {
 
 #[bench]
 fn extract_failure(bencher: &mut Bencher) {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let any = PyArray2::<f64>::zeros(py, (10, 10), false).into_any();
 
         bencher.iter(|| {
@@ -35,20 +35,20 @@ fn extract_failure(bencher: &mut Bencher) {
 }
 
 #[bench]
-fn downcast_success(bencher: &mut Bencher) {
-    Python::with_gil(|py| {
+fn cast_success(bencher: &mut Bencher) {
+    Python::attach(|py| {
         let any = PyArray2::<f64>::zeros(py, (10, 10), false).into_any();
 
-        bencher.iter(|| black_box(&any).downcast::<PyArray2<f64>>().unwrap());
+        bencher.iter(|| black_box(&any).cast::<PyArray2<f64>>().unwrap());
     });
 }
 
 #[bench]
-fn downcast_failure(bencher: &mut Bencher) {
-    Python::with_gil(|py| {
+fn cast_failure(bencher: &mut Bencher) {
+    Python::attach(|py| {
         let any = PyArray2::<f64>::zeros(py, (10, 10), false).into_any();
 
-        bencher.iter(|| black_box(&any).downcast::<PyArray2<f64>>().unwrap_err());
+        bencher.iter(|| black_box(&any).cast::<PyArray2<f64>>().unwrap_err());
     });
 }
 
@@ -63,7 +63,7 @@ impl Iterator for Iter {
 }
 
 fn from_iter(bencher: &mut Bencher, size: usize) {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         bencher.iter(|| {
             let iter = black_box(Iter(0..size));
 
@@ -90,7 +90,7 @@ fn from_iter_large(bencher: &mut Bencher) {
 fn from_slice(bencher: &mut Bencher, size: usize) {
     let vec = (0..size).collect::<Vec<_>>();
 
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         bencher.iter(|| {
             let slice = black_box(&vec);
 
@@ -115,13 +115,13 @@ fn from_slice_large(bencher: &mut Bencher) {
 }
 
 fn from_object_slice(bencher: &mut Bencher, size: usize) {
-    let vec = Python::with_gil(|py| {
+    let vec = Python::attach(|py| {
         (0..size)
             .map(|val| val.into_py_any(py).unwrap())
             .collect::<Vec<_>>()
     });
 
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         bencher.iter(|| {
             let slice = black_box(&vec);
 
@@ -148,7 +148,7 @@ fn from_object_slice_large(bencher: &mut Bencher) {
 fn from_vec2(bencher: &mut Bencher, size: usize) {
     let vec2 = vec![vec![0; size]; size];
 
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         bencher.iter(|| {
             let vec2 = black_box(&vec2);
 
@@ -175,7 +175,7 @@ fn from_vec2_large(bencher: &mut Bencher) {
 fn from_vec3(bencher: &mut Bencher, size: usize) {
     let vec3 = vec![vec![vec![0; size]; size]; size];
 
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         bencher.iter(|| {
             let vec3 = black_box(&vec3);
 
