@@ -40,8 +40,9 @@ jobs:
             "3.12",
             "3.13",
             "3.13t",
-            "pypy-3.9",
-            "pypy-3.10",
+            "3.14-dev",
+            "3.14t-dev",
+            "pypy-3.11",
           ]
         platform:
           [
@@ -92,14 +93,7 @@ jobs:
                 python-architecture: "x64",
                 rust-target: "x86_64-unknown-linux-gnu",
               }
-          - python-version: pypy-3.9
-            platform:
-              {
-                os: "windows-latest",
-                python-architecture: "x86",
-                rust-target: "i686-pc-windows-msvc",
-              }
-          - python-version: pypy-3.10
+          - python-version: pypy-3.11
             platform:
               {
                 os: "windows-latest",
