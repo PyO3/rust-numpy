@@ -725,7 +725,14 @@ mod tests {
             assert_eq!(dt.byteorder(), b'=');
             assert_eq!(dt.is_native_byteorder(), Some(true));
             assert_eq!(dt.itemsize(), 8);
-            assert_eq!(dt.alignment(), 8);
+            #[cfg(target_pointer_width = "32")]
+            {
+                assert_eq!(dt.alignment(), 4);
+            }
+            #[cfg(target_pointer_width = "64")]
+            {
+                assert_eq!(dt.alignment(), 8);
+            }
             assert!(!dt.has_object());
             assert!(dt.names().is_none());
             assert!(!dt.has_fields());
@@ -761,7 +768,14 @@ mod tests {
             assert_eq!(dt.byteorder(), b'|');
             assert_eq!(dt.is_native_byteorder(), None);
             assert_eq!(dt.itemsize(), 48);
-            assert_eq!(dt.alignment(), 8);
+            #[cfg(target_pointer_width = "32")]
+            {
+                assert_eq!(dt.alignment(), 4);
+            }
+            #[cfg(target_pointer_width = "64")]
+            {
+                assert_eq!(dt.alignment(), 8);
+            }
             assert!(!dt.has_object());
             assert!(dt.names().is_none());
             assert!(!dt.has_fields());
@@ -798,8 +812,16 @@ mod tests {
             assert_eq!(dt.kind(), b'V');
             assert_eq!(dt.byteorder(), b'|');
             assert_eq!(dt.is_native_byteorder(), None);
-            assert_eq!(dt.itemsize(), 24);
-            assert_eq!(dt.alignment(), 8);
+            #[cfg(target_pointer_width = "32")]
+            {
+                assert_eq!(dt.itemsize(), 16);
+                assert_eq!(dt.alignment(), 4);
+            }
+            #[cfg(target_pointer_width = "64")]
+            {
+                assert_eq!(dt.itemsize(), 24);
+                assert_eq!(dt.alignment(), 8);
+            }
             assert!(dt.has_object());
             assert_eq!(
                 dt.names(),
@@ -816,10 +838,24 @@ mod tests {
             assert_eq!(x.1, 0);
             let y = dt.get_field("y").unwrap();
             assert!(y.0.is_equiv_to(&dtype::<f64>(py)));
-            assert_eq!(y.1, 8);
+            #[cfg(target_pointer_width = "32")]
+            {
+                assert_eq!(y.1, 4);
+            }
+            #[cfg(target_pointer_width = "64")]
+            {
+                assert_eq!(y.1, 8);
+            }
             let z = dt.get_field("z").unwrap();
             assert!(z.0.is_equiv_to(&dtype::<Py<PyAny>>(py)));
-            assert_eq!(z.1, 16);
+            #[cfg(target_pointer_width = "32")]
+            {
+                assert_eq!(z.1, 12);
+            }
+            #[cfg(target_pointer_width = "64")]
+            {
+                assert_eq!(z.1, 16);
+            }
         });
     }
 }
