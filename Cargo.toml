@@ -13,6 +13,12 @@ repository = "https://github.com/PyO3/rust-numpy"
 categories = ["api-bindings", "development-tools::ffi", "science"]
 keywords = ["python", "numpy", "ffi", "pyo3"]
 license = "BSD-2-Clause"
+exclude = [
+    ".github/*",
+    ".gitignore",
+    "codecov.yml",
+    "x.py",
+]
 
 [dependencies]
 half = { version = "2.0", default-features = false, optional = true }
