@@ -11,16 +11,16 @@ use crate::dtype::Element;
 use crate::npyffi::{array::PY_ARRAY_API, NPY_CASTING, NPY_ORDER};
 
 /// Return value of a function that can yield either an array or a scalar.
-pub trait ArrayOrScalar<'py, T>: FromPyObject<'py> {}
+pub trait ArrayOrScalar<'a, 'py, T>: FromPyObject<'a, 'py> {}
 
-impl<'py, T, D> ArrayOrScalar<'py, T> for Bound<'py, PyArray<T, D>>
+impl<'a, 'py, T, D> ArrayOrScalar<'a, 'py, T> for Bound<'py, PyArray<T, D>>
 where
-    T: Element,
-    D: Dimension,
+    T: Element + 'a,
+    D: Dimension + 'a,
 {
 }
 
-impl<'py, T> ArrayOrScalar<'py, T> for T where T: Element + FromPyObject<'py> {}
+impl<'a, 'py, T> ArrayOrScalar<'a, 'py, T> for T where T: Element + FromPyObject<'a, 'py> {}
 
 /// Return the inner product of two arrays.
 ///
@@ -64,14 +64,14 @@ where
     T: Element,
     DIN1: Dimension,
     DIN2: Dimension,
-    OUT: ArrayOrScalar<'py, T>,
+    OUT: for<'a> ArrayOrScalar<'a, 'py, T>,
 {
     let py = array1.py();
     let obj = unsafe {
         let result = PY_ARRAY_API.PyArray_InnerProduct(py, array1.as_ptr(), array2.as_ptr());
         Bound::from_owned_ptr_or_err(py, result)?
     };
-    obj.extract()
+    obj.extract().map_err(Into::into)
 }
 
 /// Return the dot product of two arrays.
@@ -122,14 +122,14 @@ where
     T: Element,
     DIN1: Dimension,
     DIN2: Dimension,
-    OUT: ArrayOrScalar<'py, T>,
+    OUT: for<'a> ArrayOrScalar<'a, 'py, T>,
 {
     let py = array1.py();
     let obj = unsafe {
         let result = PY_ARRAY_API.PyArray_MatrixProduct(py, array1.as_ptr(), array2.as_ptr());
         Bound::from_owned_ptr_or_err(py, result)?
     };
-    obj.extract()
+    obj.extract().map_err(Into::into)
 }
 
 /// Return the Einstein summation convention of given tensors.
@@ -141,7 +141,7 @@ pub fn einsum<'py, T, OUT>(
 ) -> PyResult<OUT>
 where
     T: Element,
-    OUT: ArrayOrScalar<'py, T>,
+    OUT: for<'a> ArrayOrScalar<'a, 'py, T>,
 {
     let subscripts = match CStr::from_bytes_with_nul(subscripts.as_bytes()) {
         Ok(subscripts) => Cow::Borrowed(subscripts),
@@ -162,7 +162,7 @@ where
         );
         Bound::from_owned_ptr_or_err(py, result)?
     };
-    obj.extract()
+    obj.extract().map_err(Into::into)
 }
 
 /// Return the Einstein summation convention of given tensors.

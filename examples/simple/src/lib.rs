@@ -1,20 +1,19 @@
-use std::ops::Add;
+#[pyo3::pymodule]
+mod rust_ext {
+    use numpy::ndarray::{Array1, ArrayD, ArrayView1, ArrayViewD, ArrayViewMutD, Zip};
+    use numpy::{
+        datetime::{units, Timedelta},
+        Complex64, IntoPyArray, PyArray1, PyArrayDyn, PyArrayMethods, PyReadonlyArray1,
+        PyReadonlyArrayDyn, PyReadwriteArray1, PyReadwriteArrayDyn,
+    };
+    use pyo3::{
+        exceptions::PyIndexError,
+        pyfunction,
+        types::{PyDict, PyDictMethods},
+        Bound, FromPyObject, Py, PyAny, PyResult, Python,
+    };
+    use std::ops::Add;
 
-use numpy::ndarray::{Array1, ArrayD, ArrayView1, ArrayViewD, ArrayViewMutD, Zip};
-use numpy::{
-    datetime::{units, Timedelta},
-    Complex64, IntoPyArray, PyArray1, PyArrayDyn, PyArrayMethods, PyReadonlyArray1,
-    PyReadonlyArrayDyn, PyReadwriteArray1, PyReadwriteArrayDyn,
-};
-use pyo3::{
-    exceptions::PyIndexError,
-    pymodule,
-    types::{PyDict, PyDictMethods, PyModule},
-    Bound, FromPyObject, Py, PyAny, PyResult, Python,
-};
-
-#[pymodule]
-fn rust_ext<'py>(m: &Bound<'py, PyModule>) -> PyResult<()> {
     // example using generic Py<PyAny>
     fn head(py: Python<'_>, x: ArrayViewD<'_, Py<PyAny>>) -> PyResult<Py<PyAny>> {
         x.get(0)
@@ -46,15 +45,13 @@ fn rust_ext<'py>(m: &Bound<'py, PyModule>) -> PyResult<()> {
     }
 
     // wrapper of `head`
-    #[pyfn(m)]
-    #[pyo3(name = "head")]
+    #[pyfunction(name = "head")]
     fn head_py<'py>(x: PyReadonlyArrayDyn<'py, Py<PyAny>>) -> PyResult<Py<PyAny>> {
         head(x.py(), x.as_array())
     }
 
     // wrapper of `axpy`
-    #[pyfn(m)]
-    #[pyo3(name = "axpy")]
+    #[pyfunction(name = "axpy")]
     fn axpy_py<'py>(
         py: Python<'py>,
         a: f64,
@@ -68,16 +65,14 @@ fn rust_ext<'py>(m: &Bound<'py, PyModule>) -> PyResult<()> {
     }
 
     // wrapper of `mult`
-    #[pyfn(m)]
-    #[pyo3(name = "mult")]
+    #[pyfunction(name = "mult")]
     fn mult_py<'py>(a: f64, mut x: PyReadwriteArrayDyn<'py, f64>) {
         let x = x.as_array_mut();
         mult(a, x);
     }
 
     // wrapper of `conj`
-    #[pyfn(m)]
-    #[pyo3(name = "conj")]
+    #[pyfunction(name = "conj")]
     fn conj_py<'py>(
         py: Python<'py>,
         x: PyReadonlyArrayDyn<'py, Complex64>,
@@ -86,7 +81,7 @@ fn rust_ext<'py>(m: &Bound<'py, PyModule>) -> PyResult<()> {
     }
 
     // example of how to extract an array from a dictionary
-    #[pyfn(m)]
+    #[pyfunction]
     fn extract(d: &Bound<'_, PyDict>) -> f64 {
         let x = d
             .get_item("x")
@@ -99,7 +94,7 @@ fn rust_ext<'py>(m: &Bound<'py, PyModule>) -> PyResult<()> {
     }
 
     // example using timedelta64 array
-    #[pyfn(m)]
+    #[pyfunction]
     fn add_minutes_to_seconds<'py>(
         mut x: PyReadwriteArray1<'py, Timedelta<units::Seconds>>,
         y: PyReadonlyArray1<'py, Timedelta<units::Minutes>>,
@@ -121,7 +116,7 @@ fn rust_ext<'py>(m: &Bound<'py, PyModule>) -> PyResult<()> {
         I64(Bound<'py, PyArray1<i64>>),
     }
 
-    #[pyfn(m)]
+    #[pyfunction]
     fn polymorphic_add<'py>(
         x: SupportedArray<'py>,
         y: SupportedArray<'py>,
@@ -151,6 +146,4 @@ fn rust_ext<'py>(m: &Bound<'py, PyModule>) -> PyResult<()> {
             }
         }
     }
-
-    Ok(())
 }
