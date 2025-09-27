@@ -2,10 +2,12 @@ use std::collections::hash_map::Entry;
 use std::ffi::{c_void, CString};
 use std::mem::forget;
 use std::os::raw::{c_char, c_int};
+use std::ptr::NonNull;
 use std::slice::from_raw_parts;
 use std::sync::Mutex;
 
 use num_integer::gcd;
+use pyo3::ffi::c_str;
 use pyo3::sync::PyOnceLock;
 use pyo3::types::{PyAnyMethods, PyCapsuleMethods};
 use pyo3::{exceptions::PyTypeError, types::PyCapsule, PyResult, Python};
@@ -96,7 +98,7 @@ unsafe extern "C" fn release_mut_shared(flags: *mut c_void, array: *mut PyArrayO
 
 // This global state is a cache used to access the shared borrow checking API from this extension:
 
-struct SharedPtr(PyOnceLock<*const Shared>);
+struct SharedPtr(PyOnceLock<NonNull<Shared>>);
 
 unsafe impl Send for SharedPtr {}
 
@@ -109,7 +111,7 @@ fn get_or_insert_shared<'py>(py: Python<'py>) -> PyResult<&'py Shared> {
 
     // SAFETY: We inserted the capsule if it was missing
     // and verified that it contains a compatible version.
-    Ok(unsafe { &**shared })
+    Ok(unsafe { shared.as_ref() })
 }
 
 // This function will publish this extension's version of the shared borrow checking API
@@ -117,7 +119,7 @@ fn get_or_insert_shared<'py>(py: Python<'py>) -> PyResult<&'py Shared> {
 // immediately initialize the cache used access it from this extension.
 
 #[cold]
-fn insert_shared<'py>(py: Python<'py>) -> PyResult<*const Shared> {
+fn insert_shared<'py>(py: Python<'py>) -> PyResult<NonNull<Shared>> {
     let module = get_array_module(py)?;
 
     let capsule = match module.getattr("_RUST_NUMPY_BORROW_CHECKING_API") {
@@ -149,14 +151,19 @@ fn insert_shared<'py>(py: Python<'py>) -> PyResult<*const Shared> {
     };
 
     // SAFETY: All versions of the shared borrow checking API start with a version field.
-    let version = unsafe { *capsule.pointer().cast::<u64>() };
+    let version = unsafe {
+        *capsule
+            .pointer_checked(Some(c_str!("_RUST_NUMPY_BORROW_CHECKING_API")))?
+            .cast::<u64>()
+            .as_ptr() // FIXME(icxolu): use read on MSRV 1.80
+    };
     if version < 1 {
         return Err(PyTypeError::new_err(format!(
             "Version {version} of borrow checking API is not supported by this version of rust-numpy"
         )));
     }
 
-    let ptr = capsule.pointer();
+    let ptr = capsule.pointer_checked(Some(c_str!("_RUST_NUMPY_BORROW_CHECKING_API")))?;
 
     // Intentionally leak a reference to the capsule
     // so we can safely cache a pointer into its interior.

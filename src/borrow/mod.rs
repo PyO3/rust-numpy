@@ -175,7 +175,7 @@ use std::ops::Deref;
 use ndarray::{
     ArrayView, ArrayViewMut, Dimension, IntoDimension, Ix0, Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn,
 };
-use pyo3::{Bound, FromPyObject, PyAny, PyResult};
+use pyo3::{Borrowed, Bound, CastError, FromPyObject, PyAny, PyResult};
 
 use crate::array::{PyArray, PyArrayMethods};
 use crate::convert::NpyIndex;
@@ -237,8 +237,12 @@ where
     }
 }
 
-impl<'py, T: Element, D: Dimension> FromPyObject<'py> for PyReadonlyArray<'py, T, D> {
-    fn extract_bound(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
+impl<'a, 'py, T: Element + 'a, D: Dimension + 'a> FromPyObject<'a, 'py>
+    for PyReadonlyArray<'py, T, D>
+{
+    type Error = CastError<'a, 'py>;
+
+    fn extract(obj: Borrowed<'a, 'py, PyAny>) -> Result<Self, Self::Error> {
         let array = obj.cast::<PyArray<T, D>>()?;
         Ok(array.readonly())
     }
@@ -476,8 +480,12 @@ where
     }
 }
 
-impl<'py, T: Element, D: Dimension> FromPyObject<'py> for PyReadwriteArray<'py, T, D> {
-    fn extract_bound(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
+impl<'a, 'py, T: Element + 'a, D: Dimension + 'a> FromPyObject<'a, 'py>
+    for PyReadwriteArray<'py, T, D>
+{
+    type Error = CastError<'a, 'py>;
+
+    fn extract(obj: Borrowed<'a, 'py, PyAny>) -> Result<Self, Self::Error> {
         let array = obj.cast::<PyArray<T, D>>()?;
         Ok(array.readwrite())
     }

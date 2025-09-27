@@ -18,7 +18,7 @@ use num_traits::AsPrimitive;
 use pyo3::{
     ffi,
     types::{DerefToPyAny, PyModule},
-    Bound, DowncastError, Py, PyAny, PyErr, PyResult, PyTypeInfo, Python,
+    Bound, CastError, Py, PyAny, PyErr, PyResult, PyTypeCheck, PyTypeInfo, Python,
 };
 
 use crate::borrow::{PyReadonlyArray, PyReadwriteArray};
@@ -139,12 +139,16 @@ unsafe impl<T: Element, D: Dimension> PyTypeInfo for PyArray<T, D> {
 impl<T: Element, D: Dimension> PyArray<T, D> {
     fn extract<'a, 'py, E>(ob: &'a Bound<'py, PyAny>) -> Result<&'a Bound<'py, Self>, E>
     where
-        E: From<DowncastError<'a, 'py>> + From<DimensionalityError> + From<TypeError<'py>>,
+        E: From<CastError<'a, 'py>> + From<DimensionalityError> + From<TypeError<'py>>,
     {
         // Check if the object is an array.
         let array = unsafe {
             if npyffi::PyArray_Check(ob.py(), ob.as_ptr()) == 0 {
-                return Err(DowncastError::new(ob, <Self as PyTypeInfo>::NAME).into());
+                return Err(CastError::new(
+                    ob.as_borrowed(),
+                    <Self as PyTypeCheck>::classinfo_object(ob.py()),
+                )
+                .into());
             }
             ob.cast_unchecked::<Self>()
         };

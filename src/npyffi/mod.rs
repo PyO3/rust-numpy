@@ -30,7 +30,11 @@ fn get_numpy_api<'py>(
     let module = PyModule::import(py, module)?;
     let capsule = module.getattr(capsule)?.cast_into::<PyCapsule>()?;
 
-    let api = capsule.pointer() as *const *const c_void;
+    let api = capsule
+        .pointer_checked(None)?
+        .cast::<*const c_void>()
+        .as_ptr()
+        .cast_const();
 
     // Intentionally leak a reference to the capsule
     // so we can safely cache a pointer into its interior.

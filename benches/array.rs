@@ -24,7 +24,7 @@ fn extract_success(bencher: &mut Bencher) {
 #[bench]
 fn extract_failure(bencher: &mut Bencher) {
     Python::attach(|py| {
-        let any = PyArray2::<f64>::zeros(py, (10, 10), false).into_any();
+        let any = PyArray2::<i32>::zeros(py, (10, 10), false).into_any();
 
         bencher.iter(|| {
             black_box(&any)
@@ -46,7 +46,7 @@ fn cast_success(bencher: &mut Bencher) {
 #[bench]
 fn cast_failure(bencher: &mut Bencher) {
     Python::attach(|py| {
-        let any = PyArray2::<f64>::zeros(py, (10, 10), false).into_any();
+        let any = PyArray2::<i32>::zeros(py, (10, 10), false).into_any();
 
         bencher.iter(|| black_box(&any).cast::<PyArray2<f64>>().unwrap_err());
     });

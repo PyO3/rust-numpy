@@ -6,7 +6,7 @@ use pyo3::{
     intern,
     sync::PyOnceLock,
     types::{PyAnyMethods, PyDict},
-    Bound, FromPyObject, Py, PyAny, PyResult,
+    Borrowed, FromPyObject, Py, PyAny, PyErr, PyResult,
 };
 
 use crate::array::PyArrayMethods;
@@ -135,14 +135,16 @@ where
     }
 }
 
-impl<'py, T, D, C> FromPyObject<'py> for PyArrayLike<'py, T, D, C>
+impl<'a, 'py, T, D, C> FromPyObject<'a, 'py> for PyArrayLike<'py, T, D, C>
 where
     T: Element + 'py,
     D: Dimension + 'py,
     C: Coerce,
-    Vec<T>: FromPyObject<'py>,
+    Vec<T>: FromPyObject<'a, 'py>,
 {
-    fn extract_bound(ob: &Bound<'py, PyAny>) -> PyResult<Self> {
+    type Error = PyErr;
+
+    fn extract(ob: Borrowed<'a, 'py, PyAny>) -> PyResult<Self> {
         if let Ok(array) = ob.cast::<PyArray<T, D>>() {
             return Ok(Self(array.readonly(), PhantomData));
         }
