@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/sum_products.rs`."><title>sum_products.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-84e720fa.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="numpy" data-themes="" data-resource-suffix="" data-rustdoc-version="1.89.0 (29483883e 2025-08-04)" data-channel="1.89.0" data-search-js="search-92309212.js" data-settings-js="settings-5514c975.js" ><script src="../../static.files/storage-4e99c027.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-fd3af306.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">numpy/</div>sum_products.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">use </span>std::borrow::Cow;
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/sum_products.rs`."><title>sum_products.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-aa0817cf.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="numpy" data-themes="" data-resource-suffix="" data-rustdoc-version="1.90.0 (1159e78c4 2025-09-14)" data-channel="1.90.0" data-search-js="search-fa3e91e5.js" data-settings-js="settings-5514c975.js" ><script src="../../static.files/storage-68b7e25d.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-eebb9057.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">numpy/</div>sum_products.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">use </span>std::borrow::Cow;
 <a href=#2 id=2 data-nosnippet>2</a><span class="kw">use </span>std::ffi::{CStr, CString};
 <a href=#3 id=3 data-nosnippet>3</a><span class="kw">use </span>std::ptr::null_mut;
 <a href=#4 id=4 data-nosnippet>4</a>
@@ -11,16 +11,16 @@
 <a href=#11 id=11 data-nosnippet>11</a><span class="kw">use </span><span class="kw">crate</span>::npyffi::{array::PY_ARRAY_API, NPY_CASTING, NPY_ORDER};
 <a href=#12 id=12 data-nosnippet>12</a>
 <a href=#13 id=13 data-nosnippet>13</a><span class="doccomment">/// Return value of a function that can yield either an array or a scalar.
-<a href=#14 id=14 data-nosnippet>14</a></span><span class="kw">pub trait </span>ArrayOrScalar&lt;<span class="lifetime">'py</span>, T&gt;: FromPyObject&lt;<span class="lifetime">'py</span>&gt; {}
+<a href=#14 id=14 data-nosnippet>14</a></span><span class="kw">pub trait </span>ArrayOrScalar&lt;<span class="lifetime">'a</span>, <span class="lifetime">'py</span>, T&gt;: FromPyObject&lt;<span class="lifetime">'a</span>, <span class="lifetime">'py</span>&gt; {}
 <a href=#15 id=15 data-nosnippet>15</a>
-<a href=#16 id=16 data-nosnippet>16</a><span class="kw">impl</span>&lt;<span class="lifetime">'py</span>, T, D&gt; ArrayOrScalar&lt;<span class="lifetime">'py</span>, T&gt; <span class="kw">for </span>Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;T, D&gt;&gt;
+<a href=#16 id=16 data-nosnippet>16</a><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, <span class="lifetime">'py</span>, T, D&gt; ArrayOrScalar&lt;<span class="lifetime">'a</span>, <span class="lifetime">'py</span>, T&gt; <span class="kw">for </span>Bound&lt;<span class="lifetime">'py</span>, PyArray&lt;T, D&gt;&gt;
 <a href=#17 id=17 data-nosnippet>17</a><span class="kw">where
-<a href=#18 id=18 data-nosnippet>18</a>    </span>T: Element,
-<a href=#19 id=19 data-nosnippet>19</a>    D: Dimension,
+<a href=#18 id=18 data-nosnippet>18</a>    </span>T: Element + <span class="lifetime">'a</span>,
+<a href=#19 id=19 data-nosnippet>19</a>    D: Dimension + <span class="lifetime">'a</span>,
 <a href=#20 id=20 data-nosnippet>20</a>{
 <a href=#21 id=21 data-nosnippet>21</a>}
 <a href=#22 id=22 data-nosnippet>22</a>
-<a href=#23 id=23 data-nosnippet>23</a><span class="kw">impl</span>&lt;<span class="lifetime">'py</span>, T&gt; ArrayOrScalar&lt;<span class="lifetime">'py</span>, T&gt; <span class="kw">for </span>T <span class="kw">where </span>T: Element + FromPyObject&lt;<span class="lifetime">'py</span>&gt; {}
+<a href=#23 id=23 data-nosnippet>23</a><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, <span class="lifetime">'py</span>, T&gt; ArrayOrScalar&lt;<span class="lifetime">'a</span>, <span class="lifetime">'py</span>, T&gt; <span class="kw">for </span>T <span class="kw">where </span>T: Element + FromPyObject&lt;<span class="lifetime">'a</span>, <span class="lifetime">'py</span>&gt; {}
 <a href=#24 id=24 data-nosnippet>24</a>
 <a href=#25 id=25 data-nosnippet>25</a><span class="doccomment">/// Return the inner product of two arrays.
 <a href=#26 id=26 data-nosnippet>26</a>///
@@ -64,14 +64,14 @@
 <a href=#64 id=64 data-nosnippet>64</a>    </span>T: Element,
 <a href=#65 id=65 data-nosnippet>65</a>    DIN1: Dimension,
 <a href=#66 id=66 data-nosnippet>66</a>    DIN2: Dimension,
-<a href=#67 id=67 data-nosnippet>67</a>    OUT: ArrayOrScalar&lt;<span class="lifetime">'py</span>, T&gt;,
+<a href=#67 id=67 data-nosnippet>67</a>    OUT: <span class="kw">for</span>&lt;<span class="lifetime">'a</span>&gt; ArrayOrScalar&lt;<span class="lifetime">'a</span>, <span class="lifetime">'py</span>, T&gt;,
 <a href=#68 id=68 data-nosnippet>68</a>{
 <a href=#69 id=69 data-nosnippet>69</a>    <span class="kw">let </span>py = array1.py();
 <a href=#70 id=70 data-nosnippet>70</a>    <span class="kw">let </span>obj = <span class="kw">unsafe </span>{
 <a href=#71 id=71 data-nosnippet>71</a>        <span class="kw">let </span>result = PY_ARRAY_API.PyArray_InnerProduct(py, array1.as_ptr(), array2.as_ptr());
 <a href=#72 id=72 data-nosnippet>72</a>        Bound::from_owned_ptr_or_err(py, result)<span class="question-mark">?
 <a href=#73 id=73 data-nosnippet>73</a>    </span>};
-<a href=#74 id=74 data-nosnippet>74</a>    obj.extract()
+<a href=#74 id=74 data-nosnippet>74</a>    obj.extract().map_err(Into::into)
 <a href=#75 id=75 data-nosnippet>75</a>}
 <a href=#76 id=76 data-nosnippet>76</a>
 <a href=#77 id=77 data-nosnippet>77</a><span class="doccomment">/// Return the dot product of two arrays.
@@ -122,14 +122,14 @@
 <a href=#122 id=122 data-nosnippet>122</a>    </span>T: Element,
 <a href=#123 id=123 data-nosnippet>123</a>    DIN1: Dimension,
 <a href=#124 id=124 data-nosnippet>124</a>    DIN2: Dimension,
-<a href=#125 id=125 data-nosnippet>125</a>    OUT: ArrayOrScalar&lt;<span class="lifetime">'py</span>, T&gt;,
+<a href=#125 id=125 data-nosnippet>125</a>    OUT: <span class="kw">for</span>&lt;<span class="lifetime">'a</span>&gt; ArrayOrScalar&lt;<span class="lifetime">'a</span>, <span class="lifetime">'py</span>, T&gt;,
 <a href=#126 id=126 data-nosnippet>126</a>{
 <a href=#127 id=127 data-nosnippet>127</a>    <span class="kw">let </span>py = array1.py();
 <a href=#128 id=128 data-nosnippet>128</a>    <span class="kw">let </span>obj = <span class="kw">unsafe </span>{
 <a href=#129 id=129 data-nosnippet>129</a>        <span class="kw">let </span>result = PY_ARRAY_API.PyArray_MatrixProduct(py, array1.as_ptr(), array2.as_ptr());
 <a href=#130 id=130 data-nosnippet>130</a>        Bound::from_owned_ptr_or_err(py, result)<span class="question-mark">?
 <a href=#131 id=131 data-nosnippet>131</a>    </span>};
-<a href=#132 id=132 data-nosnippet>132</a>    obj.extract()
+<a href=#132 id=132 data-nosnippet>132</a>    obj.extract().map_err(Into::into)
 <a href=#133 id=133 data-nosnippet>133</a>}
 <a href=#134 id=134 data-nosnippet>134</a>
 <a href=#135 id=135 data-nosnippet>135</a><span class="doccomment">/// Return the Einstein summation convention of given tensors.
@@ -141,7 +141,7 @@
 <a href=#141 id=141 data-nosnippet>141</a>) -&gt; PyResult&lt;OUT&gt;
 <a href=#142 id=142 data-nosnippet>142</a><span class="kw">where
 <a href=#143 id=143 data-nosnippet>143</a>    </span>T: Element,
-<a href=#144 id=144 data-nosnippet>144</a>    OUT: ArrayOrScalar&lt;<span class="lifetime">'py</span>, T&gt;,
+<a href=#144 id=144 data-nosnippet>144</a>    OUT: <span class="kw">for</span>&lt;<span class="lifetime">'a</span>&gt; ArrayOrScalar&lt;<span class="lifetime">'a</span>, <span class="lifetime">'py</span>, T&gt;,
 <a href=#145 id=145 data-nosnippet>145</a>{
 <a href=#146 id=146 data-nosnippet>146</a>    <span class="kw">let </span>subscripts = <span class="kw">match </span>CStr::from_bytes_with_nul(subscripts.as_bytes()) {
 <a href=#147 id=147 data-nosnippet>147</a>        <span class="prelude-val">Ok</span>(subscripts) =&gt; Cow::Borrowed(subscripts),
@@ -162,7 +162,7 @@
 <a href=#162 id=162 data-nosnippet>162</a>        );
 <a href=#163 id=163 data-nosnippet>163</a>        Bound::from_owned_ptr_or_err(py, result)<span class="question-mark">?
 <a href=#164 id=164 data-nosnippet>164</a>    </span>};
-<a href=#165 id=165 data-nosnippet>165</a>    obj.extract()
+<a href=#165 id=165 data-nosnippet>165</a>    obj.extract().map_err(Into::into)
 <a href=#166 id=166 data-nosnippet>166</a>}
 <a href=#167 id=167 data-nosnippet>167</a>
 <a href=#168 id=168 data-nosnippet>168</a><span class="doccomment">/// Return the Einstein summation convention of given tensors.
