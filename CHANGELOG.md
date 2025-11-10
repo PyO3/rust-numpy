@@ -1,6 +1,6 @@
 # Changelog
 - v0.27.1
-  - Bump ndarray dependency to v0.27. ([#516](https://github.com/PyO3/rust-numpy/pull/516))
+  - Bump ndarray dependency to v0.17. ([#516](https://github.com/PyO3/rust-numpy/pull/516))
 
 - v0.27.0
   - Bump PyO3 dependency to v0.27.0. ([#515](https://github.com/PyO3/rust-numpy/pull/515))
