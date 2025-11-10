@@ -11,7 +11,7 @@ crate-type = ["cdylib"]
 [dependencies]
 pyo3 = { version = "0.27.0", features = ["extension-module", "multiple-pymethods"] }
 numpy = { path = "../.." }
-ndarray = { version = "0.16", features = ["rayon", "blas"] }
+ndarray = { version = "0.17", features = ["rayon", "blas"] }
 blas-src = { version = "0.8", features = ["openblas"] }
 openblas-src = { version = "0.10", features = ["cblas", "system"] }
 
