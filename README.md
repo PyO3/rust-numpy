@@ -133,7 +133,7 @@ ndarray = "0.15"
 ```
 
 this will currently depend on both version `0.15.6` and `0.16.1` of `ndarray` by default
-even though `0.15.6` is within the range `>= 0.15, < 0.17`. To fix this, you can run
+even though `0.15.6` is within the range `>= 0.15, <= 0.17`. To fix this, you can run
 
 ```sh
 cargo update --package ndarray:0.16.1 --precise 0.15.6
