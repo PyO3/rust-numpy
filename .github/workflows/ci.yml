@@ -52,9 +52,9 @@ jobs:
               rust-target: "x86_64-unknown-linux-gnu",
             },
             {
-              os: "macos-15-intel",
-              python-architecture: "x64",
-              rust-target: "x86_64-apple-darwin",
+              os: "macOS-latest",
+              python-architecture: "arm64",
+              rust-target: "aarch64-apple-darwin",
             },
             {
               os: "windows-latest",
@@ -70,36 +70,28 @@ jobs:
         include:
           # ubuntu-24.04 does not support 3.7
           - python-version: 3.7
-            platform:
-              {
-                os: "ubuntu-22.04",
-                python-architecture: "x64",
-                rust-target: "x86_64-unknown-linux-gnu",
-              }
-          # Older versions of CPython are not available for AArch64.
-          - python-version: 3.12
-            platform:
-              {
-                os: "macOS-latest",
-                python-architecture: "arm64",
-                rust-target: "aarch64-apple-darwin",
-              }
+            platform: { os: "ubuntu-22.04", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" }
+          # not available on arm64 macOS, test on x64
+          - python-version: 3.7
+            platform: { os: "macos-15-intel", python-architecture: "x64", rust-target: "x86_64-apple-darwin" }
+          - python-version: 3.8
+            platform: { os: "macos-15-intel", python-architecture: "x64", rust-target: "x86_64-apple-darwin" }
+          - python-version: 3.9
+            platform: { os: "macos-15-intel", python-architecture: "x64", rust-target: "x86_64-apple-darwin" }
         exclude:
           # ubuntu-24.04 does not support 3.7
           - python-version: 3.7
-            platform:
-              {
-                os: "ubuntu-latest",
-                python-architecture: "x64",
-                rust-target: "x86_64-unknown-linux-gnu",
-              }
+            platform: { os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" }
+          # not available on arm64 macOS
+          - python-version: 3.7
+            platform: { os: "macOS-latest", python-architecture: "arm64", rust-target: "aarch64-apple-darwin" }
+          - python-version: 3.8
+            platform: { os: "macOS-latest", python-architecture: "arm64", rust-target: "aarch64-apple-darwin" }
+          - python-version: 3.9
+            platform: { os: "macOS-latest", python-architecture: "arm64", rust-target: "aarch64-apple-darwin" }
+          # no 32 bit windows PyPy
           - python-version: pypy-3.11
-            platform:
-              {
-                os: "windows-latest",
-                python-architecture: "x86",
-                rust-target: "i686-pc-windows-msvc",
-              }
+            platform: { os: "windows-latest", python-architecture: "x86", rust-target: "i686-pc-windows-msvc" }
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
@@ -133,7 +125,7 @@ jobs:
     strategy:
       fail-fast: ${{ !contains(github.event.pull_request.labels.*.name, 'CI-no-fail-fast') }}
       matrix:
-        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
+        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"] # last numpy 1 release for 3.12
         platform:
           [
             {
@@ -142,9 +134,9 @@ jobs:
               rust-target: "x86_64-unknown-linux-gnu",
             },
             {
-              os: "macos-15-intel",
-              python-architecture: "x64",
-              rust-target: "x86_64-apple-darwin",
+              os: "macOS-latest",
+              python-architecture: "arm64",
+              rust-target: "aarch64-apple-darwin",
             },
             {
               os: "windows-latest",
@@ -160,21 +152,25 @@ jobs:
         include:
           # ubuntu-24.04 does not support 3.7
           - python-version: 3.7
-            platform:
-              {
-                os: "ubuntu-22.04",
-                python-architecture: "x64",
-                rust-target: "x86_64-unknown-linux-gnu",
-              }
+            platform: { os: "ubuntu-22.04", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" }
+          # not available on arm64 macOS, test on x64
+          - python-version: 3.7
+            platform: { os: "macos-15-intel", python-architecture: "x64", rust-target: "x86_64-apple-darwin" }
+          - python-version: 3.8
+            platform: { os: "macos-15-intel", python-architecture: "x64", rust-target: "x86_64-apple-darwin" }
+          - python-version: 3.9
+            platform: { os: "macos-15-intel", python-architecture: "x64", rust-target: "x86_64-apple-darwin" }
         exclude:
           # ubuntu-24.04 does not support 3.7
           - python-version: 3.7
-            platform:
-              {
-                os: "ubuntu-latest",
-                python-architecture: "x64",
-                rust-target: "x86_64-unknown-linux-gnu",
-              }
+            platform: { os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" }
+          # not available on arm64 macOS
+          - python-version: 3.7
+            platform: { os: "macOS-latest", python-architecture: "arm64", rust-target: "aarch64-apple-darwin" }
+          - python-version: 3.8
+            platform: { os: "macOS-latest", python-architecture: "arm64", rust-target: "aarch64-apple-darwin" }
+          - python-version: 3.9
+            platform: { os: "macOS-latest", python-architecture: "arm64", rust-target: "aarch64-apple-darwin" }
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
@@ -206,7 +202,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.14"
       - uses: messense/maturin-action@v1
         with:
           target: aarch64
@@ -220,7 +216,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.14"
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         continue-on-error: true
@@ -238,7 +234,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.14"
       - uses: dtolnay/rust-toolchain@nightly
       - uses: Swatinem/rust-cache@v2
         continue-on-error: true
@@ -254,7 +250,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.14"
       - name: Install Rust
         uses: dtolnay/rust-toolchain@1.74
       - uses: Swatinem/rust-cache@v2
@@ -294,7 +290,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.14"
       - name: Install OpenBLAS
         run: sudo apt install --yes libopenblas-dev
       - name: Install Rust
@@ -314,7 +310,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.14"
       - name: Install numpy
         run: pip install "numpy" ml_dtypes
       - uses: Swatinem/rust-cache@v2
