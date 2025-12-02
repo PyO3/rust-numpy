@@ -38,7 +38,7 @@ name = "rust_ext"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { version = "0.27", features = ["extension-module"] }
+pyo3 = { version = "0.27" }
 numpy = "0.27"
 ```
 
