@@ -10,7 +10,7 @@ use pyo3::{
 };
 
 use crate::array::PyArrayMethods;
-use crate::{get_array_module, Element, IntoPyArray, PyArray, PyReadonlyArray};
+use crate::{get_array_module, Element, IntoPyArray, PyArray, PyReadonlyArray, PyUntypedArray};
 
 pub trait Coerce: Sealed {
     const VAL: bool;
@@ -151,7 +151,9 @@ where
 
         let py = ob.py();
 
-        if matches!(D::NDIM, None | Some(1)) {
+        // If the input is already an ndarray and `TypeMustMatch` is used then no type conversion
+        // should be performed.
+        if (C::VAL || ob.cast::<PyUntypedArray>().is_err()) && matches!(D::NDIM, None | Some(1)) {
             if let Ok(vec) = ob.extract::<Vec<T>>() {
                 let array = Array1::from(vec)
                     .into_dimensionality()
