@@ -133,6 +133,50 @@ fn unsafe_cast_shall_fail() {
 }
 
 #[test]
+fn extract_1d_array_of_different_float_types_fail() {
+    Python::attach(|py| {
+        let locals = get_np_locals(py);
+        let py_list = py
+            .eval(
+                c_str!("np.array([1, 2, 3, 4], dtype='float64')"),
+                Some(&locals),
+                None,
+            )
+            .unwrap();
+        let extracted_array_f32 = py_list.extract::<PyArrayLike1<'_, f32>>();
+        let extracted_array_f64 = py_list.extract::<PyArrayLike1<'_, f64>>().unwrap();
+
+        assert!(extracted_array_f32.is_err());
+        assert_eq!(
+            array![1_f64, 2_f64, 3_f64, 4_f64],
+            extracted_array_f64.as_array()
+        );
+    });
+}
+
+#[test]
+fn extract_2d_array_of_different_float_types_fail() {
+    Python::attach(|py| {
+        let locals = get_np_locals(py);
+        let py_list = py
+            .eval(
+                c_str!("np.array([[1, 2], [3, 4]], dtype='float64')"),
+                Some(&locals),
+                None,
+            )
+            .unwrap();
+        let extracted_array_f32 = py_list.extract::<PyArrayLike2<'_, f32>>();
+        let extracted_array_f64 = py_list.extract::<PyArrayLike2<'_, f64>>().unwrap();
+
+        assert!(extracted_array_f32.is_err());
+        assert_eq!(
+            array![[1_f64, 2_f64], [3_f64, 4_f64]],
+            extracted_array_f64.as_array()
+        );
+    });
+}
+
+#[test]
 fn unsafe_cast_with_coerce_works() {
     Python::attach(|py| {
         let locals = get_np_locals(py);
