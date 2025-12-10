@@ -13,7 +13,7 @@ use crate::array::PyArrayMethods;
 use crate::{get_array_module, Element, IntoPyArray, PyArray, PyReadonlyArray, PyUntypedArray};
 
 pub trait Coerce: Sealed {
-    const VAL: bool;
+    const ALLOW_TYPE_CHANGE: bool;
 }
 
 mod sealed {
@@ -29,7 +29,7 @@ pub struct TypeMustMatch;
 impl Sealed for TypeMustMatch {}
 
 impl Coerce for TypeMustMatch {
-    const VAL: bool = false;
+    const ALLOW_TYPE_CHANGE: bool = false;
 }
 
 /// Marker type to indicate that the element type received via [`PyArrayLike`] can be cast to the specified type by NumPy's [`asarray`](https://numpy.org/doc/stable/reference/generated/numpy.asarray.html).
@@ -39,7 +39,7 @@ pub struct AllowTypeChange;
 impl Sealed for AllowTypeChange {}
 
 impl Coerce for AllowTypeChange {
-    const VAL: bool = true;
+    const ALLOW_TYPE_CHANGE: bool = true;
 }
 
 /// Receiver for arrays or array-like types.
@@ -153,7 +153,9 @@ where
 
         // If the input is already an ndarray and `TypeMustMatch` is used then no type conversion
         // should be performed.
-        if (C::VAL || ob.cast::<PyUntypedArray>().is_err()) && matches!(D::NDIM, None | Some(1)) {
+        if (C::ALLOW_TYPE_CHANGE || ob.cast::<PyUntypedArray>().is_err())
+            && matches!(D::NDIM, None | Some(1))
+        {
             if let Ok(vec) = ob.extract::<Vec<T>>() {
                 let array = Array1::from(vec)
                     .into_dimensionality()
@@ -172,7 +174,7 @@ where
             })?
             .bind(py);
 
-        let kwargs = if C::VAL {
+        let kwargs = if C::ALLOW_TYPE_CHANGE {
             let kwargs = PyDict::new(py);
             kwargs.set_item(intern!(py, "dtype"), T::get_dtype(py))?;
             Some(kwargs)
