@@ -606,6 +606,11 @@ where
     ///
     /// Safe wrapper for [`PyArray::resize`].
     ///
+    /// Note that as this mutates a pointed-to object, you cannot hold multiple
+    /// pointers to the array simultaneously; if you begin with a [`PyArray`],
+    /// you will need to use [`PyArrayMethods::into_readwrite`] instead of
+    /// the shared-reference variant.
+    ///
     /// # Example
     ///
     /// ```
@@ -616,7 +621,7 @@ where
     ///     let pyarray = PyArray::arange(py, 0, 10, 1);
     ///     assert_eq!(pyarray.len(), 10);
     ///
-    ///     let pyarray = pyarray.readwrite();
+    ///     let pyarray = pyarray.into_readwrite();
     ///     let pyarray = pyarray.resize(100).unwrap();
     ///     assert_eq!(pyarray.len(), 100);
     /// });
@@ -722,7 +727,7 @@ mod tests {
                 .cast_into::<PyArray1<f64>>()
                 .unwrap();
 
-            let exclusive = array.readwrite();
+            let exclusive = array.into_readwrite();
             assert!(exclusive.resize(100).is_err());
         });
     }
@@ -732,7 +737,7 @@ mod tests {
         Python::attach(|py| {
             let array = PyArray::<f64, _>::zeros(py, 10, false);
 
-            let exclusive = array.readwrite();
+            let exclusive = array.into_readwrite();
             assert!(exclusive.resize(10).is_ok());
         });
     }
