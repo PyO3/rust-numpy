@@ -974,7 +974,7 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> + Sized {
     ///
     /// Panics if the allocation backing the array is currently mutably borrowed.
     ///
-    /// For a non-panicking variant, use [`try_readonly`][Self::try_into_readonly].
+    /// For a non-panicking variant, use [`try_into_readonly`][Self::try_into_readonly].
     fn into_readonly(self) -> PyReadonlyArray<'py, T, D>
     where
         T: Element,
@@ -1017,7 +1017,7 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> + Sized {
     /// Panics if the allocation backing the array is currently borrowed or
     /// if the array is [flagged as][flags] not writeable.
     ///
-    /// For a non-panicking variant, use [`try_readwrite`][Self::try_readwrite].
+    /// For a non-panicking variant, use [`try_into_readwrite`][Self::try_into_readwrite].
     ///
     /// [flags]: https://numpy.org/doc/stable/reference/generated/numpy.ndarray.flags.html
     fn into_readwrite(self) -> PyReadwriteArray<'py, T, D>

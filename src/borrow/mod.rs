@@ -606,10 +606,12 @@ where
     ///
     /// Safe wrapper for [`PyArray::resize`].
     ///
-    /// Note that as this mutates a pointed-to object, you cannot hold multiple
-    /// pointers to the array simultaneously; if you begin with a [`PyArray`],
-    /// you will need to use [`PyArrayMethods::into_readwrite`] instead of
-    /// the shared-reference variant.
+    /// Note that as this mutates a pointed-to object, the [`PyReadwriteArray`] must be the only
+    /// Python reference to the object.  There cannot be `PyArray` pointers or even `Bound<PyAny>`
+    /// pointing to the same object; this means for example that an object received from a PyO3
+    /// `pyfunction` cannot call this method, since the PyO3 wrapper maintains a reference itself.
+    /// Attempting to call this method when there are other Python references is still safe; NumPy
+    /// will raise a Python-space exception.
     ///
     /// # Example
     ///
