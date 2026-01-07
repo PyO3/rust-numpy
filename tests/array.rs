@@ -196,7 +196,8 @@ fn as_slice() {
 
         let not_aligned = not_aligned_array(py);
         assert!(!not_aligned.is_aligned());
-        assert!(not_aligned.readonly().as_slice().is_err());
+        let err = not_aligned.readonly().as_slice().unwrap_err();
+        assert_eq!(err.to_string(), "The given array is not aligned");
 
         let misaligned_empty: Bound<'_, PyArray1<u16>> = {
             let arr = not_aligned_array(py);

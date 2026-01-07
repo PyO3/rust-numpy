@@ -106,7 +106,7 @@ pub use crate::borrow::{
 };
 pub use crate::convert::{IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
 pub use crate::dtype::{dtype, Complex32, Complex64, Element, PyArrayDescr, PyArrayDescrMethods};
-pub use crate::error::{BorrowError, FromVecError, NotContiguousError};
+pub use crate::error::{AsSliceError, BorrowError, FromVecError};
 pub use crate::npyffi::{PY_ARRAY_API, PY_UFUNC_API};
 pub use crate::strings::{PyFixedString, PyFixedUnicode};
 pub use crate::sum_products::{dot, einsum, inner};
