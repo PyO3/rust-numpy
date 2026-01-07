@@ -32,6 +32,17 @@ fn not_contiguous_array(py: Python<'_>) -> Bound<'_, PyArray1<i32>> {
     .unwrap()
 }
 
+fn not_aligned_array(py: Python<'_>) -> Bound<'_, PyArray1<u16>> {
+    py.eval(
+        c_str!("np.zeros(8, dtype='u2').view('u1')[1:-1].view('u2')"),
+        None,
+        Some(&get_np_locals(py)),
+    )
+    .unwrap()
+    .cast_into()
+    .unwrap()
+}
+
 #[test]
 fn new_c_order() {
     Python::attach(|py| {
@@ -51,6 +62,7 @@ fn new_c_order() {
         assert!(arr.is_contiguous());
         assert!(arr.is_c_contiguous());
         assert!(!arr.is_fortran_contiguous());
+        assert!(arr.is_aligned());
     });
 }
 
@@ -73,6 +85,7 @@ fn new_fortran_order() {
         assert!(arr.is_contiguous());
         assert!(!arr.is_c_contiguous());
         assert!(arr.is_fortran_contiguous());
+        assert!(arr.is_aligned());
     });
 }
 
@@ -180,6 +193,26 @@ fn as_slice() {
         let not_contiguous = not_contiguous_array(py);
         let err = not_contiguous.readonly().as_slice().unwrap_err();
         assert_eq!(err.to_string(), "The given array is not contiguous");
+
+        let not_aligned = not_aligned_array(py);
+        assert!(!not_aligned.is_aligned());
+        assert!(not_aligned.readonly().as_slice().is_err());
+
+        let misaligned_empty: Bound<'_, PyArray1<u16>> = {
+            let arr = not_aligned_array(py);
+            py.eval(
+                c_str!("arr[0:0]"),
+                None,
+                Some(&[("arr", arr)].into_py_dict(py).unwrap()),
+            )
+            .unwrap()
+            .cast_into()
+            .unwrap()
+        };
+        assert_eq!(
+            misaligned_empty.readonly().as_slice().unwrap(),
+            &[] as &[u16]
+        );
     });
 }
 

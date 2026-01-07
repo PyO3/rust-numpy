@@ -744,8 +744,13 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> + Sized {
         T: Element,
         D: Dimension,
     {
-        if self.is_contiguous() {
-            Ok(slice::from_raw_parts(self.data(), self.len()))
+        let len = self.len();
+        if len == 0 {
+            // We can still produce a slice over zero objects regardless of whether
+            // the underlying pointer is aligned or not.
+            Ok(&[])
+        } else if self.is_aligned() && self.is_contiguous() {
+            Ok(slice::from_raw_parts(self.data(), len))
         } else {
             Err(NotContiguousError)
         }
@@ -766,8 +771,13 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> + Sized {
         T: Element,
         D: Dimension,
     {
-        if self.is_contiguous() {
-            Ok(slice::from_raw_parts_mut(self.data(), self.len()))
+        let len = self.len();
+        if len == 0 {
+            // We can still produce a slice over zero objects regardless of whether
+            // the underlying pointer is aligned or not.
+            Ok(&mut [])
+        } else if self.is_aligned() && self.is_contiguous() {
+            Ok(slice::from_raw_parts_mut(self.data(), len))
         } else {
             Err(NotContiguousError)
         }
