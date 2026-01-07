@@ -31,7 +31,7 @@ fn multiple_shared_borrows() {
         let array = PyArray::<f64, _>::zeros(py, (1, 2, 3), false);
 
         let shared1 = array.readonly();
-        let shared2 = array.readonly();
+        let shared2 = array.into_readonly();
 
         assert_eq!(shared2.shape(), [1, 2, 3]);
         assert_eq!(shared1.shape(), [1, 2, 3]);
@@ -341,7 +341,7 @@ fn resize_using_exclusive_borrow() {
         let array = PyArray::<f64, _>::zeros(py, 3, false);
         assert_eq!(array.shape(), [3]);
 
-        let mut array = array.readwrite();
+        let mut array = array.into_readwrite();
         assert_eq!(array.as_slice_mut().unwrap(), &[0.0; 3]);
 
         let mut array = array.resize(5).unwrap();

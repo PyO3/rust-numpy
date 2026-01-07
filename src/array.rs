@@ -714,7 +714,7 @@ unsafe fn clone_elements<T: Element>(py: Python<'_>, elems: &[T], data_ptr: &mut
 
 /// Implementation of functionality for [`PyArray<T, D>`].
 #[doc(alias = "PyArray")]
-pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> {
+pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> + Sized {
     /// Access an untyped representation of this array.
     fn as_untyped(&self) -> &Bound<'py, PyUntypedArray>;
 
@@ -956,11 +956,32 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> {
         T: Element,
         D: Dimension;
 
+    /// Consume `self` into an immutable borrow of the NumPy array
+    fn try_into_readonly(self) -> Result<PyReadonlyArray<'py, T, D>, BorrowError>
+    where
+        T: Element,
+        D: Dimension;
+
     /// Get an immutable borrow of the NumPy array
     fn try_readonly(&self) -> Result<PyReadonlyArray<'py, T, D>, BorrowError>
     where
         T: Element,
         D: Dimension;
+
+    /// Consume `self` into an immutable borrow of the NumPy array
+    ///
+    /// # Panics
+    ///
+    /// Panics if the allocation backing the array is currently mutably borrowed.
+    ///
+    /// For a non-panicking variant, use [`try_into_readonly`][Self::try_into_readonly].
+    fn into_readonly(self) -> PyReadonlyArray<'py, T, D>
+    where
+        T: Element,
+        D: Dimension,
+    {
+        self.try_into_readonly().unwrap()
+    }
 
     /// Get an immutable borrow of the NumPy array
     ///
@@ -977,11 +998,35 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> {
         self.try_readonly().unwrap()
     }
 
+    /// Consume `self` into an mutable borrow of the NumPy array
+    fn try_into_readwrite(self) -> Result<PyReadwriteArray<'py, T, D>, BorrowError>
+    where
+        T: Element,
+        D: Dimension;
+
     /// Get a mutable borrow of the NumPy array
     fn try_readwrite(&self) -> Result<PyReadwriteArray<'py, T, D>, BorrowError>
     where
         T: Element,
         D: Dimension;
+
+    /// Consume `self` into an mutable borrow of the NumPy array
+    ///
+    /// # Panics
+    ///
+    /// Panics if the allocation backing the array is currently borrowed or
+    /// if the array is [flagged as][flags] not writeable.
+    ///
+    /// For a non-panicking variant, use [`try_into_readwrite`][Self::try_into_readwrite].
+    ///
+    /// [flags]: https://numpy.org/doc/stable/reference/generated/numpy.ndarray.flags.html
+    fn into_readwrite(self) -> PyReadwriteArray<'py, T, D>
+    where
+        T: Element,
+        D: Dimension,
+    {
+        self.try_into_readwrite().unwrap()
+    }
 
     /// Get a mutable borrow of the NumPy array
     ///
@@ -1467,12 +1512,28 @@ impl<'py, T, D> PyArrayMethods<'py, T, D> for Bound<'py, PyArray<T, D>> {
         slice.map(|slc| T::vec_from_slice(self.py(), slc))
     }
 
+    fn try_into_readonly(self) -> Result<PyReadonlyArray<'py, T, D>, BorrowError>
+    where
+        T: Element,
+        D: Dimension,
+    {
+        PyReadonlyArray::try_new(self)
+    }
+
     fn try_readonly(&self) -> Result<PyReadonlyArray<'py, T, D>, BorrowError>
     where
         T: Element,
         D: Dimension,
     {
-        PyReadonlyArray::try_new(self.clone())
+        self.clone().try_into_readonly()
+    }
+
+    fn try_into_readwrite(self) -> Result<PyReadwriteArray<'py, T, D>, BorrowError>
+    where
+        T: Element,
+        D: Dimension,
+    {
+        PyReadwriteArray::try_new(self)
     }
 
     fn try_readwrite(&self) -> Result<PyReadwriteArray<'py, T, D>, BorrowError>
@@ -1480,7 +1541,7 @@ impl<'py, T, D> PyArrayMethods<'py, T, D> for Bound<'py, PyArray<T, D>> {
         T: Element,
         D: Dimension,
     {
-        PyReadwriteArray::try_new(self.clone())
+        self.clone().try_into_readwrite()
     }
 
     unsafe fn as_array(&self) -> ArrayView<'_, T, D>

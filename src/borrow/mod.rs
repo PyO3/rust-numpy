@@ -606,6 +606,13 @@ where
     ///
     /// Safe wrapper for [`PyArray::resize`].
     ///
+    /// Note that as this mutates a pointed-to object, the [`PyReadwriteArray`] must be the only
+    /// Python reference to the object.  There cannot be `PyArray` pointers or even `Bound<PyAny>`
+    /// pointing to the same object; this means for example that an object received from a PyO3
+    /// `pyfunction` cannot call this method, since the PyO3 wrapper maintains a reference itself.
+    /// Attempting to call this method when there are other Python references is still safe; NumPy
+    /// will raise a Python-space exception.
+    ///
     /// # Example
     ///
     /// ```
@@ -616,7 +623,7 @@ where
     ///     let pyarray = PyArray::arange(py, 0, 10, 1);
     ///     assert_eq!(pyarray.len(), 10);
     ///
-    ///     let pyarray = pyarray.readwrite();
+    ///     let pyarray = pyarray.into_readwrite();
     ///     let pyarray = pyarray.resize(100).unwrap();
     ///     assert_eq!(pyarray.len(), 100);
     /// });
@@ -722,7 +729,7 @@ mod tests {
                 .cast_into::<PyArray1<f64>>()
                 .unwrap();
 
-            let exclusive = array.readwrite();
+            let exclusive = array.into_readwrite();
             assert!(exclusive.resize(100).is_err());
         });
     }
@@ -732,7 +739,7 @@ mod tests {
         Python::attach(|py| {
             let array = PyArray::<f64, _>::zeros(py, 10, false);
 
-            let exclusive = array.readwrite();
+            let exclusive = array.into_readwrite();
             assert!(exclusive.resize(10).is_ok());
         });
     }
