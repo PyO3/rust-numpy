@@ -31,7 +31,7 @@ fn multiple_shared_borrows() {
         let array = PyArray::<f64, _>::zeros(py, (1, 2, 3), false);
 
         let shared1 = array.readonly();
-        let shared2 = array.readonly();
+        let shared2 = array.into_readonly();
 
         assert_eq!(shared2.shape(), [1, 2, 3]);
         assert_eq!(shared1.shape(), [1, 2, 3]);
