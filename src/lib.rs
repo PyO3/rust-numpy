@@ -132,7 +132,7 @@ pub mod prelude {
 
 /// Deprecated type alias to [`AsSliceError`].  The new name is preferred because arrays might also
 /// fail to view as a slice due to misalignment.
-#[deprecated(note = "use AsSliceError instead")]
+#[deprecated(note = "use AsSliceError instead", since = "0.28.0")]
 pub type NonContiguousError = AsSliceError;
 
 #[cfg(doctest)]
