@@ -141,50 +141,48 @@
 <a href=#141 id=141 data-nosnippet>141</a>
 <a href=#142 id=142 data-nosnippet>142</a><span class="macro">impl_pyerr!</span>(FromVecError);
 <a href=#143 id=143 data-nosnippet>143</a>
-<a href=#144 id=144 data-nosnippet>144</a><span class="doccomment">/// Represents that the given array is not contiguous.
+<a href=#144 id=144 data-nosnippet>144</a><span class="doccomment">/// Represents that the given array is not compatible with viewing as a Rust slice.
 <a href=#145 id=145 data-nosnippet>145</a></span><span class="attr">#[derive(Debug)]
-<a href=#146 id=146 data-nosnippet>146</a></span><span class="kw">pub struct </span>NotContiguousError;
-<a href=#147 id=147 data-nosnippet>147</a>
-<a href=#148 id=148 data-nosnippet>148</a><span class="kw">impl </span>fmt::Display <span class="kw">for </span>NotContiguousError {
-<a href=#149 id=149 data-nosnippet>149</a>    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; fmt::Result {
-<a href=#150 id=150 data-nosnippet>150</a>        <span class="macro">write!</span>(f, <span class="string">"The given array is not contiguous"</span>)
-<a href=#151 id=151 data-nosnippet>151</a>    }
-<a href=#152 id=152 data-nosnippet>152</a>}
+<a href=#146 id=146 data-nosnippet>146</a></span><span class="kw">pub struct </span>AsSliceError;
+<a href=#147 id=147 data-nosnippet>147</a><span class="kw">impl </span>fmt::Display <span class="kw">for </span>AsSliceError {
+<a href=#148 id=148 data-nosnippet>148</a>    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; fmt::Result {
+<a href=#149 id=149 data-nosnippet>149</a>        <span class="macro">write!</span>(f, <span class="string">"The given array is not contiguous or is misaligned."</span>)
+<a href=#150 id=150 data-nosnippet>150</a>    }
+<a href=#151 id=151 data-nosnippet>151</a>}
+<a href=#152 id=152 data-nosnippet>152</a><span class="macro">impl_pyerr!</span>(AsSliceError);
 <a href=#153 id=153 data-nosnippet>153</a>
-<a href=#154 id=154 data-nosnippet>154</a><span class="macro">impl_pyerr!</span>(NotContiguousError);
-<a href=#155 id=155 data-nosnippet>155</a>
-<a href=#156 id=156 data-nosnippet>156</a><span class="doccomment">/// Inidcates why borrowing an array failed.
-<a href=#157 id=157 data-nosnippet>157</a></span><span class="attr">#[derive(Debug)]
-<a href=#158 id=158 data-nosnippet>158</a>#[non_exhaustive]
-<a href=#159 id=159 data-nosnippet>159</a></span><span class="kw">pub enum </span>BorrowError {
-<a href=#160 id=160 data-nosnippet>160</a>    <span class="doccomment">/// The given array is already borrowed
-<a href=#161 id=161 data-nosnippet>161</a>    </span>AlreadyBorrowed,
-<a href=#162 id=162 data-nosnippet>162</a>    <span class="doccomment">/// The given array is not writeable
-<a href=#163 id=163 data-nosnippet>163</a>    </span>NotWriteable,
-<a href=#164 id=164 data-nosnippet>164</a>}
-<a href=#165 id=165 data-nosnippet>165</a>
-<a href=#166 id=166 data-nosnippet>166</a><span class="kw">impl </span>fmt::Display <span class="kw">for </span>BorrowError {
-<a href=#167 id=167 data-nosnippet>167</a>    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; fmt::Result {
-<a href=#168 id=168 data-nosnippet>168</a>        <span class="kw">match </span><span class="self">self </span>{
-<a href=#169 id=169 data-nosnippet>169</a>            <span class="self">Self</span>::AlreadyBorrowed =&gt; <span class="macro">write!</span>(f, <span class="string">"The given array is already borrowed"</span>),
-<a href=#170 id=170 data-nosnippet>170</a>            <span class="self">Self</span>::NotWriteable =&gt; <span class="macro">write!</span>(f, <span class="string">"The given array is not writeable"</span>),
-<a href=#171 id=171 data-nosnippet>171</a>        }
-<a href=#172 id=172 data-nosnippet>172</a>    }
-<a href=#173 id=173 data-nosnippet>173</a>}
+<a href=#154 id=154 data-nosnippet>154</a><span class="doccomment">/// Inidcates why borrowing an array failed.
+<a href=#155 id=155 data-nosnippet>155</a></span><span class="attr">#[derive(Debug)]
+<a href=#156 id=156 data-nosnippet>156</a>#[non_exhaustive]
+<a href=#157 id=157 data-nosnippet>157</a></span><span class="kw">pub enum </span>BorrowError {
+<a href=#158 id=158 data-nosnippet>158</a>    <span class="doccomment">/// The given array is already borrowed
+<a href=#159 id=159 data-nosnippet>159</a>    </span>AlreadyBorrowed,
+<a href=#160 id=160 data-nosnippet>160</a>    <span class="doccomment">/// The given array is not writeable
+<a href=#161 id=161 data-nosnippet>161</a>    </span>NotWriteable,
+<a href=#162 id=162 data-nosnippet>162</a>}
+<a href=#163 id=163 data-nosnippet>163</a>
+<a href=#164 id=164 data-nosnippet>164</a><span class="kw">impl </span>fmt::Display <span class="kw">for </span>BorrowError {
+<a href=#165 id=165 data-nosnippet>165</a>    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; fmt::Result {
+<a href=#166 id=166 data-nosnippet>166</a>        <span class="kw">match </span><span class="self">self </span>{
+<a href=#167 id=167 data-nosnippet>167</a>            <span class="self">Self</span>::AlreadyBorrowed =&gt; <span class="macro">write!</span>(f, <span class="string">"The given array is already borrowed"</span>),
+<a href=#168 id=168 data-nosnippet>168</a>            <span class="self">Self</span>::NotWriteable =&gt; <span class="macro">write!</span>(f, <span class="string">"The given array is not writeable"</span>),
+<a href=#169 id=169 data-nosnippet>169</a>        }
+<a href=#170 id=170 data-nosnippet>170</a>    }
+<a href=#171 id=171 data-nosnippet>171</a>}
+<a href=#172 id=172 data-nosnippet>172</a>
+<a href=#173 id=173 data-nosnippet>173</a><span class="macro">impl_pyerr!</span>(BorrowError);
 <a href=#174 id=174 data-nosnippet>174</a>
-<a href=#175 id=175 data-nosnippet>175</a><span class="macro">impl_pyerr!</span>(BorrowError);
-<a href=#176 id=176 data-nosnippet>176</a>
-<a href=#177 id=177 data-nosnippet>177</a><span class="doccomment">/// An internal type used to ignore certain error conditions
-<a href=#178 id=178 data-nosnippet>178</a>///
-<a href=#179 id=179 data-nosnippet>179</a>/// This is beneficial when those errors will never reach a public API anyway
-<a href=#180 id=180 data-nosnippet>180</a>/// but dropping them will improve performance.
-<a href=#181 id=181 data-nosnippet>181</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>IgnoreError;
-<a href=#182 id=182 data-nosnippet>182</a>
-<a href=#183 id=183 data-nosnippet>183</a><span class="kw">impl</span>&lt;E&gt; From&lt;E&gt; <span class="kw">for </span>IgnoreError
-<a href=#184 id=184 data-nosnippet>184</a><span class="kw">where
-<a href=#185 id=185 data-nosnippet>185</a>    </span>PyErr: From&lt;E&gt;,
-<a href=#186 id=186 data-nosnippet>186</a>{
-<a href=#187 id=187 data-nosnippet>187</a>    <span class="kw">fn </span>from(_err: E) -&gt; <span class="self">Self </span>{
-<a href=#188 id=188 data-nosnippet>188</a>        <span class="self">Self
-<a href=#189 id=189 data-nosnippet>189</a>    </span>}
-<a href=#190 id=190 data-nosnippet>190</a>}</code></pre></div></section></main></body></html>
+<a href=#175 id=175 data-nosnippet>175</a><span class="doccomment">/// An internal type used to ignore certain error conditions
+<a href=#176 id=176 data-nosnippet>176</a>///
+<a href=#177 id=177 data-nosnippet>177</a>/// This is beneficial when those errors will never reach a public API anyway
+<a href=#178 id=178 data-nosnippet>178</a>/// but dropping them will improve performance.
+<a href=#179 id=179 data-nosnippet>179</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>IgnoreError;
+<a href=#180 id=180 data-nosnippet>180</a>
+<a href=#181 id=181 data-nosnippet>181</a><span class="kw">impl</span>&lt;E&gt; From&lt;E&gt; <span class="kw">for </span>IgnoreError
+<a href=#182 id=182 data-nosnippet>182</a><span class="kw">where
+<a href=#183 id=183 data-nosnippet>183</a>    </span>PyErr: From&lt;E&gt;,
+<a href=#184 id=184 data-nosnippet>184</a>{
+<a href=#185 id=185 data-nosnippet>185</a>    <span class="kw">fn </span>from(_err: E) -&gt; <span class="self">Self </span>{
+<a href=#186 id=186 data-nosnippet>186</a>        <span class="self">Self
+<a href=#187 id=187 data-nosnippet>187</a>    </span>}
+<a href=#188 id=188 data-nosnippet>188</a>}</code></pre></div></section></main></body></html>

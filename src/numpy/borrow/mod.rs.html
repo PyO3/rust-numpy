@@ -180,7 +180,7 @@
 <a href=#180 id=180 data-nosnippet>180</a><span class="kw">use </span><span class="kw">crate</span>::array::{PyArray, PyArrayMethods};
 <a href=#181 id=181 data-nosnippet>181</a><span class="kw">use </span><span class="kw">crate</span>::convert::NpyIndex;
 <a href=#182 id=182 data-nosnippet>182</a><span class="kw">use </span><span class="kw">crate</span>::dtype::Element;
-<a href=#183 id=183 data-nosnippet>183</a><span class="kw">use </span><span class="kw">crate</span>::error::{BorrowError, NotContiguousError};
+<a href=#183 id=183 data-nosnippet>183</a><span class="kw">use </span><span class="kw">crate</span>::error::{AsSliceError, BorrowError};
 <a href=#184 id=184 data-nosnippet>184</a><span class="kw">use </span><span class="kw">crate</span>::npyffi::flags;
 <a href=#185 id=185 data-nosnippet>185</a><span class="kw">use </span><span class="kw">crate</span>::untyped_array::PyUntypedArrayMethods;
 <a href=#186 id=186 data-nosnippet>186</a>
@@ -268,7 +268,7 @@
 <a href=#268 id=268 data-nosnippet>268</a>
 <a href=#269 id=269 data-nosnippet>269</a>    <span class="doccomment">/// Provide an immutable slice view of the interior of the NumPy array if it is contiguous.
 <a href=#270 id=270 data-nosnippet>270</a>    </span><span class="attr">#[inline(always)]
-<a href=#271 id=271 data-nosnippet>271</a>    </span><span class="kw">pub fn </span>as_slice(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="kw-2">&amp;</span>[T], NotContiguousError&gt; {
+<a href=#271 id=271 data-nosnippet>271</a>    </span><span class="kw">pub fn </span>as_slice(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="kw-2">&amp;</span>[T], AsSliceError&gt; {
 <a href=#272 id=272 data-nosnippet>272</a>        <span class="comment">// SAFETY: Global borrow flags ensure aliasing discipline.
 <a href=#273 id=273 data-nosnippet>273</a>        </span><span class="kw">unsafe </span>{ <span class="self">self</span>.array.as_slice() }
 <a href=#274 id=274 data-nosnippet>274</a>    }
@@ -511,7 +511,7 @@
 <a href=#511 id=511 data-nosnippet>511</a>
 <a href=#512 id=512 data-nosnippet>512</a>    <span class="doccomment">/// Provide a mutable slice view of the interior of the NumPy array if it is contiguous.
 <a href=#513 id=513 data-nosnippet>513</a>    </span><span class="attr">#[inline(always)]
-<a href=#514 id=514 data-nosnippet>514</a>    </span><span class="kw">pub fn </span>as_slice_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="kw-2">&amp;mut </span>[T], NotContiguousError&gt; {
+<a href=#514 id=514 data-nosnippet>514</a>    </span><span class="kw">pub fn </span>as_slice_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="kw-2">&amp;mut </span>[T], AsSliceError&gt; {
 <a href=#515 id=515 data-nosnippet>515</a>        <span class="comment">// SAFETY: Global borrow flags ensure aliasing discipline.
 <a href=#516 id=516 data-nosnippet>516</a>        </span><span class="kw">unsafe </span>{ <span class="self">self</span>.array.as_slice_mut() }
 <a href=#517 id=517 data-nosnippet>517</a>    }
