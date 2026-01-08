@@ -231,7 +231,7 @@ fn as_slice() {
             &[] as &[u16]
         );
         assert_eq!(
-            misaligned_empty.readwrite().as_slice().unwrap(),
+            misaligned_empty.readwrite().as_slice_mut().unwrap(),
             &mut [] as &mut [u16]
         );
         assert_eq!(
