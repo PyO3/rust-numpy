@@ -180,7 +180,7 @@ use pyo3::{Borrowed, Bound, CastError, FromPyObject, PyAny, PyResult};
 use crate::array::{PyArray, PyArrayMethods};
 use crate::convert::NpyIndex;
 use crate::dtype::Element;
-use crate::error::{BorrowError, NotContiguousError};
+use crate::error::{AsSliceError, BorrowError};
 use crate::npyffi::flags;
 use crate::untyped_array::PyUntypedArrayMethods;
 
@@ -268,7 +268,7 @@ where
 
     /// Provide an immutable slice view of the interior of the NumPy array if it is contiguous.
     #[inline(always)]
-    pub fn as_slice(&self) -> Result<&[T], NotContiguousError> {
+    pub fn as_slice(&self) -> Result<&[T], AsSliceError> {
         // SAFETY: Global borrow flags ensure aliasing discipline.
         unsafe { self.array.as_slice() }
     }
@@ -511,7 +511,7 @@ where
 
     /// Provide a mutable slice view of the interior of the NumPy array if it is contiguous.
     #[inline(always)]
-    pub fn as_slice_mut(&mut self) -> Result<&mut [T], NotContiguousError> {
+    pub fn as_slice_mut(&mut self) -> Result<&mut [T], AsSliceError> {
         // SAFETY: Global borrow flags ensure aliasing discipline.
         unsafe { self.array.as_slice_mut() }
     }

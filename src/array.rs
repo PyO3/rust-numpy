@@ -26,7 +26,7 @@ use crate::cold;
 use crate::convert::{ArrayExt, IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
 use crate::dtype::{Element, PyArrayDescrMethods};
 use crate::error::{
-    BorrowError, DimensionalityError, FromVecError, IgnoreError, NotContiguousError, TypeError,
+    AsSliceError, BorrowError, DimensionalityError, FromVecError, IgnoreError, TypeError,
     DIMENSIONALITY_MISMATCH_ERR, MAX_DIMENSIONALITY_ERR,
 };
 use crate::npyffi::{self, npy_intp, NPY_ORDER, PY_ARRAY_API};
@@ -739,15 +739,20 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> + Sized {
     /// or concurrently modified by Python or other native code.
     ///
     /// Please consider the safe alternative [`PyReadonlyArray::as_slice`].
-    unsafe fn as_slice(&self) -> Result<&[T], NotContiguousError>
+    unsafe fn as_slice(&self) -> Result<&[T], AsSliceError>
     where
         T: Element,
         D: Dimension,
     {
-        if self.is_contiguous() {
-            Ok(slice::from_raw_parts(self.data(), self.len()))
+        let len = self.len();
+        if len == 0 {
+            // We can still produce a slice over zero objects regardless of whether
+            // the underlying pointer is aligned or not.
+            Ok(&[])
+        } else if self.is_aligned() && self.is_contiguous() {
+            Ok(slice::from_raw_parts(self.data(), len))
         } else {
-            Err(NotContiguousError)
+            Err(AsSliceError)
         }
     }
 
@@ -761,15 +766,20 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> + Sized {
     ///
     /// Please consider the safe alternative [`PyReadwriteArray::as_slice_mut`].
     #[allow(clippy::mut_from_ref)]
-    unsafe fn as_slice_mut(&self) -> Result<&mut [T], NotContiguousError>
+    unsafe fn as_slice_mut(&self) -> Result<&mut [T], AsSliceError>
     where
         T: Element,
         D: Dimension,
     {
-        if self.is_contiguous() {
-            Ok(slice::from_raw_parts_mut(self.data(), self.len()))
+        let len = self.len();
+        if len == 0 {
+            // We can still produce a slice over zero objects regardless of whether
+            // the underlying pointer is aligned or not.
+            Ok(&mut [])
+        } else if self.is_aligned() && self.is_contiguous() {
+            Ok(slice::from_raw_parts_mut(self.data(), len))
         } else {
-            Err(NotContiguousError)
+            Err(AsSliceError)
         }
     }
 
@@ -951,7 +961,7 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> + Sized {
     /// })
     /// # }
     /// ```
-    fn to_vec(&self) -> Result<Vec<T>, NotContiguousError>
+    fn to_vec(&self) -> Result<Vec<T>, AsSliceError>
     where
         T: Element,
         D: Dimension;
@@ -1503,7 +1513,7 @@ impl<'py, T, D> PyArrayMethods<'py, T, D> for Bound<'py, PyArray<T, D>> {
         unsafe { self.cast_unchecked() }
     }
 
-    fn to_vec(&self) -> Result<Vec<T>, NotContiguousError>
+    fn to_vec(&self) -> Result<Vec<T>, AsSliceError>
     where
         T: Element,
         D: Dimension,

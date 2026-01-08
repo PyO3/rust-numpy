@@ -106,7 +106,7 @@ pub use crate::borrow::{
 };
 pub use crate::convert::{IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
 pub use crate::dtype::{dtype, Complex32, Complex64, Element, PyArrayDescr, PyArrayDescrMethods};
-pub use crate::error::{BorrowError, FromVecError, NotContiguousError};
+pub use crate::error::{AsSliceError, BorrowError, FromVecError};
 pub use crate::npyffi::{PY_ARRAY_API, PY_UFUNC_API};
 pub use crate::strings::{PyFixedString, PyFixedUnicode};
 pub use crate::sum_products::{dot, einsum, inner};
@@ -129,6 +129,11 @@ pub mod prelude {
     pub use crate::dtype::PyArrayDescrMethods;
     pub use crate::untyped_array::PyUntypedArrayMethods;
 }
+
+/// Deprecated type alias to [`AsSliceError`].  The new name is preferred because arrays might also
+/// fail to view as a slice due to misalignment.
+#[deprecated(note = "use AsSliceError instead", since = "0.28.0")]
+pub type NonContiguousError = AsSliceError;
 
 #[cfg(doctest)]
 mod doctest {

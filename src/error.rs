@@ -141,17 +141,15 @@ impl fmt::Display for FromVecError {
 
 impl_pyerr!(FromVecError);
 
-/// Represents that the given array is not contiguous.
+/// Represents that the given array is not compatible with viewing as a Rust slice.
 #[derive(Debug)]
-pub struct NotContiguousError;
-
-impl fmt::Display for NotContiguousError {
+pub struct AsSliceError;
+impl fmt::Display for AsSliceError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "The given array is not contiguous")
+        write!(f, "The given array is not contiguous or is misaligned.")
     }
 }
-
-impl_pyerr!(NotContiguousError);
+impl_pyerr!(AsSliceError);
 
 /// Inidcates why borrowing an array failed.
 #[derive(Debug)]

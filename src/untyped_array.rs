@@ -102,6 +102,39 @@ pub trait PyUntypedArrayMethods<'py>: Sealed {
     /// [PyArray_DTYPE]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_DTYPE
     fn dtype(&self) -> Bound<'py, PyArrayDescr>;
 
+    /// Returns `true` if the internal data of the array is aligned for the dtype.
+    ///
+    /// Note that NumPy considers zero-length data to be aligned regardless of the base pointer,
+    /// which is a weaker condition than Rust's slice guarantees.  [PyArrayMethods::as_slice] will
+    /// safely handle the case of a misaligned zero-length array.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use numpy::{PyArray1, PyUntypedArrayMethods};
+    /// use pyo3::{types::{IntoPyDict, PyAnyMethods}, Python, ffi::c_str};
+    ///
+    /// # fn main() -> pyo3::PyResult<()> {
+    /// Python::attach(|py| {
+    ///     let array = PyArray1::<u16>::zeros(py, 8, false);
+    ///     assert!(array.is_aligned());
+    ///
+    ///     let view = py
+    ///         .eval(
+    ///             c_str!("array.view('u1')[1:-1].view('u2')"),
+    ///             None,
+    ///             Some(&[("array", array)].into_py_dict(py)?),
+    ///         )?
+    ///         .cast_into::<PyArray1<u16>>()?;
+    ///     assert!(!view.is_aligned());
+    /// #   Ok(())
+    /// })
+    /// # }
+    /// ```
+    fn is_aligned(&self) -> bool {
+        unsafe { check_flags(&*self.as_array_ptr(), npyffi::NPY_ARRAY_ALIGNED) }
+    }
+
     /// Returns `true` if the internal data of the array is contiguous,
     /// indepedently of whether C-style/row-major or Fortran-style/column-major.
     ///
