@@ -234,6 +234,10 @@ fn as_slice() {
             misaligned_empty.readwrite().as_slice().unwrap(),
             &mut [] as &mut [u16]
         );
+        assert_eq!(
+            misaligned_empty.readonly().to_vec().unwrap(),
+            Vec::<u16>::new()
+        );
     });
 }
 
