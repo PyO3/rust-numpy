@@ -192,12 +192,28 @@ fn as_slice() {
 
         let not_contiguous = not_contiguous_array(py);
         let err = not_contiguous.readonly().as_slice().unwrap_err();
-        assert_eq!(err.to_string(), "The given array is not contiguous");
+        assert_eq!(
+            err.to_string(),
+            "The given array is not contiguous or is misaligned."
+        );
+        let err = not_contiguous.readwrite().as_slice_mut().unwrap_err();
+        assert_eq!(
+            err.to_string(),
+            "The given array is not contiguous or is misaligned."
+        );
 
         let not_aligned = not_aligned_array(py);
         assert!(!not_aligned.is_aligned());
         let err = not_aligned.readonly().as_slice().unwrap_err();
-        assert_eq!(err.to_string(), "The given array is not aligned");
+        assert_eq!(
+            err.to_string(),
+            "The given array is not contiguous or is misaligned."
+        );
+        let err = not_aligned.readwrite().as_slice_mut().unwrap_err();
+        assert_eq!(
+            err.to_string(),
+            "The given array is not contiguous or is misaligned."
+        );
 
         let misaligned_empty: Bound<'_, PyArray1<u16>> = {
             let arr = not_aligned_array(py);
@@ -213,6 +229,10 @@ fn as_slice() {
         assert_eq!(
             misaligned_empty.readonly().as_slice().unwrap(),
             &[] as &[u16]
+        );
+        assert_eq!(
+            misaligned_empty.readwrite().as_slice().unwrap(),
+            &mut [] as &mut [u16]
         );
     });
 }

@@ -749,12 +749,10 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> + Sized {
             // We can still produce a slice over zero objects regardless of whether
             // the underlying pointer is aligned or not.
             Ok(&[])
-        } else if !self.is_aligned() {
-            Err(AsSliceError::NotAligned)
-        } else if !self.is_contiguous() {
-            Err(AsSliceError::NotContiguous)
-        } else {
+        } else if self.is_aligned() && self.is_contiguous() {
             Ok(slice::from_raw_parts(self.data(), len))
+        } else {
+            Err(AsSliceError)
         }
     }
 
@@ -778,12 +776,10 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> + Sized {
             // We can still produce a slice over zero objects regardless of whether
             // the underlying pointer is aligned or not.
             Ok(&mut [])
-        } else if !self.is_aligned() {
-            Err(AsSliceError::NotAligned)
-        } else if !self.is_contiguous() {
-            Err(AsSliceError::NotContiguous)
-        } else {
+        } else if self.is_aligned() && self.is_contiguous() {
             Ok(slice::from_raw_parts_mut(self.data(), len))
+        } else {
+            Err(AsSliceError)
         }
     }
 

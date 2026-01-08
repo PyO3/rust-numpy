@@ -142,25 +142,13 @@ impl fmt::Display for FromVecError {
 impl_pyerr!(FromVecError);
 
 /// Represents that the given array is not compatible with viewing as a Rust slice.
-///
-/// If an array fails for more than one reason, it is not guaranteed which variant is returned.
 #[derive(Debug)]
-pub enum AsSliceError {
-    /// The array is not backed by an aligned pointer.
-    NotAligned,
-    /// The array is not contiguous in memory.
-    NotContiguous,
-}
-
+pub struct AsSliceError;
 impl fmt::Display for AsSliceError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::NotAligned => write!(f, "The given array is not aligned"),
-            Self::NotContiguous => write!(f, "The given array is not contiguous"),
-        }
+        write!(f, "The given array is not contiguous or is misaligned.")
     }
 }
-
 impl_pyerr!(AsSliceError);
 
 /// Inidcates why borrowing an array failed.

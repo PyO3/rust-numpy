@@ -130,6 +130,11 @@ pub mod prelude {
     pub use crate::untyped_array::PyUntypedArrayMethods;
 }
 
+/// Deprecated type alias to [`AsSliceError`].  The new name is preferred because arrays might also
+/// fail to view as a slice due to misalignment.
+#[deprecated(note = "use AsSliceError instead")]
+pub type NonContiguousError = AsSliceError;
+
 #[cfg(doctest)]
 mod doctest {
     macro_rules! doc_comment {
