@@ -406,7 +406,7 @@ macro_rules! impl_array_type {
         pub enum NpyTypes { $($tname),* }
 
         impl PyArrayAPI {
-            /// Get a pointer of the type object assocaited with `ty`.
+            /// Get a pointer of the type object associated with `ty`.
             pub unsafe fn get_type_object<'py>(&self, py: Python<'py>, ty: NpyTypes) -> *mut PyTypeObject {
                 match ty {
                     $( NpyTypes::$tname => *(self.get(py, $offset)) as _ ),*

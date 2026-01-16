@@ -445,7 +445,7 @@ impl Sealed for Bound<'_, PyArrayDescr> {}
 /// containing object-type fields) are assumed to be trivially copyable, which
 /// is reflected in the `IS_COPY` flag. Furthermore, it is assumed that for
 /// the object type the elements are pointers into the Python heap and that the
-/// corresponding `Clone` implemenation will never panic as it only increases
+/// corresponding `Clone` implementation will never panic as it only increases
 /// the reference count.
 ///
 /// # Custom element types

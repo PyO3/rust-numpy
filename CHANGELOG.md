@@ -72,7 +72,7 @@
 
 - v0.17.0
   - Add dynamic borrow checking to safely construct references into the interior of NumPy arrays. ([#274](https://github.com/PyO3/rust-numpy/pull/274))
-    - The deprecated iterator builders `NpySingleIterBuilder::{readonly,readwrite}` and `NpyMultiIterBuilder::add_{readonly,readwrite}` now take referencces to `PyReadonlyArray` and `PyReadwriteArray` instead of consuming them.
+    - The deprecated iterator builders `NpySingleIterBuilder::{readonly,readwrite}` and `NpyMultiIterBuilder::add_{readonly,readwrite}` now take references to `PyReadonlyArray` and `PyReadwriteArray` instead of consuming them.
     - The destructive `PyArray::resize` method is now unsafe if used without an instance of `PyReadwriteArray`. ([#302](https://github.com/PyO3/rust-numpy/pull/302))
   - Add support for `datetime64` and `timedelta64` element types via the `datetime` module. ([#308](https://github.com/PyO3/rust-numpy/pull/308))
   - Add support for IEEE 754-2008 16-bit floating point numbers via an optional dependency on the `half` crate. ([#314](https://github.com/PyO3/rust-numpy/pull/314))

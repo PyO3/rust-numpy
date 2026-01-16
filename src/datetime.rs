@@ -78,7 +78,7 @@ pub trait Unit: Send + Sync + Clone + Copy + PartialEq + Eq + Hash + PartialOrd 
     /// [NPY_DATETIMEUNIT]: https://github.com/numpy/numpy/blob/4c60b3263ac50e5e72f6a909e156314fc3c9cba0/numpy/core/include/numpy/ndarraytypes.h#L276
     const UNIT: NPY_DATETIMEUNIT;
 
-    /// The abbrevation used for debug formatting
+    /// The abbreviation used for debug formatting
     const ABBREV: &'static str;
 }
 
