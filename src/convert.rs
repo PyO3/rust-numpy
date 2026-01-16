@@ -110,7 +110,7 @@ where
 /// });
 /// ```
 ///
-/// Due to copying the elments, this method converts non-contiguous arrays to C-order contiguous arrays.
+/// Due to copying the elements, this method converts non-contiguous arrays to C-order contiguous arrays.
 ///
 /// ```
 /// use numpy::prelude::*;

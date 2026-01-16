@@ -108,7 +108,7 @@ mod rust_ext {
     // This crate follows a strongly-typed approach to wrapping NumPy arrays
     // while Python API are often expected to work with multiple element types.
     //
-    // That kind of limited polymorphis can be recovered by accepting an enumerated type
+    // That kind of limited polymorphism can be recovered by accepting an enumerated type
     // covering the supported element types and dispatching into a generic implementation.
     #[derive(FromPyObject)]
     enum SupportedArray<'py> {

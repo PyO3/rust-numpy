@@ -5,7 +5,7 @@
 //! safe Rust code cannot cause undefined behaviour by creating references into NumPy arrays.
 //!
 //! With these borrows established, [references to individual elements][PyReadonlyArray::get] or [reference-based views of whole array][PyReadonlyArray::as_array]
-//! can be created safely. These are then the starting point for algorithms iteraing over and operating on the elements of the array.
+//! can be created safely. These are then the starting point for algorithms iterating over and operating on the elements of the array.
 //!
 //! # Examples
 //!

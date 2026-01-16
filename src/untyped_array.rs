@@ -136,7 +136,7 @@ pub trait PyUntypedArrayMethods<'py>: Sealed {
     }
 
     /// Returns `true` if the internal data of the array is contiguous,
-    /// indepedently of whether C-style/row-major or Fortran-style/column-major.
+    /// independently of whether C-style/row-major or Fortran-style/column-major.
     ///
     /// # Example
     ///
@@ -232,7 +232,7 @@ pub trait PyUntypedArrayMethods<'py>: Sealed {
         }
     }
 
-    /// Returns a slice which contains dimmensions of the array.
+    /// Returns a slice which contains dimensions of the array.
     ///
     /// See also [`ndarray.shape`][ndaray-shape] and [`PyArray_DIMS`][PyArray_DIMS].
     ///
