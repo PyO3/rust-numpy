@@ -47,7 +47,7 @@ Python::attach(|py| {
         </span>.cast_into::&lt;PyArray1&lt;u16&gt;&gt;()<span class="question-mark">?</span>;
     <span class="macro">assert!</span>(!view.is_aligned());
 })</code></pre></div></div></details><details class="toggle method-toggle" open><summary><section id="method.is_contiguous" class="method"><a class="src rightside" href="../src/numpy/untyped_array.rs.html#160-167">Source</a><h4 class="code-header">fn <a href="#method.is_contiguous" class="fn">is_contiguous</a>(&amp;self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/1.92.0/std/primitive.bool.html">bool</a></h4></section></summary><div class="docblock"><p>Returns <code>true</code> if the internal data of the array is contiguous,
-indepedently of whether C-style/row-major or Fortran-style/column-major.</p>
+independently of whether C-style/row-major or Fortran-style/column-major.</p>
 <h5 id="example-2"><a class="doc-anchor" href="#example-2">§</a>Example</h5>
 <div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>numpy::{PyArray1, PyUntypedArrayMethods};
 <span class="kw">use </span>pyo3::{types::{IntoPyDict, PyAnyMethods}, Python, ffi::c_str};
@@ -82,7 +82,7 @@ Python::attach(|py| {
     <span class="kw">let </span>arr = PyArray3::&lt;f64&gt;::zeros(py, [<span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>], <span class="bool-val">false</span>);
 
     <span class="macro">assert_eq!</span>(arr.strides(), <span class="kw-2">&amp;</span>[<span class="number">240</span>, <span class="number">48</span>, <span class="number">8</span>]);
-});</code></pre></div></div></details><details class="toggle method-toggle" open><summary><section id="method.shape" class="method"><a class="src rightside" href="../src/numpy/untyped_array.rs.html#255-266">Source</a><h4 class="code-header">fn <a href="#method.shape" class="fn">shape</a>(&amp;self) -&gt; &amp;[<a class="primitive" href="https://doc.rust-lang.org/1.92.0/std/primitive.usize.html">usize</a>]</h4></section></summary><div class="docblock"><p>Returns a slice which contains dimmensions of the array.</p>
+});</code></pre></div></div></details><details class="toggle method-toggle" open><summary><section id="method.shape" class="method"><a class="src rightside" href="../src/numpy/untyped_array.rs.html#255-266">Source</a><h4 class="code-header">fn <a href="#method.shape" class="fn">shape</a>(&amp;self) -&gt; &amp;[<a class="primitive" href="https://doc.rust-lang.org/1.92.0/std/primitive.usize.html">usize</a>]</h4></section></summary><div class="docblock"><p>Returns a slice which contains dimensions of the array.</p>
 <p>See also [<code>ndarray.shape</code>][ndaray-shape] and <a href="https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_DIMS"><code>PyArray_DIMS</code></a>.</p>
 <h5 id="example-5"><a class="doc-anchor" href="#example-5">§</a>Example</h5>
 <div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>numpy::{PyArray3, PyUntypedArrayMethods};

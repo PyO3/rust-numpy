@@ -18,7 +18,7 @@ Python::attach(|py| {
 
     <span class="macro">assert_eq!</span>(py_array.readonly().as_slice().unwrap(), <span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>]);
 });</code></pre></div>
-<p>Due to copying the elments, this method converts non-contiguous arrays to C-order contiguous arrays.</p>
+<p>Due to copying the elements, this method converts non-contiguous arrays to C-order contiguous arrays.</p>
 
 <div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>numpy::prelude::<span class="kw-2">*</span>;
 <span class="kw">use </span>numpy::{PyArray, ToPyArray};

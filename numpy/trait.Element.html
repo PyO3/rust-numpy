@@ -32,7 +32,7 @@ contain Python objects (i.e., either the object type itself or record types
 containing object-type fields) are assumed to be trivially copyable, which
 is reflected in the <code>IS_COPY</code> flag. Furthermore, it is assumed that for
 the object type the elements are pointers into the Python heap and that the
-corresponding <code>Clone</code> implemenation will never panic as it only increases
+corresponding <code>Clone</code> implementation will never panic as it only increases
 the reference count.</p>
 <h2 id="custom-element-types"><a class="doc-anchor" href="#custom-element-types">§</a>Custom element types</h2>
 <p>Note that we cannot safely store <code>Py&lt;T&gt;</code> where <code>T: PyClass</code>, because the type information would be

@@ -3,7 +3,7 @@
 which together with the dynamic borrow checking performed by this crate ensures that
 safe Rust code cannot cause undefined behaviour by creating references into NumPy arrays.</p>
 <p>With these borrows established, <a href="struct.PyReadonlyArray.html#method.get" title="method numpy::borrow::PyReadonlyArray::get">references to individual elements</a> or <a href="struct.PyReadonlyArray.html#method.as_array" title="method numpy::borrow::PyReadonlyArray::as_array">reference-based views of whole array</a>
-can be created safely. These are then the starting point for algorithms iteraing over and operating on the elements of the array.</p>
+can be created safely. These are then the starting point for algorithms iterating over and operating on the elements of the array.</p>
 <h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
 <p>The first example shows that dynamic borrow checking works to constrain
 both what safe Rust code can invoke and how it is invoked.</p>

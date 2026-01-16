@@ -406,7 +406,7 @@
 <a href=#406 id=406 data-nosnippet>406</a>        </span><span class="kw">pub enum </span>NpyTypes { $(<span class="macro-nonterminal">$tname</span>),* }
 <a href=#407 id=407 data-nosnippet>407</a>
 <a href=#408 id=408 data-nosnippet>408</a>        <span class="kw">impl </span>PyArrayAPI {
-<a href=#409 id=409 data-nosnippet>409</a>            <span class="doccomment">/// Get a pointer of the type object assocaited with `ty`.
+<a href=#409 id=409 data-nosnippet>409</a>            <span class="doccomment">/// Get a pointer of the type object associated with `ty`.
 <a href=#410 id=410 data-nosnippet>410</a>            </span><span class="kw">pub unsafe fn </span>get_type_object&lt;<span class="lifetime">'py</span>&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, py: Python&lt;<span class="lifetime">'py</span>&gt;, ty: NpyTypes) -&gt; <span class="kw-2">*mut </span>PyTypeObject {
 <a href=#411 id=411 data-nosnippet>411</a>                <span class="kw">match </span>ty {
 <a href=#412 id=412 data-nosnippet>412</a>                    $( NpyTypes::<span class="macro-nonterminal">$tname </span>=&gt; <span class="kw-2">*</span>(<span class="self">self</span>.get(py, <span class="macro-nonterminal">$offset</span>)) <span class="kw">as _ </span>),*
