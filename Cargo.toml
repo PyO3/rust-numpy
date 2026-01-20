@@ -24,12 +24,16 @@ exclude = [
 half = { version = "2.0", default-features = false, optional = true }
 libc = "0.2"
 nalgebra = { version = ">=0.30, <0.35", default-features = false, optional = true }
+faer = { version = "0.22.6", optional = true }
 num-complex = ">= 0.2, < 0.5"
 num-integer = "0.1"
 num-traits = "0.2"
 ndarray = ">= 0.15, <=0.17"
 pyo3 = { version = "0.27.0", default-features = false, features = ["macros"] }
 rustc-hash = "2.0"
+
+[features]
+faer = ["dep:faer"]
 
 [dev-dependencies]
 pyo3 = { version = "0.27.0", default-features = false, features = ["auto-initialize"]}
