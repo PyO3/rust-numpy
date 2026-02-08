@@ -252,7 +252,7 @@ jobs:
         with:
           python-version: "3.14"
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@1.74
+        uses: dtolnay/rust-toolchain@1.83
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: examples/simple
