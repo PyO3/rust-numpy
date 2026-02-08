@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/array.rs`."><title>array.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-ca0dd0c4.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="numpy" data-themes="" data-resource-suffix="" data-rustdoc-version="1.92.0 (ded5c06cf 2025-12-08)" data-channel="1.92.0" data-search-js="search-d69d8955.js" data-stringdex-js="stringdex-c3e638e9.js" data-settings-js="settings-c38705f0.js" ><script src="../../static.files/storage-e2aeef58.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-ce535bd0.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">numpy/</div>array.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-4"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="doccomment">//! Safe interface for NumPy's [N-dimensional arrays][ndarray]
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/array.rs`."><title>array.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-ca0dd0c4.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="numpy" data-themes="" data-resource-suffix="" data-rustdoc-version="1.93.0 (254b59607 2026-01-19)" data-channel="1.93.0" data-search-js="search-9e2438ea.js" data-stringdex-js="stringdex-a3946164.js" data-settings-js="settings-c38705f0.js" ><script src="../../static.files/storage-e2aeef58.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-a410ff4d.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">numpy/</div>array.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-4"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="doccomment">//! Safe interface for NumPy's [N-dimensional arrays][ndarray]
 <a href=#2 id=2 data-nosnippet>2</a>//!
 <a href=#3 id=3 data-nosnippet>3</a>//! [ndarray]: https://numpy.org/doc/stable/reference/arrays.ndarray.html
 <a href=#4 id=4 data-nosnippet>4</a>
@@ -156,7 +156,7 @@
 <a href=#156 id=156 data-nosnippet>156</a>        <span class="comment">// Check if the dimensionality matches `D`.
 <a href=#157 id=157 data-nosnippet>157</a>        </span><span class="kw">let </span>src_ndim = array.ndim();
 <a href=#158 id=158 data-nosnippet>158</a>        <span class="kw">if let </span><span class="prelude-val">Some</span>(dst_ndim) = D::NDIM {
-<a href=#159 id=159 data-nosnippet>159</a>            <span class="kw">if </span>src_ndim != dst_ndim {
+<a href=#159 id=159 data-nosnippet>159</a>            <span class="kw">if </span><span class="macro">src_ndim !</span>= dst_ndim {
 <a href=#160 id=160 data-nosnippet>160</a>                <span class="kw">return </span><span class="prelude-val">Err</span>(DimensionalityError::new(src_ndim, dst_ndim).into());
 <a href=#161 id=161 data-nosnippet>161</a>            }
 <a href=#162 id=162 data-nosnippet>162</a>        }
@@ -1400,7 +1400,7 @@
 <a href=#1400 id=1400 data-nosnippet>1400</a>
 <a href=#1401 id=1401 data-nosnippet>1401</a>    <span class="kw">let </span><span class="kw-2">mut </span>array = from_shape_ptr(shape, data_ptr <span class="kw">as _</span>);
 <a href=#1402 id=1402 data-nosnippet>1402</a>
-<a href=#1403 id=1403 data-nosnippet>1403</a>    <span class="kw">while </span>inverted_axes != <span class="number">0 </span>{
+<a href=#1403 id=1403 data-nosnippet>1403</a>    <span class="kw">while </span><span class="macro">inverted_axes !</span>= <span class="number">0 </span>{
 <a href=#1404 id=1404 data-nosnippet>1404</a>        <span class="kw">let </span>axis = inverted_axes.trailing_zeros() <span class="kw">as </span>usize;
 <a href=#1405 id=1405 data-nosnippet>1405</a>        inverted_axes &amp;= !(<span class="number">1 </span>&lt;&lt; axis);
 <a href=#1406 id=1406 data-nosnippet>1406</a>
@@ -1426,7 +1426,7 @@
 <a href=#1426 id=1426 data-nosnippet>1426</a>    <span class="kw">let </span>shape = slf.shape();
 <a href=#1427 id=1427 data-nosnippet>1427</a>    <span class="kw">let </span>strides = slf.strides();
 <a href=#1428 id=1428 data-nosnippet>1428</a>
-<a href=#1429 id=1429 data-nosnippet>1429</a>    <span class="kw">if </span>ndim != <span class="number">1 </span>&amp;&amp; ndim != <span class="number">2 </span>{
+<a href=#1429 id=1429 data-nosnippet>1429</a>    <span class="kw">if </span><span class="macro">ndim !</span>= <span class="number">1 </span>&amp;&amp; <span class="macro">ndim !</span>= <span class="number">2 </span>{
 <a href=#1430 id=1430 data-nosnippet>1430</a>        <span class="kw">return </span><span class="prelude-val">None</span>;
 <a href=#1431 id=1431 data-nosnippet>1431</a>    }
 <a href=#1432 id=1432 data-nosnippet>1432</a>
@@ -1606,7 +1606,7 @@
 <a href=#1606 id=1606 data-nosnippet>1606</a>        <span class="kw">let </span>self_ptr = <span class="self">self</span>.as_array_ptr();
 <a href=#1607 id=1607 data-nosnippet>1607</a>        <span class="kw">let </span>other_ptr = other.as_array_ptr();
 <a href=#1608 id=1608 data-nosnippet>1608</a>        <span class="kw">let </span>result = <span class="kw">unsafe </span>{ PY_ARRAY_API.PyArray_CopyInto(<span class="self">self</span>.py(), other_ptr, self_ptr) };
-<a href=#1609 id=1609 data-nosnippet>1609</a>        <span class="kw">if </span>result != -<span class="number">1 </span>{
+<a href=#1609 id=1609 data-nosnippet>1609</a>        <span class="kw">if </span><span class="macro">result !</span>= -<span class="number">1 </span>{
 <a href=#1610 id=1610 data-nosnippet>1610</a>            <span class="prelude-val">Ok</span>(())
 <a href=#1611 id=1611 data-nosnippet>1611</a>        } <span class="kw">else </span>{
 <a href=#1612 id=1612 data-nosnippet>1612</a>            <span class="prelude-val">Err</span>(PyErr::fetch(<span class="self">self</span>.py()))
@@ -1755,4 +1755,5 @@
 <a href=#1755 id=1755 data-nosnippet>1755</a>            <span class="macro">py_run!</span>(py, array, <span class="string">"assert array.dtype.hasobject"</span>);
 <a href=#1756 id=1756 data-nosnippet>1756</a>        });
 <a href=#1757 id=1757 data-nosnippet>1757</a>    }
-<a href=#1758 id=1758 data-nosnippet>1758</a>}</code></pre></div></section></main></body></html>
+<a href=#1758 id=1758 data-nosnippet>1758</a>}
+</code></pre></div></section></main></body></html>
