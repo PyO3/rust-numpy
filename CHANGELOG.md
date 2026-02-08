@@ -3,6 +3,7 @@
   - Fix mismatched behavior between `PyArrayLike1` and `PyArrayLike2` when used with floats ([#520](https://github.com/PyO3/rust-numpy/pull/520))
   - Add ownership-moving conversions into `PyReadonlyArray` and `PyReadwriteArray` ([#524](https://github.com/PyO3/rust-numpy/pull/524))
   - Fix UB when calling `PyArray::as_slice` and `as_slice_mut` on misaligned arrays ([#525](https://github.com/PyO3/rust-numpy/pull/525))
+  - Bump PyO3 dependency to v0.28.0. ([#530](https://github.com/PyO3/rust-numpy/pull/530))
 
 - v0.27.1
   - Bump ndarray dependency to v0.17. ([#516](https://github.com/PyO3/rust-numpy/pull/516))
