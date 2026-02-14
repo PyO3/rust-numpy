@@ -21,6 +21,12 @@ pub struct PyArrayObject {
     pub descr: *mut PyArray_Descr,
     pub flags: c_int,
     pub weakreflist: *mut PyObject,
+
+    #[cfg(Numpy_1_20)]
+    pub _buffer_info: *mut c_void,
+
+    #[cfg(Numpy_1_22)]
+    pub mem_handler: *mut PyObject,
 }
 
 #[repr(C)]
@@ -32,6 +38,19 @@ pub struct PyArray_Descr {
     pub byteorder: c_char,
     pub _former_flags: c_char,
     pub type_num: c_int,
+
+    #[cfg(Numpy_2_0)]
+    pub flags: npy_uint64,
+    #[cfg(Numpy_2_0)]
+    pub elsize: npy_intp,
+    #[cfg(Numpy_2_0)]
+    pub alignment: npy_intp,
+    #[cfg(Numpy_2_0)]
+    pub metadata: *mut PyObject,
+    #[cfg(Numpy_2_0)]
+    pub hash: npy_hash_t,
+    #[cfg(Numpy_2_0)]
+    pub reserved_null: [*mut c_void; 2],
 }
 
 #[repr(C)]
@@ -365,11 +384,31 @@ pub struct PyUFuncObject {
     pub core_offsets: *mut c_int,
     pub core_signature: *mut c_char,
     pub type_resolver: PyUFunc_TypeResolutionFunc,
-    pub legacy_inner_loop_selector: PyUFunc_LegacyInnerLoopSelectionFunc,
-    pub reserved2: *mut c_void,
-    pub masked_inner_loop_selector: PyUFunc_MaskedInnerLoopSelectionFunc,
+    pub dict: *mut PyObject,
+
+    #[cfg(all(Py_3_8, not(Py_LIMITED_API)))]
+    pub vectorcall: Option<vectorcallfunc>,
+    #[cfg(not(all(Py_3_8, not(Py_LIMITED_API))))]
+    pub vectorcall: *mut c_void,
+
+    pub reserved3: *mut c_void,
     pub op_flags: *mut npy_uint32,
     pub iter_flags: npy_uint32,
+
+    #[cfg(Numpy_1_16)]
+    pub core_dim_sizes: *mut npy_intp,
+    #[cfg(Numpy_1_16)]
+    pub core_dim_flags: *mut npy_uint32,
+    #[cfg(Numpy_1_16)]
+    pub identity_value: *mut PyObject,
+
+    #[cfg(Numpy_1_22)]
+    pub _dispatch_cache: *mut c_void,
+    #[cfg(Numpy_1_22)]
+    pub _loops: *mut PyObject,
+
+    #[cfg(Numpy_2_1)]
+    pub process_core_dims_func: PyUFunc_ProcessCoreDimsFunc,
 }
 
 pub type PyUFuncGenericFunction =
@@ -414,6 +453,10 @@ pub type PyUFunc_MaskedInnerLoopSelectionFunc = Option<
         *mut c_int,
     ) -> c_int,
 >;
+
+#[cfg(Numpy_2_1)]
+pub type PyUFunc_ProcessCoreDimsFunc =
+    Option<unsafe extern "C" fn(*mut PyUFuncObject, *mut npy_intp) -> c_int>;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]

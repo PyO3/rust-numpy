@@ -154,6 +154,9 @@ pub enum NPY_SELECTKIND {
     NPY_INTROSELECT = 0,
 }
 
+#[cfg(Numpy_2_4)]
+pub const NPY_SAME_VALUE_CASTING_FLAG: u32 = 64;
+
 #[repr(u32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum NPY_CASTING {
@@ -162,6 +165,9 @@ pub enum NPY_CASTING {
     NPY_SAFE_CASTING = 2,
     NPY_SAME_KIND_CASTING = 3,
     NPY_UNSAFE_CASTING = 4,
+
+    #[cfg(Numpy_2_4)]
+    NPY_SAME_VALUE_CASTING = Self::NPY_UNSAFE_CASTING as u32 | NPY_SAME_VALUE_CASTING_FLAG,
 }
 
 #[repr(u32)]
