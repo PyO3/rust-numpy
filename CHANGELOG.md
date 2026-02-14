@@ -1,4 +1,8 @@
 # Changelog
+
+- Unreleased
+  - Fix PyArray_DTypeMeta definition when Py_LIMITED_API is disabled (#532)
+
 - v0.28.0
   - Fix mismatched behavior between `PyArrayLike1` and `PyArrayLike2` when used with floats ([#520](https://github.com/PyO3/rust-numpy/pull/520))
   - Add ownership-moving conversions into `PyReadonlyArray` and `PyReadwriteArray` ([#524](https://github.com/PyO3/rust-numpy/pull/524))
