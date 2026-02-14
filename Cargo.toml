@@ -7,8 +7,8 @@ authors = [
 ]
 description = "PyO3-based Rust bindings of the NumPy C-API"
 documentation = "https://docs.rs/numpy"
-edition = "2021"
-rust-version = "1.83"
+edition.workspace = true
+rust-version.workspace = true
 repository = "https://github.com/PyO3/rust-numpy"
 categories = ["api-bindings", "development-tools::ffi", "science"]
 keywords = ["python", "numpy", "ffi", "pyo3"]
@@ -19,6 +19,29 @@ exclude = [
     "codecov.yml",
     "x.py",
 ]
+
+[features]
+default = ["target-npy119"]
+
+# Default and minimum supported version are chosen to match the content of
+# header `numpy/_core/include/numpy/numpyconfig.h`` in the first available
+# version of numpy v2.
+target-npy115 = ["numpy-build-config/target-npy115"]
+target-npy116 = ["numpy-build-config/target-npy116"]
+target-npy117 = ["numpy-build-config/target-npy117"]
+target-npy118 = ["numpy-build-config/target-npy118"]
+target-npy119 = ["numpy-build-config/target-npy119"]
+target-npy120 = ["numpy-build-config/target-npy120"]
+target-npy121 = ["numpy-build-config/target-npy121"]
+target-npy122 = ["numpy-build-config/target-npy122"]
+target-npy123 = ["numpy-build-config/target-npy123"]
+target-npy124 = ["numpy-build-config/target-npy124"]
+target-npy125 = ["numpy-build-config/target-npy125"]
+target-npy20 = ["numpy-build-config/target-npy20"]
+target-npy21 = ["numpy-build-config/target-npy21"]
+target-npy22 = ["numpy-build-config/target-npy22"]
+target-npy23 = ["numpy-build-config/target-npy23"]
+target-npy24 = ["numpy-build-config/target-npy24"]
 
 [dependencies]
 half = { version = "2.0", default-features = false, optional = true }
@@ -37,6 +60,7 @@ nalgebra = { version = ">=0.30, <0.35", default-features = false, features = ["s
 
 [build-dependencies]
 pyo3-build-config = { version = "0.28", features = ["resolve-config"]}
+numpy-build-config = { path = "numpy-build-config", version = "0.28.0" }
 
 [package.metadata.docs.rs]
 all-features = true
@@ -47,3 +71,10 @@ elided-lifetimes-in-paths = "deny"
 
 [lints.clippy]
 needless-lifetimes = "allow"
+
+[workspace.package]
+edition = "2021"
+rust-version = "1.83"
+
+[workspace]
+members = ["numpy-build-config"]

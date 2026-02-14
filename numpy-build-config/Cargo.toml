@@ -1,0 +1,33 @@
+[package]
+name = "numpy-build-config"
+version = "0.28.0"
+authors = [
+    "The rust-numpy Project Developers",
+    "PyO3 Project and Contributors <https://github.com/PyO3>",
+]
+description = "Build configuration for the numpy crate"
+edition = "2021"
+rust-version = "1.83"
+repository = "https://github.com/PyO3/rust-numpy"
+license = "BSD-2-Clause"
+
+[dependencies]
+
+[features]
+default = []
+target-npy115 = []
+target-npy116 = ["target-npy115"]
+target-npy117 = ["target-npy116"]
+target-npy118 = ["target-npy117"]
+target-npy119 = ["target-npy118"]
+target-npy120 = ["target-npy119"]
+target-npy121 = ["target-npy120"]
+target-npy122 = ["target-npy121"]
+target-npy123 = ["target-npy122"]
+target-npy124 = ["target-npy123"]
+target-npy125 = ["target-npy124"]
+target-npy20 = ["target-npy125"]
+target-npy21 = ["target-npy20"]
+target-npy22 = ["target-npy21"]
+target-npy23 = ["target-npy22"]
+target-npy24 = ["target-npy23"]
