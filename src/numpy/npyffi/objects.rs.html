@@ -549,47 +549,61 @@
 <a href=#549 id=549 data-nosnippet>549</a>// https://github.com/rust-lang/rust/issues/43467
 <a href=#550 id=550 data-nosnippet>550</a></span><span class="kw">pub type </span>npy_packed_static_string = c_void;
 <a href=#551 id=551 data-nosnippet>551</a><span class="kw">pub type </span>npy_string_allocator = c_void;
-<a href=#552 id=552 data-nosnippet>552</a><span class="kw">pub type </span>PyArray_DTypeMeta = PyTypeObject;
-<a href=#553 id=553 data-nosnippet>553</a>
-<a href=#554 id=554 data-nosnippet>554</a><span class="attr">#[repr(C)]
-<a href=#555 id=555 data-nosnippet>555</a>#[derive(Clone, Copy)]
-<a href=#556 id=556 data-nosnippet>556</a></span><span class="kw">pub struct </span>npy_static_string {
-<a href=#557 id=557 data-nosnippet>557</a>    <span class="kw">pub </span>size: usize,
-<a href=#558 id=558 data-nosnippet>558</a>    <span class="kw">pub </span>buf: <span class="kw-2">*const </span>c_char,
-<a href=#559 id=559 data-nosnippet>559</a>}
-<a href=#560 id=560 data-nosnippet>560</a>
-<a href=#561 id=561 data-nosnippet>561</a><span class="attr">#[repr(C)]
-<a href=#562 id=562 data-nosnippet>562</a></span><span class="kw">pub struct </span>PyArray_StringDTypeObject {
-<a href=#563 id=563 data-nosnippet>563</a>    <span class="kw">pub </span>base: PyArray_Descr,
-<a href=#564 id=564 data-nosnippet>564</a>    <span class="kw">pub </span>na_object: <span class="kw-2">*mut </span>PyObject,
-<a href=#565 id=565 data-nosnippet>565</a>    <span class="kw">pub </span>coerce: c_char,
-<a href=#566 id=566 data-nosnippet>566</a>    <span class="kw">pub </span>has_nan_na: c_char,
-<a href=#567 id=567 data-nosnippet>567</a>    <span class="kw">pub </span>has_string_na: c_char,
-<a href=#568 id=568 data-nosnippet>568</a>    <span class="kw">pub </span>array_owned: c_char,
-<a href=#569 id=569 data-nosnippet>569</a>    <span class="kw">pub </span>default_string: npy_static_string,
-<a href=#570 id=570 data-nosnippet>570</a>    <span class="kw">pub </span>na_name: npy_static_string,
-<a href=#571 id=571 data-nosnippet>571</a>    <span class="kw">pub </span>allocator: <span class="kw-2">*mut </span>npy_string_allocator,
-<a href=#572 id=572 data-nosnippet>572</a>}
-<a href=#573 id=573 data-nosnippet>573</a>
-<a href=#574 id=574 data-nosnippet>574</a><span class="attr">#[repr(C)]
-<a href=#575 id=575 data-nosnippet>575</a>#[derive(Clone, Copy)]
-<a href=#576 id=576 data-nosnippet>576</a></span><span class="kw">pub struct </span>PyArrayMethod_Spec {
-<a href=#577 id=577 data-nosnippet>577</a>    <span class="kw">pub </span>name: <span class="kw-2">*const </span>c_char,
-<a href=#578 id=578 data-nosnippet>578</a>    <span class="kw">pub </span>nin: c_int,
-<a href=#579 id=579 data-nosnippet>579</a>    <span class="kw">pub </span>nout: c_int,
-<a href=#580 id=580 data-nosnippet>580</a>    <span class="kw">pub </span>casting: NPY_CASTING,
-<a href=#581 id=581 data-nosnippet>581</a>    <span class="kw">pub </span>flags: NPY_ARRAYMETHOD_FLAGS,
-<a href=#582 id=582 data-nosnippet>582</a>    <span class="kw">pub </span>dtypes: <span class="kw-2">*mut *mut </span>PyArray_DTypeMeta,
-<a href=#583 id=583 data-nosnippet>583</a>    <span class="kw">pub </span>slots: <span class="kw-2">*mut </span>PyType_Slot,
-<a href=#584 id=584 data-nosnippet>584</a>}
-<a href=#585 id=585 data-nosnippet>585</a>
-<a href=#586 id=586 data-nosnippet>586</a><span class="attr">#[repr(C)]
-<a href=#587 id=587 data-nosnippet>587</a>#[derive(Clone, Copy)]
-<a href=#588 id=588 data-nosnippet>588</a></span><span class="kw">pub struct </span>PyArrayDTypeMeta_Spec {
-<a href=#589 id=589 data-nosnippet>589</a>    <span class="kw">pub </span>typeobj: <span class="kw-2">*mut </span>PyTypeObject,
-<a href=#590 id=590 data-nosnippet>590</a>    <span class="kw">pub </span>flags: c_int,
-<a href=#591 id=591 data-nosnippet>591</a>    <span class="kw">pub </span>casts: <span class="kw-2">*mut *mut </span>PyArrayMethod_Spec,
-<a href=#592 id=592 data-nosnippet>592</a>    <span class="kw">pub </span>slots: <span class="kw-2">*mut </span>PyType_Slot,
-<a href=#593 id=593 data-nosnippet>593</a>    <span class="kw">pub </span>baseclass: <span class="kw-2">*mut </span>PyTypeObject,
-<a href=#594 id=594 data-nosnippet>594</a>}
+<a href=#552 id=552 data-nosnippet>552</a>
+<a href=#553 id=553 data-nosnippet>553</a><span class="attr">#[cfg(not(Py_LIMITED_API))]
+<a href=#554 id=554 data-nosnippet>554</a>#[repr(C)]
+<a href=#555 id=555 data-nosnippet>555</a></span><span class="kw">pub struct </span>PyArray_DTypeMeta {
+<a href=#556 id=556 data-nosnippet>556</a>    <span class="kw">pub </span>superclass: PyHeapTypeObject,
+<a href=#557 id=557 data-nosnippet>557</a>    <span class="kw">pub </span>singleton: <span class="kw-2">*mut </span>PyArray_Descr,
+<a href=#558 id=558 data-nosnippet>558</a>    <span class="kw">pub </span>type_num: c_int,
+<a href=#559 id=559 data-nosnippet>559</a>    <span class="kw">pub </span>scalar_type: <span class="kw-2">*mut </span>PyTypeObject,
+<a href=#560 id=560 data-nosnippet>560</a>    <span class="kw">pub </span>flags: npy_uint64,
+<a href=#561 id=561 data-nosnippet>561</a>    <span class="kw">pub </span>dt_slots: <span class="kw-2">*mut </span>c_void,
+<a href=#562 id=562 data-nosnippet>562</a>    <span class="kw">pub </span>reserved: [<span class="kw-2">*mut </span>c_void; <span class="number">3</span>],
+<a href=#563 id=563 data-nosnippet>563</a>}
+<a href=#564 id=564 data-nosnippet>564</a>
+<a href=#565 id=565 data-nosnippet>565</a><span class="attr">#[cfg(Py_LIMITED_API)]
+<a href=#566 id=566 data-nosnippet>566</a></span><span class="kw">pub type </span>PyArray_DTypeMeta = PyTypeObject;
+<a href=#567 id=567 data-nosnippet>567</a>
+<a href=#568 id=568 data-nosnippet>568</a><span class="attr">#[repr(C)]
+<a href=#569 id=569 data-nosnippet>569</a>#[derive(Clone, Copy)]
+<a href=#570 id=570 data-nosnippet>570</a></span><span class="kw">pub struct </span>npy_static_string {
+<a href=#571 id=571 data-nosnippet>571</a>    <span class="kw">pub </span>size: usize,
+<a href=#572 id=572 data-nosnippet>572</a>    <span class="kw">pub </span>buf: <span class="kw-2">*const </span>c_char,
+<a href=#573 id=573 data-nosnippet>573</a>}
+<a href=#574 id=574 data-nosnippet>574</a>
+<a href=#575 id=575 data-nosnippet>575</a><span class="attr">#[repr(C)]
+<a href=#576 id=576 data-nosnippet>576</a></span><span class="kw">pub struct </span>PyArray_StringDTypeObject {
+<a href=#577 id=577 data-nosnippet>577</a>    <span class="kw">pub </span>base: PyArray_Descr,
+<a href=#578 id=578 data-nosnippet>578</a>    <span class="kw">pub </span>na_object: <span class="kw-2">*mut </span>PyObject,
+<a href=#579 id=579 data-nosnippet>579</a>    <span class="kw">pub </span>coerce: c_char,
+<a href=#580 id=580 data-nosnippet>580</a>    <span class="kw">pub </span>has_nan_na: c_char,
+<a href=#581 id=581 data-nosnippet>581</a>    <span class="kw">pub </span>has_string_na: c_char,
+<a href=#582 id=582 data-nosnippet>582</a>    <span class="kw">pub </span>array_owned: c_char,
+<a href=#583 id=583 data-nosnippet>583</a>    <span class="kw">pub </span>default_string: npy_static_string,
+<a href=#584 id=584 data-nosnippet>584</a>    <span class="kw">pub </span>na_name: npy_static_string,
+<a href=#585 id=585 data-nosnippet>585</a>    <span class="kw">pub </span>allocator: <span class="kw-2">*mut </span>npy_string_allocator,
+<a href=#586 id=586 data-nosnippet>586</a>}
+<a href=#587 id=587 data-nosnippet>587</a>
+<a href=#588 id=588 data-nosnippet>588</a><span class="attr">#[repr(C)]
+<a href=#589 id=589 data-nosnippet>589</a>#[derive(Clone, Copy)]
+<a href=#590 id=590 data-nosnippet>590</a></span><span class="kw">pub struct </span>PyArrayMethod_Spec {
+<a href=#591 id=591 data-nosnippet>591</a>    <span class="kw">pub </span>name: <span class="kw-2">*const </span>c_char,
+<a href=#592 id=592 data-nosnippet>592</a>    <span class="kw">pub </span>nin: c_int,
+<a href=#593 id=593 data-nosnippet>593</a>    <span class="kw">pub </span>nout: c_int,
+<a href=#594 id=594 data-nosnippet>594</a>    <span class="kw">pub </span>casting: NPY_CASTING,
+<a href=#595 id=595 data-nosnippet>595</a>    <span class="kw">pub </span>flags: NPY_ARRAYMETHOD_FLAGS,
+<a href=#596 id=596 data-nosnippet>596</a>    <span class="kw">pub </span>dtypes: <span class="kw-2">*mut *mut </span>PyArray_DTypeMeta,
+<a href=#597 id=597 data-nosnippet>597</a>    <span class="kw">pub </span>slots: <span class="kw-2">*mut </span>PyType_Slot,
+<a href=#598 id=598 data-nosnippet>598</a>}
+<a href=#599 id=599 data-nosnippet>599</a>
+<a href=#600 id=600 data-nosnippet>600</a><span class="attr">#[repr(C)]
+<a href=#601 id=601 data-nosnippet>601</a>#[derive(Clone, Copy)]
+<a href=#602 id=602 data-nosnippet>602</a></span><span class="kw">pub struct </span>PyArrayDTypeMeta_Spec {
+<a href=#603 id=603 data-nosnippet>603</a>    <span class="kw">pub </span>typeobj: <span class="kw-2">*mut </span>PyTypeObject,
+<a href=#604 id=604 data-nosnippet>604</a>    <span class="kw">pub </span>flags: c_int,
+<a href=#605 id=605 data-nosnippet>605</a>    <span class="kw">pub </span>casts: <span class="kw-2">*mut *mut </span>PyArrayMethod_Spec,
+<a href=#606 id=606 data-nosnippet>606</a>    <span class="kw">pub </span>slots: <span class="kw-2">*mut </span>PyType_Slot,
+<a href=#607 id=607 data-nosnippet>607</a>    <span class="kw">pub </span>baseclass: <span class="kw-2">*mut </span>PyTypeObject,
+<a href=#608 id=608 data-nosnippet>608</a>}
 </code></pre></div></section></main></body></html>
