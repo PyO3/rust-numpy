@@ -549,6 +549,20 @@ pub struct PyArray_DatetimeDTypeMetaData {
 // https://github.com/rust-lang/rust/issues/43467
 pub type npy_packed_static_string = c_void;
 pub type npy_string_allocator = c_void;
+
+#[cfg(not(Py_LIMITED_API))]
+#[repr(C)]
+pub struct PyArray_DTypeMeta {
+    pub superclass: PyHeapTypeObject,
+    pub singleton: *mut PyArray_Descr,
+    pub type_num: c_int,
+    pub scalar_type: *mut PyTypeObject,
+    pub flags: npy_uint64,
+    pub dt_slots: *mut c_void,
+    pub reserved: [*mut c_void; 3],
+}
+
+#[cfg(Py_LIMITED_API)]
 pub type PyArray_DTypeMeta = PyTypeObject;
 
 #[repr(C)]
