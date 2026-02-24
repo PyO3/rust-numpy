@@ -1,6 +1,8 @@
 # Changelog
 
 - Unreleased
+  - Adjust struct definitions to match the selected NumPy C API version (#534)
+  - Add features to select the NumPy C API version (#534)
   - Fix PyArray_DTypeMeta definition when Py_LIMITED_API is disabled (#532)
 
 - v0.28.0
