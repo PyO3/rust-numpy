@@ -384,14 +384,32 @@ pub struct PyUFuncObject {
     pub core_offsets: *mut c_int,
     pub core_signature: *mut c_char,
     pub type_resolver: PyUFunc_TypeResolutionFunc,
+
+    #[cfg(not(Numpy_2_0))]
+    pub legacy_inner_loop_selector: PyUFunc_LegacyInnerLoopSelectionFunc,
+    #[cfg(all(Numpy_2_0, not(Numpy_2_2)))]
+    pub reserved2: *mut c_void,
+    #[cfg(Numpy_2_2)]
     pub dict: *mut PyObject,
 
-    #[cfg(all(Py_3_8, not(Py_LIMITED_API)))]
+    #[cfg(not(Numpy_1_21))]
+    pub reserved2: *mut c_void,
+    #[cfg(all(Numpy_1_21, not(Numpy_1_22), Py_3_8))]
     pub vectorcall: Option<vectorcallfunc>,
-    #[cfg(not(all(Py_3_8, not(Py_LIMITED_API))))]
+    #[cfg(all(Numpy_1_21, not(Numpy_1_22), not(Py_3_8)))]
+    pub reserved2: *mut c_void,
+    #[cfg(all(Numpy_1_22, Py_3_8, not(Py_LIMITED_API)))]
+    pub vectorcall: Option<vectorcallfunc>,
+    #[cfg(all(Numpy_1_22, not(all(Py_3_8, not(Py_LIMITED_API)))))]
     pub vectorcall: *mut c_void,
 
+    #[cfg(not(Numpy_1_22))]
+    pub masked_inner_loop_selector: PyUFunc_MaskedInnerLoopSelectionFunc,
+    #[cfg(all(Numpy_1_22, not(Numpy_2_0)))]
+    pub _always_null_previously_masked_innerloop_selector: *mut c_void,
+    #[cfg(Numpy_2_0)]
     pub reserved3: *mut c_void,
+
     pub op_flags: *mut npy_uint32,
     pub iter_flags: npy_uint32,
 
@@ -432,6 +450,8 @@ pub type PyUFunc_TypeResolutionFunc = Option<
         *mut *mut PyArray_Descr,
     ) -> c_int,
 >;
+
+#[cfg(not(Numpy_2_0))]
 pub type PyUFunc_LegacyInnerLoopSelectionFunc = Option<
     unsafe extern "C" fn(
         *mut PyUFuncObject,
@@ -441,6 +461,8 @@ pub type PyUFunc_LegacyInnerLoopSelectionFunc = Option<
         *mut c_int,
     ) -> c_int,
 >;
+
+#[cfg(not(Numpy_1_22))]
 pub type PyUFunc_MaskedInnerLoopSelectionFunc = Option<
     unsafe extern "C" fn(
         *mut PyUFuncObject,
