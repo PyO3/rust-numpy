@@ -203,6 +203,19 @@ define_descr_accessor!(
     std::ptr::null_mut()
 );
 
+#[allow(non_snake_case)]
+#[inline(always)]
+pub unsafe fn PyDataType_GetArrFuncs<'py>(
+    py: Python<'py>,
+    descr: *mut PyArray_Descr,
+) -> *mut PyArray_ArrFuncs {
+    if is_numpy_2(py) {
+        unsafe { PY_ARRAY_API._PyDataType_GetArrFuncs(py, descr) }
+    } else {
+        unsafe { (*(descr as *mut PyArray_DescrProto)).f }
+    }
+}
+
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct PyArray_ArrayDescr {
