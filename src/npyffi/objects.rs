@@ -73,8 +73,10 @@ pub struct PyArray_DescrProto {
     pub hash: npy_hash_t,
 }
 
+// The full structure is defined to access to modified fields, it is used only in
+// `PyDataType_SET_ELSIZE` and `PyDataType_FLAGS` functions.
 #[repr(C)]
-pub struct _PyArray_DescrNumPy2 {
+struct _PyArray_DescrNumPy2 {
     pub ob_base: PyObject,
     pub typeobj: *mut PyTypeObject,
     pub kind: c_char,
