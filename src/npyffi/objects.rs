@@ -23,10 +23,10 @@ pub struct PyArrayObject {
     pub weakreflist: *mut PyObject,
 
     #[cfg(Numpy_1_20)]
-    pub _buffer_info: *mut c_void,
+    _buffer_info: *mut c_void,
 
     #[cfg(Numpy_1_22)]
-    pub mem_handler: *mut PyObject,
+    mem_handler: *mut PyObject,
 }
 
 #[repr(C)]
@@ -40,17 +40,17 @@ pub struct PyArray_Descr {
     pub type_num: c_int,
 
     #[cfg(Numpy_2_0)]
-    pub flags: npy_uint64,
+    flags: npy_uint64,
     #[cfg(Numpy_2_0)]
-    pub elsize: npy_intp,
+    elsize: npy_intp,
     #[cfg(Numpy_2_0)]
-    pub alignment: npy_intp,
+    alignment: npy_intp,
     #[cfg(Numpy_2_0)]
-    pub metadata: *mut PyObject,
+    metadata: *mut PyObject,
     #[cfg(Numpy_2_0)]
-    pub hash: npy_hash_t,
+    hash: npy_hash_t,
     #[cfg(Numpy_2_0)]
-    pub reserved_null: [*mut c_void; 2],
+    reserved_null: [*mut c_void; 2],
 }
 
 #[repr(C)]
