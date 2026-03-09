@@ -43,7 +43,7 @@ use crate::untyped_array::{PyUntypedArray, PyUntypedArrayMethods};
 /// These methods transfers ownership of the Rust allocation into a suitable Python object
 /// and uses the memory as the internal buffer backing the NumPy array.
 ///
-/// Please note that some destructive methods like [`resize`][Self::resize] will fail
+/// Please note that some destructive methods like [`resize`][PyArrayMethods::resize] will fail
 /// when used with this kind of array as NumPy cannot reallocate the internal buffer.
 ///
 /// - Allocated by NumPy: Constructed via other methods, like [`ToPyArray`] or
@@ -94,6 +94,7 @@ use crate::untyped_array::{PyUntypedArray, PyUntypedArrayMethods};
 /// });
 /// ```
 ///
+/// [`PyObject`]: pyo3::ffi::PyObject
 /// [ndarray]: https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html
 /// [pyo3-memory]: https://pyo3.rs/main/memory.html
 #[repr(transparent)]
@@ -183,7 +184,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
     /// into Python's heap, which NumPy will automatically zero-initialize.
     ///
     /// However, the elements themselves will not be valid and should be initialized manually
-    /// using raw pointers obtained via [`uget_raw`][Self::uget_raw]. Before that, all methods
+    /// using raw pointers obtained via [`uget_raw`][PyArrayMethods::uget_raw]. Before that, all methods
     /// which produce references to the elements invoke undefined behaviour. In particular,
     /// zero-initialized pointers are _not_ valid instances of `PyObject`.
     ///
@@ -721,7 +722,7 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> + Sized {
     /// Returns a pointer to the first element of the array.
     fn data(&self) -> *mut T;
 
-    /// Same as [`shape`][PyUntypedArray::shape], but returns `D` instead of `&[usize]`.
+    /// Same as [`shape`][PyUntypedArrayMethods::shape], but returns `D` instead of `&[usize]`.
     #[inline(always)]
     fn dims(&self) -> D
     where

@@ -166,7 +166,7 @@ pub trait PyArrayDescrMethods<'py>: Sealed {
     ///
     /// Equivalent to [`numpy.dtype.itemsize`][dtype-itemsize].
     ///
-    /// [dtype-itemsiize]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.itemsize.html
+    /// [dtype-itemsize]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.itemsize.html
     fn itemsize(&self) -> usize;
 
     /// Returns the required alignment (bytes) of this type descriptor according to the compiler.
@@ -296,7 +296,7 @@ pub trait PyArrayDescrMethods<'py>: Sealed {
     /// This method will return an error if this type descriptor is not structured,
     /// or if it does not contain a field with a given name.
     ///
-    /// The list of all names can be found via [`PyArrayDescr::names`].
+    /// The list of all names can be found via [`PyArrayDescrMethods::names`].
     ///
     /// Equivalent to retrieving a single item from [`numpy.dtype.fields`][dtype-fields].
     ///
