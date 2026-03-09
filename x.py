@@ -7,8 +7,10 @@ import sys
 from pathlib import Path
 
 
-def run(*args):
-    subprocess.run([*args], check=True)
+def run(*args, env=None):
+    if env is not None:
+        env = {**os.environ, **env}
+    subprocess.run([*args], check=True, env=env)
 
 
 def can_run(*args):
@@ -55,6 +57,7 @@ def default(args):
 
 
 def check(args):
+    run("cargo", "doc", "--no-deps", env={"RUSTDOCFLAGS": "--deny warnings"})
     run("cargo", "fmt", "--", "--check")
     run("cargo", "clippy", "--all-features", "--tests", "--", *DENY_WARNINGS)
 
