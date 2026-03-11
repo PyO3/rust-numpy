@@ -171,7 +171,7 @@ impl<U: Unit> fmt::Debug for Datetime<U> {
     }
 }
 
-/// Corresponds to the [`timedelta64`][scalars-datetime64] scalar type
+/// Corresponds to the [`timedelta64`][scalars-timedelta64] scalar type
 ///
 /// [scalars-timedelta64]: https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.timedelta64
 #[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]

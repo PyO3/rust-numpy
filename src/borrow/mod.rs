@@ -161,7 +161,7 @@
 //!
 //! This does limit the set of programs that can be written using safe Rust in way similar to rustc itself
 //! which ensures that all accepted programs are memory safe but does not necessarily accept all memory safe programs.
-//! However, the unsafe method [`PyArray::as_array_mut`] can be used as an escape hatch.
+//! However, the unsafe method [`PyArrayMethods::as_array_mut`] can be used as an escape hatch.
 //! More involved cases like the example from above may be supported in the future.
 //!
 //! [base]: https://numpy.org/doc/stable/reference/c-api/types-and-structures.html#c.NPY_AO.base
@@ -529,7 +529,7 @@ where
     ///
     /// Calling this will prevent any further [PyReadwriteArray]s from being taken out.  Python
     /// space can reset this flag, unless the additional flag [`OWNDATA`][owndata] is unset.  Such
-    /// an array can be created from Rust space by using [PyArray::borrow_from_array_bound].
+    /// an array can be created from Rust space by using [PyArray::borrow_from_array].
     ///
     /// [writeable]: https://numpy.org/doc/stable/reference/c-api/array.html#c.NPY_ARRAY_WRITEABLE
     /// [owndata]: https://numpy.org/doc/stable/reference/c-api/array.html#c.NPY_ARRAY_OWNDATA
@@ -604,7 +604,7 @@ where
 {
     /// Extends or truncates the dimensions of an array.
     ///
-    /// Safe wrapper for [`PyArray::resize`].
+    /// Safe wrapper for [`PyArrayMethods::resize`].
     ///
     /// Note that as this mutates a pointed-to object, the [`PyReadwriteArray`] must be the only
     /// Python reference to the object.  There cannot be `PyArray` pointers or even `Bound<PyAny>`
