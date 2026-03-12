@@ -11,6 +11,7 @@
 
 use std::mem::forget;
 use std::os::raw::{c_uint, c_void};
+use std::ptr::NonNull;
 
 use pyo3::{
     sync::PyOnceLock,
@@ -26,21 +27,17 @@ fn get_numpy_api<'py>(
     py: Python<'py>,
     module: &str,
     capsule: &str,
-) -> PyResult<*const *const c_void> {
+) -> PyResult<NonNull<*const c_void>> {
     let module = PyModule::import(py, module)?;
     let capsule = module.getattr(capsule)?.cast_into::<PyCapsule>()?;
 
-    let api = capsule
-        .pointer_checked(None)?
-        .cast::<*const c_void>()
-        .as_ptr()
-        .cast_const();
+    let api = capsule.pointer_checked(None)?;
 
     // Intentionally leak a reference to the capsule
     // so we can safely cache a pointer into its interior.
     forget(capsule);
 
-    Ok(api)
+    Ok(api.cast())
 }
 
 /// Returns whether the runtime `numpy` version is 2.0 or greater.
@@ -57,8 +54,8 @@ macro_rules! impl_api {
     [$offset: expr; $fname: ident ($($arg: ident: $t: ty),* $(,)?) $(-> $ret: ty)?] => {
         #[allow(non_snake_case)]
         pub unsafe fn $fname<'py>(&self, py: Python<'py>, $($arg : $t), *) $(-> $ret)* {
-            let fptr = self.get(py, $offset) as *const extern "C" fn ($($arg : $t), *) $(-> $ret)*;
-            (*fptr)($($arg), *)
+            let f: extern "C" fn ($($arg : $t), *) $(-> $ret)* = self.get(py, $offset).cast().read();
+            f($($arg), *)
         }
     };
 
@@ -73,8 +70,8 @@ macro_rules! impl_api {
                 API_VERSION_2_0,
                 *API_VERSION.get(py).expect("API_VERSION is initialized"),
             );
-            let fptr = self.get(py, $offset) as *const extern "C" fn ($($arg: $t), *) $(-> $ret)*;
-            (*fptr)($($arg), *)
+            let f: extern "C" fn ($($arg: $t), *) $(-> $ret)* = self.get(py, $offset).cast().read();
+            f($($arg), *)
         }
 
     };
@@ -88,8 +85,8 @@ macro_rules! impl_api {
                 API_VERSION_2_0,
                 *API_VERSION.get(py).expect("API_VERSION is initialized"),
             );
-            let fptr = self.get(py, $offset) as *const extern "C" fn ($($arg: $t), *) $(-> $ret)*;
-            (*fptr)($($arg), *)
+            let f: extern "C" fn ($($arg: $t), *) $(-> $ret)* = self.get(py, $offset).cast().read();
+            f($($arg), *)
         }
 
     };

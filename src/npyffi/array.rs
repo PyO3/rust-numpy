@@ -4,7 +4,7 @@
 //! The reason is that they would be re-exports of the `PyMem_Raw{Malloc,Realloc,Free}` functions from PyO3,
 //! but those are not unconditionally exported, i.e. they are not available when using the limited Python C-API.
 
-use std::os::raw::*;
+use std::{os::raw::*, ptr::NonNull};
 
 use libc::FILE;
 use pyo3::{
@@ -75,14 +75,14 @@ const CAPSULE_NAME: &str = "_ARRAY_API";
 pub static PY_ARRAY_API: PyArrayAPI = PyArrayAPI(PyOnceLock::new());
 
 /// See [PY_ARRAY_API] for more.
-pub struct PyArrayAPI(PyOnceLock<*const *const c_void>);
+pub struct PyArrayAPI(PyOnceLock<NonNull<*const c_void>>);
 
 unsafe impl Send for PyArrayAPI {}
 
 unsafe impl Sync for PyArrayAPI {}
 
 impl PyArrayAPI {
-    unsafe fn get<'py>(&self, py: Python<'py>, offset: isize) -> *const *const c_void {
+    unsafe fn get<'py>(&self, py: Python<'py>, offset: isize) -> NonNull<*const c_void> {
         let api = self
             .0
             .get_or_try_init(py, || get_numpy_api(py, mod_name(py)?, CAPSULE_NAME))
@@ -379,9 +379,9 @@ impl PyArrayAPI {
         src: *mut PyArrayObject,
     ) -> c_int {
         let offset = if is_numpy_2(py) { 50 } else { 82 };
-        let fptr = self.get(py, offset)
-            as *const extern "C" fn(dst: *mut PyArrayObject, src: *mut PyArrayObject) -> c_int;
-        (*fptr)(dst, src)
+        let f: extern "C" fn(dst: *mut PyArrayObject, src: *mut PyArrayObject) -> c_int =
+            self.get(py, offset).cast().read();
+        f(dst, src)
     }
 
     #[allow(non_snake_case)]
@@ -392,9 +392,9 @@ impl PyArrayAPI {
         mp: *mut PyArrayObject,
     ) -> c_int {
         let offset = if is_numpy_2(py) { 51 } else { 83 };
-        let fptr = self.get(py, offset)
-            as *const extern "C" fn(out: *mut PyArrayObject, mp: *mut PyArrayObject) -> c_int;
-        (*fptr)(out, mp)
+        let f: extern "C" fn(out: *mut PyArrayObject, mp: *mut PyArrayObject) -> c_int =
+            self.get(py, offset).cast().read();
+        f(out, mp)
     }
 }
 
@@ -409,7 +409,7 @@ macro_rules! impl_array_type {
             /// Get a pointer of the type object associated with `ty`.
             pub unsafe fn get_type_object<'py>(&self, py: Python<'py>, ty: NpyTypes) -> *mut PyTypeObject {
                 match ty {
-                    $( NpyTypes::$tname => *(self.get(py, $offset)) as _ ),*
+                    $( NpyTypes::$tname => self.get(py, $offset).read() as _ ),*
                 }
             }
         }

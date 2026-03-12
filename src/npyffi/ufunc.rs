@@ -22,14 +22,14 @@ const CAPSULE_NAME: &str = "_UFUNC_API";
 /// pointer to [Numpy UFunc API](https://numpy.org/doc/stable/reference/c-api/ufunc.html).
 pub static PY_UFUNC_API: PyUFuncAPI = PyUFuncAPI(PyOnceLock::new());
 
-pub struct PyUFuncAPI(PyOnceLock<*const *const c_void>);
+pub struct PyUFuncAPI(PyOnceLock<NonNull<*const c_void>>);
 
 unsafe impl Send for PyUFuncAPI {}
 
 unsafe impl Sync for PyUFuncAPI {}
 
 impl PyUFuncAPI {
-    unsafe fn get<'py>(&self, py: Python<'py>, offset: isize) -> *const *const c_void {
+    unsafe fn get<'py>(&self, py: Python<'py>, offset: isize) -> NonNull<*const c_void> {
         let api = self
             .0
             .get_or_try_init(py, || get_numpy_api(py, mod_name(py)?, CAPSULE_NAME))
