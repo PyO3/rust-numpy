@@ -10,6 +10,9 @@ use std::os::raw::*;
 use super::types::*;
 use crate::npyffi::*;
 
+pub const NPY_NTYPES_ABI_COMPATIBLE: usize = 21;
+pub const NPY_MAXDIMS_LEGACY_ITERS: usize = 32;
+
 #[repr(C)]
 pub struct PyArrayObject {
     pub ob_base: PyObject,
@@ -192,7 +195,7 @@ pub struct PyArray_ArrayDescr {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct PyArray_ArrFuncs {
-    pub cast: [PyArray_VectorUnaryFunc; 21usize],
+    pub cast: [PyArray_VectorUnaryFunc; NPY_NTYPES_ABI_COMPATIBLE],
     pub getitem: PyArray_GetItemFunc,
     pub setitem: PyArray_SetItemFunc,
     pub copyswapn: PyArray_CopySwapNFunc,
@@ -205,15 +208,15 @@ pub struct PyArray_ArrFuncs {
     pub nonzero: PyArray_NonzeroFunc,
     pub fill: PyArray_FillFunc,
     pub fillwithscalar: PyArray_FillWithScalarFunc,
-    pub sort: [PyArray_SortFunc; 3usize],
-    pub argsort: [PyArray_ArgSortFunc; 3usize],
+    pub sort: [PyArray_SortFunc; NPY_NSORTS],
+    pub argsort: [PyArray_ArgSortFunc; NPY_NSORTS],
     pub castdict: *mut PyObject,
     pub scalarkind: PyArray_ScalarKindFunc,
     pub cancastscalarkindto: *mut *mut c_int,
     pub cancastto: *mut c_int,
-    pub fastclip: PyArray_FastClipFunc,
-    pub fastputmask: PyArray_FastPutmaskFunc,
-    pub fasttake: PyArray_FastTakeFunc,
+    pub _unused1: *mut c_void,
+    pub _unused2: *mut c_void,
+    pub _unused3: *mut c_void,
     pub argmin: PyArray_ArgFunc,
 }
 
@@ -263,53 +266,9 @@ pub type PyArray_SortFunc =
     Option<unsafe extern "C" fn(*mut c_void, npy_intp, *mut c_void) -> c_int>;
 pub type PyArray_ArgSortFunc =
     Option<unsafe extern "C" fn(*mut c_void, *mut npy_intp, npy_intp, *mut c_void) -> c_int>;
-pub type PyArray_PartitionFunc = Option<
-    unsafe extern "C" fn(
-        *mut c_void,
-        npy_intp,
-        npy_intp,
-        *mut npy_intp,
-        *mut npy_intp,
-        *mut c_void,
-    ) -> c_int,
->;
-pub type PyArray_ArgPartitionFunc = Option<
-    unsafe extern "C" fn(
-        *mut c_void,
-        *mut npy_intp,
-        npy_intp,
-        npy_intp,
-        *mut npy_intp,
-        *mut npy_intp,
-        *mut c_void,
-    ) -> c_int,
->;
 pub type PyArray_FillWithScalarFunc =
     Option<unsafe extern "C" fn(*mut c_void, npy_intp, *mut c_void, *mut c_void) -> c_int>;
 pub type PyArray_ScalarKindFunc = Option<unsafe extern "C" fn(*mut c_void) -> c_int>;
-pub type PyArray_FastClipFunc =
-    Option<unsafe extern "C" fn(*mut c_void, npy_intp, *mut c_void, *mut c_void, *mut c_void)>;
-pub type PyArray_FastPutmaskFunc =
-    Option<unsafe extern "C" fn(*mut c_void, *mut c_void, npy_intp, *mut c_void, npy_intp)>;
-pub type PyArray_FastTakeFunc = Option<
-    unsafe extern "C" fn(
-        *mut c_void,
-        *mut c_void,
-        *mut npy_intp,
-        npy_intp,
-        npy_intp,
-        npy_intp,
-        npy_intp,
-        NPY_CLIPMODE,
-    ) -> c_int,
->;
-
-#[repr(C)]
-pub struct PyArrayFlagsObject {
-    pub ob_base: PyObject,
-    pub arr: *mut PyObject,
-    pub flags: c_int,
-}
 
 #[repr(C)]
 #[derive(Clone, Copy)]
@@ -365,9 +324,12 @@ pub struct PyUFuncObject {
     pub core_offsets: *mut c_int,
     pub core_signature: *mut c_char,
     pub type_resolver: PyUFunc_TypeResolutionFunc,
-    pub legacy_inner_loop_selector: PyUFunc_LegacyInnerLoopSelectionFunc,
-    pub reserved2: *mut c_void,
-    pub masked_inner_loop_selector: PyUFunc_MaskedInnerLoopSelectionFunc,
+    pub reserved2: *mut c_void, // Was the legacy loop resolver
+    #[cfg(all(Py_3_8, not(Py_LIMITED_API)))]
+    pub vectorcall: Option<vectorcallfunc>,
+    #[cfg(not(all(Py_3_8, not(Py_LIMITED_API))))]
+    pub vectorcall: *mut c_void,
+    pub reserved3: *mut c_void, // Was previously the `PyUFunc_MaskedInnerLoopSelectionFunc`
     pub op_flags: *mut npy_uint32,
     pub iter_flags: npy_uint32,
 }
@@ -393,27 +355,6 @@ pub type PyUFunc_TypeResolutionFunc = Option<
         *mut *mut PyArray_Descr,
     ) -> c_int,
 >;
-pub type PyUFunc_LegacyInnerLoopSelectionFunc = Option<
-    unsafe extern "C" fn(
-        *mut PyUFuncObject,
-        *mut *mut PyArray_Descr,
-        *mut PyUFuncGenericFunction,
-        *mut *mut c_void,
-        *mut c_int,
-    ) -> c_int,
->;
-pub type PyUFunc_MaskedInnerLoopSelectionFunc = Option<
-    unsafe extern "C" fn(
-        *mut PyUFuncObject,
-        *mut *mut PyArray_Descr,
-        *mut PyArray_Descr,
-        *mut npy_intp,
-        npy_intp,
-        *mut PyUFunc_MaskedStridedInnerLoopFunc,
-        *mut *mut NpyAuxData,
-        *mut c_int,
-    ) -> c_int,
->;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -425,17 +366,17 @@ pub struct PyArrayIterObject {
     pub nd_m1: c_int,
     pub index: npy_intp,
     pub size: npy_intp,
-    pub coordinates: [npy_intp; 32usize],
-    pub dims_m1: [npy_intp; 32usize],
-    pub strides: [npy_intp; 32usize],
-    pub backstrides: [npy_intp; 32usize],
-    pub factors: [npy_intp; 32usize],
+    pub coordinates: [npy_intp; NPY_MAXDIMS_LEGACY_ITERS],
+    pub dims_m1: [npy_intp; NPY_MAXDIMS_LEGACY_ITERS],
+    pub strides: [npy_intp; NPY_MAXDIMS_LEGACY_ITERS],
+    pub backstrides: [npy_intp; NPY_MAXDIMS_LEGACY_ITERS],
+    pub factors: [npy_intp; NPY_MAXDIMS_LEGACY_ITERS],
     pub ao: *mut PyArrayObject,
     pub dataptr: *mut c_char,
     pub contiguous: npy_bool,
-    pub bounds: [[npy_intp; 2usize]; 32usize],
-    pub limits: [[npy_intp; 2usize]; 32usize],
-    pub limits_sizes: [npy_intp; 32usize],
+    pub bounds: [[npy_intp; 2usize]; NPY_MAXDIMS_LEGACY_ITERS],
+    pub limits: [[npy_intp; 2usize]; NPY_MAXDIMS_LEGACY_ITERS],
+    pub limits_sizes: [npy_intp; NPY_MAXDIMS_LEGACY_ITERS],
     pub translate: npy_iter_get_dataptr_t,
 }
 
@@ -446,7 +387,7 @@ pub struct PyArrayMultiIterObject {
     pub size: npy_intp,
     pub index: npy_intp,
     pub nd: c_int,
-    pub dimensions: [npy_intp; 32usize],
+    pub dimensions: [npy_intp; NPY_MAXDIMS_LEGACY_ITERS],
     pub iters: [*mut PyArrayIterObject; 32usize],
 }
 
@@ -456,60 +397,23 @@ pub struct PyArrayNeighborhoodIterObject {
     pub nd_m1: c_int,
     pub index: npy_intp,
     pub size: npy_intp,
-    pub coordinates: [npy_intp; 32usize],
-    pub dims_m1: [npy_intp; 32usize],
-    pub strides: [npy_intp; 32usize],
-    pub backstrides: [npy_intp; 32usize],
-    pub factors: [npy_intp; 32usize],
+    pub coordinates: [npy_intp; NPY_MAXDIMS_LEGACY_ITERS],
+    pub dims_m1: [npy_intp; NPY_MAXDIMS_LEGACY_ITERS],
+    pub strides: [npy_intp; NPY_MAXDIMS_LEGACY_ITERS],
+    pub backstrides: [npy_intp; NPY_MAXDIMS_LEGACY_ITERS],
+    pub factors: [npy_intp; NPY_MAXDIMS_LEGACY_ITERS],
     pub ao: *mut PyArrayObject,
     pub dataptr: *mut c_char,
     pub contiguous: npy_bool,
-    pub bounds: [[npy_intp; 2usize]; 32usize],
-    pub limits: [[npy_intp; 2usize]; 32usize],
-    pub limits_sizes: [npy_intp; 32usize],
+    pub bounds: [[npy_intp; 2usize]; NPY_MAXDIMS_LEGACY_ITERS],
+    pub limits: [[npy_intp; 2usize]; NPY_MAXDIMS_LEGACY_ITERS],
+    pub limits_sizes: [npy_intp; NPY_MAXDIMS_LEGACY_ITERS],
     pub translate: npy_iter_get_dataptr_t,
     pub nd: npy_intp,
-    pub dimensions: [npy_intp; 32usize],
+    pub dimensions: [npy_intp; NPY_MAXDIMS_LEGACY_ITERS],
     pub _internal_iter: *mut PyArrayIterObject,
     pub constant: *mut c_char,
     pub mode: c_int,
-}
-
-#[repr(C)]
-pub struct PyArrayMapIterObject {
-    pub ob_base: PyObject,
-    pub numiter: c_int,
-    pub size: npy_intp,
-    pub index: npy_intp,
-    pub nd: c_int,
-    pub dimensions: [npy_intp; 32usize],
-    pub outer: *mut NpyIter,
-    pub unused: [*mut c_void; 30usize],
-    pub array: *mut PyArrayObject,
-    pub ait: *mut PyArrayIterObject,
-    pub subspace: *mut PyArrayObject,
-    pub iteraxes: [c_int; 32usize],
-    pub fancy_strides: [npy_intp; 32usize],
-    pub baseoffset: *mut c_char,
-    pub consec: c_int,
-    pub dataptr: *mut c_char,
-    pub nd_fancy: c_int,
-    pub fancy_dims: [npy_intp; 32usize],
-    pub needs_api: c_int,
-    pub extra_op: *mut PyArrayObject,
-    pub extra_op_dtype: *mut PyArray_Descr,
-    pub extra_op_flags: *mut npy_uint32,
-    pub extra_op_iter: *mut NpyIter,
-    pub extra_op_next: NpyIter_IterNextFunc,
-    pub extra_op_ptrs: *mut *mut c_char,
-    pub outer_next: NpyIter_IterNextFunc,
-    pub outer_ptrs: *mut *mut c_char,
-    pub outer_strides: *mut npy_intp,
-    pub subspace_iter: *mut NpyIter,
-    pub subspace_next: NpyIter_IterNextFunc,
-    pub subspace_ptrs: *mut *mut c_char,
-    pub subspace_strides: *mut npy_intp,
-    pub iter_count: npy_intp,
 }
 
 pub type NpyIter_IterNextFunc = Option<unsafe extern "C" fn(*mut NpyIter) -> c_int>;
@@ -547,8 +451,11 @@ pub struct PyArray_DatetimeDTypeMetaData {
 // npy_packed_static_string and npy_string_allocator are opaque pointers.
 // FIXME(adamreichold): Consider extern types when they are stabilized.
 // https://github.com/rust-lang/rust/issues/43467
-pub type npy_packed_static_string = c_void;
-pub type npy_string_allocator = c_void;
+#[repr(C)]
+pub struct npy_packed_static_string([u8; 0]);
+
+#[repr(C)]
+pub struct npy_string_allocator([u8; 0]);
 
 #[cfg(not(Py_LIMITED_API))]
 #[repr(C)]

@@ -1,4 +1,4 @@
-use super::npy_uint32;
+use super::{npy_uint32, npy_uint64};
 use std::os::raw::c_int;
 
 pub const NPY_ARRAY_C_CONTIGUOUS: c_int = 0x0001;
@@ -11,8 +11,8 @@ pub const NPY_ARRAY_ELEMENTSTRIDES: c_int = 0x0080;
 pub const NPY_ARRAY_ALIGNED: c_int = 0x0100;
 pub const NPY_ARRAY_NOTSWAPPED: c_int = 0x0200;
 pub const NPY_ARRAY_WRITEABLE: c_int = 0x0400;
-pub const NPY_ARRAY_UPDATEIFCOPY: c_int = 0x1000;
 pub const NPY_ARRAY_WRITEBACKIFCOPY: c_int = 0x2000;
+pub const NPY_ARRAY_ENSURENOCOPY: c_int = 0x4000;
 pub const NPY_ARRAY_BEHAVED: c_int = NPY_ARRAY_ALIGNED | NPY_ARRAY_WRITEABLE;
 pub const NPY_ARRAY_BEHAVED_NS: c_int = NPY_ARRAY_BEHAVED | NPY_ARRAY_NOTSWAPPED;
 pub const NPY_ARRAY_CARRAY: c_int = NPY_ARRAY_C_CONTIGUOUS | NPY_ARRAY_BEHAVED;
@@ -22,13 +22,14 @@ pub const NPY_ARRAY_FARRAY_RO: c_int = NPY_ARRAY_F_CONTIGUOUS | NPY_ARRAY_ALIGNE
 pub const NPY_ARRAY_DEFAULT: c_int = NPY_ARRAY_CARRAY;
 pub const NPY_ARRAY_IN_ARRAY: c_int = NPY_ARRAY_CARRAY_RO;
 pub const NPY_ARRAY_OUT_ARRAY: c_int = NPY_ARRAY_CARRAY;
-pub const NPY_ARRAY_INOUT_ARRAY: c_int = NPY_ARRAY_CARRAY | NPY_ARRAY_UPDATEIFCOPY;
+pub const NPY_ARRAY_INOUT_ARRAY: c_int = NPY_ARRAY_CARRAY;
 pub const NPY_ARRAY_INOUT_ARRAY2: c_int = NPY_ARRAY_CARRAY | NPY_ARRAY_WRITEBACKIFCOPY;
 pub const NPY_ARRAY_IN_FARRAY: c_int = NPY_ARRAY_FARRAY_RO;
 pub const NPY_ARRAY_OUT_FARRAY: c_int = NPY_ARRAY_FARRAY;
-pub const NPY_ARRAY_INOUT_FARRAY: c_int = NPY_ARRAY_FARRAY | NPY_ARRAY_UPDATEIFCOPY;
+pub const NPY_ARRAY_INOUT_FARRAY: c_int = NPY_ARRAY_FARRAY;
 pub const NPY_ARRAY_INOUT_FARRAY2: c_int = NPY_ARRAY_FARRAY | NPY_ARRAY_WRITEBACKIFCOPY;
-pub const NPY_ARRAY_UPDATE_ALL: c_int = NPY_ARRAY_C_CONTIGUOUS | NPY_ARRAY_F_CONTIGUOUS;
+pub const NPY_ARRAY_UPDATE_ALL: c_int =
+    NPY_ARRAY_C_CONTIGUOUS | NPY_ARRAY_F_CONTIGUOUS | NPY_ARRAY_ALIGNED;
 
 pub const NPY_ITER_C_INDEX: npy_uint32 = 0x00000001;
 pub const NPY_ITER_F_INDEX: npy_uint32 = 0x00000002;
@@ -63,19 +64,18 @@ pub const NPY_ITER_OVERLAP_ASSUME_ELEMENTWISE: npy_uint32 = 0x40000000;
 pub const NPY_ITER_GLOBAL_FLAGS: npy_uint32 = 0x0000ffff;
 pub const NPY_ITER_PER_OP_FLAGS: npy_uint32 = 0xffff0000;
 
-pub const NPY_ITEM_REFCOUNT: u64 = 0x01;
-pub const NPY_ITEM_HASOBJECT: u64 = 0x01;
-pub const NPY_LIST_PICKLE: u64 = 0x02;
-pub const NPY_ITEM_IS_POINTER: u64 = 0x04;
-pub const NPY_NEEDS_INIT: u64 = 0x08;
-pub const NPY_NEEDS_PYAPI: u64 = 0x10;
-pub const NPY_USE_GETITEM: u64 = 0x20;
-pub const NPY_USE_SETITEM: u64 = 0x40;
-#[allow(overflowing_literals)]
-pub const NPY_ALIGNED_STRUCT: u64 = 0x80;
-pub const NPY_FROM_FIELDS: u64 =
+pub const NPY_ITEM_REFCOUNT: npy_uint64 = 0x01;
+pub const NPY_ITEM_HASOBJECT: npy_uint64 = 0x01;
+pub const NPY_LIST_PICKLE: npy_uint64 = 0x02;
+pub const NPY_ITEM_IS_POINTER: npy_uint64 = 0x04;
+pub const NPY_NEEDS_INIT: npy_uint64 = 0x08;
+pub const NPY_NEEDS_PYAPI: npy_uint64 = 0x10;
+pub const NPY_USE_GETITEM: npy_uint64 = 0x20;
+pub const NPY_USE_SETITEM: npy_uint64 = 0x40;
+pub const NPY_ALIGNED_STRUCT: npy_uint64 = 0x80;
+pub const NPY_FROM_FIELDS: npy_uint64 =
     NPY_NEEDS_INIT | NPY_LIST_PICKLE | NPY_ITEM_REFCOUNT | NPY_NEEDS_PYAPI;
-pub const NPY_OBJECT_DTYPE_FLAGS: u64 = NPY_LIST_PICKLE
+pub const NPY_OBJECT_DTYPE_FLAGS: npy_uint64 = NPY_LIST_PICKLE
     | NPY_USE_GETITEM
     | NPY_ITEM_IS_POINTER
     | NPY_ITEM_REFCOUNT
