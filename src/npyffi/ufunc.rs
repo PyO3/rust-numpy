@@ -42,7 +42,7 @@ impl PyUFuncAPI {
 impl PyUFuncAPI {
     impl_api![1; PyUFunc_FromFuncAndData(func: *mut PyUFuncGenericFunction, data: *mut *mut c_void, types: *mut c_char, ntypes: c_int, nin: c_int, nout: c_int, identity: c_int, name: *const c_char, doc: *const c_char, unused: c_int) -> *mut PyObject];
     impl_api![2; PyUFunc_RegisterLoopForType(ufunc: *mut PyUFuncObject, usertype: c_int, function: PyUFuncGenericFunction, arg_types: *mut c_int, data: *mut c_void) -> c_int];
-    impl_api![3; PyUFunc_GenericFunction(ufunc: *mut PyUFuncObject, args: *mut PyObject, kwds: *mut PyObject, op: *mut *mut PyArrayObject) -> c_int];
+    // Unused slot 3, was `PyUFunc_GenericFunction`
     impl_api![4; PyUFunc_f_f_As_d_d(args: *mut *mut c_char, dimensions: *mut npy_intp, steps: *mut npy_intp, func: *mut c_void)];
     impl_api![5; PyUFunc_d_d(args: *mut *mut c_char, dimensions: *mut npy_intp, steps: *mut npy_intp, func: *mut c_void)];
     impl_api![6; PyUFunc_f_f(args: *mut *mut c_char, dimensions: *mut npy_intp, steps: *mut npy_intp, func: *mut c_void)];
@@ -64,11 +64,11 @@ impl PyUFuncAPI {
     impl_api![22; PyUFunc_O_O_method(args: *mut *mut c_char, dimensions: *mut npy_intp, steps: *mut npy_intp, func: *mut c_void)];
     impl_api![23; PyUFunc_OO_O_method(args: *mut *mut c_char, dimensions: *mut npy_intp, steps: *mut npy_intp, func: *mut c_void)];
     impl_api![24; PyUFunc_On_Om(args: *mut *mut c_char, dimensions: *mut npy_intp, steps: *mut npy_intp, func: *mut c_void)];
-    impl_api![25; PyUFunc_GetPyValues(name: *mut c_char, bufsize: *mut c_int, errmask: *mut c_int, errobj: *mut *mut PyObject) -> c_int];
-    impl_api![26; PyUFunc_checkfperr(errmask: c_int, errobj: *mut PyObject, first: *mut c_int) -> c_int];
+    // Unused slot 25, was `PyUFunc_GetPyValues`
+    // Unused slot 26, was `PyUFunc_checkfperr`
     impl_api![27; PyUFunc_clearfperr()];
     impl_api![28; PyUFunc_getfperr() -> c_int];
-    impl_api![29; PyUFunc_handlefperr(errmask: c_int, errobj: *mut PyObject, retstatus: c_int, first: *mut c_int) -> c_int];
+    // Unused slot 29, was `PyUFunc_handlefperr`
     impl_api![30; PyUFunc_ReplaceLoopBySignature(func: *mut PyUFuncObject, newfunc: PyUFuncGenericFunction, signature: *mut c_int, oldfunc: *mut PyUFuncGenericFunction) -> c_int];
     impl_api![31; PyUFunc_FromFuncAndDataAndSignature(func: *mut PyUFuncGenericFunction, data: *mut *mut c_void, types: *mut c_char, ntypes: c_int, nin: c_int, nout: c_int, identity: c_int, name: *const c_char, doc: *const c_char, unused: c_int, signature: *const c_char) -> *mut PyObject];
     impl_api![32; PyUFunc_SetUsesArraysAsData(data: *mut *mut c_void, i: usize) -> c_int];
@@ -81,18 +81,27 @@ impl PyUFuncAPI {
     impl_api![39; PyUFunc_DefaultTypeResolver(ufunc: *mut PyUFuncObject, casting: NPY_CASTING, operands: *mut *mut PyArrayObject, type_tup: *mut PyObject, out_dtypes: *mut *mut PyArray_Descr) -> c_int];
     impl_api![40; PyUFunc_ValidateCasting(ufunc: *mut PyUFuncObject, casting: NPY_CASTING, operands: *mut *mut PyArrayObject, dtypes: *mut *mut PyArray_Descr) -> c_int];
     impl_api![41; PyUFunc_RegisterLoopForDescr(ufunc: *mut PyUFuncObject, user_dtype: *mut PyArray_Descr, function: PyUFuncGenericFunction, arg_dtypes: *mut *mut PyArray_Descr, data: *mut c_void) -> c_int];
-    impl_api![42; PyUFunc_FromFuncAndDataAndSignatureAndIdentity(
-        ufunc: *mut PyUFuncObject,
-        data: *mut *mut c_void,
-        types: *mut c_char,
-        ntypes: c_int,
-        nin: c_int,
-        nout: c_int,
-        identity: c_int,
-        name: *const c_char,
-        doc: *const c_char,
-        unused: c_int,
-        signature: *const c_char,
-        identity_value: *const c_char,
-    ) -> c_int];
+    // Min v1.16 impl_api![42; PyUFunc_FromFuncAndDataAndSignatureAndIdentity(
+    //     ufunc: *mut PyUFuncObject,
+    //     data: *mut *mut c_void,
+    //     types: *mut c_char,
+    //     ntypes: c_int,
+    //     nin: c_int,
+    //     nout: c_int,
+    //     identity: c_int,
+    //     name: *const c_char,
+    //     doc: *const c_char,
+    //     unused: c_int,
+    //     signature: *const c_char,
+    //     identity_value: *const c_char,
+    // ) -> c_int];
+    // Min v2.0 impl_api![43; PyUFunc_AddLoopFromSpec(ufunc: *mut PyObject, spec: *mut PyArrayMethod_Spec) -> c_int];
+    // Min v2.0 impl_api![44; PyUFunc_AddPromoter(ufunc: *mut PyObject, dtype_tuple: *mut PyObject, promoter: *mut PyObject) -> c_int];
+    // Min v2.0 impl_api![45; PyUFunc_AddWrappingLoop(
+    //     ufunc_obj: *mut PyObject,
+    //     new_dtypes: *mut *mut PyArray_DTypeMeta,
+    //     wrapped_dtypes: *mut *mut PyArray_DTypeMeta,
+    //     translate_given_descrs: *mut PyArrayMethod_TranslateGivenDescriptors,
+    //     translate_loop_descrs: *mut PyArrayMethod_TranslateLoopDescriptors) -> c_int];
+    // Min v2.0 impl_api![46; PyUFunc_GiveFloatingpointErrors(name: *mut c_char, fpe_errors: c_int) -> c_int];
 }
