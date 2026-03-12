@@ -129,7 +129,7 @@ unsafe impl<T: Element, D: Dimension> PyTypeInfo for PyArray<T, D> {
     const MODULE: Option<&'static str> = Some("numpy");
 
     fn type_object_raw<'py>(py: Python<'py>) -> *mut ffi::PyTypeObject {
-        unsafe { npyffi::PY_ARRAY_API.get_type_object(py, npyffi::NpyTypes::PyArray_Type) }
+        unsafe { npyffi::get_type_object(py, npyffi::NpyTypes::PyArray_Type) }
     }
 
     fn is_type_of(ob: &Bound<'_, PyAny>) -> bool {
@@ -233,7 +233,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         let mut dims = dims.into_dimension();
         let ptr = PY_ARRAY_API.PyArray_NewFromDescr(
             py,
-            PY_ARRAY_API.get_type_object(py, npyffi::NpyTypes::PyArray_Type),
+            npyffi::get_type_object(py, npyffi::NpyTypes::PyArray_Type),
             T::get_dtype(py).into_dtype_ptr(),
             dims.ndim_cint(),
             dims.as_dims_ptr(),
@@ -259,7 +259,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         let mut dims = dims.into_dimension();
         let ptr = PY_ARRAY_API.PyArray_NewFromDescr(
             py,
-            PY_ARRAY_API.get_type_object(py, npyffi::NpyTypes::PyArray_Type),
+            npyffi::get_type_object(py, npyffi::NpyTypes::PyArray_Type),
             T::get_dtype(py).into_dtype_ptr(),
             dims.ndim_cint(),
             dims.as_dims_ptr(),

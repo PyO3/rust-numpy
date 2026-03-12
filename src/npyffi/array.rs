@@ -82,7 +82,7 @@ unsafe impl Send for PyArrayAPI {}
 unsafe impl Sync for PyArrayAPI {}
 
 impl PyArrayAPI {
-    unsafe fn get<'py>(&self, py: Python<'py>, offset: isize) -> NonNull<*const c_void> {
+    pub(super) unsafe fn get<'py>(&self, py: Python<'py>, offset: isize) -> NonNull<*const c_void> {
         let api = self
             .0
             .get_or_try_init(py, || get_numpy_api(py, mod_name(py)?, CAPSULE_NAME))
@@ -374,81 +374,16 @@ impl PyArrayAPI {
     // Min v2.0 impl_api![365; _PyDataType_GetArrFuncs(descr: *const PyArray_Descr) -> *mut PyArray_ArrFuncs];
 }
 
-// Define type objects associated with the NumPy API
-macro_rules! impl_array_type {
-    ($(($offset:expr, $tname:ident)),* $(,)?) => {
-        /// All type objects exported by the NumPy API.
-        #[allow(non_camel_case_types)]
-        pub enum NpyTypes { $($tname),* }
-
-        impl PyArrayAPI {
-            /// Get a pointer of the type object associated with `ty`.
-            pub unsafe fn get_type_object<'py>(&self, py: Python<'py>, ty: NpyTypes) -> *mut PyTypeObject {
-                match ty {
-                    $( NpyTypes::$tname => self.get(py, $offset).read() as _ ),*
-                }
-            }
-        }
-    }
-}
-
-impl_array_type! {
-    // Slot 1 was never meaningfully used by NumPy
-    (2, PyArray_Type),
-    (3, PyArrayDescr_Type),
-    // Unused slot 4, was `PyArrayFlags_Type`
-    (5, PyArrayIter_Type),
-    (6, PyArrayMultiIter_Type),
-    // (7, NPY_NUMUSERTYPES) -> c_int,
-    (8, PyBoolArrType_Type),
-    // (9, _PyArrayScalar_BoolValues) -> *mut PyBoolScalarObject,
-    (10, PyGenericArrType_Type),
-    (11, PyNumberArrType_Type),
-    (12, PyIntegerArrType_Type),
-    (13, PySignedIntegerArrType_Type),
-    (14, PyUnsignedIntegerArrType_Type),
-    (15, PyInexactArrType_Type),
-    (16, PyFloatingArrType_Type),
-    (17, PyComplexFloatingArrType_Type),
-    (18, PyFlexibleArrType_Type),
-    (19, PyCharacterArrType_Type),
-    (20, PyByteArrType_Type),
-    (21, PyShortArrType_Type),
-    (22, PyIntArrType_Type),
-    (23, PyLongArrType_Type),
-    (24, PyLongLongArrType_Type),
-    (25, PyUByteArrType_Type),
-    (26, PyUShortArrType_Type),
-    (27, PyUIntArrType_Type),
-    (28, PyULongArrType_Type),
-    (29, PyULongLongArrType_Type),
-    (30, PyFloatArrType_Type),
-    (31, PyDoubleArrType_Type),
-    (32, PyLongDoubleArrType_Type),
-    (33, PyCFloatArrType_Type),
-    (34, PyCDoubleArrType_Type),
-    (35, PyCLongDoubleArrType_Type),
-    (36, PyObjectArrType_Type),
-    (37, PyStringArrType_Type),
-    (38, PyUnicodeArrType_Type),
-    (39, PyVoidArrType_Type),
-    (214, PyTimeIntegerArrType_Type),
-    (215, PyDatetimeArrType_Type),
-    (216, PyTimedeltaArrType_Type),
-    (217, PyHalfArrType_Type),
-    (218, NpyIter_Type),
-}
-
 /// Checks that `op` is an instance of `PyArray` or not.
 #[allow(non_snake_case)]
 pub unsafe fn PyArray_Check<'py>(py: Python<'py>, op: *mut PyObject) -> c_int {
-    ffi::PyObject_TypeCheck(op, PY_ARRAY_API.get_type_object(py, NpyTypes::PyArray_Type))
+    ffi::PyObject_TypeCheck(op, super::get_type_object(py, NpyTypes::PyArray_Type))
 }
 
 /// Checks that `op` is an exact instance of `PyArray` or not.
 #[allow(non_snake_case)]
 pub unsafe fn PyArray_CheckExact<'py>(py: Python<'py>, op: *mut PyObject) -> c_int {
-    (ffi::Py_TYPE(op) == PY_ARRAY_API.get_type_object(py, NpyTypes::PyArray_Type)) as _
+    (ffi::Py_TYPE(op) == super::get_type_object(py, NpyTypes::PyArray_Type)) as _
 }
 
 #[cfg(test)]

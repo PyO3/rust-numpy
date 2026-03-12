@@ -14,6 +14,7 @@ use std::os::raw::{c_uint, c_void};
 use std::ptr::NonNull;
 
 use pyo3::{
+    ffi::PyTypeObject,
     sync::PyOnceLock,
     types::{PyAnyMethods, PyCapsule, PyCapsuleMethods, PyModule},
     PyResult, Python,
@@ -58,6 +59,72 @@ macro_rules! impl_api {
             f($($arg), *)
         }
     };
+}
+
+// Define type objects associated with the NumPy API
+macro_rules! impl_array_type {
+    ($(($api:ident [ $offset:expr ] , $tname:ident)),* $(,)?) => {
+        /// All type objects exported by the NumPy API.
+        #[allow(non_camel_case_types)]
+        pub enum NpyTypes { $($tname),* }
+
+        /// Get a pointer of the type object associated with `ty`.
+        pub unsafe fn get_type_object<'py>(py: Python<'py>, ty: NpyTypes) -> *mut PyTypeObject {
+            match ty {
+                $( NpyTypes::$tname => $api.get(py, $offset).read() as _ ),*
+            }
+        }
+    }
+}
+
+impl_array_type! {
+    // Multiarray API
+    // Slot 1 was never meaningfully used by NumPy
+    (PY_ARRAY_API[2], PyArray_Type),
+    (PY_ARRAY_API[3], PyArrayDescr_Type),
+    // Unused slot 4, was `PyArrayFlags_Type`
+    (PY_ARRAY_API[5], PyArrayIter_Type),
+    (PY_ARRAY_API[6], PyArrayMultiIter_Type),
+    // (PY_ARRAY_API[7], NPY_NUMUSERTYPES) -> c_int,
+    (PY_ARRAY_API[8], PyBoolArrType_Type),
+    // (PY_ARRAY_API[9], _PyArrayScalar_BoolValues) -> *mut PyBoolScalarObject,
+    (PY_ARRAY_API[10], PyGenericArrType_Type),
+    (PY_ARRAY_API[11], PyNumberArrType_Type),
+    (PY_ARRAY_API[12], PyIntegerArrType_Type),
+    (PY_ARRAY_API[13], PySignedIntegerArrType_Type),
+    (PY_ARRAY_API[14], PyUnsignedIntegerArrType_Type),
+    (PY_ARRAY_API[15], PyInexactArrType_Type),
+    (PY_ARRAY_API[16], PyFloatingArrType_Type),
+    (PY_ARRAY_API[17], PyComplexFloatingArrType_Type),
+    (PY_ARRAY_API[18], PyFlexibleArrType_Type),
+    (PY_ARRAY_API[19], PyCharacterArrType_Type),
+    (PY_ARRAY_API[20], PyByteArrType_Type),
+    (PY_ARRAY_API[21], PyShortArrType_Type),
+    (PY_ARRAY_API[22], PyIntArrType_Type),
+    (PY_ARRAY_API[23], PyLongArrType_Type),
+    (PY_ARRAY_API[24], PyLongLongArrType_Type),
+    (PY_ARRAY_API[25], PyUByteArrType_Type),
+    (PY_ARRAY_API[26], PyUShortArrType_Type),
+    (PY_ARRAY_API[27], PyUIntArrType_Type),
+    (PY_ARRAY_API[28], PyULongArrType_Type),
+    (PY_ARRAY_API[29], PyULongLongArrType_Type),
+    (PY_ARRAY_API[30], PyFloatArrType_Type),
+    (PY_ARRAY_API[31], PyDoubleArrType_Type),
+    (PY_ARRAY_API[32], PyLongDoubleArrType_Type),
+    (PY_ARRAY_API[33], PyCFloatArrType_Type),
+    (PY_ARRAY_API[34], PyCDoubleArrType_Type),
+    (PY_ARRAY_API[35], PyCLongDoubleArrType_Type),
+    (PY_ARRAY_API[36], PyObjectArrType_Type),
+    (PY_ARRAY_API[37], PyStringArrType_Type),
+    (PY_ARRAY_API[38], PyUnicodeArrType_Type),
+    (PY_ARRAY_API[39], PyVoidArrType_Type),
+    (PY_ARRAY_API[214], PyTimeIntegerArrType_Type),
+    (PY_ARRAY_API[215], PyDatetimeArrType_Type),
+    (PY_ARRAY_API[216], PyTimedeltaArrType_Type),
+    (PY_ARRAY_API[217], PyHalfArrType_Type),
+    (PY_ARRAY_API[218], NpyIter_Type),
+    // UFunc API
+    (PY_UFUNC_API[0], PyUFunc_Type),
 }
 
 pub mod array;

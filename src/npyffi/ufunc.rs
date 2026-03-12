@@ -29,7 +29,7 @@ unsafe impl Send for PyUFuncAPI {}
 unsafe impl Sync for PyUFuncAPI {}
 
 impl PyUFuncAPI {
-    unsafe fn get<'py>(&self, py: Python<'py>, offset: isize) -> NonNull<*const c_void> {
+    pub(super) unsafe fn get<'py>(&self, py: Python<'py>, offset: isize) -> NonNull<*const c_void> {
         let api = self
             .0
             .get_or_try_init(py, || get_numpy_api(py, mod_name(py)?, CAPSULE_NAME))
