@@ -58,38 +58,6 @@ macro_rules! impl_api {
             f($($arg), *)
         }
     };
-
-    // API with version constraints, checked at runtime
-    [$offset: expr; NumPy1; $fname: ident ($($arg: ident: $t: ty),* $(,)?) $(-> $ret: ty)?] => {
-        #[allow(non_snake_case)]
-        pub unsafe fn $fname<'py>(&self, py: Python<'py>, $($arg : $t), *) $(-> $ret)* {
-            assert!(
-                !is_numpy_2(py),
-                "{} requires API < {:08X} (NumPy 1) but the runtime version is API {:08X}",
-                stringify!($fname),
-                API_VERSION_2_0,
-                *API_VERSION.get(py).expect("API_VERSION is initialized"),
-            );
-            let f: extern "C" fn ($($arg: $t), *) $(-> $ret)* = self.get(py, $offset).cast().read();
-            f($($arg), *)
-        }
-
-    };
-    [$offset: expr; NumPy2; $fname: ident ($($arg: ident: $t: ty),* $(,)?) $(-> $ret: ty)?] => {
-        #[allow(non_snake_case)]
-        pub unsafe fn $fname<'py>(&self, py: Python<'py>, $($arg : $t), *) $(-> $ret)* {
-            assert!(
-                is_numpy_2(py),
-                "{} requires API {:08X} or greater (NumPy 2) but the runtime version is API {:08X}",
-                stringify!($fname),
-                API_VERSION_2_0,
-                *API_VERSION.get(py).expect("API_VERSION is initialized"),
-            );
-            let f: extern "C" fn ($($arg: $t), *) $(-> $ret)* = self.get(py, $offset).cast().read();
-            f($($arg), *)
-        }
-
-    };
 }
 
 pub mod array;
