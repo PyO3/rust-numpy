@@ -8,6 +8,7 @@ use std::{os::raw::*, ptr::NonNull};
 
 use libc::FILE;
 use pyo3::{
+    exceptions::PyRuntimeError,
     ffi::{self, PyObject, PyTypeObject},
     sync::PyOnceLock,
 };
@@ -85,7 +86,58 @@ impl PyArrayAPI {
     pub(super) unsafe fn get<'py>(&self, py: Python<'py>, offset: isize) -> NonNull<*const c_void> {
         let api = self
             .0
-            .get_or_try_init(py, || get_numpy_api(py, mod_name(py)?, CAPSULE_NAME))
+            .get_or_try_init(py, || -> PyResult<_> {
+                let api = get_numpy_api(py, mod_name(py)?, CAPSULE_NAME)?;
+
+                let module_version = {
+                    // unsigned int PyArray_GetNDArrayCVersion();
+                    let get_abi_version: extern "C" fn() -> c_uint =
+                        api.add(0).cast().read();
+                    get_abi_version()
+                };
+                if NPY_VERSION < module_version {
+                    return Err(PyRuntimeError::new_err(format!(
+                        "module compiled against ABI version 0x{:x} but this version of numpy is 0x{:x}",
+                        NPY_VERSION, module_version
+                    )));
+                }
+
+                let module_feature_version = unsafe {
+                    // unsigned int PyArray_GetNDArrayCFeatureVersion();
+                    let get_runtime_version: extern "C" fn() -> c_uint =
+                        api.add(211).cast().read();
+                    get_runtime_version()
+                };
+                if NPY_FEATURE_VERSION > module_feature_version {
+                    return Err(PyRuntimeError::new_err(format!(
+                        "module was compiled against NumPy C-API version 0x{:x} (NumPy {}) but the running NumPy has C-API version 0x{:x}",
+                        NPY_FEATURE_VERSION, NPY_FEATURE_VERSION_STRING, module_feature_version
+                    )));
+                }
+
+                let endianess = unsafe {
+                    // int PyArray_GetEndianness();
+                    let get_endianess: extern "C" fn() -> c_int =
+                        api.add(210).cast().read();
+                    get_endianess()
+                };
+
+                #[cfg(target_endian = "big")]
+                if endianess != NPY_CPU_BIG {
+                    return Err(PyRuntimeError::new_err(
+                        "module compiled as big endian, but detected different endianess at runtime",
+                    ));
+                }
+
+                #[cfg(target_endian = "little")]
+                if endianess != NPY_CPU_LITTLE {
+                    return Err(PyRuntimeError::new_err(
+                        "module compiled as little endian, but detected different endianess at runtime",
+                    ));
+                }
+
+                Ok(api)
+            })
             .expect("Failed to access NumPy array API capsule");
 
         api.offset(offset)

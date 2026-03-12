@@ -20,8 +20,6 @@ use pyo3::{
     PyResult, Python,
 };
 
-pub const API_VERSION_2_0: c_uint = 0x00000012;
-
 static API_VERSION: PyOnceLock<c_uint> = PyOnceLock::new();
 
 fn get_numpy_api<'py>(
@@ -46,7 +44,7 @@ pub fn is_numpy_2<'py>(py: Python<'py>) -> bool {
     let api_version = *API_VERSION.get_or_init(py, || unsafe {
         PY_ARRAY_API.PyArray_GetNDArrayCFeatureVersion(py)
     });
-    api_version >= API_VERSION_2_0
+    api_version >= NPY_2_0_API_VERSION
 }
 
 // Implements wrappers for NumPy's Array and UFunc API
@@ -129,12 +127,16 @@ impl_array_type! {
 
 pub mod array;
 pub mod flags;
+mod npy_common;
+mod numpyconfig;
 pub mod objects;
 pub mod types;
 pub mod ufunc;
 
 pub use self::array::*;
 pub use self::flags::*;
+pub use self::npy_common::*;
+pub use self::numpyconfig::*;
 pub use self::objects::*;
 pub use self::types::*;
 pub use self::ufunc::*;
