@@ -64,7 +64,7 @@ unsafe impl PyTypeInfo for PyUntypedArray {
     const MODULE: Option<&'static str> = Some("numpy");
 
     fn type_object_raw<'py>(py: Python<'py>) -> *mut ffi::PyTypeObject {
-        unsafe { npyffi::PY_ARRAY_API.get_type_object(py, npyffi::NpyTypes::PyArray_Type) }
+        unsafe { npyffi::get_type_object(py, npyffi::NpyTypes::PyArray_Type) }
     }
 
     fn is_type_of(ob: &Bound<'_, PyAny>) -> bool {
