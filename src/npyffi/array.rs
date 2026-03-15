@@ -144,8 +144,11 @@ impl PyArrayAPI {
     }
 }
 
+// This mapping is based on the script used to generate the NumPy API:
+// https://github.com/numpy/numpy/blob/v2.0.0/numpy/_core/code_generators/numpy_api.py
 impl PyArrayAPI {
     impl_api![0; PyArray_GetNDArrayCVersion() -> c_uint];
+    // Slots 1-39 are used for type objects
     // Unused slot 40, was `PyArray_SetNumericOps`
     // Unused slot 41, was `PyArray_GetNumericOps`,
     impl_api![42; PyArray_INCREF(mp: *mut PyArrayObject) -> c_int];
@@ -320,6 +323,7 @@ impl PyArrayAPI {
     impl_api![211; PyArray_GetNDArrayCFeatureVersion() -> c_uint];
     impl_api![212; PyArray_Correlate2(op1: *mut PyObject, op2: *mut PyObject, mode: c_int) -> *mut PyObject];
     impl_api![213; PyArray_NeighborhoodIterNew(x: *mut PyArrayIterObject, bounds: *mut npy_intp, mode: c_int, fill: *mut PyArrayObject) -> *mut PyObject];
+    // Slots 214-218 are used for type objects
     // Unused slot 219, was `PyArray_SetDatetimeParseFunction`
     // Unused slot 220, was `PyArray_DatetimeToDatetimeStruct`
     // Unused slot 221, was `PyArray_TimedeltaToTimedeltaStruct`

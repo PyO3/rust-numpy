@@ -1,6 +1,13 @@
 //! Low-Level bindings for NumPy C API.
 //!
-//! <https://numpy.org/doc/stable/reference/c-api>
+//! This module provides FFI bindings to [NumPy C API], implementing access to the NumPy array and
+//! ufunc functionality. This binding is compatible with ABI v2 and the target API is v1.15 to
+//! ensure the compatibility with the older NumPy version. See the official NumPy documentation
+//! for more details about [API compatibility].
+//!
+//! [NumPy's C API]: https://numpy.org/doc/stable/reference/c-api
+//! [API compatibility]: https://numpy.org/doc/stable/dev/depending_on_numpy.html
+//!
 #![allow(
     non_camel_case_types,
     missing_docs,
