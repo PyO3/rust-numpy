@@ -5,7 +5,7 @@
 
 use libc::FILE;
 use pyo3::ffi::*;
-use std::os::raw::*;
+use std::ffi::*;
 
 use super::types::*;
 use crate::npyffi::*;

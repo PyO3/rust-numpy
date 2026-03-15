@@ -4,7 +4,7 @@
 //! The reason is that they would be re-exports of the `PyMem_Raw{Malloc,Realloc,Free}` functions from PyO3,
 //! but those are not unconditionally exported, i.e. they are not available when using the limited Python C-API.
 
-use std::{os::raw::*, ptr::NonNull};
+use std::{ffi::*, ptr::NonNull};
 
 use libc::FILE;
 use pyo3::{

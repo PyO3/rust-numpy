@@ -1,6 +1,6 @@
 //! Low-Level binding for [UFunc API](https://numpy.org/doc/stable/reference/c-api/ufunc.html)
 
-use std::os::raw::*;
+use std::ffi::*;
 
 use pyo3::{ffi::PyObject, sync::PyOnceLock};
 

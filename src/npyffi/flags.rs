@@ -1,5 +1,5 @@
 use super::{npy_uint32, npy_uint64};
-use std::os::raw::c_int;
+use std::ffi::c_int;
 
 pub const NPY_ARRAY_C_CONTIGUOUS: c_int = 0x0001;
 pub const NPY_ARRAY_F_CONTIGUOUS: c_int = 0x0002;

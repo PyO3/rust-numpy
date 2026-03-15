@@ -16,8 +16,8 @@
     clippy::missing_safety_doc
 )]
 
+use std::ffi::{c_uint, c_void};
 use std::mem::forget;
-use std::os::raw::{c_uint, c_void};
 use std::ptr::NonNull;
 
 use pyo3::{

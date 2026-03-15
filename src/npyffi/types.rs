@@ -1,5 +1,5 @@
 use pyo3::ffi::{Py_hash_t, Py_ssize_t};
-use std::{ffi::c_float, os::raw::*};
+use std::ffi::*;
 
 pub type npy_intp = Py_ssize_t;
 pub type npy_uintp = usize;
