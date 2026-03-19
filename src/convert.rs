@@ -145,6 +145,15 @@ impl<T: Element> ToPyArray for [T] {
     }
 }
 
+impl<T: Element> ToPyArray for Vec<T> {
+    type Item = T;
+    type Dim = Ix1;
+
+    fn to_pyarray<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray<Self::Item, Self::Dim>> {
+        PyArray::from_slice(py, self.as_slice())
+    }
+}
+
 impl<S, D, A> ToPyArray for ArrayBase<S, D>
 where
     S: Data<Elem = A>,
