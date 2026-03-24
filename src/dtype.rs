@@ -17,7 +17,7 @@ use pyo3::{
 };
 
 use crate::npyffi::{
-    NpyTypes, PyArray_Descr, PyDataType_ALIGNMENT, PyDataType_ELSIZE, PyDataType_FIELDS,
+    self, NpyTypes, PyArray_Descr, PyDataType_ALIGNMENT, PyDataType_ELSIZE, PyDataType_FIELDS,
     PyDataType_FLAGS, PyDataType_NAMES, PyDataType_SUBARRAY, NPY_ALIGNED_STRUCT,
     NPY_BYTEORDER_CHAR, NPY_ITEM_HASOBJECT, NPY_TYPES, PY_ARRAY_API,
 };
@@ -58,7 +58,7 @@ unsafe impl PyTypeInfo for PyArrayDescr {
 
     #[inline]
     fn type_object_raw<'py>(py: Python<'py>) -> *mut ffi::PyTypeObject {
-        unsafe { PY_ARRAY_API.get_type_object(py, NpyTypes::PyArrayDescr_Type) }
+        unsafe { npyffi::get_type_object(py, NpyTypes::PyArrayDescr_Type) }
     }
 }
 

@@ -1,12 +1,13 @@
-use pyo3::ffi::{Py_hash_t, Py_intptr_t, Py_uintptr_t};
-use std::os::raw::*;
+use pyo3::ffi::{Py_hash_t, Py_ssize_t};
+use std::ffi::*;
 
-pub type npy_intp = Py_intptr_t;
-pub type npy_uintp = Py_uintptr_t;
+pub type npy_intp = Py_ssize_t;
+pub type npy_uintp = usize;
 pub type npy_longlong = c_longlong;
 pub type npy_ulonglong = c_ulonglong;
 pub type npy_bool = c_uchar;
-pub type npy_longdouble = f64;
+// On some platforms long double is 80-bit extended precision
+// pub type npy_longdouble = f64;
 pub type npy_byte = c_char;
 pub type npy_ubyte = c_uchar;
 pub type npy_ushort = c_ushort;
@@ -16,8 +17,8 @@ pub type npy_char = c_char;
 pub type npy_short = c_short;
 pub type npy_int = c_int;
 pub type npy_long = c_long;
-pub type npy_float = f32;
-pub type npy_double = f64;
+pub type npy_float = c_float;
+pub type npy_double = c_double;
 pub type npy_hash_t = Py_hash_t;
 pub type npy_int64 = i64;
 pub type npy_uint64 = u64;
@@ -34,30 +35,30 @@ pub type npy_float32 = f32;
 pub type npy_complex64 = npy_cfloat;
 pub type npy_half = npy_uint16;
 pub type npy_float16 = npy_half;
-pub type npy_float128 = npy_longdouble;
-pub type npy_complex256 = npy_clongdouble;
+// pub type npy_float128 = npy_longdouble;
+// pub type npy_complex256 = npy_clongdouble;
 pub type npy_timedelta = npy_int64;
 pub type npy_datetime = npy_int64;
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct npy_cdouble {
-    pub real: f64,
-    pub imag: f64,
+    pub real: c_double,
+    pub imag: c_double,
 }
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct npy_cfloat {
-    pub real: f32,
-    pub imag: f32,
+    pub real: c_float,
+    pub imag: c_float,
 }
 
-#[repr(C)]
-#[derive(Debug, Clone, Copy)]
-pub struct npy_clongdouble {
-    pub real: npy_longdouble,
-    pub imag: npy_longdouble,
-}
+// #[repr(C)]
+// #[derive(Debug, Clone, Copy)]
+// pub struct npy_clongdouble {
+//     pub real: npy_longdouble,
+//     pub imag: npy_longdouble,
+// }
 
 #[repr(i32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
@@ -87,6 +88,8 @@ pub enum NPY_SORTKIND {
     NPY_HEAPSORT = 1,
     NPY_MERGESORT = 2,
 }
+
+pub const NPY_NSORTS: usize = NPY_SORTKIND::NPY_MERGESORT as usize + 1;
 
 #[repr(u32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
@@ -226,14 +229,13 @@ pub enum NPY_TYPECHAR {
     NPY_CLONGDOUBLELTR = b'G',
     NPY_OBJECTLTR = b'O',
     NPY_STRINGLTR = b'S',
-    NPY_STRINGLTR2 = b'a',
+    NPY_DEPRECATED_STRINGLTR2 = b'a',
     NPY_UNICODELTR = b'U',
     NPY_VOIDLTR = b'V',
     NPY_DATETIMELTR = b'M',
     NPY_TIMEDELTALTR = b'm',
     NPY_CHARLTR = b'c',
-    NPY_INTPLTR = b'p',
-    NPY_UINTPLTR = b'P',
+    NPY_VSTRINGLTR = b'T',
 }
 
 // Note: NPY_TYPEKINDCHAR doesn't exist in the header and has been created here artificially
@@ -280,5 +282,6 @@ pub enum NPY_ARRAYMETHOD_FLAGS {
     NPY_METH_SUPPORTS_UNALIGNED = 1 << 2,
     NPY_METH_IS_REORDERABLE = 1 << 3,
     _NPY_METH_FORCE_CAST_INPUTS = 1 << 17,
-    NPY_METH_RUNTIME_FLAGS = (1 << 0) | (1 << 1), // NPY_METH_REQUIRES_PYAPI | NPY_METH_NO_FLOATINGPOINT_ERRORS
+    NPY_METH_RUNTIME_FLAGS =
+        Self::NPY_METH_REQUIRES_PYAPI as i32 | Self::NPY_METH_NO_FLOATINGPOINT_ERRORS as i32,
 }
