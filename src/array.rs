@@ -3,10 +3,9 @@
 //! [ndarray]: https://numpy.org/doc/stable/reference/arrays.ndarray.html
 
 use std::{
+    ffi::{c_int, c_void},
     marker::PhantomData,
-    mem,
-    os::raw::{c_int, c_void},
-    ptr, slice,
+    mem, ptr, slice,
 };
 
 use ndarray::{

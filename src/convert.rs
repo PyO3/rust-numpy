@@ -1,6 +1,6 @@
 //! Defines conversion traits between Rust types and NumPy data types.
 
-use std::{mem, os::raw::c_int, ptr};
+use std::{ffi::c_int, mem, ptr};
 
 use ndarray::{ArrayBase, Data, Dim, Dimension, IntoDimension, Ix1, OwnedRepr};
 use pyo3::{Bound, Python};
