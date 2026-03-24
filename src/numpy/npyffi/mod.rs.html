@@ -1,109 +1,150 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/npyffi/mod.rs`."><title>mod.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-77263533.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="numpy" data-themes="" data-resource-suffix="" data-rustdoc-version="1.94.0 (4a4ef493e 2026-03-02)" data-channel="1.94.0" data-search-js="search-9e2438ea.js" data-stringdex-js="stringdex-b897f86f.js" data-settings-js="settings-c38705f0.js" ><script src="../../../static.files/storage-e2aeef58.js"></script><script defer src="../../../static.files/src-script-813739b1.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-7bab91a1.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-ffcac47a.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">numpy/npyffi/</div>mod.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="doccomment">//! Low-Level bindings for NumPy C API.
 <a href=#2 id=2 data-nosnippet>2</a>//!
-<a href=#3 id=3 data-nosnippet>3</a>//! &lt;https://numpy.org/doc/stable/reference/c-api&gt;
-<a href=#4 id=4 data-nosnippet>4</a></span><span class="attr">#![allow(
-<a href=#5 id=5 data-nosnippet>5</a>    non_camel_case_types,
-<a href=#6 id=6 data-nosnippet>6</a>    missing_docs,
-<a href=#7 id=7 data-nosnippet>7</a>    missing_debug_implementations,
-<a href=#8 id=8 data-nosnippet>8</a>    clippy::too_many_arguments,
-<a href=#9 id=9 data-nosnippet>9</a>    clippy::missing_safety_doc
-<a href=#10 id=10 data-nosnippet>10</a>)]
-<a href=#11 id=11 data-nosnippet>11</a>
-<a href=#12 id=12 data-nosnippet>12</a></span><span class="kw">use </span>std::mem::forget;
-<a href=#13 id=13 data-nosnippet>13</a><span class="kw">use </span>std::os::raw::{c_uint, c_void};
-<a href=#14 id=14 data-nosnippet>14</a>
-<a href=#15 id=15 data-nosnippet>15</a><span class="kw">use </span>pyo3::{
-<a href=#16 id=16 data-nosnippet>16</a>    sync::PyOnceLock,
-<a href=#17 id=17 data-nosnippet>17</a>    types::{PyAnyMethods, PyCapsule, PyCapsuleMethods, PyModule},
-<a href=#18 id=18 data-nosnippet>18</a>    PyResult, Python,
-<a href=#19 id=19 data-nosnippet>19</a>};
-<a href=#20 id=20 data-nosnippet>20</a>
-<a href=#21 id=21 data-nosnippet>21</a><span class="kw">pub const </span>API_VERSION_2_0: c_uint = <span class="number">0x00000012</span>;
+<a href=#3 id=3 data-nosnippet>3</a>//! This module provides FFI bindings to [NumPy C API], implementing access to the NumPy array and
+<a href=#4 id=4 data-nosnippet>4</a>//! ufunc functionality. This binding is compatible with ABI v2 and the target API is v1.15 to
+<a href=#5 id=5 data-nosnippet>5</a>//! ensure the compatibility with the older NumPy version. See the official NumPy documentation
+<a href=#6 id=6 data-nosnippet>6</a>//! for more details about [API compatibility].
+<a href=#7 id=7 data-nosnippet>7</a>//!
+<a href=#8 id=8 data-nosnippet>8</a>//! [NumPy's C API]: https://numpy.org/doc/stable/reference/c-api
+<a href=#9 id=9 data-nosnippet>9</a>//! [API compatibility]: https://numpy.org/doc/stable/dev/depending_on_numpy.html
+<a href=#10 id=10 data-nosnippet>10</a>//!
+<a href=#11 id=11 data-nosnippet>11</a></span><span class="attr">#![allow(
+<a href=#12 id=12 data-nosnippet>12</a>    non_camel_case_types,
+<a href=#13 id=13 data-nosnippet>13</a>    missing_docs,
+<a href=#14 id=14 data-nosnippet>14</a>    missing_debug_implementations,
+<a href=#15 id=15 data-nosnippet>15</a>    clippy::too_many_arguments,
+<a href=#16 id=16 data-nosnippet>16</a>    clippy::missing_safety_doc
+<a href=#17 id=17 data-nosnippet>17</a>)]
+<a href=#18 id=18 data-nosnippet>18</a>
+<a href=#19 id=19 data-nosnippet>19</a></span><span class="kw">use </span>std::ffi::{c_uint, c_void};
+<a href=#20 id=20 data-nosnippet>20</a><span class="kw">use </span>std::mem::forget;
+<a href=#21 id=21 data-nosnippet>21</a><span class="kw">use </span>std::ptr::NonNull;
 <a href=#22 id=22 data-nosnippet>22</a>
-<a href=#23 id=23 data-nosnippet>23</a><span class="kw">static </span>API_VERSION: PyOnceLock&lt;c_uint&gt; = PyOnceLock::new();
-<a href=#24 id=24 data-nosnippet>24</a>
-<a href=#25 id=25 data-nosnippet>25</a><span class="kw">fn </span>get_numpy_api&lt;<span class="lifetime">'py</span>&gt;(
-<a href=#26 id=26 data-nosnippet>26</a>    py: Python&lt;<span class="lifetime">'py</span>&gt;,
-<a href=#27 id=27 data-nosnippet>27</a>    module: <span class="kw-2">&amp;</span>str,
-<a href=#28 id=28 data-nosnippet>28</a>    capsule: <span class="kw-2">&amp;</span>str,
-<a href=#29 id=29 data-nosnippet>29</a>) -&gt; PyResult&lt;<span class="kw-2">*const *const </span>c_void&gt; {
-<a href=#30 id=30 data-nosnippet>30</a>    <span class="kw">let </span>module = PyModule::import(py, module)<span class="question-mark">?</span>;
-<a href=#31 id=31 data-nosnippet>31</a>    <span class="kw">let </span>capsule = module.getattr(capsule)<span class="question-mark">?</span>.cast_into::&lt;PyCapsule&gt;()<span class="question-mark">?</span>;
-<a href=#32 id=32 data-nosnippet>32</a>
-<a href=#33 id=33 data-nosnippet>33</a>    <span class="kw">let </span>api = capsule
-<a href=#34 id=34 data-nosnippet>34</a>        .pointer_checked(<span class="prelude-val">None</span>)<span class="question-mark">?
-<a href=#35 id=35 data-nosnippet>35</a>        </span>.cast::&lt;<span class="kw-2">*const </span>c_void&gt;()
-<a href=#36 id=36 data-nosnippet>36</a>        .as_ptr()
-<a href=#37 id=37 data-nosnippet>37</a>        .cast_const();
-<a href=#38 id=38 data-nosnippet>38</a>
-<a href=#39 id=39 data-nosnippet>39</a>    <span class="comment">// Intentionally leak a reference to the capsule
-<a href=#40 id=40 data-nosnippet>40</a>    // so we can safely cache a pointer into its interior.
-<a href=#41 id=41 data-nosnippet>41</a>    </span>forget(capsule);
-<a href=#42 id=42 data-nosnippet>42</a>
-<a href=#43 id=43 data-nosnippet>43</a>    <span class="prelude-val">Ok</span>(api)
-<a href=#44 id=44 data-nosnippet>44</a>}
+<a href=#23 id=23 data-nosnippet>23</a><span class="kw">use </span>pyo3::{
+<a href=#24 id=24 data-nosnippet>24</a>    ffi::PyTypeObject,
+<a href=#25 id=25 data-nosnippet>25</a>    sync::PyOnceLock,
+<a href=#26 id=26 data-nosnippet>26</a>    types::{PyAnyMethods, PyCapsule, PyCapsuleMethods, PyModule},
+<a href=#27 id=27 data-nosnippet>27</a>    PyResult, Python,
+<a href=#28 id=28 data-nosnippet>28</a>};
+<a href=#29 id=29 data-nosnippet>29</a>
+<a href=#30 id=30 data-nosnippet>30</a><span class="kw">static </span>API_VERSION: PyOnceLock&lt;c_uint&gt; = PyOnceLock::new();
+<a href=#31 id=31 data-nosnippet>31</a>
+<a href=#32 id=32 data-nosnippet>32</a><span class="kw">fn </span>get_numpy_api&lt;<span class="lifetime">'py</span>&gt;(
+<a href=#33 id=33 data-nosnippet>33</a>    py: Python&lt;<span class="lifetime">'py</span>&gt;,
+<a href=#34 id=34 data-nosnippet>34</a>    module: <span class="kw-2">&amp;</span>str,
+<a href=#35 id=35 data-nosnippet>35</a>    capsule: <span class="kw-2">&amp;</span>str,
+<a href=#36 id=36 data-nosnippet>36</a>) -&gt; PyResult&lt;NonNull&lt;<span class="kw-2">*const </span>c_void&gt;&gt; {
+<a href=#37 id=37 data-nosnippet>37</a>    <span class="kw">let </span>module = PyModule::import(py, module)<span class="question-mark">?</span>;
+<a href=#38 id=38 data-nosnippet>38</a>    <span class="kw">let </span>capsule = module.getattr(capsule)<span class="question-mark">?</span>.cast_into::&lt;PyCapsule&gt;()<span class="question-mark">?</span>;
+<a href=#39 id=39 data-nosnippet>39</a>
+<a href=#40 id=40 data-nosnippet>40</a>    <span class="kw">let </span>api = capsule.pointer_checked(<span class="prelude-val">None</span>)<span class="question-mark">?</span>;
+<a href=#41 id=41 data-nosnippet>41</a>
+<a href=#42 id=42 data-nosnippet>42</a>    <span class="comment">// Intentionally leak a reference to the capsule
+<a href=#43 id=43 data-nosnippet>43</a>    // so we can safely cache a pointer into its interior.
+<a href=#44 id=44 data-nosnippet>44</a>    </span>forget(capsule);
 <a href=#45 id=45 data-nosnippet>45</a>
-<a href=#46 id=46 data-nosnippet>46</a><span class="doccomment">/// Returns whether the runtime `numpy` version is 2.0 or greater.
-<a href=#47 id=47 data-nosnippet>47</a></span><span class="kw">pub fn </span>is_numpy_2&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; bool {
-<a href=#48 id=48 data-nosnippet>48</a>    <span class="kw">let </span>api_version = <span class="kw-2">*</span>API_VERSION.get_or_init(py, || <span class="kw">unsafe </span>{
-<a href=#49 id=49 data-nosnippet>49</a>        PY_ARRAY_API.PyArray_GetNDArrayCFeatureVersion(py)
-<a href=#50 id=50 data-nosnippet>50</a>    });
-<a href=#51 id=51 data-nosnippet>51</a>    api_version &gt;= API_VERSION_2_0
-<a href=#52 id=52 data-nosnippet>52</a>}
-<a href=#53 id=53 data-nosnippet>53</a>
-<a href=#54 id=54 data-nosnippet>54</a><span class="comment">// Implements wrappers for NumPy's Array and UFunc API
-<a href=#55 id=55 data-nosnippet>55</a></span><span class="macro">macro_rules!</span> impl_api {
-<a href=#56 id=56 data-nosnippet>56</a>    <span class="comment">// API available on all versions
-<a href=#57 id=57 data-nosnippet>57</a>    </span>[<span class="macro-nonterminal">$offset</span>: expr; <span class="macro-nonterminal">$fname</span>: ident ($(<span class="macro-nonterminal">$arg</span>: ident: <span class="macro-nonterminal">$t</span>: ty),* $(,)<span class="question-mark">?</span>) $(-&gt; <span class="macro-nonterminal">$ret</span>: ty)<span class="question-mark">?</span>] =&gt; {
-<a href=#58 id=58 data-nosnippet>58</a>        <span class="attr">#[allow(non_snake_case)]
-<a href=#59 id=59 data-nosnippet>59</a>        </span><span class="kw">pub unsafe fn </span><span class="macro-nonterminal">$fname</span>&lt;<span class="lifetime">'py</span>&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, py: Python&lt;<span class="lifetime">'py</span>&gt;, $(<span class="macro-nonterminal">$arg </span>: <span class="macro-nonterminal">$t</span>), <span class="kw-2">*</span>) $(-&gt; <span class="macro-nonterminal">$ret</span>)* {
-<a href=#60 id=60 data-nosnippet>60</a>            <span class="kw">let </span>fptr = <span class="self">self</span>.get(py, <span class="macro-nonterminal">$offset</span>) <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">extern </span><span class="string">"C" </span><span class="kw">fn </span>($(<span class="macro-nonterminal">$arg </span>: <span class="macro-nonterminal">$t</span>), <span class="kw-2">*</span>) $(-&gt; <span class="macro-nonterminal">$ret</span>)<span class="kw-2">*</span>;
-<a href=#61 id=61 data-nosnippet>61</a>            (<span class="kw-2">*</span>fptr)($(<span class="macro-nonterminal">$arg</span>), <span class="kw-2">*</span>)
-<a href=#62 id=62 data-nosnippet>62</a>        }
-<a href=#63 id=63 data-nosnippet>63</a>    };
-<a href=#64 id=64 data-nosnippet>64</a>
-<a href=#65 id=65 data-nosnippet>65</a>    <span class="comment">// API with version constraints, checked at runtime
-<a href=#66 id=66 data-nosnippet>66</a>    </span>[<span class="macro-nonterminal">$offset</span>: expr; NumPy1; <span class="macro-nonterminal">$fname</span>: ident ($(<span class="macro-nonterminal">$arg</span>: ident: <span class="macro-nonterminal">$t</span>: ty),* $(,)<span class="question-mark">?</span>) $(-&gt; <span class="macro-nonterminal">$ret</span>: ty)<span class="question-mark">?</span>] =&gt; {
-<a href=#67 id=67 data-nosnippet>67</a>        <span class="attr">#[allow(non_snake_case)]
-<a href=#68 id=68 data-nosnippet>68</a>        </span><span class="kw">pub unsafe fn </span><span class="macro-nonterminal">$fname</span>&lt;<span class="lifetime">'py</span>&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, py: Python&lt;<span class="lifetime">'py</span>&gt;, $(<span class="macro-nonterminal">$arg </span>: <span class="macro-nonterminal">$t</span>), <span class="kw-2">*</span>) $(-&gt; <span class="macro-nonterminal">$ret</span>)* {
-<a href=#69 id=69 data-nosnippet>69</a>            <span class="macro">assert!</span>(
-<a href=#70 id=70 data-nosnippet>70</a>                !is_numpy_2(py),
-<a href=#71 id=71 data-nosnippet>71</a>                <span class="string">"{} requires API &lt; {:08X} (NumPy 1) but the runtime version is API {:08X}"</span>,
-<a href=#72 id=72 data-nosnippet>72</a>                <span class="macro">stringify!</span>(<span class="macro-nonterminal">$fname</span>),
-<a href=#73 id=73 data-nosnippet>73</a>                API_VERSION_2_0,
-<a href=#74 id=74 data-nosnippet>74</a>                <span class="kw-2">*</span>API_VERSION.get(py).expect(<span class="string">"API_VERSION is initialized"</span>),
-<a href=#75 id=75 data-nosnippet>75</a>            );
-<a href=#76 id=76 data-nosnippet>76</a>            <span class="kw">let </span>fptr = <span class="self">self</span>.get(py, <span class="macro-nonterminal">$offset</span>) <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">extern </span><span class="string">"C" </span><span class="kw">fn </span>($(<span class="macro-nonterminal">$arg</span>: <span class="macro-nonterminal">$t</span>), <span class="kw-2">*</span>) $(-&gt; <span class="macro-nonterminal">$ret</span>)<span class="kw-2">*</span>;
-<a href=#77 id=77 data-nosnippet>77</a>            (<span class="kw-2">*</span>fptr)($(<span class="macro-nonterminal">$arg</span>), <span class="kw-2">*</span>)
-<a href=#78 id=78 data-nosnippet>78</a>        }
-<a href=#79 id=79 data-nosnippet>79</a>
-<a href=#80 id=80 data-nosnippet>80</a>    };
-<a href=#81 id=81 data-nosnippet>81</a>    [<span class="macro-nonterminal">$offset</span>: expr; NumPy2; <span class="macro-nonterminal">$fname</span>: ident ($(<span class="macro-nonterminal">$arg</span>: ident: <span class="macro-nonterminal">$t</span>: ty),* $(,)<span class="question-mark">?</span>) $(-&gt; <span class="macro-nonterminal">$ret</span>: ty)<span class="question-mark">?</span>] =&gt; {
-<a href=#82 id=82 data-nosnippet>82</a>        <span class="attr">#[allow(non_snake_case)]
-<a href=#83 id=83 data-nosnippet>83</a>        </span><span class="kw">pub unsafe fn </span><span class="macro-nonterminal">$fname</span>&lt;<span class="lifetime">'py</span>&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, py: Python&lt;<span class="lifetime">'py</span>&gt;, $(<span class="macro-nonterminal">$arg </span>: <span class="macro-nonterminal">$t</span>), <span class="kw-2">*</span>) $(-&gt; <span class="macro-nonterminal">$ret</span>)* {
-<a href=#84 id=84 data-nosnippet>84</a>            <span class="macro">assert!</span>(
-<a href=#85 id=85 data-nosnippet>85</a>                is_numpy_2(py),
-<a href=#86 id=86 data-nosnippet>86</a>                <span class="string">"{} requires API {:08X} or greater (NumPy 2) but the runtime version is API {:08X}"</span>,
-<a href=#87 id=87 data-nosnippet>87</a>                <span class="macro">stringify!</span>(<span class="macro-nonterminal">$fname</span>),
-<a href=#88 id=88 data-nosnippet>88</a>                API_VERSION_2_0,
-<a href=#89 id=89 data-nosnippet>89</a>                <span class="kw-2">*</span>API_VERSION.get(py).expect(<span class="string">"API_VERSION is initialized"</span>),
-<a href=#90 id=90 data-nosnippet>90</a>            );
-<a href=#91 id=91 data-nosnippet>91</a>            <span class="kw">let </span>fptr = <span class="self">self</span>.get(py, <span class="macro-nonterminal">$offset</span>) <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">extern </span><span class="string">"C" </span><span class="kw">fn </span>($(<span class="macro-nonterminal">$arg</span>: <span class="macro-nonterminal">$t</span>), <span class="kw-2">*</span>) $(-&gt; <span class="macro-nonterminal">$ret</span>)<span class="kw-2">*</span>;
-<a href=#92 id=92 data-nosnippet>92</a>            (<span class="kw-2">*</span>fptr)($(<span class="macro-nonterminal">$arg</span>), <span class="kw-2">*</span>)
-<a href=#93 id=93 data-nosnippet>93</a>        }
-<a href=#94 id=94 data-nosnippet>94</a>
-<a href=#95 id=95 data-nosnippet>95</a>    };
-<a href=#96 id=96 data-nosnippet>96</a>}
-<a href=#97 id=97 data-nosnippet>97</a>
-<a href=#98 id=98 data-nosnippet>98</a><span class="kw">pub mod </span>array;
-<a href=#99 id=99 data-nosnippet>99</a><span class="kw">pub mod </span>flags;
-<a href=#100 id=100 data-nosnippet>100</a><span class="kw">pub mod </span>objects;
-<a href=#101 id=101 data-nosnippet>101</a><span class="kw">pub mod </span>types;
-<a href=#102 id=102 data-nosnippet>102</a><span class="kw">pub mod </span>ufunc;
-<a href=#103 id=103 data-nosnippet>103</a>
-<a href=#104 id=104 data-nosnippet>104</a><span class="kw">pub use </span><span class="self">self</span>::array::<span class="kw-2">*</span>;
-<a href=#105 id=105 data-nosnippet>105</a><span class="kw">pub use </span><span class="self">self</span>::flags::<span class="kw-2">*</span>;
-<a href=#106 id=106 data-nosnippet>106</a><span class="kw">pub use </span><span class="self">self</span>::objects::<span class="kw-2">*</span>;
-<a href=#107 id=107 data-nosnippet>107</a><span class="kw">pub use </span><span class="self">self</span>::types::<span class="kw-2">*</span>;
-<a href=#108 id=108 data-nosnippet>108</a><span class="kw">pub use </span><span class="self">self</span>::ufunc::<span class="kw-2">*</span>;
+<a href=#46 id=46 data-nosnippet>46</a>    <span class="prelude-val">Ok</span>(api.cast())
+<a href=#47 id=47 data-nosnippet>47</a>}
+<a href=#48 id=48 data-nosnippet>48</a>
+<a href=#49 id=49 data-nosnippet>49</a><span class="doccomment">/// Returns whether the runtime `numpy` version is 2.0 or greater.
+<a href=#50 id=50 data-nosnippet>50</a></span><span class="kw">pub fn </span>is_numpy_2&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; bool {
+<a href=#51 id=51 data-nosnippet>51</a>    <span class="kw">let </span>api_version = <span class="kw-2">*</span>API_VERSION.get_or_init(py, || <span class="kw">unsafe </span>{
+<a href=#52 id=52 data-nosnippet>52</a>        PY_ARRAY_API.PyArray_GetNDArrayCFeatureVersion(py)
+<a href=#53 id=53 data-nosnippet>53</a>    });
+<a href=#54 id=54 data-nosnippet>54</a>    api_version &gt;= NPY_2_0_API_VERSION
+<a href=#55 id=55 data-nosnippet>55</a>}
+<a href=#56 id=56 data-nosnippet>56</a>
+<a href=#57 id=57 data-nosnippet>57</a><span class="comment">// Implements wrappers for NumPy's Array and UFunc API
+<a href=#58 id=58 data-nosnippet>58</a></span><span class="macro">macro_rules!</span> impl_api {
+<a href=#59 id=59 data-nosnippet>59</a>    <span class="comment">// API available on all versions
+<a href=#60 id=60 data-nosnippet>60</a>    </span>[<span class="macro-nonterminal">$offset</span>: expr; <span class="macro-nonterminal">$fname</span>: ident ($(<span class="macro-nonterminal">$arg</span>: ident: <span class="macro-nonterminal">$t</span>: ty),* $(,)<span class="question-mark">?</span>) $(-&gt; <span class="macro-nonterminal">$ret</span>: ty)<span class="question-mark">?</span>] =&gt; {
+<a href=#61 id=61 data-nosnippet>61</a>        <span class="attr">#[allow(non_snake_case)]
+<a href=#62 id=62 data-nosnippet>62</a>        </span><span class="kw">pub unsafe fn </span><span class="macro-nonterminal">$fname</span>&lt;<span class="lifetime">'py</span>&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, py: Python&lt;<span class="lifetime">'py</span>&gt;, $(<span class="macro-nonterminal">$arg </span>: <span class="macro-nonterminal">$t</span>), <span class="kw-2">*</span>) $(-&gt; <span class="macro-nonterminal">$ret</span>)* {
+<a href=#63 id=63 data-nosnippet>63</a>            <span class="kw">let </span>f: <span class="kw">extern </span><span class="string">"C" </span><span class="kw">fn </span>($(<span class="macro-nonterminal">$arg </span>: <span class="macro-nonterminal">$t</span>), <span class="kw-2">*</span>) $(-&gt; <span class="macro-nonterminal">$ret</span>)* = <span class="self">self</span>.get(py, <span class="macro-nonterminal">$offset</span>).cast().read();
+<a href=#64 id=64 data-nosnippet>64</a>            f($(<span class="macro-nonterminal">$arg</span>), <span class="kw-2">*</span>)
+<a href=#65 id=65 data-nosnippet>65</a>        }
+<a href=#66 id=66 data-nosnippet>66</a>    };
+<a href=#67 id=67 data-nosnippet>67</a>}
+<a href=#68 id=68 data-nosnippet>68</a>
+<a href=#69 id=69 data-nosnippet>69</a><span class="comment">// Define type objects associated with the NumPy API
+<a href=#70 id=70 data-nosnippet>70</a></span><span class="macro">macro_rules!</span> impl_array_type {
+<a href=#71 id=71 data-nosnippet>71</a>    ($((<span class="macro-nonterminal">$api</span>:ident [ <span class="macro-nonterminal">$offset</span>:expr ] , <span class="macro-nonterminal">$tname</span>:ident)),* $(,)<span class="question-mark">?</span>) =&gt; {
+<a href=#72 id=72 data-nosnippet>72</a>        <span class="doccomment">/// All type objects exported by the NumPy API.
+<a href=#73 id=73 data-nosnippet>73</a>        </span><span class="attr">#[allow(non_camel_case_types)]
+<a href=#74 id=74 data-nosnippet>74</a>        </span><span class="kw">pub enum </span>NpyTypes { $(<span class="macro-nonterminal">$tname</span>),* }
+<a href=#75 id=75 data-nosnippet>75</a>
+<a href=#76 id=76 data-nosnippet>76</a>        <span class="doccomment">/// Get a pointer of the type object associated with `ty`.
+<a href=#77 id=77 data-nosnippet>77</a>        </span><span class="kw">pub unsafe fn </span>get_type_object&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;, ty: NpyTypes) -&gt; <span class="kw-2">*mut </span>PyTypeObject {
+<a href=#78 id=78 data-nosnippet>78</a>            <span class="kw">match </span>ty {
+<a href=#79 id=79 data-nosnippet>79</a>                $( NpyTypes::<span class="macro-nonterminal">$tname </span>=&gt; <span class="macro-nonterminal">$api</span>.get(py, <span class="macro-nonterminal">$offset</span>).read() <span class="kw">as _ </span>),*
+<a href=#80 id=80 data-nosnippet>80</a>            }
+<a href=#81 id=81 data-nosnippet>81</a>        }
+<a href=#82 id=82 data-nosnippet>82</a>    }
+<a href=#83 id=83 data-nosnippet>83</a>}
+<a href=#84 id=84 data-nosnippet>84</a>
+<a href=#85 id=85 data-nosnippet>85</a><span class="macro">impl_array_type!</span> {
+<a href=#86 id=86 data-nosnippet>86</a>    <span class="comment">// Multiarray API
+<a href=#87 id=87 data-nosnippet>87</a>    // Slot 1 was never meaningfully used by NumPy
+<a href=#88 id=88 data-nosnippet>88</a>    </span>(PY_ARRAY_API[<span class="number">2</span>], PyArray_Type),
+<a href=#89 id=89 data-nosnippet>89</a>    (PY_ARRAY_API[<span class="number">3</span>], PyArrayDescr_Type),
+<a href=#90 id=90 data-nosnippet>90</a>    <span class="comment">// Unused slot 4, was `PyArrayFlags_Type`
+<a href=#91 id=91 data-nosnippet>91</a>    </span>(PY_ARRAY_API[<span class="number">5</span>], PyArrayIter_Type),
+<a href=#92 id=92 data-nosnippet>92</a>    (PY_ARRAY_API[<span class="number">6</span>], PyArrayMultiIter_Type),
+<a href=#93 id=93 data-nosnippet>93</a>    <span class="comment">// (PY_ARRAY_API[7], NPY_NUMUSERTYPES) -&gt; c_int,
+<a href=#94 id=94 data-nosnippet>94</a>    </span>(PY_ARRAY_API[<span class="number">8</span>], PyBoolArrType_Type),
+<a href=#95 id=95 data-nosnippet>95</a>    <span class="comment">// (PY_ARRAY_API[9], _PyArrayScalar_BoolValues) -&gt; *mut PyBoolScalarObject,
+<a href=#96 id=96 data-nosnippet>96</a>    </span>(PY_ARRAY_API[<span class="number">10</span>], PyGenericArrType_Type),
+<a href=#97 id=97 data-nosnippet>97</a>    (PY_ARRAY_API[<span class="number">11</span>], PyNumberArrType_Type),
+<a href=#98 id=98 data-nosnippet>98</a>    (PY_ARRAY_API[<span class="number">12</span>], PyIntegerArrType_Type),
+<a href=#99 id=99 data-nosnippet>99</a>    (PY_ARRAY_API[<span class="number">13</span>], PySignedIntegerArrType_Type),
+<a href=#100 id=100 data-nosnippet>100</a>    (PY_ARRAY_API[<span class="number">14</span>], PyUnsignedIntegerArrType_Type),
+<a href=#101 id=101 data-nosnippet>101</a>    (PY_ARRAY_API[<span class="number">15</span>], PyInexactArrType_Type),
+<a href=#102 id=102 data-nosnippet>102</a>    (PY_ARRAY_API[<span class="number">16</span>], PyFloatingArrType_Type),
+<a href=#103 id=103 data-nosnippet>103</a>    (PY_ARRAY_API[<span class="number">17</span>], PyComplexFloatingArrType_Type),
+<a href=#104 id=104 data-nosnippet>104</a>    (PY_ARRAY_API[<span class="number">18</span>], PyFlexibleArrType_Type),
+<a href=#105 id=105 data-nosnippet>105</a>    (PY_ARRAY_API[<span class="number">19</span>], PyCharacterArrType_Type),
+<a href=#106 id=106 data-nosnippet>106</a>    (PY_ARRAY_API[<span class="number">20</span>], PyByteArrType_Type),
+<a href=#107 id=107 data-nosnippet>107</a>    (PY_ARRAY_API[<span class="number">21</span>], PyShortArrType_Type),
+<a href=#108 id=108 data-nosnippet>108</a>    (PY_ARRAY_API[<span class="number">22</span>], PyIntArrType_Type),
+<a href=#109 id=109 data-nosnippet>109</a>    (PY_ARRAY_API[<span class="number">23</span>], PyLongArrType_Type),
+<a href=#110 id=110 data-nosnippet>110</a>    (PY_ARRAY_API[<span class="number">24</span>], PyLongLongArrType_Type),
+<a href=#111 id=111 data-nosnippet>111</a>    (PY_ARRAY_API[<span class="number">25</span>], PyUByteArrType_Type),
+<a href=#112 id=112 data-nosnippet>112</a>    (PY_ARRAY_API[<span class="number">26</span>], PyUShortArrType_Type),
+<a href=#113 id=113 data-nosnippet>113</a>    (PY_ARRAY_API[<span class="number">27</span>], PyUIntArrType_Type),
+<a href=#114 id=114 data-nosnippet>114</a>    (PY_ARRAY_API[<span class="number">28</span>], PyULongArrType_Type),
+<a href=#115 id=115 data-nosnippet>115</a>    (PY_ARRAY_API[<span class="number">29</span>], PyULongLongArrType_Type),
+<a href=#116 id=116 data-nosnippet>116</a>    (PY_ARRAY_API[<span class="number">30</span>], PyFloatArrType_Type),
+<a href=#117 id=117 data-nosnippet>117</a>    (PY_ARRAY_API[<span class="number">31</span>], PyDoubleArrType_Type),
+<a href=#118 id=118 data-nosnippet>118</a>    (PY_ARRAY_API[<span class="number">32</span>], PyLongDoubleArrType_Type),
+<a href=#119 id=119 data-nosnippet>119</a>    (PY_ARRAY_API[<span class="number">33</span>], PyCFloatArrType_Type),
+<a href=#120 id=120 data-nosnippet>120</a>    (PY_ARRAY_API[<span class="number">34</span>], PyCDoubleArrType_Type),
+<a href=#121 id=121 data-nosnippet>121</a>    (PY_ARRAY_API[<span class="number">35</span>], PyCLongDoubleArrType_Type),
+<a href=#122 id=122 data-nosnippet>122</a>    (PY_ARRAY_API[<span class="number">36</span>], PyObjectArrType_Type),
+<a href=#123 id=123 data-nosnippet>123</a>    (PY_ARRAY_API[<span class="number">37</span>], PyStringArrType_Type),
+<a href=#124 id=124 data-nosnippet>124</a>    (PY_ARRAY_API[<span class="number">38</span>], PyUnicodeArrType_Type),
+<a href=#125 id=125 data-nosnippet>125</a>    (PY_ARRAY_API[<span class="number">39</span>], PyVoidArrType_Type),
+<a href=#126 id=126 data-nosnippet>126</a>    (PY_ARRAY_API[<span class="number">214</span>], PyTimeIntegerArrType_Type),
+<a href=#127 id=127 data-nosnippet>127</a>    (PY_ARRAY_API[<span class="number">215</span>], PyDatetimeArrType_Type),
+<a href=#128 id=128 data-nosnippet>128</a>    (PY_ARRAY_API[<span class="number">216</span>], PyTimedeltaArrType_Type),
+<a href=#129 id=129 data-nosnippet>129</a>    (PY_ARRAY_API[<span class="number">217</span>], PyHalfArrType_Type),
+<a href=#130 id=130 data-nosnippet>130</a>    (PY_ARRAY_API[<span class="number">218</span>], NpyIter_Type),
+<a href=#131 id=131 data-nosnippet>131</a>    <span class="comment">// UFunc API
+<a href=#132 id=132 data-nosnippet>132</a>    </span>(PY_UFUNC_API[<span class="number">0</span>], PyUFunc_Type),
+<a href=#133 id=133 data-nosnippet>133</a>}
+<a href=#134 id=134 data-nosnippet>134</a>
+<a href=#135 id=135 data-nosnippet>135</a><span class="kw">pub mod </span>array;
+<a href=#136 id=136 data-nosnippet>136</a><span class="kw">pub mod </span>flags;
+<a href=#137 id=137 data-nosnippet>137</a><span class="kw">mod </span>npy_common;
+<a href=#138 id=138 data-nosnippet>138</a><span class="kw">mod </span>numpyconfig;
+<a href=#139 id=139 data-nosnippet>139</a><span class="kw">pub mod </span>objects;
+<a href=#140 id=140 data-nosnippet>140</a><span class="kw">pub mod </span>types;
+<a href=#141 id=141 data-nosnippet>141</a><span class="kw">pub mod </span>ufunc;
+<a href=#142 id=142 data-nosnippet>142</a>
+<a href=#143 id=143 data-nosnippet>143</a><span class="kw">pub use </span><span class="self">self</span>::array::<span class="kw-2">*</span>;
+<a href=#144 id=144 data-nosnippet>144</a><span class="kw">pub use </span><span class="self">self</span>::flags::<span class="kw-2">*</span>;
+<a href=#145 id=145 data-nosnippet>145</a><span class="kw">pub use </span><span class="self">self</span>::npy_common::<span class="kw-2">*</span>;
+<a href=#146 id=146 data-nosnippet>146</a><span class="kw">pub use </span><span class="self">self</span>::numpyconfig::<span class="kw-2">*</span>;
+<a href=#147 id=147 data-nosnippet>147</a><span class="kw">pub use </span><span class="self">self</span>::objects::<span class="kw-2">*</span>;
+<a href=#148 id=148 data-nosnippet>148</a><span class="kw">pub use </span><span class="self">self</span>::types::<span class="kw-2">*</span>;
+<a href=#149 id=149 data-nosnippet>149</a><span class="kw">pub use </span><span class="self">self</span>::ufunc::<span class="kw-2">*</span>;
 </code></pre></div></section></main></body></html>

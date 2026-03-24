@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"constant":["API_VERSION_2_0"],"fn":["is_numpy_2"],"mod":["array","flags","objects","types","ufunc"]};
+window.SIDEBAR_ITEMS = {"constant":["NPY_CPU_BIG","NPY_CPU_LITTLE","NPY_CPU_UNKNOWN_ENDIAN","NPY_FEATURE_VERSION","NPY_FEATURE_VERSION_STRING","NPY_VERSION"],"enum":["NpyTypes"],"fn":["get_type_object","is_numpy_2"],"mod":["array","flags","objects","types","ufunc"]};

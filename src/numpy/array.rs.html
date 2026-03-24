@@ -129,7 +129,7 @@
 <a href=#129 id=129 data-nosnippet>129</a>    <span class="kw">const </span>MODULE: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'static </span>str&gt; = <span class="prelude-val">Some</span>(<span class="string">"numpy"</span>);
 <a href=#130 id=130 data-nosnippet>130</a>
 <a href=#131 id=131 data-nosnippet>131</a>    <span class="kw">fn </span>type_object_raw&lt;<span class="lifetime">'py</span>&gt;(py: Python&lt;<span class="lifetime">'py</span>&gt;) -&gt; <span class="kw-2">*mut </span>ffi::PyTypeObject {
-<a href=#132 id=132 data-nosnippet>132</a>        <span class="kw">unsafe </span>{ npyffi::PY_ARRAY_API.get_type_object(py, npyffi::NpyTypes::PyArray_Type) }
+<a href=#132 id=132 data-nosnippet>132</a>        <span class="kw">unsafe </span>{ npyffi::get_type_object(py, npyffi::NpyTypes::PyArray_Type) }
 <a href=#133 id=133 data-nosnippet>133</a>    }
 <a href=#134 id=134 data-nosnippet>134</a>
 <a href=#135 id=135 data-nosnippet>135</a>    <span class="kw">fn </span>is_type_of(ob: <span class="kw-2">&amp;</span>Bound&lt;<span class="lifetime">'_</span>, PyAny&gt;) -&gt; bool {
@@ -233,7 +233,7 @@
 <a href=#233 id=233 data-nosnippet>233</a>        <span class="kw">let </span><span class="kw-2">mut </span>dims = dims.into_dimension();
 <a href=#234 id=234 data-nosnippet>234</a>        <span class="kw">let </span>ptr = PY_ARRAY_API.PyArray_NewFromDescr(
 <a href=#235 id=235 data-nosnippet>235</a>            py,
-<a href=#236 id=236 data-nosnippet>236</a>            PY_ARRAY_API.get_type_object(py, npyffi::NpyTypes::PyArray_Type),
+<a href=#236 id=236 data-nosnippet>236</a>            npyffi::get_type_object(py, npyffi::NpyTypes::PyArray_Type),
 <a href=#237 id=237 data-nosnippet>237</a>            T::get_dtype(py).into_dtype_ptr(),
 <a href=#238 id=238 data-nosnippet>238</a>            dims.ndim_cint(),
 <a href=#239 id=239 data-nosnippet>239</a>            dims.as_dims_ptr(),
@@ -259,7 +259,7 @@
 <a href=#259 id=259 data-nosnippet>259</a>        <span class="kw">let </span><span class="kw-2">mut </span>dims = dims.into_dimension();
 <a href=#260 id=260 data-nosnippet>260</a>        <span class="kw">let </span>ptr = PY_ARRAY_API.PyArray_NewFromDescr(
 <a href=#261 id=261 data-nosnippet>261</a>            py,
-<a href=#262 id=262 data-nosnippet>262</a>            PY_ARRAY_API.get_type_object(py, npyffi::NpyTypes::PyArray_Type),
+<a href=#262 id=262 data-nosnippet>262</a>            npyffi::get_type_object(py, npyffi::NpyTypes::PyArray_Type),
 <a href=#263 id=263 data-nosnippet>263</a>            T::get_dtype(py).into_dtype_ptr(),
 <a href=#264 id=264 data-nosnippet>264</a>            dims.ndim_cint(),
 <a href=#265 id=265 data-nosnippet>265</a>            dims.as_dims_ptr(),
