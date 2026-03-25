@@ -1,5 +1,5 @@
+use std::ffi::{c_int, c_long, c_longlong, c_short, c_uint, c_ulong, c_ulonglong, c_ushort};
 use std::mem::size_of;
-use std::os::raw::{c_int, c_long, c_longlong, c_short, c_uint, c_ulong, c_ulonglong, c_ushort};
 use std::ptr;
 
 #[cfg(feature = "half")]

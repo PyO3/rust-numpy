@@ -4,9 +4,9 @@
 //! [ucs4]: https://numpy.org/doc/stable/reference/c-api/dtype.html#c.NPY_UNICODE
 
 use std::collections::hash_map::Entry;
+use std::ffi::c_char;
 use std::fmt;
 use std::mem::size_of;
-use std::os::raw::c_char;
 use std::str;
 use std::sync::Mutex;
 

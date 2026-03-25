@@ -1,7 +1,6 @@
 use std::collections::hash_map::Entry;
-use std::ffi::{c_void, CString};
+use std::ffi::{c_char, c_int, c_void, CString};
 use std::mem::forget;
-use std::os::raw::{c_char, c_int};
 use std::ptr::NonNull;
 use std::slice::from_raw_parts;
 use std::sync::Mutex;
