@@ -2,15 +2,11 @@ use std::marker::PhantomData;
 use std::ops::Deref;
 
 use ndarray::{Array1, Dimension, Ix0, Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};
-use pyo3::{
-    intern,
-    sync::PyOnceLock,
-    types::{PyAnyMethods, PyDict},
-    Borrowed, FromPyObject, Py, PyAny, PyErr, PyResult,
-};
+use pyo3::{types::PyAnyMethods, Borrowed, FromPyObject, PyAny, PyErr, PyResult};
 
-use crate::array::PyArrayMethods;
-use crate::{get_array_module, Element, IntoPyArray, PyArray, PyReadonlyArray, PyUntypedArray};
+use crate::npyffi::NPY_ARRAY_FORCECAST;
+use crate::{array::PyArrayMethods, PY_ARRAY_API};
+use crate::{Element, IntoPyArray, PyArray, PyReadonlyArray, PyUntypedArray};
 
 pub trait Coerce: Sealed {
     const ALLOW_TYPE_CHANGE: bool;
@@ -166,24 +162,31 @@ where
             }
         }
 
-        static AS_ARRAY: PyOnceLock<Py<PyAny>> = PyOnceLock::new();
-
-        let as_array = AS_ARRAY
-            .get_or_try_init(py, || {
-                get_array_module(py)?.getattr("asarray").map(Into::into)
-            })?
-            .bind(py);
-
-        let kwargs = if C::ALLOW_TYPE_CHANGE {
-            let kwargs = PyDict::new(py);
-            kwargs.set_item(intern!(py, "dtype"), T::get_dtype(py))?;
-            Some(kwargs)
+        let (dtype, flags) = if C::ALLOW_TYPE_CHANGE {
+            (Some(T::get_dtype(py)), NPY_ARRAY_FORCECAST)
         } else {
-            None
+            (None, 0)
         };
 
-        let array = as_array.call((ob,), kwargs.as_ref())?.extract()?;
-        Ok(Self(array, PhantomData))
+        let newtype = dtype
+            .map(|dt| dt.into_ptr().cast())
+            .unwrap_or_else(std::ptr::null_mut);
+
+        let array = unsafe {
+            let ptr = PY_ARRAY_API.PyArray_FromAny(
+                py,
+                ob.as_ptr(),
+                newtype,
+                0,
+                0,
+                flags,
+                std::ptr::null_mut(),
+            );
+
+            pyo3::Bound::from_owned_ptr_or_err(py, ptr)?
+        };
+
+        Ok(Self(array.extract()?, PhantomData))
     }
 }
 
