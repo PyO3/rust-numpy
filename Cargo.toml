@@ -44,6 +44,10 @@ name = "array"
 harness = false
 
 [[bench]]
+name = "array_like"
+harness = false
+
+[[bench]]
 name = "borrow"
 harness = false
 
