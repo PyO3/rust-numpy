@@ -88,9 +88,6 @@ def test(args):
 
 
 def bench(args):
-    if not nightly():
-        sys.exit("Benchmarks require a nightly build of the Rust compiler.")
-
     if args.name is None:
         run("cargo", "bench", "--all-features", "--benches")
     else:
@@ -151,9 +148,7 @@ if __name__ == "__main__":
     test_parser.set_defaults(func=test)
     test_parser.add_argument("name", nargs="?", help="Test target name")
 
-    bench_parser = subparsers.add_parser(
-        "bench", aliases=["b"], help="Benchmarks (requires nightly)"
-    )
+    bench_parser = subparsers.add_parser("bench", aliases=["b"], help="Benchmarks")
     bench_parser.set_defaults(func=bench)
     bench_parser.add_argument("name", nargs="?", help="Benchmark target name")
 
