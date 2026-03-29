@@ -34,9 +34,18 @@ rustc-hash = "2.0"
 [dev-dependencies]
 pyo3 = { version = "0.28.0", default-features = false, features = ["auto-initialize"]}
 nalgebra = { version = ">=0.30, <0.35", default-features = false, features = ["std"] }
+criterion = "0.8.2"
 
 [build-dependencies]
 pyo3-build-config = { version = "0.28", features = ["resolve-config"]}
+
+[[bench]]
+name = "array"
+harness = false
+
+[[bench]]
+name = "borrow"
+harness = false
 
 [package.metadata.docs.rs]
 all-features = true

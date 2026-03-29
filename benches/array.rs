@@ -1,54 +1,54 @@
-#![feature(test)]
+use std::{hint::black_box, ops::Range};
 
-extern crate test;
-use test::{black_box, Bencher};
-
-use std::ops::Range;
-
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use numpy::{PyArray1, PyArray2, PyArray3};
 use pyo3::{types::PyAnyMethods, Bound, IntoPyObjectExt, Python};
 
-#[bench]
-fn extract_success(bencher: &mut Bencher) {
+fn extract_success(c: &mut Criterion) {
     Python::attach(|py| {
         let any = PyArray2::<f64>::zeros(py, (10, 10), false).into_any();
 
-        bencher.iter(|| {
-            black_box(&any)
-                .extract::<Bound<'_, PyArray2<f64>>>()
-                .unwrap()
+        c.bench_function("extract_success", |b| {
+            b.iter(|| {
+                black_box(&any)
+                    .extract::<Bound<'_, PyArray2<f64>>>()
+                    .unwrap()
+            });
         });
     });
 }
 
-#[bench]
-fn extract_failure(bencher: &mut Bencher) {
+fn extract_failure(c: &mut Criterion) {
     Python::attach(|py| {
         let any = PyArray2::<i32>::zeros(py, (10, 10), false).into_any();
 
-        bencher.iter(|| {
-            black_box(&any)
-                .extract::<Bound<'_, PyArray2<f64>>>()
-                .unwrap_err()
+        c.bench_function("extract_failure", |b| {
+            b.iter(|| {
+                black_box(&any)
+                    .extract::<Bound<'_, PyArray2<f64>>>()
+                    .unwrap_err()
+            });
         });
     });
 }
 
-#[bench]
-fn cast_success(bencher: &mut Bencher) {
+fn cast_success(c: &mut Criterion) {
     Python::attach(|py| {
         let any = PyArray2::<f64>::zeros(py, (10, 10), false).into_any();
 
-        bencher.iter(|| black_box(&any).cast::<PyArray2<f64>>().unwrap());
+        c.bench_function("cast_success", |b| {
+            b.iter(|| black_box(&any).cast::<PyArray2<f64>>().unwrap());
+        });
     });
 }
 
-#[bench]
-fn cast_failure(bencher: &mut Bencher) {
+fn cast_failure(c: &mut Criterion) {
     Python::attach(|py| {
         let any = PyArray2::<i32>::zeros(py, (10, 10), false).into_any();
 
-        bencher.iter(|| black_box(&any).cast::<PyArray2<f64>>().unwrap_err());
+        c.bench_function("cast_failure", |b| {
+            b.iter(|| black_box(&any).cast::<PyArray2<f64>>().unwrap_err());
+        })
     });
 }
 
@@ -62,139 +62,111 @@ impl Iterator for Iter {
     }
 }
 
-fn from_iter(bencher: &mut Bencher, size: usize) {
-    Python::attach(|py| {
-        bencher.iter(|| {
-            let iter = black_box(Iter(0..size));
+fn from_iter(c: &mut Criterion) {
+    const SIZES: &[usize] = &[2_usize.pow(5), 2_usize.pow(10), 2_usize.pow(15)];
 
-            PyArray1::from_iter(py, iter)
+    let mut group = c.benchmark_group("from_iter");
+    for &size in SIZES {
+        Python::attach(|py| {
+            group.throughput(Throughput::Elements(size as u64));
+            group.bench_with_input(BenchmarkId::from_parameter(size), &size, |b, _size| {
+                b.iter(|| {
+                    let iter = black_box(Iter(0..size));
+                    black_box(PyArray1::from_iter(py, iter));
+                });
+            });
         });
-    });
+    }
 }
 
-#[bench]
-fn from_iter_small(bencher: &mut Bencher) {
-    from_iter(bencher, 2_usize.pow(5));
-}
+fn from_slice(c: &mut Criterion) {
+    const SIZES: &[usize] = &[2_usize.pow(5), 2_usize.pow(10), 2_usize.pow(15)];
 
-#[bench]
-fn from_iter_medium(bencher: &mut Bencher) {
-    from_iter(bencher, 2_usize.pow(10));
-}
+    let mut group = c.benchmark_group("from_slice");
+    for &size in SIZES {
+        let vec = (0..size).collect::<Vec<_>>();
 
-#[bench]
-fn from_iter_large(bencher: &mut Bencher) {
-    from_iter(bencher, 2_usize.pow(15));
-}
-
-fn from_slice(bencher: &mut Bencher, size: usize) {
-    let vec = (0..size).collect::<Vec<_>>();
-
-    Python::attach(|py| {
-        bencher.iter(|| {
-            let slice = black_box(&vec);
-
-            PyArray1::from_slice(py, slice)
+        Python::attach(|py| {
+            group.throughput(Throughput::Elements(size as u64));
+            group.bench_with_input(BenchmarkId::from_parameter(size), &size, |b, _size| {
+                b.iter(|| {
+                    let slice = black_box(&vec[..]);
+                    black_box(PyArray1::from_slice(py, slice));
+                });
+            });
         });
-    });
+    }
 }
 
-#[bench]
-fn from_slice_small(bencher: &mut Bencher) {
-    from_slice(bencher, 2_usize.pow(5));
-}
+fn from_object_slice(c: &mut Criterion) {
+    const SIZES: &[usize] = &[2_usize.pow(5), 2_usize.pow(10), 2_usize.pow(15)];
 
-#[bench]
-fn from_slice_medium(bencher: &mut Bencher) {
-    from_slice(bencher, 2_usize.pow(10));
-}
+    let mut group = c.benchmark_group("from_object_slice");
+    for &size in SIZES {
+        Python::attach(|py| {
+            let vec = (0..size)
+                .map(|val| val.into_py_any(py).unwrap())
+                .collect::<Vec<_>>();
 
-#[bench]
-fn from_slice_large(bencher: &mut Bencher) {
-    from_slice(bencher, 2_usize.pow(15));
-}
-
-fn from_object_slice(bencher: &mut Bencher, size: usize) {
-    let vec = Python::attach(|py| {
-        (0..size)
-            .map(|val| val.into_py_any(py).unwrap())
-            .collect::<Vec<_>>()
-    });
-
-    Python::attach(|py| {
-        bencher.iter(|| {
-            let slice = black_box(&vec);
-
-            PyArray1::from_slice(py, slice)
+            group.throughput(Throughput::Elements(size as u64));
+            group.bench_with_input(BenchmarkId::from_parameter(size), &size, |b, _size| {
+                b.iter(|| {
+                    let slice = black_box(&vec[..]);
+                    black_box(PyArray1::from_slice(py, slice));
+                });
+            });
         });
-    });
+    }
 }
 
-#[bench]
-fn from_object_slice_small(bencher: &mut Bencher) {
-    from_object_slice(bencher, 2_usize.pow(5));
-}
+fn from_vec2(c: &mut Criterion) {
+    const SIZES: &[usize] = &[2_usize.pow(3), 2_usize.pow(5), 2_usize.pow(8)];
 
-#[bench]
-fn from_object_slice_medium(bencher: &mut Bencher) {
-    from_object_slice(bencher, 2_usize.pow(10));
-}
+    let mut group = c.benchmark_group("from_vec2");
+    for &size in SIZES {
+        let vec2 = vec![vec![0; size]; size];
 
-#[bench]
-fn from_object_slice_large(bencher: &mut Bencher) {
-    from_object_slice(bencher, 2_usize.pow(15));
-}
-
-fn from_vec2(bencher: &mut Bencher, size: usize) {
-    let vec2 = vec![vec![0; size]; size];
-
-    Python::attach(|py| {
-        bencher.iter(|| {
-            let vec2 = black_box(&vec2);
-
-            PyArray2::from_vec2(py, vec2).unwrap()
+        Python::attach(|py| {
+            group.throughput(Throughput::Elements(size.pow(2) as u64));
+            group.bench_with_input(BenchmarkId::from_parameter(size), &size, |b, _size| {
+                b.iter(|| {
+                    let vec2 = black_box(&vec2);
+                    black_box(PyArray2::from_vec2(py, vec2).unwrap());
+                });
+            });
         });
-    });
+    }
 }
 
-#[bench]
-fn from_vec2_small(bencher: &mut Bencher) {
-    from_vec2(bencher, 2_usize.pow(3));
-}
+fn from_vec3(c: &mut Criterion) {
+    const SIZES: &[usize] = &[2_usize.pow(2), 2_usize.pow(4), 2_usize.pow(5)];
 
-#[bench]
-fn from_vec2_medium(bencher: &mut Bencher) {
-    from_vec2(bencher, 2_usize.pow(5));
-}
+    let mut group = c.benchmark_group("from_vec3");
+    for &size in SIZES {
+        let vec3 = vec![vec![vec![0; size]; size]; size];
 
-#[bench]
-fn from_vec2_large(bencher: &mut Bencher) {
-    from_vec2(bencher, 2_usize.pow(8));
-}
-
-fn from_vec3(bencher: &mut Bencher, size: usize) {
-    let vec3 = vec![vec![vec![0; size]; size]; size];
-
-    Python::attach(|py| {
-        bencher.iter(|| {
-            let vec3 = black_box(&vec3);
-
-            PyArray3::from_vec3(py, vec3).unwrap()
+        Python::attach(|py| {
+            group.throughput(Throughput::Elements(size.pow(3) as u64));
+            group.bench_with_input(BenchmarkId::from_parameter(size), &size, |b, _size| {
+                b.iter(|| {
+                    let vec3 = black_box(&vec3);
+                    black_box(PyArray3::from_vec3(py, vec3).unwrap());
+                });
+            });
         });
-    });
+    }
 }
 
-#[bench]
-fn from_vec3_small(bencher: &mut Bencher) {
-    from_vec3(bencher, 2_usize.pow(2));
-}
-
-#[bench]
-fn from_vec3_medium(bencher: &mut Bencher) {
-    from_vec3(bencher, 2_usize.pow(4));
-}
-
-#[bench]
-fn from_vec3_large(bencher: &mut Bencher) {
-    from_vec3(bencher, 2_usize.pow(5));
-}
+criterion_group!(
+    benches,
+    extract_success,
+    extract_failure,
+    cast_success,
+    cast_failure,
+    from_iter,
+    from_slice,
+    from_object_slice,
+    from_vec2,
+    from_vec3
+);
+criterion_main!(benches);
