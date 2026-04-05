@@ -151,7 +151,7 @@ impl fmt::Display for AsSliceError {
 }
 impl_pyerr!(AsSliceError);
 
-/// Inidcates why borrowing an array failed.
+/// Indicates why borrowing an array failed.
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum BorrowError {

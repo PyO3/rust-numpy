@@ -463,7 +463,7 @@ where
     type Target = PyReadonlyArray<'py, T, D>;
 
     fn deref(&self) -> &Self::Target {
-        // SAFETY: Exclusive references decay implictly into shared references.
+        // SAFETY: Exclusive references decay implicitly into shared references.
         unsafe { &*(self as *const Self as *const Self::Target) }
     }
 }

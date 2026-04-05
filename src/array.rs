@@ -61,7 +61,7 @@ use crate::untyped_array::{PyUntypedArray, PyUntypedArrayMethods};
 ///
 /// # Element type and dimensionality
 ///
-/// `PyArray` has two type parametes `T` and `D`.
+/// `PyArray` has two type parameters `T` and `D`.
 /// `T` represents the type of its elements, e.g. [`f32`] or [`PyObject`].
 /// `D` represents its dimensionality, e.g [`Ix2`][type@Ix2] or [`IxDyn`][type@IxDyn].
 ///
@@ -293,7 +293,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
 
     /// Creates a NumPy array backed by `array` and ties its ownership to the Python object `container`.
     ///
-    /// The resulting NumPy array will be writeable from Python space.  If this is undesireable, use
+    /// The resulting NumPy array will be writeable from Python space.  If this is undesirable, use
     /// [PyReadwriteArray::make_nonwriteable].
     ///
     /// # Safety

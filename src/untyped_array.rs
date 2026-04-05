@@ -270,7 +270,7 @@ pub trait PyUntypedArrayMethods<'py>: Sealed {
         self.shape().iter().product()
     }
 
-    /// Returns `true` if the there are no elements in the array.
+    /// Returns `true` if there are no elements in the array.
     fn is_empty(&self) -> bool {
         self.shape().contains(&0)
     }
