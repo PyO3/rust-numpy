@@ -174,7 +174,7 @@ fn insert_shared<'py>(py: Python<'py>) -> PyResult<NonNull<Shared>> {
 // These entry points will be used to access the shared borrow checking API from this extension:
 
 pub fn acquire<'py>(py: Python<'py>, array: *mut PyArrayObject) -> Result<(), BorrowError> {
-    let shared = get_or_insert_shared(py).expect("Interal borrow checking API error");
+    let shared = get_or_insert_shared(py).expect("Internal borrow checking API error");
 
     let rc = unsafe { (shared.acquire)(shared.flags, array) };
 
@@ -186,7 +186,7 @@ pub fn acquire<'py>(py: Python<'py>, array: *mut PyArrayObject) -> Result<(), Bo
 }
 
 pub fn acquire_mut<'py>(py: Python<'py>, array: *mut PyArrayObject) -> Result<(), BorrowError> {
-    let shared = get_or_insert_shared(py).expect("Interal borrow checking API error");
+    let shared = get_or_insert_shared(py).expect("Internal borrow checking API error");
 
     let rc = unsafe { (shared.acquire_mut)(shared.flags, array) };
 
@@ -199,7 +199,7 @@ pub fn acquire_mut<'py>(py: Python<'py>, array: *mut PyArrayObject) -> Result<()
 }
 
 pub fn release<'py>(py: Python<'py>, array: *mut PyArrayObject) {
-    let shared = get_or_insert_shared(py).expect("Interal borrow checking API error");
+    let shared = get_or_insert_shared(py).expect("Internal borrow checking API error");
 
     unsafe {
         (shared.release)(shared.flags, array);
@@ -207,7 +207,7 @@ pub fn release<'py>(py: Python<'py>, array: *mut PyArrayObject) {
 }
 
 pub fn release_mut<'py>(py: Python<'py>, array: *mut PyArrayObject) {
-    let shared = get_or_insert_shared(py).expect("Interal borrow checking API error");
+    let shared = get_or_insert_shared(py).expect("Internal borrow checking API error");
 
     unsafe {
         (shared.release_mut)(shared.flags, array);

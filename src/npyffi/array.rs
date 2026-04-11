@@ -115,24 +115,24 @@ impl PyArrayAPI {
                     )));
                 }
 
-                let endianess = unsafe {
+                let endianness = unsafe {
                     // int PyArray_GetEndianness();
-                    let get_endianess: extern "C" fn() -> c_int =
+                    let get_endianness: extern "C" fn() -> c_int =
                         api.add(210).cast().read();
-                    get_endianess()
+                    get_endianness()
                 };
 
                 #[cfg(target_endian = "big")]
-                if endianess != NPY_CPU_BIG {
+                if endianness != NPY_CPU_BIG {
                     return Err(PyRuntimeError::new_err(
-                        "module compiled as big endian, but detected different endianess at runtime",
+                        "module compiled as big endian, but detected different endianness at runtime",
                     ));
                 }
 
                 #[cfg(target_endian = "little")]
-                if endianess != NPY_CPU_LITTLE {
+                if endianness != NPY_CPU_LITTLE {
                     return Err(PyRuntimeError::new_err(
-                        "module compiled as little endian, but detected different endianess at runtime",
+                        "module compiled as little endian, but detected different endianness at runtime",
                     ));
                 }
 
