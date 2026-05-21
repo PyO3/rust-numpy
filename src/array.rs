@@ -134,6 +134,10 @@ unsafe impl<T: Element, D: Dimension> PyTypeInfo for PyArray<T, D> {
     fn is_type_of(ob: &Bound<'_, PyAny>) -> bool {
         Self::extract::<IgnoreError>(ob).is_ok()
     }
+
+    fn is_exact_type_of(ob: &Bound<'_, PyAny>) -> bool {
+        Self::extract::<IgnoreError>(ob).is_ok()
+    }
 }
 
 impl<T: Element, D: Dimension> PyArray<T, D> {

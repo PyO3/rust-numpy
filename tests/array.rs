@@ -252,6 +252,26 @@ fn is_instance() {
 }
 
 #[test]
+fn cast_exact_checks_dtype_and_shape() {
+    Python::attach(|py| {
+        let arr_f64 = PyArray2::<f64>::zeros(py, [3, 5], false);
+        let arr_f32 = PyArray2::<f32>::zeros(py, [3, 5], false);
+        let arr_f64_3d = PyArray::<f64, _>::zeros(py, [3, 5, 7], false);
+
+        // cast_exact should succeed when dtype and shape both match
+        assert!(arr_f64.as_any().cast_exact::<PyArray2<f64>>().is_ok());
+        assert!(arr_f32.as_any().cast_exact::<PyArray2<f32>>().is_ok());
+
+        // cast_exact should fail when dtype does not match
+        assert!(arr_f64.as_any().cast_exact::<PyArray2<f32>>().is_err());
+        assert!(arr_f32.as_any().cast_exact::<PyArray2<f64>>().is_err());
+
+        // cast_exact should fail when dimensionality does not match
+        assert!(arr_f64_3d.as_any().cast_exact::<PyArray2<f64>>().is_err());
+    });
+}
+
+#[test]
 fn from_vec2() {
     Python::attach(|py| {
         let pyarray = PyArray::from_vec2(py, &[vec![1, 2, 3], vec![4, 5, 6]]).unwrap();
