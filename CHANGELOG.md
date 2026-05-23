@@ -3,6 +3,7 @@
 - Unreleased
   - Fix PyArray_DTypeMeta definition when Py_LIMITED_API is disabled ([#532](https://github.com/PyO3/rust-numpy/pull/532))
   - The NumPy C API binding has been updated to target the ABI v2, while maintaining runtime compatibility with NumPy v1 targeting the API v1.15. The higher interface is unchanged. ([#537](https://github.com/PyO3/rust-numpy/pull/537))
+  - Fix `is_exact_type_of` / `cast_exact` to use `PyArray_CheckExact` instead of `PyArray_Check`, correctly rejecting subclasses of `ndarray`. ([#550](https://github.com/PyO3/rust-numpy/pull/550))
 
 - v0.28.0
   - Fix mismatched behavior between `PyArrayLike1` and `PyArrayLike2` when used with floats ([#520](https://github.com/PyO3/rust-numpy/pull/520))
