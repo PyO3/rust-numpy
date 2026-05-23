@@ -268,6 +268,19 @@ fn cast_exact_checks_dtype_and_shape() {
 
         // cast_exact should fail when dimensionality does not match
         assert!(arr_f64_3d.as_any().cast_exact::<PyArray2<f64>>().is_err());
+
+        // cast_exact should reject subclasses of ndarray; cast should accept them
+        let masked = py
+            .eval(
+                pyo3::ffi::c_str!(
+                    "__import__('numpy').ma.MaskedArray([[1.0, 2.0], [3.0, 4.0]], dtype='float64')"
+                ),
+                None,
+                None,
+            )
+            .unwrap();
+        assert!(masked.cast::<PyArray2<f64>>().is_ok());
+        assert!(masked.cast_exact::<PyArray2<f64>>().is_err());
     });
 }
 

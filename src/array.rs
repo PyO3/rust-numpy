@@ -132,22 +132,25 @@ unsafe impl<T: Element, D: Dimension> PyTypeInfo for PyArray<T, D> {
     }
 
     fn is_type_of(ob: &Bound<'_, PyAny>) -> bool {
-        Self::extract::<IgnoreError>(ob).is_ok()
+        Self::extract::<IgnoreError>(ob, npyffi::PyArray_Check).is_ok()
     }
 
     fn is_exact_type_of(ob: &Bound<'_, PyAny>) -> bool {
-        Self::extract::<IgnoreError>(ob).is_ok()
+        Self::extract::<IgnoreError>(ob, npyffi::PyArray_CheckExact).is_ok()
     }
 }
 
 impl<T: Element, D: Dimension> PyArray<T, D> {
-    fn extract<'a, 'py, E>(ob: &'a Bound<'py, PyAny>) -> Result<&'a Bound<'py, Self>, E>
+    fn extract<'a, 'py, E>(
+        ob: &'a Bound<'py, PyAny>,
+        check: unsafe fn(Python<'py>, *mut ffi::PyObject) -> c_int,
+    ) -> Result<&'a Bound<'py, Self>, E>
     where
         E: From<CastError<'a, 'py>> + From<DimensionalityError> + From<TypeError<'py>>,
     {
         // Check if the object is an array.
         let array = unsafe {
-            if npyffi::PyArray_Check(ob.py(), ob.as_ptr()) == 0 {
+            if check(ob.py(), ob.as_ptr()) == 0 {
                 return Err(CastError::new(
                     ob.as_borrowed(),
                     <Self as PyTypeCheck>::classinfo_object(ob.py()),
