@@ -15,8 +15,8 @@ Rust bindings for the NumPy C-API.
 ## Requirements
 - Rust >= 1.83.0
   - Basically, our MSRV follows the one of [PyO3](https://github.com/PyO3/pyo3)
-- Python >= 3.7
-  - Python 3.6 support was dropped from 0.16
+- Python >= 3.8
+  - Python 3.7 support was dropped from 0.29
 - Some Rust libraries
   - [ndarray](https://github.com/rust-ndarray/ndarray) for Rust-side matrix library
   - [PyO3](https://github.com/PyO3/pyo3) for Python bindings
@@ -38,8 +38,8 @@ name = "rust_ext"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { version = "0.27" }
-numpy = "0.27"
+pyo3 = { version = "0.29" }
+numpy = "0.29"
 ```
 
 ```rust
@@ -89,8 +89,8 @@ mod rust_ext {
 name = "numpy-test"
 
 [dependencies]
-pyo3 = { version = "0.27", features = ["auto-initialize"] }
-numpy = "0.27"
+pyo3 = { version = "0.29", features = ["auto-initialize"] }
+numpy = "0.29"
 ```
 
 ```rust
@@ -128,7 +128,7 @@ on anything but that exact range. It can therefore be necessary to manually unif
 For example, if you specify the following dependencies
 
 ```toml
-numpy = "0.27"
+numpy = "0.29"
 ndarray = "0.15"
 ```
 
