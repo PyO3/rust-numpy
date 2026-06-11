@@ -32,14 +32,12 @@ jobs:
       matrix:
         python-version:
           [
-            "3.7",
             "3.8",
             "3.9",
             "3.10",
             "3.11",
             "3.12",
             "3.13",
-            "3.13t",
             "3.14",
             "3.14t",
             "pypy-3.11",
@@ -68,23 +66,11 @@ jobs:
             },
           ]
         include:
-          # ubuntu-24.04 does not support 3.7
-          - python-version: 3.7
-            platform: { os: "ubuntu-22.04", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" }
-          # not available on arm64 macOS, test on x64
-          - python-version: 3.7
-            platform: { os: "macos-15-intel", python-architecture: "x64", rust-target: "x86_64-apple-darwin" }
           - python-version: 3.8
             platform: { os: "macos-15-intel", python-architecture: "x64", rust-target: "x86_64-apple-darwin" }
           - python-version: 3.9
             platform: { os: "macos-15-intel", python-architecture: "x64", rust-target: "x86_64-apple-darwin" }
         exclude:
-          # ubuntu-24.04 does not support 3.7
-          - python-version: 3.7
-            platform: { os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" }
-          # not available on arm64 macOS
-          - python-version: 3.7
-            platform: { os: "macOS-latest", python-architecture: "arm64", rust-target: "aarch64-apple-darwin" }
           - python-version: 3.8
             platform: { os: "macOS-latest", python-architecture: "arm64", rust-target: "aarch64-apple-darwin" }
           - python-version: 3.9
@@ -125,7 +111,7 @@ jobs:
     strategy:
       fail-fast: ${{ !contains(github.event.pull_request.labels.*.name, 'CI-no-fail-fast') }}
       matrix:
-        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"] # last numpy 1 release for 3.12
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"] # last numpy 1 release for 3.12
         platform:
           [
             {
@@ -150,23 +136,11 @@ jobs:
             },
           ]
         include:
-          # ubuntu-24.04 does not support 3.7
-          - python-version: 3.7
-            platform: { os: "ubuntu-22.04", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" }
-          # not available on arm64 macOS, test on x64
-          - python-version: 3.7
-            platform: { os: "macos-15-intel", python-architecture: "x64", rust-target: "x86_64-apple-darwin" }
           - python-version: 3.8
             platform: { os: "macos-15-intel", python-architecture: "x64", rust-target: "x86_64-apple-darwin" }
           - python-version: 3.9
             platform: { os: "macos-15-intel", python-architecture: "x64", rust-target: "x86_64-apple-darwin" }
         exclude:
-          # ubuntu-24.04 does not support 3.7
-          - python-version: 3.7
-            platform: { os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" }
-          # not available on arm64 macOS
-          - python-version: 3.7
-            platform: { os: "macOS-latest", python-architecture: "arm64", rust-target: "aarch64-apple-darwin" }
           - python-version: 3.8
             platform: { os: "macOS-latest", python-architecture: "arm64", rust-target: "aarch64-apple-darwin" }
           - python-version: 3.9
