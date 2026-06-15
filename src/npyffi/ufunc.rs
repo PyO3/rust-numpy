@@ -105,4 +105,9 @@ impl PyUFuncAPI {
     //     translate_given_descrs: *mut PyArrayMethod_TranslateGivenDescriptors,
     //     translate_loop_descrs: *mut PyArrayMethod_TranslateLoopDescriptors) -> c_int];
     // Min v2.0 impl_api![46; PyUFunc_GiveFloatingpointErrors(name: *mut c_char, fpe_errors: c_int) -> c_int];
+    // Min v2.4 impl_api![47; PyUFunc_AddLoopsFromSpecs(slots: *mut PyUFunc_LoopSlot) -> c_int];
+
+    // Min v2.5
+    #[cfg(all(Py_LIMITED_API, Py_GIL_DISABLED))]
+    impl_api![48; _PyUFuncObject_GET_ITEM_DATA(obj: *const PyUFuncObject) -> *mut PyUFuncObject_fields];
 }

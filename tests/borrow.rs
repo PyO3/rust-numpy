@@ -1,8 +1,9 @@
 use std::thread::spawn;
 
 use numpy::{
-    array::PyArrayMethods, npyffi::NPY_ARRAY_WRITEABLE, PyArray, PyArray1, PyArray2,
-    PyReadonlyArray3, PyReadwriteArray3, PyUntypedArrayMethods,
+    array::PyArrayMethods,
+    npyffi::{_PyArray_GET_ITEM_DATA, NPY_ARRAY_WRITEABLE},
+    PyArray, PyArray1, PyArray2, PyReadonlyArray3, PyReadwriteArray3, PyUntypedArrayMethods,
 };
 use pyo3::{
     ffi::c_str,
@@ -78,7 +79,8 @@ fn exclusive_borrow_requires_writeable() {
         let array = PyArray::<f64, _>::zeros(py, (1, 2, 3), false);
 
         unsafe {
-            (*array.as_array_ptr()).flags &= !NPY_ARRAY_WRITEABLE;
+            (*_PyArray_GET_ITEM_DATA(array.as_array_ptr().cast_const())).flags &=
+                !NPY_ARRAY_WRITEABLE;
         }
 
         let err = array.try_readwrite().unwrap_err();

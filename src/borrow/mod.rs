@@ -182,7 +182,7 @@ use crate::convert::NpyIndex;
 use crate::dtype::Element;
 use crate::error::{AsSliceError, BorrowError};
 use crate::npyffi;
-use crate::npyffi::flags;
+use crate::npyffi::{_PyArray_GET_ITEM_DATA, flags};
 use crate::untyped_array::PyUntypedArrayMethods;
 
 use shared::{acquire, acquire_mut, release, release_mut};
@@ -538,7 +538,7 @@ where
         // SAFETY: consuming the only extant mutable reference guarantees we cannot invalidate an
         // existing reference, nor allow the caller to keep hold of one.
         unsafe {
-            (*self.as_array_ptr()).flags &= !flags::NPY_ARRAY_WRITEABLE;
+            (*_PyArray_GET_ITEM_DATA(self.as_array_ptr())).flags &= !flags::NPY_ARRAY_WRITEABLE;
         }
         self.into()
     }

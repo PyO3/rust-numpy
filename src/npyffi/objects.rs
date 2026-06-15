@@ -14,8 +14,8 @@ pub const NPY_NTYPES_ABI_COMPATIBLE: usize = 21;
 pub const NPY_MAXDIMS_LEGACY_ITERS: usize = 32;
 
 #[repr(C)]
-pub struct PyArrayObject {
-    pub ob_base: PyObject,
+#[cfg_attr(Py_3_15, repr(align(8)))]
+pub struct PyArrayObject_fields {
     pub data: *mut c_char,
     pub nd: c_int,
     pub dimensions: *mut npy_intp,
@@ -26,9 +26,20 @@ pub struct PyArrayObject {
     pub weakreflist: *mut PyObject,
 }
 
+#[cfg(all(Py_LIMITED_API, Py_GIL_DISABLED))]
+opaque_struct!(pub PyArrayObject);
+
+#[cfg(not(all(Py_LIMITED_API, Py_GIL_DISABLED)))]
 #[repr(C)]
-pub struct PyArray_Descr {
+pub struct PyArrayObject {
     pub ob_base: PyObject,
+    pub fields: PyArrayObject_fields,
+}
+
+#[cfg(not(all(Py_LIMITED_API, Py_GIL_DISABLED)))]
+#[repr(C)]
+#[cfg_attr(Py_3_15, repr(align(8)))]
+pub struct PyArray_Descr_fields {
     pub typeobj: *mut PyTypeObject,
     pub kind: c_char,
     pub type_: c_char,
@@ -37,6 +48,21 @@ pub struct PyArray_Descr {
     pub type_num: c_int,
 }
 
+#[doc(inline)]
+#[cfg(all(Py_LIMITED_API, Py_GIL_DISABLED))]
+pub use _PyArray_DescrNumPy2_fields as PyArray_Descr_fields;
+
+#[cfg(not(all(Py_LIMITED_API, Py_GIL_DISABLED)))]
+#[repr(C)]
+pub struct PyArray_Descr {
+    pub ob_base: PyObject,
+    pub fields: PyArray_Descr_fields,
+}
+
+#[cfg(all(Py_LIMITED_API, Py_GIL_DISABLED))]
+opaque_struct!(pub PyArray_Descr);
+
+#[cfg(not(all(Py_LIMITED_API, Py_GIL_DISABLED)))]
 #[repr(C)]
 pub struct PyArray_DescrProto {
     pub ob_base: PyObject,
@@ -58,8 +84,8 @@ pub struct PyArray_DescrProto {
 }
 
 #[repr(C)]
-pub struct _PyArray_DescrNumPy2 {
-    pub ob_base: PyObject,
+#[cfg_attr(Py_3_15, repr(align(8)))]
+pub struct _PyArray_DescrNumPy2_fields {
     pub typeobj: *mut PyTypeObject,
     pub kind: c_char,
     pub type_: c_char,
@@ -75,8 +101,8 @@ pub struct _PyArray_DescrNumPy2 {
 }
 
 #[repr(C)]
-struct _PyArray_LegacyDescr {
-    pub ob_base: PyObject,
+#[cfg_attr(Py_3_15, repr(align(8)))]
+pub(crate) struct _PyArray_LegacyDescr_fields {
     pub typeobj: *mut PyTypeObject,
     pub kind: c_char,
     pub type_: c_char,
@@ -95,9 +121,67 @@ struct _PyArray_LegacyDescr {
     pub c_metadata: *mut NpyAuxData,
 }
 
+#[cfg(not(all(Py_LIMITED_API, Py_GIL_DISABLED)))]
+#[repr(C)]
+pub(crate) struct _PyArray_LegacyDescr {
+    pub _ob_base: PyObject,
+    pub fields: _PyArray_LegacyDescr_fields,
+}
+
+#[cfg(all(Py_LIMITED_API, Py_GIL_DISABLED))]
+opaque_struct!(pub(crate) _PyArray_LegacyDescr);
+
+/// # Safety
+/// - attached Python thread-state
+#[allow(non_snake_case)]
+#[inline(always)]
+pub unsafe fn _PyArray_GET_ITEM_DATA(arr: *const PyArrayObject) -> *mut PyArrayObject_fields {
+    #[cfg(all(Py_LIMITED_API, Py_GIL_DISABLED))]
+    {
+        PY_ARRAY_API._PyArray_GET_ITEM_DATA(Python::assume_attached(), arr)
+    }
+    #[cfg(not(all(Py_LIMITED_API, Py_GIL_DISABLED)))]
+    {
+        &raw mut (*arr.cast_mut()).fields
+    }
+}
+
+/// # Safety
+/// - attached Python thread-state
+#[allow(non_snake_case)]
+#[inline(always)]
+pub unsafe fn _PyDataType_GET_ITEM_DATA(dtype: *const PyArray_Descr) -> *mut PyArray_Descr_fields {
+    #[cfg(all(Py_LIMITED_API, Py_GIL_DISABLED))]
+    {
+        PY_ARRAY_API._PyDataType_GET_ITEM_DATA(Python::assume_attached(), dtype)
+    }
+    #[cfg(not(all(Py_LIMITED_API, Py_GIL_DISABLED)))]
+    {
+        &raw mut (*dtype.cast_mut()).fields
+    }
+}
+
+/// # Safety
+/// - attached Python thread-state
+#[allow(non_snake_case)]
+#[inline(always)]
+unsafe fn _PyArray_LegacyDescr_GET_ITEM_DATA(
+    dtype: *const _PyArray_LegacyDescr,
+) -> *mut _PyArray_LegacyDescr_fields {
+    #[cfg(all(Py_LIMITED_API, Py_GIL_DISABLED))]
+    {
+        PY_ARRAY_API._PyArray_LegacyDescr_GET_ITEM_DATA(Python::assume_attached(), dtype)
+    }
+    #[cfg(not(all(Py_LIMITED_API, Py_GIL_DISABLED)))]
+    {
+        &raw mut (*dtype.cast_mut()).fields
+    }
+}
+
 #[allow(non_snake_case)]
 #[inline(always)]
 pub unsafe fn PyDataType_ISLEGACY(dtype: *const PyArray_Descr) -> bool {
+    let dtype = _PyDataType_GET_ITEM_DATA(dtype);
     (*dtype).type_num < NPY_TYPES::NPY_VSTRING as _ && (*dtype).type_num >= 0
 }
 
@@ -108,24 +192,38 @@ pub unsafe fn PyDataType_SET_ELSIZE<'py>(
     dtype: *mut PyArray_Descr,
     size: npy_intp,
 ) {
+    #[cfg(not(all(Py_LIMITED_API, Py_GIL_DISABLED)))]
     if is_numpy_2(py) {
         unsafe {
-            (*(dtype as *mut _PyArray_DescrNumPy2)).elsize = size;
+            (*_PyDataType_GET_ITEM_DATA(dtype).cast::<_PyArray_DescrNumPy2_fields>()).elsize = size;
         }
     } else {
-        unsafe {
-            (*(dtype as *mut PyArray_DescrProto)).elsize = size as c_int;
-        }
+        // Numpy 1 does not support abi3t, so direct field access is fine
+        unsafe { (*dtype.cast::<PyArray_DescrProto>()).elsize = size as c_int }
+    }
+
+    #[cfg(all(Py_LIMITED_API, Py_GIL_DISABLED))]
+    unsafe {
+        debug_assert!(is_numpy_2(py));
+        (*_PyDataType_GET_ITEM_DATA(dtype)).elsize = size;
     }
 }
 
 #[allow(non_snake_case)]
 #[inline(always)]
 pub unsafe fn PyDataType_FLAGS<'py>(py: Python<'py>, dtype: *const PyArray_Descr) -> npy_uint64 {
+    #[cfg(not(all(Py_LIMITED_API, Py_GIL_DISABLED)))]
     if is_numpy_2(py) {
-        unsafe { (*(dtype as *mut _PyArray_DescrNumPy2)).flags }
+        unsafe { (*_PyDataType_GET_ITEM_DATA(dtype).cast::<_PyArray_DescrNumPy2_fields>()).flags }
     } else {
-        unsafe { (*(dtype as *mut PyArray_DescrProto)).flags as c_uchar as npy_uint64 }
+        // Numpy 1 does not support abi3t, so direct field access is fine
+        unsafe { (*dtype.cast::<PyArray_DescrProto>()).flags as c_uchar as npy_uint64 }
+    }
+
+    #[cfg(all(Py_LIMITED_API, Py_GIL_DISABLED))]
+    unsafe {
+        debug_assert!(is_numpy_2(py));
+        (*_PyDataType_GET_ITEM_DATA(dtype)).flags
     }
 }
 
@@ -137,10 +235,18 @@ macro_rules! define_descr_accessor {
             if $legacy_only && !PyDataType_ISLEGACY(dtype) {
                 $default
             } else {
+                #[cfg(not(all(Py_LIMITED_API, Py_GIL_DISABLED)))]
                 if is_numpy_2(py) {
-                    unsafe { (*(dtype as *const _PyArray_LegacyDescr)).$property }
+                    unsafe { (*_PyArray_LegacyDescr_GET_ITEM_DATA(dtype.cast())).$property }
                 } else {
-                    unsafe { (*(dtype as *mut PyArray_DescrProto)).$property as $type }
+                    // Numpy 1 does not support abi3t, so direct field access is fine
+                    unsafe { (*dtype.cast::<PyArray_DescrProto>()).$property as $type }
+                }
+
+                #[cfg(all(Py_LIMITED_API, Py_GIL_DISABLED))]
+                unsafe {
+                    debug_assert!(is_numpy_2(py));
+                    (*_PyArray_LegacyDescr_GET_ITEM_DATA(dtype.cast())).$property
                 }
             }
         }
@@ -301,8 +407,8 @@ pub struct PyArrayInterface {
 }
 
 #[repr(C)]
-pub struct PyUFuncObject {
-    pub ob_base: PyObject,
+#[cfg_attr(Py_3_15, repr(align(8)))]
+pub struct PyUFuncObject_fields {
     pub nin: c_int,
     pub nout: c_int,
     pub nargs: c_int,
@@ -334,6 +440,16 @@ pub struct PyUFuncObject {
     pub iter_flags: npy_uint32,
 }
 
+#[cfg(not(all(Py_LIMITED_API, Py_GIL_DISABLED)))]
+#[repr(C)]
+pub struct PyUFuncObject {
+    pub ob_base: PyObject,
+    pub fields: PyUFuncObject_fields,
+}
+
+#[cfg(all(Py_LIMITED_API, Py_GIL_DISABLED))]
+opaque_struct!(pub PyUFuncObject);
+
 pub type PyUFuncGenericFunction =
     Option<unsafe extern "C" fn(*mut *mut c_char, *mut npy_intp, *mut npy_intp, *mut c_void)>;
 pub type PyUFunc_MaskedStridedInnerLoopFunc = Option<
@@ -361,8 +477,8 @@ pub type PyUFunc_TypeResolutionFunc = Option<
 pub struct NpyIter([u8; 0]);
 
 #[repr(C)]
-pub struct PyArrayIterObject {
-    pub ob_base: PyObject,
+#[cfg_attr(Py_3_15, repr(align(8)))]
+pub struct PyArrayIterObject_fields {
     pub nd_m1: c_int,
     pub index: npy_intp,
     pub size: npy_intp,
@@ -380,9 +496,19 @@ pub struct PyArrayIterObject {
     pub translate: npy_iter_get_dataptr_t,
 }
 
+#[cfg(not(all(Py_LIMITED_API, Py_GIL_DISABLED)))]
 #[repr(C)]
-pub struct PyArrayMultiIterObject {
+pub struct PyArrayIterObject {
     pub ob_base: PyObject,
+    pub fields: PyArrayIterObject_fields,
+}
+
+#[cfg(all(Py_LIMITED_API, Py_GIL_DISABLED))]
+opaque_struct!(pub PyArrayIterObject);
+
+#[repr(C)]
+#[cfg_attr(Py_3_15, repr(align(8)))]
+pub struct PyArrayMultiIterObject_fields {
     pub numiter: c_int,
     pub size: npy_intp,
     pub index: npy_intp,
@@ -391,9 +517,19 @@ pub struct PyArrayMultiIterObject {
     pub iters: [*mut PyArrayIterObject; 32usize],
 }
 
+#[cfg(not(all(Py_LIMITED_API, Py_GIL_DISABLED)))]
 #[repr(C)]
-pub struct PyArrayNeighborhoodIterObject {
+pub struct PyArrayMultiIterObject {
     pub ob_base: PyObject,
+    pub fields: PyArrayMultiIterObject_fields,
+}
+
+#[cfg(all(Py_LIMITED_API, Py_GIL_DISABLED))]
+opaque_struct!(pub PyArrayMultiIterObject);
+
+#[repr(C)]
+#[cfg_attr(Py_3_15, repr(align(8)))]
+pub struct PyArrayNeighborhoodIterObject_fields {
     pub nd_m1: c_int,
     pub index: npy_intp,
     pub size: npy_intp,
@@ -415,6 +551,16 @@ pub struct PyArrayNeighborhoodIterObject {
     pub constant: *mut c_char,
     pub mode: c_int,
 }
+
+#[cfg(not(all(Py_LIMITED_API, Py_GIL_DISABLED)))]
+#[repr(C)]
+pub struct PyArrayNeighborhoodIterObject {
+    pub ob_base: PyObject,
+    pub fields: PyArrayNeighborhoodIterObject_fields,
+}
+
+#[cfg(all(Py_LIMITED_API, Py_GIL_DISABLED))]
+opaque_struct!(pub PyArrayNeighborhoodIterObject);
 
 pub type NpyIter_IterNextFunc = Option<unsafe extern "C" fn(*mut NpyIter) -> c_int>;
 pub type NpyIter_GetMultiIndexFunc = Option<unsafe extern "C" fn(*mut NpyIter, *mut npy_intp)>;
@@ -479,6 +625,7 @@ pub struct npy_static_string {
     pub buf: *const c_char,
 }
 
+#[cfg(not(all(Py_LIMITED_API, Py_GIL_DISABLED)))]
 #[repr(C)]
 pub struct PyArray_StringDTypeObject {
     pub base: PyArray_Descr,
@@ -491,6 +638,9 @@ pub struct PyArray_StringDTypeObject {
     pub na_name: npy_static_string,
     pub allocator: *mut npy_string_allocator,
 }
+
+#[cfg(all(Py_LIMITED_API, Py_GIL_DISABLED))]
+opaque_struct!(pub PyArray_StringDTypeObject);
 
 #[repr(C)]
 #[derive(Clone, Copy)]
