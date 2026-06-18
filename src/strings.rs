@@ -205,6 +205,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[allow(clippy::byte_char_slices)]
     fn format_fixed_string() {
         assert_eq!(
             PyFixedString([b'f', b'o', b'o', 0, 0, 0]).to_string(),

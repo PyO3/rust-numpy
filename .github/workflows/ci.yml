@@ -26,6 +26,7 @@ jobs:
   test:
     name: python${{ matrix.python-version }}-${{ matrix.platform.python-architecture }} ${{ matrix.platform.os }}
     runs-on: ${{ matrix.platform.os }}
+    continue-on-error: ${{ startsWith(matrix.python-version, '3.15') }} # remove once 3.15 releases
     needs: [lint, check-msrv, examples]
     strategy:
       fail-fast: ${{ !contains(github.event.pull_request.labels.*.name, 'CI-no-fail-fast') }}
@@ -40,6 +41,8 @@ jobs:
             "3.13",
             "3.14",
             "3.14t",
+            "3.15",
+            "3.15t",
             "pypy-3.11",
           ]
         platform:
@@ -78,6 +81,10 @@ jobs:
           # no 32 bit windows PyPy
           - python-version: pypy-3.11
             platform: { os: "windows-latest", python-architecture: "x86", rust-target: "i686-pc-windows-msvc" }
+          # free-threaded on 32bit only supported on 3.15+
+          - python-version: 3.14t
+            platform: { os: "windows-latest", python-architecture: "x86", rust-target: "i686-pc-windows-msvc" }
+
     steps:
       - uses: actions/checkout@v6
       - name: Set up Python ${{ matrix.python-version }}
@@ -85,24 +92,35 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           architecture: ${{ matrix.platform.python-architecture }}
+          allow-prereleases: ${{ startsWith(matrix.python-version, '3.15') }} # remove once 3.15 releases
+      - name: Set up UV
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.platform.rust-target }}
       - name: Test
-        run: |
-          pip install "numpy" ml_dtypes
-          cargo test --all-features
         # Not on PyPy, because no embedding API
         if: ${{ !startsWith(matrix.python-version, 'pypy') }}
+        run: |
+          uv pip install "numpy" ml_dtypes
+          cargo test --all-features
+      - name: Test abi3t
+        if: ${{ matrix.python-version == '3.15t' }}
+        run: |
+          cargo test --all-features -F pyo3/abi3t
       - name: Test example
         run: |
-          pip install nox
-          nox -f examples/simple/noxfile.py
+          uvx nox -f examples/simple/noxfile.py
     env:
       CARGO_TERM_VERBOSE: true
       CARGO_BUILD_TARGET: ${{ matrix.platform.rust-target }}
       RUST_BACKTRACE: 1
+      UV_SYSTEM_PYTHON: true
+      UV_PRERELEASE: ${{ startsWith(matrix.python-version, '3.15') && 'allow' || 'disallow' }} # remove once numpy 2.6 releases
+      UV_NO_BUILD_PACKAGE: "numpy"
+      UV_INDEX: ${{ startsWith(matrix.python-version, '3.15') && 'https://pypi.anaconda.org/scientific-python-nightly-wheels/simple/' || '' }} # remove once numpy 2.6 releases
+      NOX_DEFAULT_VENV_BACKEND: "uv"
 
   test-numpy1:
     name: python${{ matrix.python-version }}-${{ matrix.platform.python-architecture }} ${{ matrix.platform.os }} numpy1
