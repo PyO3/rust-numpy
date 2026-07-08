@@ -172,6 +172,35 @@ fn as_array() {
 }
 
 #[test]
+fn as_array_zero_sized_dimension() {
+    // Regression test for https://github.com/PyO3/rust-numpy/issues/527:
+    // NumPy reports zero strides for arrays with a zero-length axis, which
+    // used to make the (mutable) ndarray view constructor panic even though
+    // an empty array cannot alias any element.
+    Python::attach(|py| {
+        let arr = PyArray2::<f64>::zeros(py, [2, 0], false);
+        {
+            let view = arr.readonly();
+            assert_eq!(view.as_array().shape(), &[2, 0]);
+        }
+        {
+            let mut view = arr.readwrite();
+            assert_eq!(view.as_array_mut().shape(), &[2, 0]);
+        }
+
+        // A leading zero-length axis is handled as well.
+        let arr = PyArray2::<f64>::zeros(py, [0, 2], false);
+        assert_eq!(arr.readonly().as_array().shape(), &[0, 2]);
+        assert_eq!(arr.readwrite().as_array_mut().shape(), &[0, 2]);
+
+        // Higher-rank arrays with an interior zero-length axis too.
+        let arr = PyArray::<f64, _>::zeros(py, [2, 0, 3], false);
+        assert_eq!(arr.readonly().as_array().shape(), &[2, 0, 3]);
+        assert_eq!(arr.readwrite().as_array_mut().shape(), &[2, 0, 3]);
+    });
+}
+
+#[test]
 fn as_raw_array() {
     Python::attach(|py| {
         let not_contiguous = not_contiguous_array(py);

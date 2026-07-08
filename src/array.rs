@@ -1393,6 +1393,21 @@ where
             }
         }
 
+        // NumPy reports zero strides for arrays that have a zero-length axis.
+        // ndarray's view constructors reject a zero stride on an axis of length
+        // greater than one, because that would let two indices alias the same
+        // element, and panic even though a zero-element array cannot alias
+        // anything. Substitute clamped C-contiguous strides in that case; the
+        // data pointer is never dereferenced for an empty array, so the
+        // fabricated strides are sound for both immutable and mutable views.
+        if shape.size() == 0 {
+            let mut acc = 1;
+            for i in (0..strides.len()).rev() {
+                new_strides[i] = acc;
+                acc *= shape[i].max(1);
+            }
+        }
+
         (shape.strides(new_strides), inverted_axes, data_ptr)
     }
 
