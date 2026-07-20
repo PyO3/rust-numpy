@@ -245,7 +245,7 @@ impl<'a, 'py, T: Element + 'a, D: Dimension + 'a> FromPyObject<'a, 'py>
 
     fn extract(obj: Borrowed<'a, 'py, PyAny>) -> Result<Self, Self::Error> {
         let array = PyArray::<T, D>::extract::<PyErr>(obj, npyffi::PyArray_Check)?;
-        Ok(array.readonly())
+        Ok(array.try_readonly()?)
     }
 }
 
@@ -488,7 +488,7 @@ impl<'a, 'py, T: Element + 'a, D: Dimension + 'a> FromPyObject<'a, 'py>
 
     fn extract(obj: Borrowed<'a, 'py, PyAny>) -> Result<Self, Self::Error> {
         let array = PyArray::<T, D>::extract::<PyErr>(obj, npyffi::PyArray_Check)?;
-        Ok(array.readwrite())
+        Ok(array.try_readwrite()?)
     }
 }
 
