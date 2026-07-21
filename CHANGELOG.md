@@ -1,6 +1,7 @@
 # Changelog
 
 - Unreleased
+  - `PyReadonlyArray`/`PyReadwriteArray` extraction now returns a `PyErr` which reports the actual dtype/dimensionality mismatch instead of nonsensical `CastError` messages like “'ndarray' is not an instance of 'ndarray'” ([#562](https://github.com/PyO3/rust-numpy/pull/562))
 
 - v0.29.0
   - Fix PyArray_DTypeMeta definition when Py_LIMITED_API is disabled ([#532](https://github.com/PyO3/rust-numpy/pull/532))
