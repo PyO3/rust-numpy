@@ -17,7 +17,7 @@ use num_traits::AsPrimitive;
 use pyo3::{
     ffi,
     types::{DerefToPyAny, PyModule},
-    Bound, CastError, Py, PyAny, PyErr, PyResult, PyTypeCheck, PyTypeInfo, Python,
+    Borrowed, Bound, CastError, Py, PyAny, PyErr, PyResult, PyTypeCheck, PyTypeInfo, Python,
 };
 
 use crate::borrow::{PyReadonlyArray, PyReadwriteArray};
@@ -132,30 +132,28 @@ unsafe impl<T: Element, D: Dimension> PyTypeInfo for PyArray<T, D> {
     }
 
     fn is_type_of(ob: &Bound<'_, PyAny>) -> bool {
-        Self::extract::<IgnoreError>(ob, npyffi::PyArray_Check).is_ok()
+        Self::extract::<IgnoreError>(ob.as_borrowed(), npyffi::PyArray_Check).is_ok()
     }
 
     fn is_exact_type_of(ob: &Bound<'_, PyAny>) -> bool {
-        Self::extract::<IgnoreError>(ob, npyffi::PyArray_CheckExact).is_ok()
+        Self::extract::<IgnoreError>(ob.as_borrowed(), npyffi::PyArray_CheckExact).is_ok()
     }
 }
 
 impl<T: Element, D: Dimension> PyArray<T, D> {
-    fn extract<'a, 'py, E>(
-        ob: &'a Bound<'py, PyAny>,
+    pub(crate) fn extract<'a, 'py, E>(
+        ob: Borrowed<'a, 'py, PyAny>,
         check: unsafe fn(Python<'py>, *mut ffi::PyObject) -> c_int,
-    ) -> Result<&'a Bound<'py, Self>, E>
+    ) -> Result<Borrowed<'a, 'py, Self>, E>
     where
         E: From<CastError<'a, 'py>> + From<DimensionalityError> + From<TypeError<'py>>,
     {
         // Check if the object is an array.
         let array = unsafe {
             if check(ob.py(), ob.as_ptr()) == 0 {
-                return Err(CastError::new(
-                    ob.as_borrowed(),
-                    <Self as PyTypeCheck>::classinfo_object(ob.py()),
-                )
-                .into());
+                return Err(
+                    CastError::new(ob, <Self as PyTypeCheck>::classinfo_object(ob.py())).into(),
+                );
             }
             ob.cast_unchecked::<Self>()
         };
