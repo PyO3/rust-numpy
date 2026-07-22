@@ -2,7 +2,7 @@
 //!
 //! Using the patterns described in [“Extending `numpy.random`”][ext],
 //! you can generate random numbers without holding the GIL,
-//! by [acquiring][`PyBitGeneratorMethods::lock`] a lock [guard][`PyBitGeneratorGuard`] for the [`PyBitGenerator`]:
+//! by [locking][`PyBitGeneratorMethods::lock`] a [`PyBitGenerator`] for the duration of a closure:
 //!
 //! ```
 //! use pyo3::prelude::*;
@@ -15,18 +15,14 @@
 //! }
 //!
 //! let random_number = Python::attach(|py| -> PyResult<_> {
-//!     let mut bitgen = default_bit_gen(py)?.lock()?;
-//!     // use bitgen without holding the GIL
-//!     let r = py.detach(|| bitgen.next_u64());
-//!     // release the lock manually while holding the GIL again
-//!     bitgen.release(py)?;
-//!     Ok(r)
+//!     // lock the generator, then use it without holding the GIL
+//!     default_bit_gen(py)?.lock(|bitgen| py.detach(|| bitgen.next_u64()))
 //! })?;
 //! # Ok::<(), PyErr>(())
 //! ```
 //!
-//! With the `rand` crate installed, you can also use its `Rng` APIs on any generator, since
-//! [`BitGenerator`] implements [`rand_core::RngCore`] (and [`PyBitGeneratorGuard`] derefs to it).
+//! With the `rand` crate installed, you can also use its `Rng` APIs on any generator,
+//! since [`BitGenerator`] implements [`rand_core::RngCore`].
 //!
 //! ```
 //! # use pyo3::prelude::*;
@@ -40,11 +36,43 @@
 //! # }
 //!
 //! Python::attach(|py| -> PyResult<_> {
-//!     let mut bitgen = default_bit_gen(py)?.lock()?;
-//!     if bitgen.random_ratio(1, 1_000_000) {
-//!         println!("a sure thing");
-//!     }
-//!     bitgen.release(py)?;
+//!     default_bit_gen(py)?.lock(|bitgen| {
+//!         if bitgen.random_ratio(1, 1_000_000) {
+//!             println!("a sure thing");
+//!         }
+//!     })
+//! })?;
+//! # Ok::<(), PyErr>(())
+//! ```
+//!
+//! Using `spawn`, you can create multiple [`BitGenerator`]s to generate random numbers truly in parallel,
+//! all without holding the GIL:
+//!
+//! ```
+//! # use pyo3::prelude::*;
+//! # use rand::Rng as _;
+//! use numpy::{PyArray2, PyArrayMethods as _};
+//! # use numpy::random::{PyBitGenerator, PyBitGeneratorMethods as _};
+//! # // TODO: reuse function definition from above?
+//! # fn default_bit_gen<'py>(py: Python<'py>) -> PyResult<Bound<'py, PyBitGenerator>> {
+//! #     let default_rng = py.import("numpy.random")?.call_method0("default_rng")?;
+//! #     let bit_generator = default_rng.getattr("bit_generator")?.cast_into()?;
+//! #     Ok(bit_generator)
+//! # }
+//!
+//! Python::attach(|py| -> PyResult<_> {
+//!     let children = default_bit_gen(py)?.spawn(4)?;
+//!     let mut arr = PyArray2::<u32>::zeros(py, (4, 300), false).readwrite();
+//!     let mut arr = arr.as_array_mut();  // ndarray for more convenience
+//!     py.detach(|| std::thread::scope(|s| {
+//!         for (mut chunk, mut child) in arr.rows_mut().into_iter().zip(children) {
+//!             s.spawn(move || {
+//!                 for x in chunk.iter_mut() {
+//!                     *x = child.random_range(10..200);
+//!                 }
+//!             });
+//!         }
+//!     }));
 //!     Ok(())
 //! })?;
 //! # Ok::<(), PyErr>(())
@@ -53,10 +81,9 @@
 //! [bg]: https://numpy.org/doc/stable//reference/random/bit_generators/generated/numpy.random.BitGenerator.html
 //! [ext]: https://numpy.org/doc/stable/reference/random/extending.html
 
+use std::cell::RefCell;
 use std::collections::HashSet;
-use std::ops::{Deref, DerefMut};
 use std::ptr::NonNull;
-use std::sync::{Mutex, OnceLock};
 
 use pyo3::{
     exceptions::PyRuntimeError,
@@ -69,10 +96,11 @@ use pyo3::{
 
 use crate::npyffi::bitgen_t;
 
-/// Addresses of the `bitgen_t`s that currently have a live [`PyBitGeneratorGuard`].
-fn locked_bitgens() -> &'static Mutex<HashSet<usize>> {
-    static LOCKED: OnceLock<Mutex<HashSet<usize>>> = OnceLock::new();
-    LOCKED.get_or_init(|| Mutex::new(HashSet::new()))
+thread_local! {
+    /// Addresses of the `bitgen_t`s currently locked on this thread.
+    /// `BitGenerator.lock` is a reentrant `RLock` preventing cross-thread use,
+    /// and this helps rejecting same thread re-locking.
+    static LOCKED: RefCell<HashSet<usize>> = RefCell::new(HashSet::new());
 }
 
 /// Wrapper for [`np.random.BitGenerator`][bg].
@@ -98,50 +126,70 @@ unsafe impl PyTypeInfo for PyBitGenerator {
     }
 }
 
+/// Releases the `BitGenerator` lock (and clears its reentrancy marker) on drop,
+/// so it happens even if the closure passed to [`PyBitGeneratorMethods::lock`] panics.
+struct LockGuard<'py> {
+    lock: Bound<'py, PyAny>,
+    addr: usize,
+}
+
+impl Drop for LockGuard<'_> {
+    fn drop(&mut self) {
+        LOCKED.with_borrow_mut(|locked| locked.remove(&self.addr));
+        // ignore errors because `drop` can’t fail
+        let _ = self.lock.call_method0(intern!(self.lock.py(), "release"));
+    }
+}
+
 /// Methods for [`PyBitGenerator`].
 pub trait PyBitGeneratorMethods {
-    /// Acquire a lock on the BitGenerator to allow calling its methods in.
-    fn lock(&self) -> PyResult<PyBitGeneratorGuard>;
+    /// Lock the bit generator, run `f` with exclusive access to it,
+    /// then release the lock (even on panic).
+    /// `f` may use it without the GIL via [`Python::detach`].
+    fn lock<R>(&self, f: impl FnOnce(&mut BitGenerator) -> R) -> PyResult<R>;
 
-    /// Spawn `n_children` independent child `BitGenerator`s.
+    /// Spawn `n_children` independent child [`BitGenerator`]s.
     ///
     /// This is the recommended way to obtain generators for multiple threads: unlike sharing a
     /// single [locked][PyBitGeneratorMethods::lock] one, each child has its own, independent state.
     fn spawn(&self, n_children: usize) -> PyResult<Vec<BitGenerator>>;
+
+    /// Spawn a single owned child [`BitGenerator`] that doesn’t need locking to be used.
+    fn spawn_one(&self) -> PyResult<BitGenerator> {
+        self.spawn(1).map(|mut v| v.pop().unwrap())
+    }
 }
 
 impl<'py> PyBitGeneratorMethods for Bound<'py, PyBitGenerator> {
-    fn lock(&self) -> PyResult<PyBitGeneratorGuard> {
+    fn lock<R>(&self, f: impl FnOnce(&mut BitGenerator) -> R) -> PyResult<R> {
         let py = self.py();
         let lock = self.getattr(intern!(py, "lock"))?;
         // Acquire the (reentrant!) lock in non-blocking mode or return an error.
         if !lock
-            .call_method(intern!(py, "acquire"), (false,), None)?
+            .call_method1(intern!(py, "acquire"), (false,))?
             .extract()?
         {
             return Err(PyRuntimeError::new_err(
                 "Failed to acquire BitGenerator lock",
             ));
         }
-        // SAFETY: we hold the lock, and the guard keeps holding it for the `BitGenerator`’s
-        //         lifetime; `locked_bitgens` below additionally rejects same-thread re-locking.
-        let generator = match unsafe { BitGenerator::new(self.clone()) } {
+        // SAFETY: we hold the lock until the end of this scope (the `LockGuard` releases it),
+        //         and reject reentrant re-locking below, so `generator`’s access stays exclusive.
+        let mut generator = match unsafe { BitGenerator::new(self.clone()) } {
             Ok(generator) => generator,
             Err(err) => {
                 lock.call_method0(intern!(py, "release"))?;
                 return Err(err);
             }
         };
-        // Reject re-locking the same `BitGenerator`, since the `RLock` above won’t.
-        if !locked_bitgens().lock().unwrap().insert(generator.addr()) {
+        let addr = generator.addr();
+        // Reject re-locking the same `BitGenerator`, since the reentrant `RLock` above won’t.
+        if !LOCKED.with_borrow_mut(|locked| locked.insert(addr)) {
             lock.call_method0(intern!(py, "release"))?;
             return Err(PyRuntimeError::new_err("BitGenerator is already locked"));
         }
-        Ok(PyBitGeneratorGuard {
-            generator,
-            released: false,
-            lock: lock.unbind(),
-        })
+        let _guard = LockGuard { lock, addr };
+        Ok(f(&mut generator))
     }
 
     fn spawn(&self, n_children: usize) -> PyResult<Vec<BitGenerator>> {
@@ -154,18 +202,10 @@ impl<'py> PyBitGeneratorMethods for Bound<'py, PyBitGenerator> {
     }
 }
 
-impl<'py> TryFrom<&Bound<'py, PyBitGenerator>> for PyBitGeneratorGuard {
-    type Error = PyErr;
-    fn try_from(value: &Bound<'py, PyBitGenerator>) -> Result<Self, Self::Error> {
-        value.lock()
-    }
-}
-
 /// A numpy `BitGenerator` usable without the GIL, with exclusive access to its state.
 ///
-/// [`spawn`][PyBitGeneratorMethods::spawn] hands out independent, owned ones; a
-/// [`PyBitGeneratorGuard`] derefs to one borrowing a shared generator under its held lock.
-/// [`share`][BitGenerator::share] locks an owned one so it can be used from Python again.
+/// [`spawn`][PyBitGeneratorMethods::spawn] hands out independent, owned ones;
+/// [`lock`][PyBitGeneratorMethods::lock] passes one borrowing a shared generator under its lock.
 pub struct BitGenerator {
     raw: NonNull<bitgen_t>,
     /// Keeps `raw` alive: the capsule’s pointer lives in memory owned by the `BitGenerator`, which
@@ -176,7 +216,8 @@ pub struct BitGenerator {
 // SAFETY: `raw` is only ever accessed through `&mut self`, so it can’t be used in parallel, and we
 //         keep its `bitgen_t` alive via `_bit_generator`. Every `BitGenerator` has exclusive access
 //         to its `bitgen_t` (a fresh `spawn` child it owns, or a shared one protected by a held lock
-//         inside a `PyBitGeneratorGuard`), so nothing else can touch its state.
+//         for the duration of a [`lock`][PyBitGeneratorMethods::lock] call), so nothing else can
+//         touch its state.
 unsafe impl Send for BitGenerator {}
 
 impl BitGenerator {
@@ -184,9 +225,9 @@ impl BitGenerator {
     ///
     /// # Safety
     ///
-    /// The caller must ensure the result has exclusive access to the `bitgen_t` for its whole
-    /// lifetime: either `bit_generator` is freshly created and not handed out elsewhere, or its
-    /// lock is held (as by [`PyBitGeneratorGuard`]) the entire time.
+    /// The caller must ensure the result has exclusive access to the `bitgen_t` for its whole lifetime:
+    /// either `bit_generator` is freshly created and not handed out elsewhere,
+    /// or its lock is held (as by [`lock`][PyBitGeneratorMethods::lock]) the entire time.
     unsafe fn new(bit_generator: Bound<'_, PyBitGenerator>) -> PyResult<Self> {
         let py = bit_generator.py();
         let capsule = bit_generator
@@ -203,11 +244,6 @@ impl BitGenerator {
 
     fn addr(&self) -> usize {
         self.raw.as_ptr() as usize
-    }
-
-    /// Re-acquire the lock so this generator can be shared with (and used from) Python again.
-    pub fn share(self, py: Python<'_>) -> PyResult<PyBitGeneratorGuard> {
-        self._bit_generator.bind(py).lock()
     }
 
     /// Returns the next random unsigned 64 bit integer.
@@ -257,62 +293,6 @@ impl rand_core::RngCore for BitGenerator {
     }
 }
 
-/// A locked, shared [`PyBitGenerator`], usable without the GIL. Derefs to [`BitGenerator`].
-///
-/// Since [dropping](`Drop::drop`) this reacquires the GIL,
-/// prefer to call [`release`][`PyBitGeneratorGuard::release`] manually to release the lock.
-pub struct PyBitGeneratorGuard {
-    generator: BitGenerator,
-    /// Whether this guard has been manually released.
-    released: bool,
-    /// This lock makes sure no other threads try to use the BitGenerator while we do.
-    /// Since it’s a reentrant `RLock`, `locked_bitgens` closes the same-thread reentrancy gap.
-    lock: Py<PyAny>,
-}
-
-impl Deref for PyBitGeneratorGuard {
-    type Target = BitGenerator;
-    fn deref(&self) -> &BitGenerator {
-        &self.generator
-    }
-}
-
-impl DerefMut for PyBitGeneratorGuard {
-    fn deref_mut(&mut self) -> &mut BitGenerator {
-        &mut self.generator
-    }
-}
-
-impl Drop for PyBitGeneratorGuard {
-    fn drop(&mut self) {
-        if self.released {
-            return;
-        }
-        locked_bitgens()
-            .lock()
-            .unwrap()
-            .remove(&self.generator.addr());
-        // ignore errors because `drop` can’t fail
-        let _ = Python::attach(|py| -> PyResult<_> {
-            self.lock.bind(py).call_method0(intern!(py, "release"))?;
-            Ok(())
-        });
-    }
-}
-
-impl<'py> PyBitGeneratorGuard {
-    /// Release the lock, allowing for checking for errors.
-    pub fn release(mut self, py: Python<'py>) -> PyResult<()> {
-        self.released = true; // only ever read by drop at the end of a scope (like this one).
-        locked_bitgens()
-            .lock()
-            .unwrap()
-            .remove(&self.generator.addr());
-        self.lock.bind(py).call_method0(intern!(py, "release"))?;
-        Ok(())
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -325,53 +305,45 @@ mod tests {
         Ok(bit_generator)
     }
 
-    /// Test the primary use case: acquire the lock, release the GIL, then use the lock
+    /// Simple single-threaded use: lock the generator, then use it without the GIL
     #[test]
     fn use_outside_gil() -> PyResult<()> {
         Python::attach(|py| {
-            let mut bitgen = get_bit_generator(py)?.lock()?;
-            py.detach(|| {
-                let _ = bitgen.next_raw();
-            });
-            assert!(bitgen.release(py).is_ok());
-            Ok(())
+            get_bit_generator(py)?.lock(|bitgen| {
+                py.detach(|| {
+                    let _ = bitgen.next_raw();
+                });
+            })
         })
     }
 
-    /// More complex version of primary use case: use from multiple threads
+    /// Use single shared generator from multiple threads (not very useful but possible)
     #[cfg(feature = "rand_core")]
     #[test]
-    fn use_parallel() -> PyResult<()> {
+    fn use_concurrent() -> PyResult<()> {
         use crate::array::{PyArray2, PyArrayMethods as _};
         use rand::Rng;
-        use std::sync::{Arc, Mutex};
+        use std::sync::Mutex;
 
         Python::attach(|py| -> PyResult<_> {
             let mut arr = PyArray2::<u32>::zeros(py, (2, 300), false).readwrite();
-            let bitgen = get_bit_generator(py)?.lock()?;
-            let bitgen = Arc::new(Mutex::new(bitgen));
-
             let mut arr = arr.as_array_mut();
-            py.detach(|| {
-                std::thread::scope(|s| {
-                    for mut chunk in arr.rows_mut() {
-                        let bitgen = Arc::clone(&bitgen);
-                        s.spawn(move || {
-                            let mut bitgen = bitgen.lock().unwrap();
-                            for x in chunk.iter_mut() {
-                                *x = bitgen.random_range(10..200);
-                            }
-                        });
-                    }
-                })
-            });
-
-            Arc::into_inner(bitgen)
-                .unwrap()
-                .into_inner()
-                .unwrap()
-                .release(py)?;
-            Ok(())
+            get_bit_generator(py)?.lock(|bitgen| {
+                let bitgen = Mutex::new(bitgen);
+                py.detach(|| {
+                    std::thread::scope(|s| {
+                        for mut chunk in arr.rows_mut() {
+                            let bitgen = &bitgen;
+                            s.spawn(move || {
+                                let mut bitgen = bitgen.lock().unwrap();
+                                for x in chunk.iter_mut() {
+                                    *x = bitgen.random_range(10..200);
+                                }
+                            });
+                        }
+                    })
+                });
+            })
         })
     }
 
@@ -382,13 +354,12 @@ mod tests {
         use rand::Rng as _;
 
         Python::attach(|py| {
-            let mut bitgen = get_bit_generator(py)?.lock()?;
-            py.detach(|| {
-                assert!(bitgen.random_ratio(1, 1));
-                assert!(!bitgen.random_ratio(0, 1));
-            });
-            assert!(bitgen.release(py).is_ok());
-            Ok(())
+            get_bit_generator(py)?.lock(|bitgen| {
+                py.detach(|| {
+                    assert!(bitgen.random_ratio(1, 1));
+                    assert!(!bitgen.random_ratio(0, 1));
+                });
+            })
         })
     }
 
@@ -404,33 +375,30 @@ mod tests {
             };
 
             let refcount_before = get_refcount()?;
-
-            let bitgen = generator.lock()?;
-            let refcount_locked = get_refcount()?;
-            assert!(refcount_locked > refcount_before);
-
-            bitgen.release(py)?;
-            let refcount_after = get_refcount()?;
-            assert_eq!(refcount_after, refcount_before);
+            generator.lock(|_| {
+                assert!(get_refcount().unwrap() > refcount_before);
+            })?;
+            assert_eq!(get_refcount()?, refcount_before);
             Ok(())
         })
     }
 
-    /// Locking a PyBitGenerator twice fails
+    /// Locking a PyBitGenerator while it’s already locked fails
     #[test]
     fn double_lock_fails_direct() -> PyResult<()> {
         Python::attach(|py| {
             let generator = get_bit_generator(py)?;
-            let bitgen = generator.lock()?;
-            assert!(generator.lock().is_err());
-            assert!(bitgen.release(py).is_ok());
-            Ok(())
+            generator.lock(|_| {
+                assert!(generator.lock(|_| {}).is_err());
+            })
         })
     }
 
-    /// Locking a bit generator twice fails even if it’s not the same Rust object
+    /// Locking a bit generator twice fails even through a separate handle obtained from Python
     #[test]
-    fn double_lock_fails_cloned() -> PyResult<()> {
+    fn double_lock_fails_roundtrip() -> PyResult<()> {
+        use pyo3::types::PyList;
+
         Python::attach(|py| {
             let get_bg_ptr = |gen: &Bound<'_, _>| {
                 gen.getattr("capsule")?
@@ -439,19 +407,20 @@ mod tests {
             };
 
             let generator1 = get_bit_generator(py)?;
-            let generator2 = generator1.clone().into_any();
-            let generator2 = generator2.cast::<PyBitGenerator>()?;
+            // round-trip the very same object through Python, so no Rust-side cloning is involved
+            let generator2 = PyList::new(py, [&generator1])?
+                .get_item(0)?
+                .cast_into::<PyBitGenerator>()?;
             assert_eq!(get_bg_ptr(&generator1)?, get_bg_ptr(&generator2)?);
 
-            let bitgen = generator1.lock()?;
-            assert!(generator2.lock().is_err());
-            assert!(bitgen.release(py).is_ok());
-            Ok(())
+            generator1.lock(|_| {
+                assert!(generator2.lock(|_| {}).is_err());
+            })
         })
     }
 
-    /// Spawned children are independent and owned, so they can be used (and dropped) from their
-    /// own threads without locking or a manual `release`.
+    /// Spawned children are independent and owned,
+    /// so they can be used (and dropped) from their own threads without locking.
     #[test]
     fn spawn_produces_independent_generators() -> PyResult<()> {
         Python::attach(|py| {
@@ -471,18 +440,6 @@ mod tests {
             });
 
             assert_ne!(values[0], values[1]);
-            Ok(())
-        })
-    }
-
-    /// A spawned child can be `share`d back into a lockable guard.
-    #[test]
-    fn spawn_child_can_be_shared() -> PyResult<()> {
-        Python::attach(|py| {
-            let child = get_bit_generator(py)?.spawn(1)?.pop().unwrap();
-            let mut guard = child.share(py)?;
-            let _ = py.detach(|| guard.next_u64());
-            assert!(guard.release(py).is_ok());
             Ok(())
         })
     }
