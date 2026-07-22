@@ -1,22 +1,44 @@
 //! Safe interface for NumPy's random [`BitGenerator`][bg].
 //!
 //! Using the patterns described in [“Extending `numpy.random`”][ext],
-//! you can generate random numbers without holding the GIL,
-//! by [locking][`PyBitGeneratorMethods::lock`] a [`PyBitGenerator`] for the duration of a closure:
+//! you can generate random numbers without holding the GIL in one of the following ways:
+//! - [lock][`PyBitGeneratorMethods::lock`] a [`PyBitGenerator`] you received from Python
+//! - [spawn][`PyBitGeneratorMethods::spawn`] fresh [`BitGenerator`]s from it
+//! - obtain a fresh [`BitGenerator`] [from numpy][`BitGenerator::from_numpy`]:
 //!
 //! ```
 //! use pyo3::prelude::*;
-//! use numpy::random::{PyBitGenerator, PyBitGeneratorMethods as _};
+//! use numpy::random::BitGenerator;
 //!
-//! fn default_bit_gen<'py>(py: Python<'py>) -> PyResult<Bound<'py, PyBitGenerator>> {
-//!     let default_rng = py.import("numpy.random")?.call_method0("default_rng")?;
-//!     let bit_generator = default_rng.getattr("bit_generator")?.cast_into()?;
-//!     Ok(bit_generator)
+//! let mut bitgen = Python::attach(|py| {
+//!     BitGenerator::from_numpy(py, Default::default())
+//! })?;
+//! let random_number = bitgen.next_u64();
+//! # Ok::<(), PyErr>(())
+//! ```
+//!
+//! If you write a pyo3 extension, you would extract
+//! a `numpy.random.BitGenerator` into a [`PyBitGenerator`]:
+//!
+//! ```
+//! # use pyo3::prelude::*;
+//! use numpy::random::{BitGenerator, PyBitGenerator, PyBitGeneratorMethods as _};
+//! # fn default_bit_gen<'py>(py: Python<'py>) -> PyResult<Bound<'py, PyBitGenerator>> {
+//! #     Ok(BitGenerator::from_numpy(py, Default::default())?.into_shared().into_bound(py))
+//! # }
+//!
+//! #[pyfunction]
+//! fn super_fast_random_number(bitgen: Bound<PyBitGenerator>) -> PyResult<u64> {
+//!     let py = bitgen.py();
+//!     // lock the generator, then use it without holding the GIL
+//!     bitgen.lock(|bitgen| py.detach(|| bitgen.next_u64()))
 //! }
 //!
-//! let random_number = Python::attach(|py| -> PyResult<_> {
-//!     // lock the generator, then use it without holding the GIL
-//!     default_bit_gen(py)?.lock(|bitgen| py.detach(|| bitgen.next_u64()))
+//! Python::attach(|py| -> PyResult<_> {
+//!     let bitgen: Bound<PyBitGenerator> = default_bit_gen(py)?;
+//!     let random_number = super_fast_random_number(bitgen)?;
+//!     println!("{random_number}");
+//!     Ok(())
 //! })?;
 //! # Ok::<(), PyErr>(())
 //! ```
@@ -25,23 +47,14 @@
 //! since [`BitGenerator`] implements [`rand_core::RngCore`].
 //!
 //! ```
-//! # use pyo3::prelude::*;
+//! use pyo3::prelude::*;
 //! use rand::Rng as _;
-//! # use numpy::random::{PyBitGenerator, PyBitGeneratorMethods as _};
-//! # // TODO: reuse function definition from above?
-//! # fn default_bit_gen<'py>(py: Python<'py>) -> PyResult<Bound<'py, PyBitGenerator>> {
-//! #     let default_rng = py.import("numpy.random")?.call_method0("default_rng")?;
-//! #     let bit_generator = default_rng.getattr("bit_generator")?.cast_into()?;
-//! #     Ok(bit_generator)
-//! # }
+//! use numpy::random::{BitGenerator, NumpyBitGenerator::SFC64};
 //!
-//! Python::attach(|py| -> PyResult<_> {
-//!     default_bit_gen(py)?.lock(|bitgen| {
-//!         if bitgen.random_ratio(1, 1_000_000) {
-//!             println!("a sure thing");
-//!         }
-//!     })
-//! })?;
+//! let mut bitgen = Python::attach(|py| BitGenerator::from_numpy(py, SFC64))?;
+//! if bitgen.random_ratio(1, 1_000_000) {
+//!     println!("a sure thing");
+//! };
 //! # Ok::<(), PyErr>(())
 //! ```
 //!
@@ -52,20 +65,18 @@
 //! # use pyo3::prelude::*;
 //! # use rand::Rng as _;
 //! use numpy::{PyArray2, PyArrayMethods as _};
-//! # use numpy::random::{PyBitGenerator, PyBitGeneratorMethods as _};
-//! # // TODO: reuse function definition from above?
+//! # use numpy::random::{BitGenerator, PyBitGenerator, PyBitGeneratorMethods as _};
 //! # fn default_bit_gen<'py>(py: Python<'py>) -> PyResult<Bound<'py, PyBitGenerator>> {
-//! #     let default_rng = py.import("numpy.random")?.call_method0("default_rng")?;
-//! #     let bit_generator = default_rng.getattr("bit_generator")?.cast_into()?;
-//! #     Ok(bit_generator)
+//! #     Ok(BitGenerator::from_numpy(py, Default::default())?.into_shared().into_bound(py))
 //! # }
 //!
 //! Python::attach(|py| -> PyResult<_> {
-//!     let children = default_bit_gen(py)?.spawn(4)?;
+//!     let bitgen: Bound<PyBitGenerator> = default_bit_gen(py)?;
+//!     let children = bitgen.spawn(4)?;
 //!     let mut arr = PyArray2::<u32>::zeros(py, (4, 300), false).readwrite();
-//!     let mut arr = arr.as_array_mut();  // ndarray for more convenience
+//!     let mut ndarr = arr.as_array_mut();  // ndarray for more convenience
 //!     py.detach(|| std::thread::scope(|s| {
-//!         for (mut chunk, mut child) in arr.rows_mut().into_iter().zip(children) {
+//!         for (mut chunk, mut child) in ndarr.rows_mut().into_iter().zip(children) {
 //!             s.spawn(move || {
 //!                 for x in chunk.iter_mut() {
 //!                     *x = child.random_range(10..200);
@@ -73,6 +84,7 @@
 //!             });
 //!         }
 //!     }));
+//!     println!("Now filled: {arr:?}");
 //!     Ok(())
 //! })?;
 //! # Ok::<(), PyErr>(())
@@ -175,7 +187,7 @@ impl<'py> PyBitGeneratorMethods for Bound<'py, PyBitGenerator> {
         }
         // SAFETY: we hold the lock until the end of this scope (the `LockGuard` releases it),
         //         and reject reentrant re-locking below, so `generator`’s access stays exclusive.
-        let mut generator = match unsafe { BitGenerator::new(self.clone()) } {
+        let mut generator = match unsafe { BitGenerator::from_py(self.clone()) } {
             Ok(generator) => generator,
             Err(err) => {
                 lock.call_method0(intern!(py, "release"))?;
@@ -197,8 +209,36 @@ impl<'py> PyBitGeneratorMethods for Bound<'py, PyBitGenerator> {
         self.call_method1(intern!(py, "spawn"), (n_children,))?
             .try_iter()?
             // SAFETY: each child is freshly spawned and only handed to us, so it’s exclusively ours.
-            .map(|child| unsafe { BitGenerator::new(child?.cast_into::<PyBitGenerator>()?) })
+            .map(|child| unsafe { BitGenerator::from_py(child?.cast_into::<PyBitGenerator>()?) })
             .collect()
+    }
+}
+
+/// Known numpy bit generator types.
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum NumpyBitGenerator {
+    /// Mersenne Twister (MT19937)
+    MT19937,
+    /// Permuted congruential generator (64-bit, PCG-64)
+    #[default]
+    PCG64,
+    /// Permuted congruential generator (64-bit, PCG-64 DXSM
+    PCG64DXSM,
+    /// Philox counter-based RNG
+    Philox,
+    /// SFC64 Small Fast Chaotic PRNG
+    SFC64,
+}
+
+impl Into<&'static str> for NumpyBitGenerator {
+    fn into(self) -> &'static str {
+        match self {
+            NumpyBitGenerator::MT19937 => "MT19937",
+            NumpyBitGenerator::PCG64 => "PCG64",
+            NumpyBitGenerator::PCG64DXSM => "PCG64dxsm",
+            NumpyBitGenerator::Philox => "Philox",
+            NumpyBitGenerator::SFC64 => "SFC64",
+        }
     }
 }
 
@@ -221,6 +261,25 @@ pub struct BitGenerator {
 unsafe impl Send for BitGenerator {}
 
 impl BitGenerator {
+    /// Creates a fresh [`BitGenerator`] backed by numpy’s implementation.
+    ///
+    /// ```
+    /// use pyo3::prelude::*;
+    /// use numpy::random::{BitGenerator, NumpyBitGenerator};
+    ///
+    /// let mut bitgen = Python::attach(|py| BitGenerator::from_numpy(py, Default::default()))?;
+    /// println!("{}", bitgen.next_u32());
+    /// # Ok::<(), PyErr>(())
+    /// ```
+    pub fn from_numpy(py: Python<'_>, flavor: NumpyBitGenerator) -> PyResult<Self> {
+        let bitgen = py
+            .import("numpy.random")?
+            .call_method0::<&str>(flavor.into())?
+            .cast_into::<PyBitGenerator>()?;
+        // SAFETY: `bitgen` is freshly created and not handed out elsewhere.
+        unsafe { Self::from_py(bitgen) }
+    }
+
     /// Extracts the raw `bitgen_t` pointer from `bit_generator`’s capsule. Doesn’t touch the lock.
     ///
     /// # Safety
@@ -228,7 +287,7 @@ impl BitGenerator {
     /// The caller must ensure the result has exclusive access to the `bitgen_t` for its whole lifetime:
     /// either `bit_generator` is freshly created and not handed out elsewhere,
     /// or its lock is held (as by [`lock`][PyBitGeneratorMethods::lock]) the entire time.
-    unsafe fn new(bit_generator: Bound<'_, PyBitGenerator>) -> PyResult<Self> {
+    unsafe fn from_py(bit_generator: Bound<'_, PyBitGenerator>) -> PyResult<Self> {
         let py = bit_generator.py();
         let capsule = bit_generator
             .getattr(intern!(py, "capsule"))?
@@ -244,6 +303,11 @@ impl BitGenerator {
 
     fn addr(&self) -> usize {
         self.raw.as_ptr() as usize
+    }
+
+    /// Returns the underlying [`PyBitGenerator`].
+    pub fn into_shared(self) -> Py<PyBitGenerator> {
+        self._bit_generator
     }
 
     /// Returns the next random unsigned 64 bit integer.
