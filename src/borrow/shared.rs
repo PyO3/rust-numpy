@@ -1,13 +1,15 @@
 use std::collections::hash_map::Entry;
-use std::ffi::{c_void, CString};
+use std::ffi::{c_char, c_int, c_void};
 use std::mem::forget;
-use std::os::raw::{c_char, c_int};
+use std::ptr::NonNull;
 use std::slice::from_raw_parts;
 use std::sync::Mutex;
 
 use num_integer::gcd;
+use pyo3::ffi::c_str;
+use pyo3::sync::PyOnceLock;
 use pyo3::types::{PyAnyMethods, PyCapsuleMethods};
-use pyo3::{exceptions::PyTypeError, sync::GILOnceCell, types::PyCapsule, PyResult, Python};
+use pyo3::{exceptions::PyTypeError, types::PyCapsule, PyResult, Python};
 use rustc_hash::FxHashMap;
 
 use crate::array::get_array_module;
@@ -41,8 +43,8 @@ unsafe impl Send for Shared {}
 // These are the entry points which implement the shared borrow checking API:
 
 unsafe extern "C" fn acquire_shared(flags: *mut c_void, array: *mut PyArrayObject) -> c_int {
-    // SAFETY: GIL must be held when calling `acquire_shared`.
-    let py = Python::assume_gil_acquired();
+    // SAFETY: must be attached when calling `acquire_shared`.
+    let py = Python::assume_attached();
     let flags = &*(flags as *mut BorrowFlags);
 
     let address = base_address(py, array);
@@ -59,8 +61,8 @@ unsafe extern "C" fn acquire_mut_shared(flags: *mut c_void, array: *mut PyArrayO
         return -2;
     }
 
-    // SAFETY: GIL must be held when calling `acquire_shared`.
-    let py = Python::assume_gil_acquired();
+    // SAFETY: must be attached when calling `acquire_shared`.
+    let py = Python::assume_attached();
     let flags = &*(flags as *mut BorrowFlags);
 
     let address = base_address(py, array);
@@ -73,8 +75,8 @@ unsafe extern "C" fn acquire_mut_shared(flags: *mut c_void, array: *mut PyArrayO
 }
 
 unsafe extern "C" fn release_shared(flags: *mut c_void, array: *mut PyArrayObject) {
-    // SAFETY: GIL must be held when calling `acquire_shared`.
-    let py = Python::assume_gil_acquired();
+    // SAFETY: must be attached when calling `acquire_shared`.
+    let py = Python::assume_attached();
     let flags = &*(flags as *mut BorrowFlags);
     let address = base_address(py, array);
     let key = borrow_key(py, array);
@@ -83,8 +85,8 @@ unsafe extern "C" fn release_shared(flags: *mut c_void, array: *mut PyArrayObjec
 }
 
 unsafe extern "C" fn release_mut_shared(flags: *mut c_void, array: *mut PyArrayObject) {
-    // SAFETY: GIL must be held when calling `acquire_shared`.
-    let py = Python::assume_gil_acquired();
+    // SAFETY: must be attached when calling `acquire_shared`.
+    let py = Python::assume_attached();
     let flags = &*(flags as *mut BorrowFlags);
 
     let address = base_address(py, array);
@@ -95,20 +97,20 @@ unsafe extern "C" fn release_mut_shared(flags: *mut c_void, array: *mut PyArrayO
 
 // This global state is a cache used to access the shared borrow checking API from this extension:
 
-struct SharedPtr(GILOnceCell<*const Shared>);
+struct SharedPtr(PyOnceLock<NonNull<Shared>>);
 
 unsafe impl Send for SharedPtr {}
 
 unsafe impl Sync for SharedPtr {}
 
-static SHARED: SharedPtr = SharedPtr(GILOnceCell::new());
+static SHARED: SharedPtr = SharedPtr(PyOnceLock::new());
 
 fn get_or_insert_shared<'py>(py: Python<'py>) -> PyResult<&'py Shared> {
     let shared = SHARED.0.get_or_try_init(py, || insert_shared(py))?;
 
     // SAFETY: We inserted the capsule if it was missing
     // and verified that it contains a compatible version.
-    Ok(unsafe { &**shared })
+    Ok(unsafe { shared.as_ref() })
 }
 
 // This function will publish this extension's version of the shared borrow checking API
@@ -116,11 +118,11 @@ fn get_or_insert_shared<'py>(py: Python<'py>) -> PyResult<&'py Shared> {
 // immediately initialize the cache used access it from this extension.
 
 #[cold]
-fn insert_shared<'py>(py: Python<'py>) -> PyResult<*const Shared> {
+fn insert_shared<'py>(py: Python<'py>) -> PyResult<NonNull<Shared>> {
     let module = get_array_module(py)?;
 
     let capsule = match module.getattr("_RUST_NUMPY_BORROW_CHECKING_API") {
-        Ok(capsule) => capsule.downcast_into::<PyCapsule>()?,
+        Ok(capsule) => capsule.cast_into::<PyCapsule>()?,
         Err(_err) => {
             let flags: *mut BorrowFlags = Box::into_raw(Box::default());
 
@@ -133,10 +135,10 @@ fn insert_shared<'py>(py: Python<'py>) -> PyResult<*const Shared> {
                 release_mut: release_mut_shared,
             };
 
-            let capsule = PyCapsule::new_with_destructor(
+            let capsule = PyCapsule::new_with_value_and_destructor(
                 py,
                 shared,
-                Some(CString::new("_RUST_NUMPY_BORROW_CHECKING_API").unwrap()),
+                c"_RUST_NUMPY_BORROW_CHECKING_API",
                 |shared, _ctx| {
                     // SAFETY: `shared.flags` was initialized using `Box::into_raw`.
                     let _ = unsafe { Box::from_raw(shared.flags as *mut BorrowFlags) };
@@ -148,15 +150,19 @@ fn insert_shared<'py>(py: Python<'py>) -> PyResult<*const Shared> {
     };
 
     // SAFETY: All versions of the shared borrow checking API start with a version field.
-    let version = unsafe { *capsule.pointer().cast::<u64>() };
+    let version = unsafe {
+        *capsule
+            .pointer_checked(Some(c_str!("_RUST_NUMPY_BORROW_CHECKING_API")))?
+            .cast::<u64>()
+            .as_ptr() // FIXME(icxolu): use read on MSRV 1.80
+    };
     if version < 1 {
         return Err(PyTypeError::new_err(format!(
-            "Version {} of borrow checking API is not supported by this version of rust-numpy",
-            version
+            "Version {version} of borrow checking API is not supported by this version of rust-numpy"
         )));
     }
 
-    let ptr = capsule.pointer();
+    let ptr = capsule.pointer_checked(Some(c_str!("_RUST_NUMPY_BORROW_CHECKING_API")))?;
 
     // Intentionally leak a reference to the capsule
     // so we can safely cache a pointer into its interior.
@@ -168,19 +174,19 @@ fn insert_shared<'py>(py: Python<'py>) -> PyResult<*const Shared> {
 // These entry points will be used to access the shared borrow checking API from this extension:
 
 pub fn acquire<'py>(py: Python<'py>, array: *mut PyArrayObject) -> Result<(), BorrowError> {
-    let shared = get_or_insert_shared(py).expect("Interal borrow checking API error");
+    let shared = get_or_insert_shared(py).expect("Internal borrow checking API error");
 
     let rc = unsafe { (shared.acquire)(shared.flags, array) };
 
     match rc {
         0 => Ok(()),
         -1 => Err(BorrowError::AlreadyBorrowed),
-        rc => panic!("Unexpected return code {} from borrow checking API", rc),
+        rc => panic!("Unexpected return code {rc} from borrow checking API"),
     }
 }
 
 pub fn acquire_mut<'py>(py: Python<'py>, array: *mut PyArrayObject) -> Result<(), BorrowError> {
-    let shared = get_or_insert_shared(py).expect("Interal borrow checking API error");
+    let shared = get_or_insert_shared(py).expect("Internal borrow checking API error");
 
     let rc = unsafe { (shared.acquire_mut)(shared.flags, array) };
 
@@ -188,12 +194,12 @@ pub fn acquire_mut<'py>(py: Python<'py>, array: *mut PyArrayObject) -> Result<()
         0 => Ok(()),
         -1 => Err(BorrowError::AlreadyBorrowed),
         -2 => Err(BorrowError::NotWriteable),
-        rc => panic!("Unexpected return code {} from borrow checking API", rc),
+        rc => panic!("Unexpected return code {rc} from borrow checking API"),
     }
 }
 
 pub fn release<'py>(py: Python<'py>, array: *mut PyArrayObject) {
-    let shared = get_or_insert_shared(py).expect("Interal borrow checking API error");
+    let shared = get_or_insert_shared(py).expect("Internal borrow checking API error");
 
     unsafe {
         (shared.release)(shared.flags, array);
@@ -201,7 +207,7 @@ pub fn release<'py>(py: Python<'py>, array: *mut PyArrayObject) {
 }
 
 pub fn release_mut<'py>(py: Python<'py>, array: *mut PyArrayObject) {
-    let shared = get_or_insert_shared(py).expect("Interal borrow checking API error");
+    let shared = get_or_insert_shared(py).expect("Internal borrow checking API error");
 
     unsafe {
         (shared.release_mut)(shared.flags, array);
@@ -483,7 +489,7 @@ mod tests {
 
     #[test]
     fn without_base_object() {
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             let array = PyArray::<f64, _>::zeros(py, (1, 2, 3), false);
 
             let base = unsafe { (*array.as_array_ptr()).base };
@@ -500,7 +506,7 @@ mod tests {
 
     #[test]
     fn with_base_object() {
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             let array = Array::<f64, _>::zeros((1, 2, 3)).into_pyarray(py);
 
             let base = unsafe { (*array.as_array_ptr()).base };
@@ -520,14 +526,14 @@ mod tests {
 
     #[test]
     fn view_without_base_object() {
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             let array = PyArray::<f64, _>::zeros(py, (1, 2, 3), false);
 
             let locals = [("array", &array)].into_py_dict(py).unwrap();
             let view = py
                 .eval(c_str!("array[:,:,0]"), None, Some(&locals))
                 .unwrap()
-                .downcast_into::<PyArray2<f64>>()
+                .cast_into::<PyArray2<f64>>()
                 .unwrap();
             assert_ne!(
                 view.as_ptr().cast::<c_void>(),
@@ -549,14 +555,14 @@ mod tests {
 
     #[test]
     fn view_with_base_object() {
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             let array = Array::<f64, _>::zeros((1, 2, 3)).into_pyarray(py);
 
             let locals = [("array", &array)].into_py_dict(py).unwrap();
             let view = py
                 .eval(c_str!("array[:,:,0]"), None, Some(&locals))
                 .unwrap()
-                .downcast_into::<PyArray2<f64>>()
+                .cast_into::<PyArray2<f64>>()
                 .unwrap();
             assert_ne!(
                 view.as_ptr().cast::<c_void>(),
@@ -584,14 +590,14 @@ mod tests {
 
     #[test]
     fn view_of_view_without_base_object() {
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             let array = PyArray::<f64, _>::zeros(py, (1, 2, 3), false);
 
             let locals = [("array", &array)].into_py_dict(py).unwrap();
             let view1 = py
                 .eval(c_str!("array[:,:,0]"), None, Some(&locals))
                 .unwrap()
-                .downcast_into::<PyArray2<f64>>()
+                .cast_into::<PyArray2<f64>>()
                 .unwrap();
             assert_ne!(
                 view1.as_ptr().cast::<c_void>(),
@@ -602,7 +608,7 @@ mod tests {
             let view2 = py
                 .eval(c_str!("view1[:,0]"), None, Some(&locals))
                 .unwrap()
-                .downcast_into::<PyArray1<f64>>()
+                .cast_into::<PyArray1<f64>>()
                 .unwrap();
             assert_ne!(
                 view2.as_ptr().cast::<c_void>(),
@@ -632,14 +638,14 @@ mod tests {
 
     #[test]
     fn view_of_view_with_base_object() {
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             let array = Array::<f64, _>::zeros((1, 2, 3)).into_pyarray(py);
 
             let locals = [("array", &array)].into_py_dict(py).unwrap();
             let view1 = py
                 .eval(c_str!("array[:,:,0]"), None, Some(&locals))
                 .unwrap()
-                .downcast_into::<PyArray2<f64>>()
+                .cast_into::<PyArray2<f64>>()
                 .unwrap();
             assert_ne!(
                 view1.as_ptr().cast::<c_void>(),
@@ -650,7 +656,7 @@ mod tests {
             let view2 = py
                 .eval(c_str!("view1[:,0]"), None, Some(&locals))
                 .unwrap()
-                .downcast_into::<PyArray1<f64>>()
+                .cast_into::<PyArray1<f64>>()
                 .unwrap();
             assert_ne!(
                 view2.as_ptr().cast::<c_void>(),
@@ -686,14 +692,14 @@ mod tests {
 
     #[test]
     fn view_with_negative_strides() {
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             let array = PyArray::<f64, _>::zeros(py, (1, 2, 3), false);
 
             let locals = [("array", &array)].into_py_dict(py).unwrap();
             let view = py
                 .eval(c_str!("array[::-1,:,::-1]"), None, Some(&locals))
                 .unwrap()
-                .downcast_into::<PyArray3<f64>>()
+                .cast_into::<PyArray3<f64>>()
                 .unwrap();
             assert_ne!(
                 view.as_ptr().cast::<c_void>(),
@@ -718,7 +724,7 @@ mod tests {
 
     #[test]
     fn array_with_zero_dimensions() {
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             let array = PyArray::<f64, _>::zeros(py, (1, 0, 3), false);
 
             let base = unsafe { (*array.as_array_ptr()).base };
@@ -735,14 +741,14 @@ mod tests {
 
     #[test]
     fn view_with_non_dividing_strides() {
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             let array = PyArray::<f64, _>::zeros(py, (10, 10), false);
             let locals = [("array", array)].into_py_dict(py).unwrap();
 
             let view1 = py
                 .eval(c_str!("array[:,::3]"), None, Some(&locals))
                 .unwrap()
-                .downcast_into::<PyArray2<f64>>()
+                .cast_into::<PyArray2<f64>>()
                 .unwrap();
 
             let key1 = borrow_key(py, view1.as_array_ptr());
@@ -753,7 +759,7 @@ mod tests {
             let view2 = py
                 .eval(c_str!("array[:,1::3]"), None, Some(&locals))
                 .unwrap()
-                .downcast_into::<PyArray2<f64>>()
+                .cast_into::<PyArray2<f64>>()
                 .unwrap();
 
             let key2 = borrow_key(py, view2.as_array_ptr());
@@ -764,7 +770,7 @@ mod tests {
             let view3 = py
                 .eval(c_str!("array[:,::2]"), None, Some(&locals))
                 .unwrap()
-                .downcast_into::<PyArray2<f64>>()
+                .cast_into::<PyArray2<f64>>()
                 .unwrap();
 
             let key3 = borrow_key(py, view3.as_array_ptr());
@@ -775,7 +781,7 @@ mod tests {
             let view4 = py
                 .eval(c_str!("array[:,1::2]"), None, Some(&locals))
                 .unwrap()
-                .downcast_into::<PyArray2<f64>>()
+                .cast_into::<PyArray2<f64>>()
                 .unwrap();
 
             let key4 = borrow_key(py, view4.as_array_ptr());
@@ -794,7 +800,7 @@ mod tests {
 
     #[test]
     fn borrow_multiple_arrays() {
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             let array1 = PyArray::<f64, _>::zeros(py, 10, false);
             let array2 = PyArray::<f64, _>::zeros(py, 10, false);
 
@@ -835,7 +841,7 @@ mod tests {
 
     #[test]
     fn borrow_multiple_views() {
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             let array = PyArray::<f64, _>::zeros(py, 10, false);
             let base = base_address(py, array.as_array_ptr());
 
@@ -844,7 +850,7 @@ mod tests {
             let view1 = py
                 .eval(c_str!("array[:5]"), None, Some(&locals))
                 .unwrap()
-                .downcast_into::<PyArray1<f64>>()
+                .cast_into::<PyArray1<f64>>()
                 .unwrap();
 
             let key1 = borrow_key(py, view1.as_array_ptr());
@@ -863,7 +869,7 @@ mod tests {
             let view2 = py
                 .eval(c_str!("array[5:]"), None, Some(&locals))
                 .unwrap()
-                .downcast_into::<PyArray1<f64>>()
+                .cast_into::<PyArray1<f64>>()
                 .unwrap();
 
             let key2 = borrow_key(py, view2.as_array_ptr());
@@ -884,7 +890,7 @@ mod tests {
             let view3 = py
                 .eval(c_str!("array[5:]"), None, Some(&locals))
                 .unwrap()
-                .downcast_into::<PyArray1<f64>>()
+                .cast_into::<PyArray1<f64>>()
                 .unwrap();
 
             let key3 = borrow_key(py, view3.as_array_ptr());
@@ -908,7 +914,7 @@ mod tests {
             let view4 = py
                 .eval(c_str!("array[7:]"), None, Some(&locals))
                 .unwrap()
-                .downcast_into::<PyArray1<f64>>()
+                .cast_into::<PyArray1<f64>>()
                 .unwrap();
 
             let key4 = borrow_key(py, view4.as_array_ptr());

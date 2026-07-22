@@ -14,7 +14,7 @@ fn get_np_locals(py: Python<'_>) -> Bound<'_, PyDict> {
 
 #[test]
 fn extract_reference() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let locals = get_np_locals(py);
         let py_array = py
             .eval(
@@ -34,7 +34,7 @@ fn extract_reference() {
 
 #[test]
 fn convert_array_on_extract() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let locals = get_np_locals(py);
         let py_array = py
             .eval(
@@ -56,7 +56,7 @@ fn convert_array_on_extract() {
 
 #[test]
 fn convert_list_on_extract() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let py_list = py
             .eval(c_str!("[[1.0,2.0],[3.0,4.0]]"), None, None)
             .unwrap();
@@ -68,7 +68,7 @@ fn convert_list_on_extract() {
 
 #[test]
 fn convert_array_in_list_on_extract() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let locals = get_np_locals(py);
         let py_array = py
             .eval(
@@ -85,7 +85,7 @@ fn convert_array_in_list_on_extract() {
 
 #[test]
 fn convert_list_on_extract_dyn() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let py_list = py
             .eval(c_str!("[[[1,2],[3,4]],[[5,6],[7,8]]]"), None, None)
             .unwrap();
@@ -102,7 +102,7 @@ fn convert_list_on_extract_dyn() {
 
 #[test]
 fn convert_1d_list_on_extract() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let py_list = py.eval(c_str!("[1,2,3,4]"), None, None).unwrap();
         let extracted_array_1d = py_list.extract::<PyArrayLike1<'_, u32>>().unwrap();
         let extracted_array_dyn = py_list.extract::<PyArrayLikeDyn<'_, f64>>().unwrap();
@@ -117,7 +117,7 @@ fn convert_1d_list_on_extract() {
 
 #[test]
 fn unsafe_cast_shall_fail() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let locals = get_np_locals(py);
         let py_list = py
             .eval(
@@ -133,8 +133,52 @@ fn unsafe_cast_shall_fail() {
 }
 
 #[test]
+fn extract_1d_array_of_different_float_types_fail() {
+    Python::attach(|py| {
+        let locals = get_np_locals(py);
+        let py_list = py
+            .eval(
+                c_str!("np.array([1, 2, 3, 4], dtype='float64')"),
+                Some(&locals),
+                None,
+            )
+            .unwrap();
+        let extracted_array_f32 = py_list.extract::<PyArrayLike1<'_, f32>>();
+        let extracted_array_f64 = py_list.extract::<PyArrayLike1<'_, f64>>().unwrap();
+
+        assert!(extracted_array_f32.is_err());
+        assert_eq!(
+            array![1_f64, 2_f64, 3_f64, 4_f64],
+            extracted_array_f64.as_array()
+        );
+    });
+}
+
+#[test]
+fn extract_2d_array_of_different_float_types_fail() {
+    Python::attach(|py| {
+        let locals = get_np_locals(py);
+        let py_list = py
+            .eval(
+                c_str!("np.array([[1, 2], [3, 4]], dtype='float64')"),
+                Some(&locals),
+                None,
+            )
+            .unwrap();
+        let extracted_array_f32 = py_list.extract::<PyArrayLike2<'_, f32>>();
+        let extracted_array_f64 = py_list.extract::<PyArrayLike2<'_, f64>>().unwrap();
+
+        assert!(extracted_array_f32.is_err());
+        assert_eq!(
+            array![[1_f64, 2_f64], [3_f64, 4_f64]],
+            extracted_array_f64.as_array()
+        );
+    });
+}
+
+#[test]
 fn unsafe_cast_with_coerce_works() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let locals = get_np_locals(py);
         let py_list = py
             .eval(

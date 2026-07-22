@@ -1,6 +1,6 @@
 //! Defines conversion traits between Rust types and NumPy data types.
 
-use std::{mem, os::raw::c_int, ptr};
+use std::{ffi::c_int, mem, ptr};
 
 use ndarray::{ArrayBase, Data, Dim, Dimension, IntoDimension, Ix1, OwnedRepr};
 use pyo3::{Bound, Python};
@@ -23,7 +23,7 @@ use crate::slice_container::PySliceContainer;
 /// use numpy::{PyArray, IntoPyArray, PyArrayMethods};
 /// use pyo3::Python;
 ///
-/// Python::with_gil(|py| {
+/// Python::attach(|py| {
 ///     let py_array = vec![1, 2, 3].into_pyarray(py);
 ///
 ///     assert_eq!(py_array.readonly().as_slice().unwrap(), &[1, 2, 3]);
@@ -103,14 +103,14 @@ where
 /// use numpy::{PyArray, ToPyArray, PyArrayMethods};
 /// use pyo3::Python;
 ///
-/// Python::with_gil(|py| {
+/// Python::attach(|py| {
 ///     let py_array = vec![1, 2, 3].to_pyarray(py);
 ///
 ///     assert_eq!(py_array.readonly().as_slice().unwrap(), &[1, 2, 3]);
 /// });
 /// ```
 ///
-/// Due to copying the elments, this method converts non-contiguous arrays to C-order contiguous arrays.
+/// Due to copying the elements, this method converts non-contiguous arrays to C-order contiguous arrays.
 ///
 /// ```
 /// use numpy::prelude::*;
@@ -118,7 +118,7 @@ where
 /// use ndarray::{arr3, s};
 /// use pyo3::Python;
 ///
-/// Python::with_gil(|py| {
+/// Python::attach(|py| {
 ///     let array = arr3(&[[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]]);
 ///     let py_array = array.slice(s![.., 0..1, ..]).to_pyarray(py);
 ///

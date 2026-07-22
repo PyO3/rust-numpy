@@ -2,7 +2,7 @@ rust-numpy
 ===========
 [![Actions Status](https://github.com/PyO3/rust-numpy/workflows/CI/badge.svg)](https://github.com/PyO3/rust-numpy/actions)
 [![Crate](https://img.shields.io/crates/v/numpy.svg)](https://crates.io/crates/numpy)
-[![Minimum rustc 1.63](https://img.shields.io/badge/rustc-1.63+-blue.svg)](https://rust-lang.github.io/rfcs/2495-min-rust-version.html)
+[![Minimum rustc 1.83](https://img.shields.io/badge/rustc-1.83+-blue.svg)](https://rust-lang.github.io/rfcs/2495-min-rust-version.html)
 [![Documentation](https://docs.rs/numpy/badge.svg)](https://docs.rs/numpy)
 [![codecov](https://codecov.io/gh/PyO3/rust-numpy/branch/main/graph/badge.svg)](https://codecov.io/gh/PyO3/rust-numpy)
 
@@ -13,10 +13,10 @@ Rust bindings for the NumPy C-API.
 - [Current main](https://pyo3.github.io/rust-numpy)
 
 ## Requirements
-- Rust >= 1.63.0
+- Rust >= 1.83.0
   - Basically, our MSRV follows the one of [PyO3](https://github.com/PyO3/pyo3)
-- Python >= 3.7
-  - Python 3.6 support was dropped from 0.16
+- Python >= 3.8
+  - Python 3.7 support was dropped from 0.29
 - Some Rust libraries
   - [ndarray](https://github.com/rust-ndarray/ndarray) for Rust-side matrix library
   - [PyO3](https://github.com/PyO3/pyo3) for Python bindings
@@ -38,17 +38,17 @@ name = "rust_ext"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { version = "0.22", features = ["extension-module"] }
-numpy = "0.22"
+pyo3 = { version = "0.29" }
+numpy = "0.29"
 ```
 
 ```rust
-use numpy::ndarray::{ArrayD, ArrayViewD, ArrayViewMutD};
-use numpy::{IntoPyArray, PyArrayDyn, PyReadonlyArrayDyn, PyArrayMethods};
-use pyo3::{pymodule, types::PyModule, PyResult, Python, Bound};
+#[pyo3::pymodule]
+mod rust_ext {
+    use numpy::ndarray::{ArrayD, ArrayViewD, ArrayViewMutD};
+    use numpy::{IntoPyArray, PyArrayDyn, PyReadonlyArrayDyn, PyArrayMethods};
+    use pyo3::{pyfunction, PyResult, Python, Bound};
 
-#[pymodule]
-fn rust_ext<'py>(_py: Python<'py>, m: &Bound<'py, PyModule>) -> PyResult<()> {
     // example using immutable borrows producing a new array
     fn axpy(a: f64, x: ArrayViewD<'_, f64>, y: ArrayViewD<'_, f64>) -> ArrayD<f64> {
         a * &x + &y
@@ -60,8 +60,7 @@ fn rust_ext<'py>(_py: Python<'py>, m: &Bound<'py, PyModule>) -> PyResult<()> {
     }
 
     // wrapper of `axpy`
-    #[pyfn(m)]
-    #[pyo3(name = "axpy")]
+    #[pyfunction(name = "axpy")]
     fn axpy_py<'py>(
         py: Python<'py>,
         a: f64,
@@ -75,14 +74,11 @@ fn rust_ext<'py>(_py: Python<'py>, m: &Bound<'py, PyModule>) -> PyResult<()> {
     }
 
     // wrapper of `mult`
-    #[pyfn(m)]
-    #[pyo3(name = "mult")]
+    #[pyfunction(name = "mult")]
     fn mult_py<'py>(a: f64, x: &Bound<'py, PyArrayDyn<f64>>) {
         let x = unsafe { x.as_array_mut() };
         mult(a, x);
     }
-
-    Ok(())
 }
 ```
 
@@ -93,8 +89,8 @@ fn rust_ext<'py>(_py: Python<'py>, m: &Bound<'py, PyModule>) -> PyResult<()> {
 name = "numpy-test"
 
 [dependencies]
-pyo3 = { version = "0.22", features = ["auto-initialize"] }
-numpy = "0.22"
+pyo3 = { version = "0.29", features = ["auto-initialize"] }
+numpy = "0.29"
 ```
 
 ```rust
@@ -102,13 +98,13 @@ use numpy::{PyArray1, PyArrayMethods};
 use pyo3::{types::{IntoPyDict, PyAnyMethods}, PyResult, Python, ffi::c_str};
 
 fn main() -> PyResult<()> {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let np = py.import("numpy")?;
         let locals = [("np", np)].into_py_dict(py)?;
 
         let pyarray = py
             .eval(c_str!("np.absolute(np.array([-1, -2, -3], dtype='int32'))"), Some(&locals), None)?
-            .downcast_into::<PyArray1<i32>>()?;
+            .cast_into::<PyArray1<i32>>()?;
 
         let readonly = pyarray.readonly();
         let slice = readonly.as_slice()?;
@@ -125,19 +121,19 @@ This crate uses types from `ndarray` in its public API. `ndarray` is re-exported
 in the crate root so that you do not need to specify it as a direct dependency.
 
 Furthermore, this crate is compatible with multiple versions of `ndarray` and therefore depends
-on a range of semver-incompatible versions, currently `>= 0.15, < 0.17`. Cargo does not
+on a range of semver-incompatible versions, currently `>= 0.15, <= 0.17`. Cargo does not
 automatically choose a single version of `ndarray` by itself if you depend directly or indirectly
 on anything but that exact range. It can therefore be necessary to manually unify these dependencies.
 
 For example, if you specify the following dependencies
 
 ```toml
-numpy = "0.22"
+numpy = "0.29"
 ndarray = "0.15"
 ```
 
 this will currently depend on both version `0.15.6` and `0.16.1` of `ndarray` by default
-even though `0.15.6` is within the range `>= 0.15, < 0.17`. To fix this, you can run
+even though `0.15.6` is within the range `>= 0.15, <= 0.17`. To fix this, you can run
 
 ```sh
 cargo update --package ndarray:0.16.1 --precise 0.15.6

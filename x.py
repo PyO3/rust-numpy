@@ -7,8 +7,10 @@ import sys
 from pathlib import Path
 
 
-def run(*args):
-    subprocess.run([*args], check=True)
+def run(*args, env=None):
+    if env is not None:
+        env = {**os.environ, **env}
+    subprocess.run([*args], check=True, env=env)
 
 
 def can_run(*args):
@@ -55,6 +57,7 @@ def default(args):
 
 
 def check(args):
+    run("cargo", "doc", "--no-deps", env={"RUSTDOCFLAGS": "--deny warnings"})
     run("cargo", "fmt", "--", "--check")
     run("cargo", "clippy", "--all-features", "--tests", "--", *DENY_WARNINGS)
 
@@ -85,9 +88,6 @@ def test(args):
 
 
 def bench(args):
-    if not nightly():
-        sys.exit("Benchmarks require a nightly build of the Rust compiler.")
-
     if args.name is None:
         run("cargo", "bench", "--all-features", "--benches")
     else:
@@ -148,9 +148,7 @@ if __name__ == "__main__":
     test_parser.set_defaults(func=test)
     test_parser.add_argument("name", nargs="?", help="Test target name")
 
-    bench_parser = subparsers.add_parser(
-        "bench", aliases=["b"], help="Benchmarks (requires nightly)"
-    )
+    bench_parser = subparsers.add_parser("bench", aliases=["b"], help="Benchmarks")
     bench_parser.set_defaults(func=bench)
     bench_parser.add_argument("name", nargs="?", help="Benchmark target name")
 

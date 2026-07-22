@@ -11,16 +11,16 @@ use crate::dtype::Element;
 use crate::npyffi::{array::PY_ARRAY_API, NPY_CASTING, NPY_ORDER};
 
 /// Return value of a function that can yield either an array or a scalar.
-pub trait ArrayOrScalar<'py, T>: FromPyObject<'py> {}
+pub trait ArrayOrScalar<'a, 'py, T>: FromPyObject<'a, 'py> {}
 
-impl<'py, T, D> ArrayOrScalar<'py, T> for Bound<'py, PyArray<T, D>>
+impl<'a, 'py, T, D> ArrayOrScalar<'a, 'py, T> for Bound<'py, PyArray<T, D>>
 where
-    T: Element,
-    D: Dimension,
+    T: Element + 'a,
+    D: Dimension + 'a,
 {
 }
 
-impl<'py, T> ArrayOrScalar<'py, T> for T where T: Element + FromPyObject<'py> {}
+impl<'a, 'py, T> ArrayOrScalar<'a, 'py, T> for T where T: Element + FromPyObject<'a, 'py> {}
 
 /// Return the inner product of two arrays.
 ///
@@ -34,7 +34,7 @@ impl<'py, T> ArrayOrScalar<'py, T> for T where T: Element + FromPyObject<'py> {}
 /// use pyo3::Python;
 /// use numpy::{inner, pyarray, PyArray0};
 ///
-/// Python::with_gil(|py| {
+/// Python::attach(|py| {
 ///     let vector = pyarray![py, 1.0, 2.0, 3.0];
 ///     let result: f64 = inner(&vector, &vector).unwrap();
 ///     assert_eq!(result, 14.0);
@@ -48,7 +48,7 @@ impl<'py, T> ArrayOrScalar<'py, T> for T where T: Element + FromPyObject<'py> {}
 /// use numpy::prelude::*;
 /// use numpy::{inner, pyarray, PyArray0};
 ///
-/// Python::with_gil(|py| {
+/// Python::attach(|py| {
 ///     let vector = pyarray![py, 1, 2, 3];
 ///     let result: Bound<'_, PyArray0<_>> = inner(&vector, &vector).unwrap();
 ///     assert_eq!(result.item(), 14);
@@ -64,14 +64,14 @@ where
     T: Element,
     DIN1: Dimension,
     DIN2: Dimension,
-    OUT: ArrayOrScalar<'py, T>,
+    OUT: for<'a> ArrayOrScalar<'a, 'py, T>,
 {
     let py = array1.py();
     let obj = unsafe {
         let result = PY_ARRAY_API.PyArray_InnerProduct(py, array1.as_ptr(), array2.as_ptr());
         Bound::from_owned_ptr_or_err(py, result)?
     };
-    obj.extract()
+    obj.extract().map_err(Into::into)
 }
 
 /// Return the dot product of two arrays.
@@ -87,7 +87,7 @@ where
 /// use ndarray::array;
 /// use numpy::{dot, pyarray, PyArray2, PyArrayMethods};
 ///
-/// Python::with_gil(|py| {
+/// Python::attach(|py| {
 ///     let matrix = pyarray![py, [1, 0], [0, 1]];
 ///     let another_matrix = pyarray![py, [4, 1], [2, 2]];
 ///
@@ -106,7 +106,7 @@ where
 /// use pyo3::Python;
 /// use numpy::{dot, pyarray, PyArray0};
 ///
-/// Python::with_gil(|py| {
+/// Python::attach(|py| {
 ///     let vector = pyarray![py, 1.0, 2.0, 3.0];
 ///     let result: f64 = dot(&vector, &vector).unwrap();
 ///     assert_eq!(result, 14.0);
@@ -122,26 +122,26 @@ where
     T: Element,
     DIN1: Dimension,
     DIN2: Dimension,
-    OUT: ArrayOrScalar<'py, T>,
+    OUT: for<'a> ArrayOrScalar<'a, 'py, T>,
 {
     let py = array1.py();
     let obj = unsafe {
         let result = PY_ARRAY_API.PyArray_MatrixProduct(py, array1.as_ptr(), array2.as_ptr());
         Bound::from_owned_ptr_or_err(py, result)?
     };
-    obj.extract()
+    obj.extract().map_err(Into::into)
 }
 
 /// Return the Einstein summation convention of given tensors.
 ///
-/// This is usually invoked via the the [`einsum!`][crate::einsum!] macro.
+/// This is usually invoked via the [`einsum!`][crate::einsum!] macro.
 pub fn einsum<'py, T, OUT>(
     subscripts: &str,
     arrays: &[Borrowed<'_, 'py, PyArray<T, IxDyn>>],
 ) -> PyResult<OUT>
 where
     T: Element,
-    OUT: ArrayOrScalar<'py, T>,
+    OUT: for<'a> ArrayOrScalar<'a, 'py, T>,
 {
     let subscripts = match CStr::from_bytes_with_nul(subscripts.as_bytes()) {
         Ok(subscripts) => Cow::Borrowed(subscripts),
@@ -162,7 +162,7 @@ where
         );
         Bound::from_owned_ptr_or_err(py, result)?
     };
-    obj.extract()
+    obj.extract().map_err(Into::into)
 }
 
 /// Return the Einstein summation convention of given tensors.
@@ -177,7 +177,7 @@ where
 /// use ndarray::array;
 /// use numpy::{einsum, pyarray, PyArray, PyArray2, PyArrayMethods};
 ///
-/// Python::with_gil(|py| {
+/// Python::attach(|py| {
 ///     let tensor = PyArray::arange(py, 0, 2 * 3 * 4, 1).reshape([2, 3, 4]).unwrap();
 ///     let another_tensor = pyarray![py, [20, 30], [40, 50], [60, 70]];
 ///

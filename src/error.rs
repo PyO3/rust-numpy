@@ -4,7 +4,7 @@ use std::error::Error;
 use std::fmt;
 
 use pyo3::{
-    conversion::IntoPyObject, exceptions::PyTypeError, Bound, Py, PyErr, PyErrArguments, PyObject,
+    conversion::IntoPyObject, exceptions::PyTypeError, Bound, Py, PyAny, PyErr, PyErrArguments,
     Python,
 };
 
@@ -22,7 +22,7 @@ macro_rules! impl_pyerr {
         impl Error for $err_type {}
 
         impl PyErrArguments for $err_type {
-            fn arguments<'py>(self, py: Python<'py>) -> PyObject {
+            fn arguments<'py>(self, py: Python<'py>) -> Py<PyAny> {
                 self.to_string()
                     .into_pyobject(py)
                     .unwrap()
@@ -91,7 +91,7 @@ struct TypeErrorArguments {
 }
 
 impl PyErrArguments for TypeErrorArguments {
-    fn arguments<'py>(self, py: Python<'py>) -> PyObject {
+    fn arguments<'py>(self, py: Python<'py>) -> Py<PyAny> {
         let err = TypeError {
             from: self.from.into_bound(py),
             to: self.to.into_bound(py),
@@ -141,19 +141,17 @@ impl fmt::Display for FromVecError {
 
 impl_pyerr!(FromVecError);
 
-/// Represents that the given array is not contiguous.
+/// Represents that the given array is not compatible with viewing as a Rust slice.
 #[derive(Debug)]
-pub struct NotContiguousError;
-
-impl fmt::Display for NotContiguousError {
+pub struct AsSliceError;
+impl fmt::Display for AsSliceError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "The given array is not contiguous")
+        write!(f, "The given array is not contiguous or is misaligned.")
     }
 }
+impl_pyerr!(AsSliceError);
 
-impl_pyerr!(NotContiguousError);
-
-/// Inidcates why borrowing an array failed.
+/// Indicates why borrowing an array failed.
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum BorrowError {

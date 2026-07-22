@@ -1,7 +1,38 @@
 # Changelog
+
+- Unreleased
+
+- v0.29.0
+  - Fix PyArray_DTypeMeta definition when Py_LIMITED_API is disabled ([#532](https://github.com/PyO3/rust-numpy/pull/532))
+  - The NumPy C API binding has been updated to target the ABI v2, while maintaining runtime compatibility with NumPy v1 targeting the API v1.15. The higher interface is unchanged. ([#537](https://github.com/PyO3/rust-numpy/pull/537))
+  - Fix `is_exact_type_of` / `cast_exact` to use `PyArray_CheckExact` instead of `PyArray_Check`, correctly rejecting subclasses of `ndarray`. ([#550](https://github.com/PyO3/rust-numpy/pull/550))
+  - Bump PyO3 dependency to v0.29.0 ([#553](https://github.com/PyO3/rust-numpy/pull/553))
+    - Fix `PyCapsule::new_with_destructor` to use `PyCapsule::new_with_value_and_destructor`. 
+    - Open `nalgebra` range to include 0.35.
+
+- v0.28.0
+  - Fix mismatched behavior between `PyArrayLike1` and `PyArrayLike2` when used with floats ([#520](https://github.com/PyO3/rust-numpy/pull/520))
+  - Add ownership-moving conversions into `PyReadonlyArray` and `PyReadwriteArray` ([#524](https://github.com/PyO3/rust-numpy/pull/524))
+  - Fix UB when calling `PyArray::as_slice` and `as_slice_mut` on misaligned arrays ([#525](https://github.com/PyO3/rust-numpy/pull/525))
+  - Bump PyO3 dependency to v0.28.0. ([#530](https://github.com/PyO3/rust-numpy/pull/530))
+
+- v0.27.1
+  - Bump ndarray dependency to v0.17. ([#516](https://github.com/PyO3/rust-numpy/pull/516))
+
+- v0.27.0
+  - Bump PyO3 dependency to v0.27.0. ([#515](https://github.com/PyO3/rust-numpy/pull/515))
+
+- v0.26.0
+  - bump MSRV to 1.74, matching PyO3 ([#504](https://github.com/PyO3/rust-numpy/pull/504))
+  - extend supported `nalgebra` version to `0.34` ([#503](https://github.com/PyO3/rust-numpy/pull/503))
+  - Bump PyO3 dependency to v0.26.0. ([#506](https://github.com/PyO3/rust-numpy/pull/506))
+
+- v0.25.0,
+  - Bump PyO3 dependency to v0.25.0. ([#492](https://github.com/PyO3/rust-numpy/pull/492))
+
 - v0.24.0
-  - Bump PyO3 dependency to v0.24.0. ([#483](https://github.com/PyO3/rust-numpy/pull/483)
-  - Support Python 3.13t "free-threaded" Python. ([#471](https://github.com/PyO3/rust-numpy/pull/471)
+  - Bump PyO3 dependency to v0.24.0. ([#483](https://github.com/PyO3/rust-numpy/pull/483))
+  - Support Python 3.13t "free-threaded" Python. ([#471](https://github.com/PyO3/rust-numpy/pull/471))
 
 - v0.23.0
   - Drop support for PyPy 3.7 and 3.8. ([#470](https://github.com/PyO3/rust-numpy/pull/470))
@@ -53,7 +84,7 @@
 
 - v0.17.0
   - Add dynamic borrow checking to safely construct references into the interior of NumPy arrays. ([#274](https://github.com/PyO3/rust-numpy/pull/274))
-    - The deprecated iterator builders `NpySingleIterBuilder::{readonly,readwrite}` and `NpyMultiIterBuilder::add_{readonly,readwrite}` now take referencces to `PyReadonlyArray` and `PyReadwriteArray` instead of consuming them.
+    - The deprecated iterator builders `NpySingleIterBuilder::{readonly,readwrite}` and `NpyMultiIterBuilder::add_{readonly,readwrite}` now take references to `PyReadonlyArray` and `PyReadwriteArray` instead of consuming them.
     - The destructive `PyArray::resize` method is now unsafe if used without an instance of `PyReadwriteArray`. ([#302](https://github.com/PyO3/rust-numpy/pull/302))
   - Add support for `datetime64` and `timedelta64` element types via the `datetime` module. ([#308](https://github.com/PyO3/rust-numpy/pull/308))
   - Add support for IEEE 754-2008 16-bit floating point numbers via an optional dependency on the `half` crate. ([#314](https://github.com/PyO3/rust-numpy/pull/314))

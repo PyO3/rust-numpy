@@ -1,6 +1,6 @@
 [package]
 name = "numpy"
-version = "0.25.0"
+version = "0.29.0"
 authors = [
     "The rust-numpy Project Developers",
     "PyO3 Project and Contributors <https://github.com/PyO3>",
@@ -8,35 +8,50 @@ authors = [
 description = "PyO3-based Rust bindings of the NumPy C-API"
 documentation = "https://docs.rs/numpy"
 edition = "2021"
-rust-version = "1.63"
+rust-version = "1.83"
 repository = "https://github.com/PyO3/rust-numpy"
 categories = ["api-bindings", "development-tools::ffi", "science"]
 keywords = ["python", "numpy", "ffi", "pyo3"]
 license = "BSD-2-Clause"
+exclude = [
+    ".github/*",
+    ".gitignore",
+    "codecov.yml",
+    "x.py",
+]
 
 [dependencies]
 half = { version = "2.0", default-features = false, optional = true }
 libc = "0.2"
-nalgebra = { version = ">=0.30, <0.34", default-features = false, optional = true }
+nalgebra = { version = ">=0.30, <=0.35", default-features = false, optional = true }
 num-complex = ">= 0.2, < 0.5"
 num-integer = "0.1"
 num-traits = "0.2"
-ndarray = ">= 0.15, < 0.17"
-pyo3 = { version = "0.25.0", default-features = false, features = ["macros"] }
+ndarray = ">= 0.15, <=0.17"
+pyo3 = { version = "0.29.0", default-features = false, features = ["macros"] }
 rand_core = { version = "0.9.3", default-features = false, optional = true }
 rustc-hash = "2.0"
 
 [dev-dependencies]
-pyo3 = { version = "0.25", default-features = false, features = [
-    "auto-initialize",
-] }
-nalgebra = { version = ">=0.30, <0.34", default-features = false, features = [
-    "std",
-] }
+pyo3 = { version = "0.29.0", default-features = false, features = ["auto-initialize"]}
+nalgebra = { version = ">=0.30, <0.35", default-features = false, features = ["std"] }
+criterion = "0.8.2"
 rand = { version = "0.9.1", default-features = false }
 
 [build-dependencies]
-pyo3-build-config = { version = "0.25", features = ["resolve-config"] }
+pyo3-build-config = { version = "0.29", features = ["resolve-config"]}
+
+[[bench]]
+name = "array"
+harness = false
+
+[[bench]]
+name = "array_like"
+harness = false
+
+[[bench]]
+name = "borrow"
+harness = false
 
 [package.metadata.docs.rs]
 all-features = true

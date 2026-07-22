@@ -2,18 +2,14 @@ use std::marker::PhantomData;
 use std::ops::Deref;
 
 use ndarray::{Array1, Dimension, Ix0, Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};
-use pyo3::{
-    intern,
-    sync::GILOnceCell,
-    types::{PyAnyMethods, PyDict},
-    Bound, FromPyObject, Py, PyAny, PyResult,
-};
+use pyo3::{types::PyAnyMethods, Borrowed, FromPyObject, PyAny, PyErr, PyResult};
 
-use crate::array::PyArrayMethods;
-use crate::{get_array_module, Element, IntoPyArray, PyArray, PyReadonlyArray};
+use crate::npyffi::NPY_ARRAY_FORCECAST;
+use crate::{array::PyArrayMethods, PY_ARRAY_API};
+use crate::{Element, IntoPyArray, PyArray, PyReadonlyArray, PyUntypedArray};
 
 pub trait Coerce: Sealed {
-    const VAL: bool;
+    const ALLOW_TYPE_CHANGE: bool;
 }
 
 mod sealed {
@@ -29,7 +25,7 @@ pub struct TypeMustMatch;
 impl Sealed for TypeMustMatch {}
 
 impl Coerce for TypeMustMatch {
-    const VAL: bool = false;
+    const ALLOW_TYPE_CHANGE: bool = false;
 }
 
 /// Marker type to indicate that the element type received via [`PyArrayLike`] can be cast to the specified type by NumPy's [`asarray`](https://numpy.org/doc/stable/reference/generated/numpy.asarray.html).
@@ -39,7 +35,7 @@ pub struct AllowTypeChange;
 impl Sealed for AllowTypeChange {}
 
 impl Coerce for AllowTypeChange {
-    const VAL: bool = true;
+    const ALLOW_TYPE_CHANGE: bool = true;
 }
 
 /// Receiver for arrays or array-like types.
@@ -66,7 +62,7 @@ impl Coerce for AllowTypeChange {
 ///     array.as_array().sum()
 /// }
 ///
-/// Python::with_gil(|py| {
+/// Python::attach(|py| {
 ///     let np = get_array_module(py).unwrap();
 ///     let sum_up = wrap_pyfunction!(sum_up)(py).unwrap();
 ///
@@ -87,7 +83,7 @@ impl Coerce for AllowTypeChange {
 ///     array.as_array().sum()
 /// }
 ///
-/// Python::with_gil(|py| {
+/// Python::attach(|py| {
 ///     let np = get_array_module(py).unwrap();
 ///     let sum_up = wrap_pyfunction!(sum_up)(py).unwrap();
 ///
@@ -107,7 +103,7 @@ impl Coerce for AllowTypeChange {
 ///     array.as_array().sum()
 /// }
 ///
-/// Python::with_gil(|py| {
+/// Python::attach(|py| {
 ///     let np = get_array_module(py).unwrap();
 ///     let sum_up = wrap_pyfunction!(sum_up)(py).unwrap();
 ///
@@ -135,21 +131,27 @@ where
     }
 }
 
-impl<'py, T, D, C> FromPyObject<'py> for PyArrayLike<'py, T, D, C>
+impl<'a, 'py, T, D, C> FromPyObject<'a, 'py> for PyArrayLike<'py, T, D, C>
 where
     T: Element + 'py,
     D: Dimension + 'py,
     C: Coerce,
-    Vec<T>: FromPyObject<'py>,
+    Vec<T>: FromPyObject<'a, 'py>,
 {
-    fn extract_bound(ob: &Bound<'py, PyAny>) -> PyResult<Self> {
-        if let Ok(array) = ob.downcast::<PyArray<T, D>>() {
+    type Error = PyErr;
+
+    fn extract(ob: Borrowed<'a, 'py, PyAny>) -> PyResult<Self> {
+        if let Ok(array) = ob.cast::<PyArray<T, D>>() {
             return Ok(Self(array.readonly(), PhantomData));
         }
 
         let py = ob.py();
 
-        if matches!(D::NDIM, None | Some(1)) {
+        // If the input is already an ndarray and `TypeMustMatch` is used then no type conversion
+        // should be performed.
+        if (C::ALLOW_TYPE_CHANGE || ob.cast::<PyUntypedArray>().is_err())
+            && matches!(D::NDIM, None | Some(1))
+        {
             if let Ok(vec) = ob.extract::<Vec<T>>() {
                 let array = Array1::from(vec)
                     .into_dimensionality()
@@ -160,24 +162,31 @@ where
             }
         }
 
-        static AS_ARRAY: GILOnceCell<Py<PyAny>> = GILOnceCell::new();
-
-        let as_array = AS_ARRAY
-            .get_or_try_init(py, || {
-                get_array_module(py)?.getattr("asarray").map(Into::into)
-            })?
-            .bind(py);
-
-        let kwargs = if C::VAL {
-            let kwargs = PyDict::new(py);
-            kwargs.set_item(intern!(py, "dtype"), T::get_dtype(py))?;
-            Some(kwargs)
+        let (dtype, flags) = if C::ALLOW_TYPE_CHANGE {
+            (Some(T::get_dtype(py)), NPY_ARRAY_FORCECAST)
         } else {
-            None
+            (None, 0)
         };
 
-        let array = as_array.call((ob,), kwargs.as_ref())?.extract()?;
-        Ok(Self(array, PhantomData))
+        let newtype = dtype
+            .map(|dt| dt.into_ptr().cast())
+            .unwrap_or_else(std::ptr::null_mut);
+
+        let array = unsafe {
+            let ptr = PY_ARRAY_API.PyArray_FromAny(
+                py,
+                ob.as_ptr(),
+                newtype,
+                0,
+                0,
+                flags,
+                std::ptr::null_mut(),
+            );
+
+            pyo3::Bound::from_owned_ptr_or_err(py, ptr)?
+        };
+
+        Ok(Self(array.extract()?, PhantomData))
     }
 }
 

@@ -11,7 +11,7 @@ use pyo3::{
 
 #[test]
 fn to_pyarray_vec() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         #[allow(clippy::useless_vec)]
         let arr = vec![1, 2, 3].to_pyarray(py);
 
@@ -22,7 +22,7 @@ fn to_pyarray_vec() {
 
 #[test]
 fn to_pyarray_boxed_slice() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let arr = vec![1, 2, 3].into_boxed_slice().to_pyarray(py);
 
         assert_eq!(arr.shape(), [3]);
@@ -32,7 +32,7 @@ fn to_pyarray_boxed_slice() {
 
 #[test]
 fn to_pyarray_array() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let arr = Array3::<f64>::zeros((3, 4, 2));
 
         let shape = arr.shape().to_vec();
@@ -51,7 +51,7 @@ fn to_pyarray_array() {
 
 #[test]
 fn iter_to_pyarray() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let arr = PyArray::from_iter(py, (0..10).map(|x| x * x));
 
         assert_eq!(
@@ -63,7 +63,7 @@ fn iter_to_pyarray() {
 
 #[test]
 fn long_iter_to_pyarray() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let arr = PyArray::from_iter(py, 0_u32..512);
 
         assert_eq!(
@@ -78,7 +78,7 @@ fn from_small_array() {
     macro_rules! small_array_test {
         ($($t:ty)+) => {
             $({
-                Python::with_gil(|py| {
+                Python::attach(|py| {
                     let array: [$t; 2] = [<$t>::MIN, <$t>::MAX];
                     let pyarray = array.to_pyarray(py);
 
@@ -96,7 +96,7 @@ fn from_small_array() {
 
 #[test]
 fn usize_dtype() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let x = vec![1_usize, 2, 3].into_pyarray(py);
 
         if cfg!(target_pointer_width = "64") {
@@ -109,7 +109,7 @@ fn usize_dtype() {
 
 #[test]
 fn into_pyarray_vec() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let arr = vec![1, 2, 3].into_pyarray(py);
 
         assert_eq!(arr.readonly().as_slice().unwrap(), &[1, 2, 3])
@@ -118,7 +118,7 @@ fn into_pyarray_vec() {
 
 #[test]
 fn into_pyarray_boxed_slice() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let arr = vec![1, 2, 3].into_boxed_slice().into_pyarray(py);
 
         assert_eq!(arr.readonly().as_slice().unwrap(), &[1, 2, 3])
@@ -127,7 +127,7 @@ fn into_pyarray_boxed_slice() {
 
 #[test]
 fn into_pyarray_array() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let arr = Array3::<f64>::zeros((3, 4, 2));
 
         let shape = arr.shape().to_vec();
@@ -146,7 +146,7 @@ fn into_pyarray_array() {
 
 #[test]
 fn into_pyarray_cannot_resize() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let arr = vec![1, 2, 3].into_pyarray(py);
 
         unsafe {
@@ -157,7 +157,7 @@ fn into_pyarray_cannot_resize() {
 
 #[test]
 fn into_pyarray_can_write() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let arr = vec![1, 2, 3].into_pyarray(py);
 
         py_run!(py, arr, "assert arr.flags['WRITEABLE']");
@@ -170,7 +170,7 @@ fn collapsed_into_pyarray() {
     // Check that `into_pyarray` works for array with the pointer of the first element is
     // not at the start of the allocation.
     // See https://github.com/PyO3/rust-numpy/issues/182 for more.
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let mut arr = Array2::<f64>::from_shape_fn([3, 4], |(i, j)| (i * 10 + j) as f64);
         arr.slice_collapse(s![1.., ..]);
         let cloned_arr = arr.clone();
@@ -183,7 +183,7 @@ fn collapsed_into_pyarray() {
 
 #[test]
 fn sliced_to_pyarray() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let matrix = Array2::from_shape_vec([4, 2], vec![0, 1, 2, 3, 4, 5, 6, 7]).unwrap();
         let sliced_matrix = matrix.slice(s![1..4; -1, ..]);
 
@@ -197,7 +197,7 @@ fn sliced_to_pyarray() {
 
 #[test]
 fn forder_to_pyarray() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let matrix = Array2::from_shape_vec([4, 2], vec![0, 1, 2, 3, 4, 5, 6, 7]).unwrap();
         let forder_matrix = matrix.reversed_axes();
 
@@ -214,7 +214,7 @@ fn forder_to_pyarray() {
 
 #[test]
 fn forder_into_pyarray() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let matrix = Array2::from_shape_vec([4, 2], vec![0, 1, 2, 3, 4, 5, 6, 7]).unwrap();
         let forder_matrix = matrix.reversed_axes();
 
@@ -231,7 +231,7 @@ fn forder_into_pyarray() {
 
 #[test]
 fn to_pyarray_object_vec() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let dict = PyDict::new(py);
         let string = PyString::new(py, "Hello:)");
         #[allow(clippy::useless_vec)] // otherwise we do not test the right trait impl
@@ -250,7 +250,7 @@ fn to_pyarray_object_vec() {
 
 #[test]
 fn to_pyarray_object_array() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let mut nd_arr = Array2::from_shape_fn((2, 3), |(_, _)| py.None());
         nd_arr[(0, 2)] = PyDict::new(py).into_any().unbind();
         nd_arr[(1, 0)] = PyString::new(py, "Hello:)").into_any().unbind();
@@ -273,7 +273,7 @@ fn to_pyarray_object_array() {
 
 #[test]
 fn slice_container_type_confusion() {
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let mut nd_arr = Array2::from_shape_fn((2, 3), |(_, _)| py.None());
         nd_arr[(0, 2)] = PyDict::new(py).into_any().unbind();
         nd_arr[(1, 0)] = PyString::new(py, "Hello:)").into_any().unbind();
@@ -294,7 +294,7 @@ fn matrix_to_numpy() {
     let matrix = nalgebra::Matrix3::<i32>::new(0, 1, 2, 3, 4, 5, 6, 7, 8);
     assert!(nalgebra::RawStorage::is_contiguous(&matrix.data));
 
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let array = matrix.to_pyarray(py);
 
         assert_eq!(
@@ -306,7 +306,7 @@ fn matrix_to_numpy() {
     let matrix = matrix.row(0);
     assert!(!nalgebra::RawStorage::is_contiguous(&matrix.data));
 
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let array = matrix.to_pyarray(py);
 
         assert_eq!(array.readonly().as_array(), array![[0, 1, 2]]);
@@ -314,7 +314,7 @@ fn matrix_to_numpy() {
 
     let vector = nalgebra::Vector4::<i32>::new(-4, 1, 2, 3);
 
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let array = vector.to_pyarray(py);
 
         assert_eq!(array.readonly().as_array(), array![[-4], [1], [2], [3]]);
@@ -322,7 +322,7 @@ fn matrix_to_numpy() {
 
     let vector = nalgebra::RowVector2::<i32>::new(23, 42);
 
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         let array = vector.to_pyarray(py);
 
         assert_eq!(array.readonly().as_array(), array![[23, 42]]);

@@ -5,7 +5,7 @@
 //! safe Rust code cannot cause undefined behaviour by creating references into NumPy arrays.
 //!
 //! With these borrows established, [references to individual elements][PyReadonlyArray::get] or [reference-based views of whole array][PyReadonlyArray::as_array]
-//! can be created safely. These are then the starting point for algorithms iteraing over and operating on the elements of the array.
+//! can be created safely. These are then the starting point for algorithms iterating over and operating on the elements of the array.
 //!
 //! # Examples
 //!
@@ -40,7 +40,7 @@
 //!     assert!(res.is_err());
 //! }
 //!
-//! Python::with_gil(|py| {
+//! Python::attach(|py| {
 //!     let x = PyArray1::<f64>::zeros(py, 42, false);
 //!     let y = PyArray1::<f64>::zeros(py, 42, false);
 //!     let z = PyArray1::<f64>::zeros(py, 42, false);
@@ -66,14 +66,14 @@
 //! use pyo3::{types::{IntoPyDict, PyAnyMethods}, Python, ffi::c_str};
 //!
 //! # fn main() -> pyo3::PyResult<()> {
-//! Python::with_gil(|py| {
+//! Python::attach(|py| {
 //!     let array = PyArray1::arange(py, 0.0, 10.0, 1.0);
 //!     let locals = [("array", array)].into_py_dict(py)?;
 //!
-//!     let view1 = py.eval(c_str!("array[:5]"), None, Some(&locals))?.downcast_into::<PyArray1<f64>>()?;
-//!     let view2 = py.eval(c_str!("array[5:]"), None, Some(&locals))?.downcast_into::<PyArray1<f64>>()?;
-//!     let view3 = py.eval(c_str!("array[::2]"), None, Some(&locals))?.downcast_into::<PyArray1<f64>>()?;
-//!     let view4 = py.eval(c_str!("array[1::2]"), None, Some(&locals))?.downcast_into::<PyArray1<f64>>()?;
+//!     let view1 = py.eval(c_str!("array[:5]"), None, Some(&locals))?.cast_into::<PyArray1<f64>>()?;
+//!     let view2 = py.eval(c_str!("array[5:]"), None, Some(&locals))?.cast_into::<PyArray1<f64>>()?;
+//!     let view3 = py.eval(c_str!("array[::2]"), None, Some(&locals))?.cast_into::<PyArray1<f64>>()?;
+//!     let view4 = py.eval(c_str!("array[1::2]"), None, Some(&locals))?.cast_into::<PyArray1<f64>>()?;
 //!
 //!     {
 //!         let _view1 = view1.readwrite();
@@ -98,12 +98,12 @@
 //! use pyo3::{types::{IntoPyDict, PyAnyMethods}, Python, ffi::c_str};
 //!
 //! # fn main() -> pyo3::PyResult<()> {
-//! Python::with_gil(|py| {
+//! Python::attach(|py| {
 //!     let array = PyArray2::<f64>::zeros(py, (10, 10), false);
 //!     let locals = [("array", array)].into_py_dict(py)?;
 //!
-//!     let view1 = py.eval(c_str!("array[:, ::3]"), None, Some(&locals))?.downcast_into::<PyArray2<f64>>()?;
-//!     let view2 = py.eval(c_str!("array[:, 1::3]"), None, Some(&locals))?.downcast_into::<PyArray2<f64>>()?;
+//!     let view1 = py.eval(c_str!("array[:, ::3]"), None, Some(&locals))?.cast_into::<PyArray2<f64>>()?;
+//!     let view2 = py.eval(c_str!("array[:, 1::3]"), None, Some(&locals))?.cast_into::<PyArray2<f64>>()?;
 //!
 //!     // A false conflict as the views do not actually share any elements.
 //!     let res = catch_unwind(AssertUnwindSafe(|| {
@@ -140,7 +140,7 @@
 //! which does not require aliasing discipline.
 //!
 //! Concerning multi-threading in particular: While the GIL needs to be acquired to create borrows, they are not bound to the GIL
-//! and will stay active after the GIL is released, for example by calling [`allow_threads`][pyo3::Python::allow_threads].
+//! and will stay active after the GIL is released, for example by calling [`detach`][pyo3::Python::detach].
 //! Borrows also do not provide synchronization, i.e. multiple threads borrowing the same array will lead to runtime panics,
 //! it will not block those threads until already active borrows are released.
 //!
@@ -161,7 +161,7 @@
 //!
 //! This does limit the set of programs that can be written using safe Rust in way similar to rustc itself
 //! which ensures that all accepted programs are memory safe but does not necessarily accept all memory safe programs.
-//! However, the unsafe method [`PyArray::as_array_mut`] can be used as an escape hatch.
+//! However, the unsafe method [`PyArrayMethods::as_array_mut`] can be used as an escape hatch.
 //! More involved cases like the example from above may be supported in the future.
 //!
 //! [base]: https://numpy.org/doc/stable/reference/c-api/types-and-structures.html#c.NPY_AO.base
@@ -175,12 +175,12 @@ use std::ops::Deref;
 use ndarray::{
     ArrayView, ArrayViewMut, Dimension, IntoDimension, Ix0, Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn,
 };
-use pyo3::{types::PyAnyMethods, Bound, FromPyObject, PyAny, PyResult};
+use pyo3::{Borrowed, Bound, CastError, FromPyObject, PyAny, PyResult};
 
 use crate::array::{PyArray, PyArrayMethods};
 use crate::convert::NpyIndex;
 use crate::dtype::Element;
-use crate::error::{BorrowError, NotContiguousError};
+use crate::error::{AsSliceError, BorrowError};
 use crate::npyffi::flags;
 use crate::untyped_array::PyUntypedArrayMethods;
 
@@ -237,9 +237,13 @@ where
     }
 }
 
-impl<'py, T: Element, D: Dimension> FromPyObject<'py> for PyReadonlyArray<'py, T, D> {
-    fn extract_bound(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        let array = obj.downcast::<PyArray<T, D>>()?;
+impl<'a, 'py, T: Element + 'a, D: Dimension + 'a> FromPyObject<'a, 'py>
+    for PyReadonlyArray<'py, T, D>
+{
+    type Error = CastError<'a, 'py>;
+
+    fn extract(obj: Borrowed<'a, 'py, PyAny>) -> Result<Self, Self::Error> {
+        let array = obj.cast::<PyArray<T, D>>()?;
         Ok(array.readonly())
     }
 }
@@ -264,7 +268,7 @@ where
 
     /// Provide an immutable slice view of the interior of the NumPy array if it is contiguous.
     #[inline(always)]
-    pub fn as_slice(&self) -> Result<&[T], NotContiguousError> {
+    pub fn as_slice(&self) -> Result<&[T], AsSliceError> {
         // SAFETY: Global borrow flags ensure aliasing discipline.
         unsafe { self.array.as_slice() }
     }
@@ -312,7 +316,7 @@ where
     /// }
     ///
     /// # fn main() -> pyo3::PyResult<()> {
-    /// Python::with_gil(|py| {
+    /// Python::attach(|py| {
     ///     let np = py.eval(c_str!("__import__('numpy')"), None, None)?;
     ///     let sum_standard_layout = wrap_pyfunction!(sum_standard_layout)(py)?;
     ///     let sum_dynamic_strides = wrap_pyfunction!(sum_dynamic_strides)(py)?;
@@ -459,7 +463,7 @@ where
     type Target = PyReadonlyArray<'py, T, D>;
 
     fn deref(&self) -> &Self::Target {
-        // SAFETY: Exclusive references decay implictly into shared references.
+        // SAFETY: Exclusive references decay implicitly into shared references.
         unsafe { &*(self as *const Self as *const Self::Target) }
     }
 }
@@ -476,9 +480,13 @@ where
     }
 }
 
-impl<'py, T: Element, D: Dimension> FromPyObject<'py> for PyReadwriteArray<'py, T, D> {
-    fn extract_bound(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        let array = obj.downcast::<PyArray<T, D>>()?;
+impl<'a, 'py, T: Element + 'a, D: Dimension + 'a> FromPyObject<'a, 'py>
+    for PyReadwriteArray<'py, T, D>
+{
+    type Error = CastError<'a, 'py>;
+
+    fn extract(obj: Borrowed<'a, 'py, PyAny>) -> Result<Self, Self::Error> {
+        let array = obj.cast::<PyArray<T, D>>()?;
         Ok(array.readwrite())
     }
 }
@@ -503,7 +511,7 @@ where
 
     /// Provide a mutable slice view of the interior of the NumPy array if it is contiguous.
     #[inline(always)]
-    pub fn as_slice_mut(&mut self) -> Result<&mut [T], NotContiguousError> {
+    pub fn as_slice_mut(&mut self) -> Result<&mut [T], AsSliceError> {
         // SAFETY: Global borrow flags ensure aliasing discipline.
         unsafe { self.array.as_slice_mut() }
     }
@@ -521,7 +529,7 @@ where
     ///
     /// Calling this will prevent any further [PyReadwriteArray]s from being taken out.  Python
     /// space can reset this flag, unless the additional flag [`OWNDATA`][owndata] is unset.  Such
-    /// an array can be created from Rust space by using [PyArray::borrow_from_array_bound].
+    /// an array can be created from Rust space by using [PyArray::borrow_from_array].
     ///
     /// [writeable]: https://numpy.org/doc/stable/reference/c-api/array.html#c.NPY_ARRAY_WRITEABLE
     /// [owndata]: https://numpy.org/doc/stable/reference/c-api/array.html#c.NPY_ARRAY_OWNDATA
@@ -596,7 +604,14 @@ where
 {
     /// Extends or truncates the dimensions of an array.
     ///
-    /// Safe wrapper for [`PyArray::resize`].
+    /// Safe wrapper for [`PyArrayMethods::resize`].
+    ///
+    /// Note that as this mutates a pointed-to object, the [`PyReadwriteArray`] must be the only
+    /// Python reference to the object.  There cannot be `PyArray` pointers or even `Bound<PyAny>`
+    /// pointing to the same object; this means for example that an object received from a PyO3
+    /// `pyfunction` cannot call this method, since the PyO3 wrapper maintains a reference itself.
+    /// Attempting to call this method when there are other Python references is still safe; NumPy
+    /// will raise a Python-space exception.
     ///
     /// # Example
     ///
@@ -604,11 +619,11 @@ where
     /// use numpy::{PyArray, PyArrayMethods, PyUntypedArrayMethods};
     /// use pyo3::Python;
     ///
-    /// Python::with_gil(|py| {
+    /// Python::attach(|py| {
     ///     let pyarray = PyArray::arange(py, 0, 10, 1);
     ///     assert_eq!(pyarray.len(), 10);
     ///
-    ///     let pyarray = pyarray.readwrite();
+    ///     let pyarray = pyarray.into_readwrite();
     ///     let pyarray = pyarray.resize(100).unwrap();
     ///     assert_eq!(pyarray.len(), 100);
     /// });
@@ -667,14 +682,14 @@ mod tests {
 
     #[test]
     fn test_debug_formatting() {
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             let array = PyArray::<f64, _>::zeros(py, (1, 2, 3), false);
 
             {
                 let shared = array.readonly();
 
                 assert_eq!(
-                    format!("{:?}", shared),
+                    format!("{shared:?}"),
                     "PyReadonlyArray<f64, ndarray::dimension::dim::Dim<[usize; 3]>>"
                 );
             }
@@ -683,7 +698,7 @@ mod tests {
                 let exclusive = array.readwrite();
 
                 assert_eq!(
-                    format!("{:?}", exclusive),
+                    format!("{exclusive:?}"),
                     "PyReadwriteArray<f64, ndarray::dimension::dim::Dim<[usize; 3]>>"
                 );
             }
@@ -693,7 +708,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "AlreadyBorrowed")]
     fn cannot_clone_exclusive_borrow_via_deref() {
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             let array = PyArray::<f64, _>::zeros(py, (3, 2, 1), false);
 
             let exclusive = array.readwrite();
@@ -703,7 +718,7 @@ mod tests {
 
     #[test]
     fn failed_resize_does_not_double_release() {
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             let array = PyArray::<f64, _>::zeros(py, 10, false);
 
             // The view will make the internal reference check of `PyArray_Resize` fail.
@@ -711,20 +726,20 @@ mod tests {
             let _view = py
                 .eval(c_str!("array[:]"), None, Some(&locals))
                 .unwrap()
-                .downcast_into::<PyArray1<f64>>()
+                .cast_into::<PyArray1<f64>>()
                 .unwrap();
 
-            let exclusive = array.readwrite();
+            let exclusive = array.into_readwrite();
             assert!(exclusive.resize(100).is_err());
         });
     }
 
     #[test]
     fn ineffective_resize_does_not_conflict() {
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             let array = PyArray::<f64, _>::zeros(py, 10, false);
 
-            let exclusive = array.readwrite();
+            let exclusive = array.into_readwrite();
             assert!(exclusive.resize(10).is_ok());
         });
     }
