@@ -281,7 +281,6 @@ mod tests {
     #[test]
     fn use_parallel() -> PyResult<()> {
         use crate::array::{PyArray2, PyArrayMethods as _};
-        use ndarray::Dimension;
         use rand::Rng;
         use std::sync::{Arc, Mutex};
 
@@ -290,16 +289,16 @@ mod tests {
             let bitgen = get_bit_generator(py)?.lock()?;
             let bitgen = Arc::new(Mutex::new(bitgen));
 
-            let (_n_threads, chunk_size) = arr.dims().into_pattern();
-            let slice = arr.as_slice_mut()?;
-
+            let mut arr = arr.as_array_mut();
             py.detach(|| {
                 std::thread::scope(|s| {
-                    for chunk in slice.chunks_exact_mut(chunk_size) {
+                    for mut chunk in arr.rows_mut() {
                         let bitgen = Arc::clone(&bitgen);
                         s.spawn(move || {
                             let mut bitgen = bitgen.lock().unwrap();
-                            chunk.fill_with(|| bitgen.random_range(10..200));
+                            for x in chunk.iter_mut() {
+                                *x = bitgen.random_range(10..200);
+                            }
                         });
                     }
                 })
@@ -335,18 +334,20 @@ mod tests {
     fn lock_keeps_bit_generator_alive() -> PyResult<()> {
         Python::attach(|py| {
             let generator = get_bit_generator(py)?;
-            let sys = py.import("sys")?;
-            let refcount_before: usize =
-                sys.call_method1("getrefcount", (&generator,))?.extract()?;
+            let get_refcount = || {
+                py.import("sys")?
+                    .call_method1("getrefcount", (&generator,))?
+                    .extract::<usize>()
+            };
+
+            let refcount_before = get_refcount()?;
 
             let bitgen = generator.lock()?;
-            let refcount_locked: usize =
-                sys.call_method1("getrefcount", (&generator,))?.extract()?;
+            let refcount_locked = get_refcount()?;
             assert!(refcount_locked > refcount_before);
 
             bitgen.release(py)?;
-            let refcount_after: usize =
-                sys.call_method1("getrefcount", (&generator,))?.extract()?;
+            let refcount_after = get_refcount()?;
             assert_eq!(refcount_after, refcount_before);
             Ok(())
         })
@@ -366,18 +367,16 @@ mod tests {
     #[test]
     fn double_lock_fails_2() -> PyResult<()> {
         Python::attach(|py| {
+            let get_bg_ptr = |gen: &Bound<'_, _>| {
+                gen.getattr("capsule")?
+                    .cast::<PyCapsule>()?
+                    .pointer_checked(Some(ffi::c_str!("BitGenerator")))
+            };
+
             let generator1 = get_bit_generator(py)?;
             let generator2 = generator1.clone();
-            assert_eq!(
-                generator1
-                    .getattr("capsule")?
-                    .cast::<PyCapsule>()?
-                    .pointer_checked(Some(ffi::c_str!("BitGenerator")))?,
-                generator2
-                    .getattr("capsule")?
-                    .cast::<PyCapsule>()?
-                    .pointer_checked(Some(ffi::c_str!("BitGenerator")))?
-            );
+            assert_eq!(get_bg_ptr(&generator1)?, get_bg_ptr(&generator2)?);
+
             let bitgen = generator1.lock()?;
             assert!(generator2.lock().is_err());
             assert!(bitgen.release(py).is_ok());
