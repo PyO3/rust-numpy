@@ -245,7 +245,7 @@
 <a href=#245 id=245 data-nosnippet>245</a>
 <a href=#246 id=246 data-nosnippet>246</a>    <span class="kw">fn </span>extract(obj: Borrowed&lt;<span class="lifetime">'a</span>, <span class="lifetime">'py</span>, PyAny&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, <span class="self">Self</span>::Error&gt; {
 <a href=#247 id=247 data-nosnippet>247</a>        <span class="kw">let </span>array = PyArray::&lt;T, D&gt;::extract::&lt;PyErr&gt;(obj, npyffi::PyArray_Check)<span class="question-mark">?</span>;
-<a href=#248 id=248 data-nosnippet>248</a>        <span class="prelude-val">Ok</span>(array.readonly())
+<a href=#248 id=248 data-nosnippet>248</a>        <span class="prelude-val">Ok</span>(array.try_readonly()<span class="question-mark">?</span>)
 <a href=#249 id=249 data-nosnippet>249</a>    }
 <a href=#250 id=250 data-nosnippet>250</a>}
 <a href=#251 id=251 data-nosnippet>251</a>
@@ -488,7 +488,7 @@
 <a href=#488 id=488 data-nosnippet>488</a>
 <a href=#489 id=489 data-nosnippet>489</a>    <span class="kw">fn </span>extract(obj: Borrowed&lt;<span class="lifetime">'a</span>, <span class="lifetime">'py</span>, PyAny&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, <span class="self">Self</span>::Error&gt; {
 <a href=#490 id=490 data-nosnippet>490</a>        <span class="kw">let </span>array = PyArray::&lt;T, D&gt;::extract::&lt;PyErr&gt;(obj, npyffi::PyArray_Check)<span class="question-mark">?</span>;
-<a href=#491 id=491 data-nosnippet>491</a>        <span class="prelude-val">Ok</span>(array.readwrite())
+<a href=#491 id=491 data-nosnippet>491</a>        <span class="prelude-val">Ok</span>(array.try_readwrite()<span class="question-mark">?</span>)
 <a href=#492 id=492 data-nosnippet>492</a>    }
 <a href=#493 id=493 data-nosnippet>493</a>}
 <a href=#494 id=494 data-nosnippet>494</a>
