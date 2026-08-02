@@ -1,7 +1,7 @@
 //! Safe interface for NumPy's random [`BitGenerator`][bg].
 //!
 //! Using the patterns described in [“Extending `numpy.random`”][ext],
-//! you can generate random numbers without holding the GIL in one of the following ways:
+//! you can generate random numbers without being attached to the interpreter runtime in one of the following ways:
 //! - [lock][`PyBitGeneratorMethods::lock`] a [`PyBitGenerator`] you received from Python
 //! - [spawn][`PyBitGeneratorMethods::spawn`] fresh [`BitGenerator`]s from it
 //! - obtain a fresh [`BitGenerator`] [from numpy][`BitGenerator::from_numpy`]:
@@ -30,7 +30,7 @@
 //! #[pyfunction]
 //! fn super_fast_random_number(bitgen: Bound<PyBitGenerator>) -> PyResult<u64> {
 //!     let py = bitgen.py();
-//!     // lock the generator, then use it without holding the GIL
+//!     // lock the generator, then use it without being attached to the interpreter runtime
 //!     bitgen.lock(|bitgen| py.detach(|| bitgen.next_u64()))
 //! }
 //!
@@ -59,7 +59,7 @@
 //! ```
 //!
 //! Using `spawn`, you can create multiple [`BitGenerator`]s to generate random numbers truly in parallel,
-//! all without holding the GIL:
+//! all without being attached to the interpreter runtime:
 //!
 //! ```
 //! # use pyo3::prelude::*;
@@ -112,7 +112,7 @@ use crate::npyffi::bitgen_t;
 pub trait PyBitGeneratorMethods {
     /// Lock the bit generator, run `f` with exclusive access to it,
     /// then release the lock (even on panic).
-    /// `f` may use it without the GIL via [`Python::detach`].
+    /// `f` may use it without being attached to the interpreter runtime via [`Python::detach`].
     fn lock<R>(&self, f: impl FnOnce(&mut BitGenerator) -> R) -> PyResult<R>;
 
     /// Spawn `n_children` independent child [`BitGenerator`]s.
@@ -261,7 +261,8 @@ impl Into<&'static str> for NumpyBitGenerator {
     }
 }
 
-/// A numpy `BitGenerator` usable without the GIL, with exclusive access to its state.
+/// A numpy `BitGenerator` usable without being attached to the interpreter runtime,
+/// with exclusive access to its state.
 ///
 /// [`spawn`][PyBitGeneratorMethods::spawn] hands out independent, owned ones;
 /// [`lock`][PyBitGeneratorMethods::lock] passes one borrowing a shared generator under its lock.
@@ -388,9 +389,10 @@ mod tests {
         Ok(bit_generator)
     }
 
-    /// Simple single-threaded use: lock the generator, then use it without the GIL
+    /// Simple single-threaded use: lock the generator,
+    /// then use it without being attached to the interpreter runtime.
     #[test]
-    fn use_outside_gil() -> PyResult<()> {
+    fn use_detached() -> PyResult<()> {
         Python::attach(|py| {
             get_bit_generator(py)?.lock(|bitgen| {
                 py.detach(|| {
