@@ -175,12 +175,13 @@ use std::ops::Deref;
 use ndarray::{
     ArrayView, ArrayViewMut, Dimension, IntoDimension, Ix0, Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn,
 };
-use pyo3::{Borrowed, Bound, CastError, FromPyObject, PyAny, PyResult};
+use pyo3::{Borrowed, Bound, FromPyObject, PyAny, PyErr, PyResult};
 
 use crate::array::{PyArray, PyArrayMethods};
 use crate::convert::NpyIndex;
 use crate::dtype::Element;
 use crate::error::{AsSliceError, BorrowError};
+use crate::npyffi;
 use crate::npyffi::flags;
 use crate::untyped_array::PyUntypedArrayMethods;
 
@@ -240,11 +241,11 @@ where
 impl<'a, 'py, T: Element + 'a, D: Dimension + 'a> FromPyObject<'a, 'py>
     for PyReadonlyArray<'py, T, D>
 {
-    type Error = CastError<'a, 'py>;
+    type Error = PyErr;
 
     fn extract(obj: Borrowed<'a, 'py, PyAny>) -> Result<Self, Self::Error> {
-        let array = obj.cast::<PyArray<T, D>>()?;
-        Ok(array.readonly())
+        let array = PyArray::<T, D>::extract::<PyErr>(obj, npyffi::PyArray_Check)?;
+        Ok(array.try_readonly()?)
     }
 }
 
@@ -483,11 +484,11 @@ where
 impl<'a, 'py, T: Element + 'a, D: Dimension + 'a> FromPyObject<'a, 'py>
     for PyReadwriteArray<'py, T, D>
 {
-    type Error = CastError<'a, 'py>;
+    type Error = PyErr;
 
     fn extract(obj: Borrowed<'a, 'py, PyAny>) -> Result<Self, Self::Error> {
-        let array = obj.cast::<PyArray<T, D>>()?;
-        Ok(array.readwrite())
+        let array = PyArray::<T, D>::extract::<PyErr>(obj, npyffi::PyArray_Check)?;
+        Ok(array.try_readwrite()?)
     }
 }
 
@@ -675,7 +676,10 @@ where
 mod tests {
     use super::*;
 
-    use pyo3::{types::IntoPyDict, Python};
+    use pyo3::{
+        types::{IntoPyDict, PyAnyMethods},
+        Python,
+    };
 
     use crate::array::PyArray1;
     use pyo3::ffi::c_str;
@@ -741,6 +745,38 @@ mod tests {
 
             let exclusive = array.into_readwrite();
             assert!(exclusive.resize(10).is_ok());
+        });
+    }
+
+    #[test]
+    fn extraction_reports_dtype_mismatch() {
+        Python::attach(|py| {
+            let array = PyArray::<f64, _>::zeros(py, (2, 2), false);
+            let any = array.as_any();
+
+            let err = any.extract::<PyReadonlyArray2<'_, f32>>().unwrap_err();
+            let msg = err.to_string();
+            assert_eq!(msg, "TypeError: type mismatch:\n from=float64, to=float32");
+
+            let err = any.extract::<PyReadwriteArray2<'_, f32>>().unwrap_err();
+            let msg = err.to_string();
+            assert_eq!(msg, "TypeError: type mismatch:\n from=float64, to=float32");
+        });
+    }
+
+    #[test]
+    fn extraction_reports_dimensionality_mismatch() {
+        Python::attach(|py| {
+            let array = PyArray::<f64, _>::zeros(py, (2, 2), false);
+            let any = array.as_any();
+
+            let err = any.extract::<PyReadonlyArray3<'_, f64>>().unwrap_err();
+            let msg = err.to_string();
+            assert_eq!(msg, "TypeError: dimensionality mismatch:\n from=2, to=3");
+
+            let err = any.extract::<PyReadwriteArray3<'_, f64>>().unwrap_err();
+            let msg = err.to_string();
+            assert_eq!(msg, "TypeError: dimensionality mismatch:\n from=2, to=3");
         });
     }
 }

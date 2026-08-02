@@ -6,7 +6,7 @@ use numpy::{
 };
 use pyo3::{
     ffi::c_str,
-    py_run, pyclass, pymethods,
+    pyclass, pymethods,
     types::{IntoPyDict, PyAnyMethods},
     Py, Python,
 };
@@ -97,16 +97,20 @@ impl Borrower {
 }
 
 #[test]
-#[should_panic(expected = "AlreadyBorrowed")]
 fn borrows_span_frames() {
     Python::attach(|py| {
         let borrower = Py::new(py, Borrower).unwrap();
+        let borrower = borrower.bind(py);
 
         let array = PyArray::<f64, _>::zeros(py, (1, 2, 3), false);
 
         let _exclusive = array.readwrite();
 
-        py_run!(py, borrower array, "borrower.exclusive(array)");
+        let locals = [("borrower", borrower.as_any()), ("array", array.as_any())]
+            .into_py_dict(py)
+            .unwrap();
+        py.run(c"borrower.exclusive(array)", Some(&locals), None)
+            .expect_err("already borrowed");
     });
 }
 

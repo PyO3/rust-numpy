@@ -211,10 +211,7 @@ mod tests {
             PyFixedString([b'f', b'o', b'o', 0, 0, 0]).to_string(),
             "foo"
         );
-        assert_eq!(
-            PyFixedString([b'f', b'o', b'o', b'b', b'a', b'r']).to_string(),
-            "foobar"
-        );
+        assert_eq!(PyFixedString(*b"foobar").to_string(), "foobar");
     }
 
     #[test]
