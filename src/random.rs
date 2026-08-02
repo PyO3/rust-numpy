@@ -108,11 +108,68 @@ use pyo3::{
 
 use crate::npyffi::bitgen_t;
 
+/// Methods for [`PyBitGenerator`].
+pub trait PyBitGeneratorMethods {
+    /// Lock the bit generator, run `f` with exclusive access to it,
+    /// then release the lock (even on panic).
+    /// `f` may use it without the GIL via [`Python::detach`].
+    fn lock<R>(&self, f: impl FnOnce(&mut BitGenerator) -> R) -> PyResult<R>;
+
+    /// Spawn `n_children` independent child [`BitGenerator`]s.
+    ///
+    /// This is the recommended way to obtain generators for multiple threads: unlike sharing a
+    /// single [locked][PyBitGeneratorMethods::lock] one, each child has its own, independent state.
+    fn spawn(&self, n_children: usize) -> PyResult<Vec<BitGenerator>>;
+
+    /// Spawn a single owned child [`BitGenerator`] that doesn’t need locking to be used.
+    fn spawn_one(&self) -> PyResult<BitGenerator> {
+        self.spawn(1).map(|mut v| v.pop().unwrap())
+    }
+}
+
 thread_local! {
     /// Addresses of the `bitgen_t`s currently locked on this thread.
     /// `BitGenerator.lock` is a reentrant `RLock` preventing cross-thread use,
     /// and this helps rejecting same thread re-locking.
     static LOCKED: RefCell<HashSet<usize>> = RefCell::new(HashSet::new());
+}
+
+struct SameThreadLockGuard<'py> {
+    lock: Bound<'py, PyAny>,
+    addr: usize,
+    release_on_drop: bool,
+}
+
+/// Release the `BitGenerator` lock and clear its reentrancy marker, even on panic.
+impl<'py> SameThreadLockGuard<'py> {
+    /// Takes a locked lock, and returns a `LockGuard` that releases it on drop or `release`.
+    fn new(lock: Bound<'py, PyAny>, generator: &BitGenerator) -> PyResult<Self> {
+        let addr = generator.addr();
+        if !LOCKED.with_borrow_mut(|locked| locked.insert(addr)) {
+            lock.call_method0(intern!(lock.py(), "release"))?;
+            return Err(PyRuntimeError::new_err("BitGenerator is already locked"));
+        }
+        Ok(Self {
+            lock,
+            addr,
+            release_on_drop: true,
+        })
+    }
+    fn release(&mut self) -> PyResult<()> {
+        self.release_on_drop = false;
+        LOCKED.with_borrow_mut(|locked| locked.remove(&self.addr));
+        self.lock.call_method0(intern!(self.lock.py(), "release"))?;
+        Ok(())
+    }
+}
+
+impl Drop for SameThreadLockGuard<'_> {
+    fn drop(&mut self) {
+        if self.release_on_drop {
+            // ignore errors because `drop` can’t fail
+            let _ = self.release();
+        }
+    }
 }
 
 /// Wrapper for [`np.random.BitGenerator`][bg].
@@ -138,40 +195,6 @@ unsafe impl PyTypeInfo for PyBitGenerator {
     }
 }
 
-/// Releases the `BitGenerator` lock (and clears its reentrancy marker) on drop,
-/// so it happens even if the closure passed to [`PyBitGeneratorMethods::lock`] panics.
-struct LockGuard<'py> {
-    lock: Bound<'py, PyAny>,
-    addr: usize,
-}
-
-impl Drop for LockGuard<'_> {
-    fn drop(&mut self) {
-        LOCKED.with_borrow_mut(|locked| locked.remove(&self.addr));
-        // ignore errors because `drop` can’t fail
-        let _ = self.lock.call_method0(intern!(self.lock.py(), "release"));
-    }
-}
-
-/// Methods for [`PyBitGenerator`].
-pub trait PyBitGeneratorMethods {
-    /// Lock the bit generator, run `f` with exclusive access to it,
-    /// then release the lock (even on panic).
-    /// `f` may use it without the GIL via [`Python::detach`].
-    fn lock<R>(&self, f: impl FnOnce(&mut BitGenerator) -> R) -> PyResult<R>;
-
-    /// Spawn `n_children` independent child [`BitGenerator`]s.
-    ///
-    /// This is the recommended way to obtain generators for multiple threads: unlike sharing a
-    /// single [locked][PyBitGeneratorMethods::lock] one, each child has its own, independent state.
-    fn spawn(&self, n_children: usize) -> PyResult<Vec<BitGenerator>>;
-
-    /// Spawn a single owned child [`BitGenerator`] that doesn’t need locking to be used.
-    fn spawn_one(&self) -> PyResult<BitGenerator> {
-        self.spawn(1).map(|mut v| v.pop().unwrap())
-    }
-}
-
 impl<'py> PyBitGeneratorMethods for Bound<'py, PyBitGenerator> {
     fn lock<R>(&self, f: impl FnOnce(&mut BitGenerator) -> R) -> PyResult<R> {
         let py = self.py();
@@ -194,14 +217,10 @@ impl<'py> PyBitGeneratorMethods for Bound<'py, PyBitGenerator> {
                 return Err(err);
             }
         };
-        let addr = generator.addr();
-        // Reject re-locking the same `BitGenerator`, since the reentrant `RLock` above won’t.
-        if !LOCKED.with_borrow_mut(|locked| locked.insert(addr)) {
-            lock.call_method0(intern!(py, "release"))?;
-            return Err(PyRuntimeError::new_err("BitGenerator is already locked"));
-        }
-        let _guard = LockGuard { lock, addr };
-        Ok(f(&mut generator))
+        let mut guard = SameThreadLockGuard::new(lock, &generator)?;
+        let rv = f(&mut generator);
+        guard.release()?; // `f` didn’t panic, so we can release the lock fallibly here.
+        Ok(rv)
     }
 
     fn spawn(&self, n_children: usize) -> PyResult<Vec<BitGenerator>> {
