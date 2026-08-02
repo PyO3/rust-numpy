@@ -70,6 +70,7 @@
 //! #     Ok(BitGenerator::from_numpy(py, Default::default())?.into_shared().into_bound(py))
 //! # }
 //!
+//! # #[cfg(Py_3_9)]
 //! Python::attach(|py| -> PyResult<_> {
 //!     let bitgen: Bound<PyBitGenerator> = default_bit_gen(py)?;
 //!     let children = bitgen.spawn(4)?;
