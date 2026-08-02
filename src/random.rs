@@ -249,9 +249,9 @@ pub enum NumpyBitGenerator {
     SFC64,
 }
 
-impl Into<&'static str> for NumpyBitGenerator {
-    fn into(self) -> &'static str {
-        match self {
+impl From<NumpyBitGenerator> for &'static str {
+    fn from(value: NumpyBitGenerator) -> &'static str {
+        match value {
             NumpyBitGenerator::MT19937 => "MT19937",
             NumpyBitGenerator::PCG64 => "PCG64",
             NumpyBitGenerator::PCG64DXSM => "PCG64dxsm",
