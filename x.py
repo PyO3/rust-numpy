@@ -57,7 +57,7 @@ def default(args):
 
 
 def check(args):
-    run("cargo", "doc", "--no-deps", env={"RUSTDOCFLAGS": "--deny warnings"})
+    run("cargo", "doc", "--all-features", "--no-deps", env={"RUSTDOCFLAGS": "--deny warnings"})
     run("cargo", "fmt", "--", "--check")
     run("cargo", "clippy", "--all-features", "--tests", "--", *DENY_WARNINGS)
 
