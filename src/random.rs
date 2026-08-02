@@ -451,6 +451,8 @@ mod tests {
 
     /// Spawned children are independent and owned,
     /// so they can be used (and dropped) from their own threads without locking.
+    /// `.spawn` exists since numpy 1.25+, which needs Python 3.9
+    #[cfg(Py_3_9)]
     #[test]
     fn spawn_produces_independent_generators() -> PyResult<()> {
         Python::attach(|py| {
