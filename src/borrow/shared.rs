@@ -454,7 +454,7 @@ mod tests {
     use pyo3::ffi::c_str;
 
     struct BorrowFlagsState {
-        #[cfg(not(Py_GIL_DISABLED))]
+        #[cfg(all(not(Py_GIL_DISABLED), target_pointer_width = "64"))]
         n_flags: usize,
         n_arrays: usize,
         flag: Option<isize>,
@@ -472,14 +472,14 @@ mod tests {
             .unwrap();
         if let Some(base_arrays) = inner.get(&base) {
             BorrowFlagsState {
-                #[cfg(not(Py_GIL_DISABLED))]
+                #[cfg(all(not(Py_GIL_DISABLED), target_pointer_width = "64"))]
                 n_flags: inner.len(),
                 n_arrays: base_arrays.len(),
                 flag: base_arrays.get(key).copied(),
             }
         } else {
             BorrowFlagsState {
-                #[cfg(not(Py_GIL_DISABLED))]
+                #[cfg(all(not(Py_GIL_DISABLED), target_pointer_width = "64"))]
                 n_flags: 0,
                 n_arrays: 0,
                 flag: None,
@@ -812,7 +812,7 @@ mod tests {
 
             {
                 let state = get_borrow_flags_state(py, base1, &key1);
-                #[cfg(not(Py_GIL_DISABLED))]
+                #[cfg(all(not(Py_GIL_DISABLED), target_pointer_width = "64"))]
                 // borrow checking state is shared and other tests might have registered a borrow
                 assert_eq!(state.n_flags, 1);
 
@@ -825,7 +825,7 @@ mod tests {
 
             {
                 let state = get_borrow_flags_state(py, base1, &key1);
-                #[cfg(not(Py_GIL_DISABLED))]
+                #[cfg(all(not(Py_GIL_DISABLED), target_pointer_width = "64"))]
                 // borrow checking state is shared and other tests might have registered a borrow
                 assert_eq!(state.n_flags, 2);
 
@@ -859,7 +859,7 @@ mod tests {
             {
                 let state = get_borrow_flags_state(py, base, &key1);
 
-                #[cfg(not(Py_GIL_DISABLED))]
+                #[cfg(all(not(Py_GIL_DISABLED), target_pointer_width = "64"))]
                 // borrow checking state is shared and other tests might have registered a borrow
                 assert_eq!(state.n_flags, 1);
                 assert_eq!(state.n_arrays, 1);
@@ -877,7 +877,7 @@ mod tests {
 
             {
                 let state = get_borrow_flags_state(py, base, &key1);
-                #[cfg(not(Py_GIL_DISABLED))]
+                #[cfg(all(not(Py_GIL_DISABLED), target_pointer_width = "64"))]
                 // borrow checking state is shared and other tests might have registered a borrow
                 assert_eq!(state.n_flags, 1);
                 assert_eq!(state.n_arrays, 2);
@@ -898,7 +898,7 @@ mod tests {
 
             {
                 let state = get_borrow_flags_state(py, base, &key1);
-                #[cfg(not(Py_GIL_DISABLED))]
+                #[cfg(all(not(Py_GIL_DISABLED), target_pointer_width = "64"))]
                 // borrow checking state is shared and other tests might have registered a borrow
                 assert_eq!(state.n_flags, 1);
                 assert_eq!(state.n_arrays, 2);
@@ -922,7 +922,7 @@ mod tests {
 
             {
                 let state = get_borrow_flags_state(py, base, &key1);
-                #[cfg(not(Py_GIL_DISABLED))]
+                #[cfg(all(not(Py_GIL_DISABLED), target_pointer_width = "64"))]
                 // borrow checking state is shared and other tests might have registered a borrow
                 assert_eq!(state.n_flags, 1);
                 assert_eq!(state.n_arrays, 3);
@@ -942,7 +942,7 @@ mod tests {
 
             {
                 let state = get_borrow_flags_state(py, base, &key1);
-                #[cfg(not(Py_GIL_DISABLED))]
+                #[cfg(all(not(Py_GIL_DISABLED), target_pointer_width = "64"))]
                 // borrow checking state is shared and other tests might have registered a borrow
                 assert_eq!(state.n_flags, 1);
                 assert_eq!(state.n_arrays, 3);
@@ -962,7 +962,7 @@ mod tests {
 
             {
                 let state = get_borrow_flags_state(py, base, &key1);
-                #[cfg(not(Py_GIL_DISABLED))]
+                #[cfg(all(not(Py_GIL_DISABLED), target_pointer_width = "64"))]
                 // borrow checking state is shared and other tests might have registered a borrow
                 assert_eq!(state.n_flags, 1);
                 assert_eq!(state.n_arrays, 2);
@@ -982,7 +982,7 @@ mod tests {
 
             {
                 let state = get_borrow_flags_state(py, base, &key1);
-                #[cfg(not(Py_GIL_DISABLED))]
+                #[cfg(all(not(Py_GIL_DISABLED), target_pointer_width = "64"))]
                 // borrow checking state is shared and other tests might have registered a borrow
                 assert_eq!(state.n_flags, 1);
                 assert_eq!(state.n_arrays, 1);
@@ -1000,7 +1000,7 @@ mod tests {
 
             drop(shared4);
 
-            #[cfg(not(Py_GIL_DISABLED))]
+            #[cfg(all(not(Py_GIL_DISABLED), target_pointer_width = "64"))]
             // borrow checking state is shared and other tests might have registered a borrow
             {
                 assert_eq!(get_borrow_flags_state(py, base, &key1).n_flags, 0);
