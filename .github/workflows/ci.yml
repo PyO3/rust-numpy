@@ -106,7 +106,7 @@ jobs:
           uv pip install "numpy" ml_dtypes
           cargo test --all-features
       - name: Test abi3t
-        if: ${{ matrix.python-version == '3.15t' }}
+        if: ${{ endsWith(matrix.python-version, 't') }}
         run: |
           cargo test --all-features -F pyo3/abi3t
       - name: Test example
