@@ -31,7 +31,7 @@
 //! fn super_fast_random_number(bitgen: Bound<PyBitGenerator>) -> PyResult<u64> {
 //!     let py = bitgen.py();
 //!     // lock the generator, then use it without being attached to the interpreter runtime
-//!     bitgen.lock(|bitgen| bitgen.next_u64())
+//!     bitgen.lock(|mut bitgen| bitgen.next_u64())
 //! }
 //!
 //! Python::attach(|py| -> PyResult<_> {
@@ -117,7 +117,7 @@ pub trait PyBitGeneratorMethods {
     /// `f` may use it without being attached to the interpreter runtime via [`Python::detach`].
     fn lock<R: Ungil>(
         &self,
-        f: impl (FnOnce(&mut BitGenerator) -> R) + Ungil + Send,
+        f: impl (FnOnce(BitGeneratorRef<'_>) -> R) + Ungil + Send,
     ) -> PyResult<R>;
 
     /// Spawn `n_children` independent child [`BitGenerator`]s.
@@ -205,7 +205,7 @@ unsafe impl PyTypeInfo for PyBitGenerator {
 impl<'py> PyBitGeneratorMethods for Bound<'py, PyBitGenerator> {
     fn lock<R: Ungil>(
         &self,
-        f: impl (FnOnce(&mut BitGenerator) -> R) + Ungil + Send,
+        f: impl (FnOnce(BitGeneratorRef<'_>) -> R) + Ungil + Send,
     ) -> PyResult<R> {
         let py = self.py();
         let lock = self.getattr(intern!(py, "lock"))?;
@@ -228,7 +228,7 @@ impl<'py> PyBitGeneratorMethods for Bound<'py, PyBitGenerator> {
             }
         };
         let guard = guard::SameThreadLockGuard::new(lock, &generator)?;
-        let rv = py.detach(|| f(&mut generator));
+        let rv = py.detach(|| f(BitGeneratorRef(&mut generator)));
         guard.release()?; // `f` didn’t panic, so we can release the lock fallibly here.
         Ok(rv)
     }
@@ -374,6 +374,61 @@ impl BitGenerator {
     }
 }
 
+/// Exclusive access to a *shared* [`BitGenerator`], handed to the closure of
+/// [`lock`][PyBitGeneratorMethods::lock] for as long as its lock is held.
+///
+/// It deliberately doesn’t hand out `&mut BitGenerator`: that would let the closure
+/// [swap][std::mem::swap] the shared generator out and keep using it after the lock is released:
+///
+/// ```compile_fail
+/// # use pyo3::prelude::*;
+/// # use numpy::random::{BitGenerator, NumpyBitGenerator, PyBitGenerator, PyBitGeneratorMethods as _};
+/// # fn shared<'py>(py: Python<'py>) -> PyResult<Bound<'py, PyBitGenerator>> {
+/// #     Ok(BitGenerator::from_numpy(py, Default::default())?.into_shared().into_bound(py))
+/// # }
+/// Python::attach(|py| {
+///     let mut mine = BitGenerator::from_numpy(py, NumpyBitGenerator::PCG64)?;
+///     // `shared` is a `BitGeneratorRef`, not a `&mut BitGenerator`, so this doesn’t compile:
+///     shared(py)?.lock(|shared| std::mem::swap(shared, &mut mine))?;
+///     mine.next_double(); // would be unsynchronized access to the shared generator
+///     Ok::<(), PyErr>(())
+/// })?;
+/// # Ok::<(), PyErr>(())
+/// ```
+pub struct BitGeneratorRef<'a>(&'a mut BitGenerator);
+
+impl BitGeneratorRef<'_> {
+    /// See [`BitGenerator::next_u64`].
+    pub fn next_u64(&mut self) -> u64 {
+        self.0.next_u64()
+    }
+    /// See [`BitGenerator::next_u32`].
+    pub fn next_u32(&mut self) -> u32 {
+        self.0.next_u32()
+    }
+    /// See [`BitGenerator::next_double`].
+    pub fn next_double(&mut self) -> f64 {
+        self.0.next_double()
+    }
+    /// See [`BitGenerator::next_raw`].
+    pub fn next_raw(&mut self) -> u64 {
+        self.0.next_raw()
+    }
+}
+
+#[cfg(feature = "rand_core")]
+impl rand_core::RngCore for BitGeneratorRef<'_> {
+    fn next_u32(&mut self) -> u32 {
+        self.0.next_u32()
+    }
+    fn next_u64(&mut self) -> u64 {
+        self.0.next_u64()
+    }
+    fn fill_bytes(&mut self, dst: &mut [u8]) {
+        rand_core::impls::fill_bytes_via_next(self, dst)
+    }
+}
+
 #[cfg(feature = "rand_core")]
 impl rand_core::RngCore for BitGenerator {
     fn next_u32(&mut self) -> u32 {
@@ -404,7 +459,7 @@ mod tests {
     #[test]
     fn use_detached() -> PyResult<()> {
         Python::attach(|py| {
-            get_bit_generator(py)?.lock(|bitgen| {
+            get_bit_generator(py)?.lock(|mut bitgen| {
                 let _ = bitgen.next_raw();
             })
         })
@@ -445,7 +500,7 @@ mod tests {
         use rand::Rng as _;
 
         Python::attach(|py| {
-            get_bit_generator(py)?.lock(|bitgen| {
+            get_bit_generator(py)?.lock(|mut bitgen| {
                 assert!(bitgen.random_ratio(1, 1));
                 assert!(!bitgen.random_ratio(0, 1));
             })
