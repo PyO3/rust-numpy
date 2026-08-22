@@ -15,8 +15,9 @@ Rust bindings for the NumPy C-API.
 ## Requirements
 - Rust >= 1.83.0
   - Basically, our MSRV follows the one of [PyO3](https://github.com/PyO3/pyo3)
-- Python >= 3.8
+- Python >= 3.9
   - Python 3.7 support was dropped from 0.29
+  - Python 3.8 support was dropped from 0.30
 - Some Rust libraries
   - [ndarray](https://github.com/rust-ndarray/ndarray) for Rust-side matrix library
   - [PyO3](https://github.com/PyO3/pyo3) for Python bindings

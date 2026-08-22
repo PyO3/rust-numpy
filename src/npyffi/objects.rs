@@ -431,9 +431,9 @@ pub struct PyUFuncObject_fields {
     pub core_signature: *mut c_char,
     pub type_resolver: PyUFunc_TypeResolutionFunc,
     pub reserved2: *mut c_void, // Was the legacy loop resolver
-    #[cfg(all(Py_3_8, not(Py_LIMITED_API)))]
+    #[cfg(not(Py_LIMITED_API))]
     pub vectorcall: Option<vectorcallfunc>,
-    #[cfg(not(all(Py_3_8, not(Py_LIMITED_API))))]
+    #[cfg(Py_LIMITED_API)]
     pub vectorcall: *mut c_void,
     pub reserved3: *mut c_void, // Was previously the `PyUFunc_MaskedInnerLoopSelectionFunc`
     pub op_flags: *mut npy_uint32,
