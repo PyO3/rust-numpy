@@ -4,14 +4,14 @@
 //! you can generate random numbers without being attached to the interpreter runtime in one of the following ways:
 //! - [lock][`PyBitGeneratorMethods::lock`] a [`PyBitGenerator`] you received from Python
 //! - [spawn][`PyBitGeneratorMethods::spawn`] fresh [`BitGenerator`]s from it
-//! - obtain a fresh [`BitGenerator`] [from numpy][`BitGenerator::from_numpy`]:
+//! - create a fresh [`BitGenerator`] [from numpy][`BitGenerator::new`]:
 //!
 //! ```
 //! use pyo3::prelude::*;
 //! use numpy::random::BitGenerator;
 //!
 //! let mut bitgen = Python::attach(|py| {
-//!     BitGenerator::from_numpy(py, Default::default())
+//!     BitGenerator::new(py, Default::default())
 //! })?;
 //! let random_number = bitgen.next_u64();
 //! # Ok::<(), PyErr>(())
@@ -24,7 +24,7 @@
 //! # use pyo3::prelude::*;
 //! use numpy::random::{BitGenerator, PyBitGenerator, PyBitGeneratorMethods as _};
 //! # fn default_bit_gen<'py>(py: Python<'py>) -> PyResult<Bound<'py, PyBitGenerator>> {
-//! #     Ok(BitGenerator::from_numpy(py, Default::default())?.into_shared().into_bound(py))
+//! #     Ok(BitGenerator::new(py, Default::default())?.into_shared().into_bound(py))
 //! # }
 //!
 //! #[pyfunction]
@@ -49,9 +49,9 @@
 //! ```
 //! use pyo3::prelude::*;
 //! use rand::Rng as _;
-//! use numpy::random::{BitGenerator, NumpyBitGenerator::SFC64};
+//! use numpy::random::{BitGenerator, BitGeneratorKind::SFC64};
 //!
-//! let mut bitgen = Python::attach(|py| BitGenerator::from_numpy(py, SFC64))?;
+//! let mut bitgen = Python::attach(|py| BitGenerator::new(py, SFC64))?;
 //! if bitgen.random_ratio(1, 1_000_000) {
 //!     println!("a sure thing");
 //! };
@@ -67,7 +67,7 @@
 //! use numpy::{PyArray2, PyArrayMethods as _};
 //! # use numpy::random::{BitGenerator, PyBitGenerator, PyBitGeneratorMethods as _};
 //! # fn default_bit_gen<'py>(py: Python<'py>) -> PyResult<Bound<'py, PyBitGenerator>> {
-//! #     Ok(BitGenerator::from_numpy(py, Default::default())?.into_shared().into_bound(py))
+//! #     Ok(BitGenerator::new(py, Default::default())?.into_shared().into_bound(py))
 //! # }
 //!
 //! # #[cfg(Py_3_9)]
@@ -243,9 +243,9 @@ impl<'py> PyBitGeneratorMethods for Bound<'py, PyBitGenerator> {
     }
 }
 
-/// Known numpy bit generator types.
+/// Which of numpy’s bit generator algorithms [`BitGenerator::new`] should create.
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum NumpyBitGenerator {
+pub enum BitGeneratorKind {
     /// Mersenne Twister (MT19937)
     MT19937,
     /// Permuted congruential generator (64-bit, PCG-64)
@@ -259,14 +259,14 @@ pub enum NumpyBitGenerator {
     SFC64,
 }
 
-impl From<NumpyBitGenerator> for &'static str {
-    fn from(value: NumpyBitGenerator) -> &'static str {
+impl From<BitGeneratorKind> for &'static str {
+    fn from(value: BitGeneratorKind) -> &'static str {
         match value {
-            NumpyBitGenerator::MT19937 => "MT19937",
-            NumpyBitGenerator::PCG64 => "PCG64",
-            NumpyBitGenerator::PCG64DXSM => "PCG64dxsm",
-            NumpyBitGenerator::Philox => "Philox",
-            NumpyBitGenerator::SFC64 => "SFC64",
+            BitGeneratorKind::MT19937 => "MT19937",
+            BitGeneratorKind::PCG64 => "PCG64",
+            BitGeneratorKind::PCG64DXSM => "PCG64dxsm",
+            BitGeneratorKind::Philox => "Philox",
+            BitGeneratorKind::SFC64 => "SFC64",
         }
     }
 }
@@ -295,16 +295,16 @@ impl BitGenerator {
     ///
     /// ```
     /// use pyo3::prelude::*;
-    /// use numpy::random::{BitGenerator, NumpyBitGenerator};
+    /// use numpy::random::{BitGenerator, BitGeneratorKind};
     ///
-    /// let mut bitgen = Python::attach(|py| BitGenerator::from_numpy(py, Default::default()))?;
+    /// let mut bitgen = Python::attach(|py| BitGenerator::new(py, Default::default()))?;
     /// println!("{}", bitgen.next_u32());
     /// # Ok::<(), PyErr>(())
     /// ```
-    pub fn from_numpy(py: Python<'_>, flavor: NumpyBitGenerator) -> PyResult<Self> {
+    pub fn new(py: Python<'_>, kind: BitGeneratorKind) -> PyResult<Self> {
         let bitgen = py
             .import("numpy.random")?
-            .call_method0::<&str>(flavor.into())?
+            .call_method0::<&str>(kind.into())?
             .cast_into::<PyBitGenerator>()?;
         // SAFETY: `bitgen` is freshly created and not handed out elsewhere.
         unsafe { Self::from_py(bitgen) }
@@ -382,12 +382,12 @@ impl BitGenerator {
 ///
 /// ```compile_fail
 /// # use pyo3::prelude::*;
-/// # use numpy::random::{BitGenerator, NumpyBitGenerator, PyBitGenerator, PyBitGeneratorMethods as _};
+/// # use numpy::random::{BitGenerator, BitGeneratorKind, PyBitGenerator, PyBitGeneratorMethods as _};
 /// # fn shared<'py>(py: Python<'py>) -> PyResult<Bound<'py, PyBitGenerator>> {
-/// #     Ok(BitGenerator::from_numpy(py, Default::default())?.into_shared().into_bound(py))
+/// #     Ok(BitGenerator::new(py, Default::default())?.into_shared().into_bound(py))
 /// # }
 /// Python::attach(|py| {
-///     let mut mine = BitGenerator::from_numpy(py, NumpyBitGenerator::PCG64)?;
+///     let mut mine = BitGenerator::new(py, BitGeneratorKind::PCG64)?;
 ///     // `shared` is a `BitGeneratorRef`, not a `&mut BitGenerator`, so this doesn’t compile:
 ///     shared(py)?.lock(|shared| std::mem::swap(shared, &mut mine))?;
 ///     mine.next_double(); // would be unsynchronized access to the shared generator
