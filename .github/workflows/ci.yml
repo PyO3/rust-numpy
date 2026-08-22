@@ -117,9 +117,6 @@ jobs:
       CARGO_BUILD_TARGET: ${{ matrix.platform.rust-target }}
       RUST_BACKTRACE: 1
       UV_SYSTEM_PYTHON: true
-      UV_PRERELEASE: ${{ startsWith(matrix.python-version, '3.15') && 'allow' || 'disallow' }} # remove once numpy 2.6 releases
-      UV_NO_BUILD_PACKAGE: "numpy"
-      UV_INDEX: ${{ startsWith(matrix.python-version, '3.15') && 'https://pypi.anaconda.org/scientific-python-nightly-wheels/simple/' || '' }} # remove once numpy 2.6 releases
       NOX_DEFAULT_VENV_BACKEND: "uv"
 
   test-numpy1:
