@@ -94,9 +94,9 @@
 //! [bg]: https://numpy.org/doc/stable//reference/random/bit_generators/generated/numpy.random.BitGenerator.html
 //! [ext]: https://numpy.org/doc/stable/reference/random/extending.html
 
-use std::cell::RefCell;
 use std::collections::HashSet;
 use std::ptr::NonNull;
+use std::{cell::RefCell, mem::ManuallyDrop};
 
 use pyo3::{
     exceptions::PyRuntimeError,
@@ -139,40 +139,42 @@ thread_local! {
     static LOCKED: RefCell<HashSet<usize>> = RefCell::new(HashSet::new());
 }
 
-struct SameThreadLockGuard<'py> {
-    lock: Bound<'py, PyAny>,
-    addr: usize,
-    release_on_drop: bool,
-}
+mod guard {
+    use super::*;
 
-/// Release the `BitGenerator` lock and clear its reentrancy marker, even on panic.
-impl<'py> SameThreadLockGuard<'py> {
-    /// Takes a locked lock, and returns a `LockGuard` that releases it on drop or `release`.
-    fn new(lock: Bound<'py, PyAny>, generator: &BitGenerator) -> PyResult<Self> {
-        let addr = generator.addr();
-        if !LOCKED.with_borrow_mut(|locked| locked.insert(addr)) {
-            lock.call_method0(intern!(lock.py(), "release"))?;
-            return Err(PyRuntimeError::new_err("BitGenerator is already locked"));
+    pub(super) struct SameThreadLockGuard<'py> {
+        lock: Bound<'py, PyAny>,
+        addr: usize,
+    }
+
+    /// Release the `BitGenerator` lock and clear its reentrancy marker, even on panic.
+    impl<'py> SameThreadLockGuard<'py> {
+        /// Takes a locked lock, and returns a `LockGuard` that releases it on drop or `release`.
+        pub(super) fn new(lock: Bound<'py, PyAny>, generator: &BitGenerator) -> PyResult<Self> {
+            let addr = generator.addr();
+            if !LOCKED.with_borrow_mut(|locked| locked.insert(addr)) {
+                lock.call_method0(intern!(lock.py(), "release"))?;
+                return Err(PyRuntimeError::new_err("BitGenerator is already locked"));
+            }
+            Ok(Self { lock, addr })
         }
-        Ok(Self {
-            lock,
-            addr,
-            release_on_drop: true,
-        })
+        /// Releases the lock.
+        pub(super) fn release(self) -> PyResult<()> {
+            let mut s = ManuallyDrop::new(self);
+            s.release_borrowed()?;
+            Ok(())
+        }
+        fn release_borrowed(&mut self) -> PyResult<()> {
+            LOCKED.with_borrow_mut(|locked| locked.remove(&self.addr));
+            self.lock.call_method0(intern!(self.lock.py(), "release"))?;
+            Ok(())
+        }
     }
-    fn release(&mut self) -> PyResult<()> {
-        self.release_on_drop = false;
-        LOCKED.with_borrow_mut(|locked| locked.remove(&self.addr));
-        self.lock.call_method0(intern!(self.lock.py(), "release"))?;
-        Ok(())
-    }
-}
 
-impl Drop for SameThreadLockGuard<'_> {
-    fn drop(&mut self) {
-        if self.release_on_drop {
+    impl Drop for SameThreadLockGuard<'_> {
+        fn drop(&mut self) {
             // ignore errors because `drop` can’t fail
-            let _ = self.release();
+            let _ = self.release_borrowed();
         }
     }
 }
@@ -225,7 +227,7 @@ impl<'py> PyBitGeneratorMethods for Bound<'py, PyBitGenerator> {
                 return Err(err);
             }
         };
-        let mut guard = SameThreadLockGuard::new(lock, &generator)?;
+        let guard = guard::SameThreadLockGuard::new(lock, &generator)?;
         let rv = py.detach(|| f(&mut generator));
         guard.release()?; // `f` didn’t panic, so we can release the lock fallibly here.
         Ok(rv)
