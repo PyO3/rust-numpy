@@ -70,7 +70,6 @@
 //! #     Ok(BitGenerator::new(py, Default::default())?.into_shared().into_bound(py))
 //! # }
 //!
-//! # #[cfg(Py_3_9)]
 //! Python::attach(|py| -> PyResult<_> {
 //!     let bitgen: Bound<PyBitGenerator> = default_bit_gen(py)?;
 //!     let children = bitgen.spawn(4)?;
@@ -509,8 +508,6 @@ mod tests {
 
     /// Spawned children are independent and owned,
     /// so they can be used (and dropped) from their own threads without locking.
-    /// `.spawn` exists since numpy 1.25+, which needs Python 3.9
-    #[cfg(Py_3_9)]
     #[test]
     fn spawn_produces_independent_generators() -> PyResult<()> {
         Python::attach(|py| {
