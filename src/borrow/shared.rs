@@ -15,7 +15,9 @@ use rustc_hash::FxHashMap;
 use crate::array::get_array_module;
 use crate::cold;
 use crate::error::BorrowError;
-use crate::npyffi::{PyArrayObject, PyArray_Check, PyDataType_ELSIZE, NPY_ARRAY_WRITEABLE};
+use crate::npyffi::{
+    _PyArray_GET_ITEM_DATA, PyArrayObject, PyArray_Check, PyDataType_ELSIZE, NPY_ARRAY_WRITEABLE,
+};
 
 /// Defines the shared C API used for borrow checking
 ///
@@ -57,7 +59,7 @@ unsafe extern "C" fn acquire_shared(flags: *mut c_void, array: *mut PyArrayObjec
 }
 
 unsafe extern "C" fn acquire_mut_shared(flags: *mut c_void, array: *mut PyArrayObject) -> c_int {
-    if (*array).flags & NPY_ARRAY_WRITEABLE == 0 {
+    if (*_PyArray_GET_ITEM_DATA(array)).flags & NPY_ARRAY_WRITEABLE == 0 {
         return -2;
     }
 
@@ -368,7 +370,7 @@ impl BorrowFlags {
 
 fn base_address<'py>(py: Python<'py>, mut array: *mut PyArrayObject) -> *mut c_void {
     loop {
-        let base = unsafe { (*array).base };
+        let base = unsafe { (*_PyArray_GET_ITEM_DATA(array)).base };
 
         if base.is_null() {
             return array as *mut c_void;
@@ -383,7 +385,7 @@ fn base_address<'py>(py: Python<'py>, mut array: *mut PyArrayObject) -> *mut c_v
 fn borrow_key<'py>(py: Python<'py>, array: *mut PyArrayObject) -> BorrowKey {
     let range = data_range(py, array);
 
-    let data_ptr = unsafe { (*array).data };
+    let data_ptr = unsafe { (*_PyArray_GET_ITEM_DATA(array)).data };
     let gcd_strides = gcd_strides(array);
 
     BorrowKey {
@@ -394,6 +396,7 @@ fn borrow_key<'py>(py: Python<'py>, array: *mut PyArrayObject) -> BorrowKey {
 }
 
 fn data_range<'py>(py: Python<'py>, array: *mut PyArrayObject) -> (*mut c_char, *mut c_char) {
+    let array = unsafe { _PyArray_GET_ITEM_DATA(array) };
     let nd = unsafe { (*array).nd } as usize;
     let data = unsafe { (*array).data };
 
@@ -430,6 +433,7 @@ fn data_range<'py>(py: Python<'py>, array: *mut PyArrayObject) -> (*mut c_char, 
 }
 
 fn gcd_strides(array: *mut PyArrayObject) -> isize {
+    let array = unsafe { _PyArray_GET_ITEM_DATA(array) };
     let nd = unsafe { (*array).nd } as usize;
 
     if nd == 0 {
@@ -492,7 +496,7 @@ mod tests {
         Python::attach(|py| {
             let array = PyArray::<f64, _>::zeros(py, (1, 2, 3), false);
 
-            let base = unsafe { (*array.as_array_ptr()).base };
+            let base = unsafe { (*_PyArray_GET_ITEM_DATA(array.as_array_ptr().cast_const())).base };
             assert!(base.is_null());
 
             let base_address = base_address(py, array.as_array_ptr());
@@ -509,7 +513,7 @@ mod tests {
         Python::attach(|py| {
             let array = Array::<f64, _>::zeros((1, 2, 3)).into_pyarray(py);
 
-            let base = unsafe { (*array.as_array_ptr()).base };
+            let base = unsafe { (*_PyArray_GET_ITEM_DATA(array.as_array_ptr().cast_const())).base };
             assert!(!base.is_null());
 
             let base_address = base_address(py, array.as_array_ptr());
@@ -540,7 +544,7 @@ mod tests {
                 array.as_ptr().cast::<c_void>()
             );
 
-            let base = unsafe { (*view.as_array_ptr()).base };
+            let base = unsafe { (*_PyArray_GET_ITEM_DATA(view.as_array_ptr().cast_const())).base };
             assert_eq!(base as *mut c_void, array.as_ptr().cast::<c_void>());
 
             let base_address = base_address(py, view.as_array_ptr());
@@ -569,10 +573,10 @@ mod tests {
                 array.as_ptr().cast::<c_void>(),
             );
 
-            let base = unsafe { (*view.as_array_ptr()).base };
+            let base = unsafe { (*_PyArray_GET_ITEM_DATA(view.as_array_ptr().cast_const())).base };
             assert_eq!(base.cast::<c_void>(), array.as_ptr().cast::<c_void>());
 
-            let base = unsafe { (*array.as_array_ptr()).base };
+            let base = unsafe { (*_PyArray_GET_ITEM_DATA(array.as_array_ptr().cast_const())).base };
             assert!(!base.is_null());
 
             let base_address = base_address(py, view.as_array_ptr());
@@ -619,10 +623,10 @@ mod tests {
                 view1.as_ptr().cast::<c_void>()
             );
 
-            let base = unsafe { (*view2.as_array_ptr()).base };
+            let base = unsafe { (*_PyArray_GET_ITEM_DATA(view2.as_array_ptr().cast_const())).base };
             assert_eq!(base as *mut c_void, array.as_ptr().cast::<c_void>());
 
-            let base = unsafe { (*view1.as_array_ptr()).base };
+            let base = unsafe { (*_PyArray_GET_ITEM_DATA(view1.as_array_ptr().cast_const())).base };
             assert_eq!(base as *mut c_void, array.as_ptr().cast::<c_void>());
 
             let base_address = base_address(py, view2.as_array_ptr());
@@ -667,13 +671,13 @@ mod tests {
                 view1.as_ptr().cast::<c_void>(),
             );
 
-            let base = unsafe { (*view2.as_array_ptr()).base };
+            let base = unsafe { (*_PyArray_GET_ITEM_DATA(view2.as_array_ptr().cast_const())).base };
             assert_eq!(base.cast::<c_void>(), array.as_ptr().cast::<c_void>());
 
-            let base = unsafe { (*view1.as_array_ptr()).base };
+            let base = unsafe { (*_PyArray_GET_ITEM_DATA(view1.as_array_ptr().cast_const())).base };
             assert_eq!(base.cast::<c_void>(), array.as_ptr().cast::<c_void>());
 
-            let base = unsafe { (*array.as_array_ptr()).base };
+            let base = unsafe { (*_PyArray_GET_ITEM_DATA(array.as_array_ptr().cast_const())).base };
             assert!(!base.is_null());
 
             let base_address = base_address(py, view2.as_array_ptr());
@@ -706,7 +710,7 @@ mod tests {
                 array.as_ptr().cast::<c_void>()
             );
 
-            let base = unsafe { (*view.as_array_ptr()).base };
+            let base = unsafe { (*_PyArray_GET_ITEM_DATA(view.as_array_ptr().cast_const())).base };
             assert_eq!(base.cast::<c_void>(), array.as_ptr().cast::<c_void>());
 
             let base_address = base_address(py, view.as_array_ptr());
@@ -727,7 +731,7 @@ mod tests {
         Python::attach(|py| {
             let array = PyArray::<f64, _>::zeros(py, (1, 0, 3), false);
 
-            let base = unsafe { (*array.as_array_ptr()).base };
+            let base = unsafe { (*_PyArray_GET_ITEM_DATA(array.as_array_ptr().cast_const())).base };
             assert!(base.is_null());
 
             let base_address = base_address(py, array.as_array_ptr());

@@ -301,6 +301,7 @@ impl PyArrayAPI {
     impl_api![189; PyArray_LexSort(sort_keys: *mut PyObject, axis: c_int) -> *mut PyObject];
     impl_api![190; PyArray_Round(a: *mut PyArrayObject, decimals: c_int, out: *mut PyArrayObject) -> *mut PyObject];
     impl_api![191; PyArray_EquivTypenums(typenum1: c_int, typenum2: c_int) -> c_uchar];
+    #[cfg(not(all(Py_LIMITED_API, Py_GIL_DISABLED)))]
     impl_api![192; PyArray_RegisterDataType(descr: *mut PyArray_DescrProto) -> c_int];
     impl_api![193; PyArray_RegisterCastFunc(descr: *mut PyArray_Descr, totype: c_int, castfunc: PyArray_VectorUnaryFunc) -> c_int];
     impl_api![194; PyArray_RegisterCanCast(descr: *mut PyArray_Descr, totype: c_int, scalar: NPY_SCALARKIND) -> c_int];
@@ -428,6 +429,22 @@ impl PyArrayAPI {
     // Min v2.0 impl_api![363; PyArray_CommonDType(dtype1: *mut PyArray_DTypeMeta, dtype2: *mut PyArray_DTypeMeta) -> PyArray_DTypeMeta];
     // Min v2.0 impl_api![364; PyArray_PromoteDTypeSequence(length: npy_intp, dtypes_in: *mut *mut PyArray_DTypeMeta) -> *mut PyArray_DTypeMeta];
     // Min v2.0 impl_api![365; _PyDataType_GetArrFuncs(descr: *const PyArray_Descr) -> *mut PyArray_ArrFuncs];
+    // Slot 366, 367, 368 are the abstract DTypes
+}
+
+// Min v2.5
+#[cfg(all(Py_LIMITED_API, Py_GIL_DISABLED))]
+impl PyArrayAPI {
+    impl_api![369; _PyArray_GET_ITEM_DATA(arr: *const PyArrayObject) -> *mut PyArrayObject_fields];
+    impl_api![370; _PyArrayIter_GET_ITEM_DATA(iter: *const PyArrayIterObject) -> *mut PyArrayIterObject_fields];
+    impl_api![371; pub(crate) _PyArray_LegacyDescr_GET_ITEM_DATA(dtype: *const _PyArray_LegacyDescr) -> *mut _PyArray_LegacyDescr_fields];
+    impl_api![372; _PyDataType_GET_ITEM_DATA(dtype: *const PyArray_Descr) -> *mut PyArray_Descr_fields];
+    impl_api![373; _PyArrayMultiIter_GET_ITEM_DATA(multi: *const PyArrayMultiIterObject) -> *mut PyArrayMultiIterObject_fields];
+    impl_api![374; _PyArrayNeighborhoodIter_GET_ITEM_DATA(iter: *const PyArrayNeighborhoodIterObject) -> *mut PyArrayNeighborhoodIterObject_fields];
+    impl_api![375; _PyDatetimeScalarObject_GetMetadata(obj: *mut PyObject) -> PyArray_DatetimeMetaData];
+    impl_api![376; _PyTimedeltaScalarObject_GetMetadata(obj: *mut PyObject) -> PyArray_DatetimeMetaData];
+    impl_api![377; _PyDatetimeScalarObject_GetValue(obj: *mut PyObject) -> npy_datetime];
+    impl_api![378; _PyTimedeltaScalarObject_GetValue(obj: *mut PyObject) -> npy_timedelta];
 }
 
 /// Checks that `op` is an instance of `PyArray` or not.
