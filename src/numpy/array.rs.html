@@ -28,7 +28,7 @@
 <a href=#28 id=28 data-nosnippet>28</a>    AsSliceError, BorrowError, DimensionalityError, FromVecError, IgnoreError, TypeError,
 <a href=#29 id=29 data-nosnippet>29</a>    DIMENSIONALITY_MISMATCH_ERR, MAX_DIMENSIONALITY_ERR,
 <a href=#30 id=30 data-nosnippet>30</a>};
-<a href=#31 id=31 data-nosnippet>31</a><span class="kw">use </span><span class="kw">crate</span>::npyffi::{<span class="self">self</span>, npy_intp, NPY_ORDER, PY_ARRAY_API};
+<a href=#31 id=31 data-nosnippet>31</a><span class="kw">use </span><span class="kw">crate</span>::npyffi::{<span class="self">self</span>, _PyArray_GET_ITEM_DATA, npy_intp, NPY_ORDER, PY_ARRAY_API};
 <a href=#32 id=32 data-nosnippet>32</a><span class="kw">use </span><span class="kw">crate</span>::slice_container::PySliceContainer;
 <a href=#33 id=33 data-nosnippet>33</a><span class="kw">use </span><span class="kw">crate</span>::untyped_array::{PyUntypedArray, PyUntypedArrayMethods};
 <a href=#34 id=34 data-nosnippet>34</a>
@@ -1481,7 +1481,7 @@
 <a href=#1481 id=1481 data-nosnippet>1481</a>
 <a href=#1482 id=1482 data-nosnippet>1482</a>    <span class="attr">#[inline(always)]
 <a href=#1483 id=1483 data-nosnippet>1483</a>    </span><span class="kw">fn </span>data(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">*mut </span>T {
-<a href=#1484 id=1484 data-nosnippet>1484</a>        <span class="kw">unsafe </span>{ (<span class="kw-2">*</span><span class="self">self</span>.as_array_ptr()).data.cast() }
+<a href=#1484 id=1484 data-nosnippet>1484</a>        <span class="kw">unsafe </span>{ (<span class="kw-2">*</span>_PyArray_GET_ITEM_DATA(<span class="self">self</span>.as_array_ptr())).data.cast() }
 <a href=#1485 id=1485 data-nosnippet>1485</a>    }
 <a href=#1486 id=1486 data-nosnippet>1486</a>
 <a href=#1487 id=1487 data-nosnippet>1487</a>    <span class="attr">#[inline(always)]

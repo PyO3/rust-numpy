@@ -105,5 +105,10 @@
 <a href=#105 id=105 data-nosnippet>105</a>    //     translate_given_descrs: *mut PyArrayMethod_TranslateGivenDescriptors,
 <a href=#106 id=106 data-nosnippet>106</a>    //     translate_loop_descrs: *mut PyArrayMethod_TranslateLoopDescriptors) -&gt; c_int];
 <a href=#107 id=107 data-nosnippet>107</a>    // Min v2.0 impl_api![46; PyUFunc_GiveFloatingpointErrors(name: *mut c_char, fpe_errors: c_int) -&gt; c_int];
-<a href=#108 id=108 data-nosnippet>108</a></span>}
+<a href=#108 id=108 data-nosnippet>108</a>    // Min v2.4 impl_api![47; PyUFunc_AddLoopsFromSpecs(slots: *mut PyUFunc_LoopSlot) -&gt; c_int];
+<a href=#109 id=109 data-nosnippet>109</a>
+<a href=#110 id=110 data-nosnippet>110</a>    // Min v2.5
+<a href=#111 id=111 data-nosnippet>111</a>    </span><span class="attr">#[cfg(all(Py_LIMITED_API, Py_GIL_DISABLED))]
+<a href=#112 id=112 data-nosnippet>112</a>    </span><span class="macro">impl_api!</span>[<span class="number">48</span>; _PyUFuncObject_GET_ITEM_DATA(obj: <span class="kw-2">*const </span>PyUFuncObject) -&gt; <span class="kw-2">*mut </span>PyUFuncObject_fields];
+<a href=#113 id=113 data-nosnippet>113</a>}
 </code></pre></div></section></main></body></html>

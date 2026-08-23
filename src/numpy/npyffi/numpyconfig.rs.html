@@ -5,15 +5,25 @@
 <a href=#5 id=5 data-nosnippet>5</a><span class="doccomment">/// The current target ABI version
 <a href=#6 id=6 data-nosnippet>6</a></span><span class="kw">const </span>NPY_ABI_VERSION: c_uint = <span class="number">0x02000000</span>;
 <a href=#7 id=7 data-nosnippet>7</a>
-<a href=#8 id=8 data-nosnippet>8</a><span class="doccomment">/// The current target API version (v1.15)
-<a href=#9 id=9 data-nosnippet>9</a></span><span class="kw">const </span>NPY_API_VERSION: c_uint = <span class="number">0x0000000c</span>;
-<a href=#10 id=10 data-nosnippet>10</a>
-<a href=#11 id=11 data-nosnippet>11</a><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">const </span>NPY_2_0_API_VERSION: c_uint = <span class="number">0x00000012</span>;
-<a href=#12 id=12 data-nosnippet>12</a>
-<a href=#13 id=13 data-nosnippet>13</a><span class="doccomment">/// The current version of the `ndarray` object (ABI version).
-<a href=#14 id=14 data-nosnippet>14</a></span><span class="kw">pub const </span>NPY_VERSION: c_uint = NPY_ABI_VERSION;
-<a href=#15 id=15 data-nosnippet>15</a><span class="doccomment">/// The current version of C API.
-<a href=#16 id=16 data-nosnippet>16</a></span><span class="kw">pub const </span>NPY_FEATURE_VERSION: c_uint = NPY_API_VERSION;
-<a href=#17 id=17 data-nosnippet>17</a><span class="doccomment">/// The string representation of current version C API.
-<a href=#18 id=18 data-nosnippet>18</a></span><span class="kw">pub const </span>NPY_FEATURE_VERSION_STRING: <span class="kw-2">&amp;</span>str = <span class="string">"1.15"</span>;
+<a href=#8 id=8 data-nosnippet>8</a><span class="doccomment">/// The current target API version
+<a href=#9 id=9 data-nosnippet>9</a></span><span class="kw">const </span>NPY_API_VERSION: c_uint = <span class="kw">if </span><span class="macro">cfg!</span>(all(Py_LIMITED_API, Py_GIL_DISABLED)) {
+<a href=#10 id=10 data-nosnippet>10</a>    <span class="comment">// (v2.5)
+<a href=#11 id=11 data-nosnippet>11</a>    </span><span class="number">0x00000016
+<a href=#12 id=12 data-nosnippet>12</a></span>} <span class="kw">else </span>{
+<a href=#13 id=13 data-nosnippet>13</a>    <span class="comment">// (v1.15)
+<a href=#14 id=14 data-nosnippet>14</a>    </span><span class="number">0x0000000c
+<a href=#15 id=15 data-nosnippet>15</a></span>};
+<a href=#16 id=16 data-nosnippet>16</a>
+<a href=#17 id=17 data-nosnippet>17</a><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">const </span>NPY_2_0_API_VERSION: c_uint = <span class="number">0x00000012</span>;
+<a href=#18 id=18 data-nosnippet>18</a>
+<a href=#19 id=19 data-nosnippet>19</a><span class="doccomment">/// The current version of the `ndarray` object (ABI version).
+<a href=#20 id=20 data-nosnippet>20</a></span><span class="kw">pub const </span>NPY_VERSION: c_uint = NPY_ABI_VERSION;
+<a href=#21 id=21 data-nosnippet>21</a><span class="doccomment">/// The current version of C API.
+<a href=#22 id=22 data-nosnippet>22</a></span><span class="kw">pub const </span>NPY_FEATURE_VERSION: c_uint = NPY_API_VERSION;
+<a href=#23 id=23 data-nosnippet>23</a><span class="doccomment">/// The string representation of current version C API.
+<a href=#24 id=24 data-nosnippet>24</a></span><span class="kw">pub const </span>NPY_FEATURE_VERSION_STRING: <span class="kw-2">&amp;</span>str = <span class="kw">if </span><span class="macro">cfg!</span>(all(Py_LIMITED_API, Py_GIL_DISABLED)) {
+<a href=#25 id=25 data-nosnippet>25</a>    <span class="string">"2.5"
+<a href=#26 id=26 data-nosnippet>26</a></span>} <span class="kw">else </span>{
+<a href=#27 id=27 data-nosnippet>27</a>    <span class="string">"1.15"
+<a href=#28 id=28 data-nosnippet>28</a></span>};
 </code></pre></div></section></main></body></html>

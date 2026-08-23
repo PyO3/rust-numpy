@@ -182,7 +182,7 @@
 <a href=#182 id=182 data-nosnippet>182</a><span class="kw">use </span><span class="kw">crate</span>::dtype::Element;
 <a href=#183 id=183 data-nosnippet>183</a><span class="kw">use </span><span class="kw">crate</span>::error::{AsSliceError, BorrowError};
 <a href=#184 id=184 data-nosnippet>184</a><span class="kw">use </span><span class="kw">crate</span>::npyffi;
-<a href=#185 id=185 data-nosnippet>185</a><span class="kw">use </span><span class="kw">crate</span>::npyffi::flags;
+<a href=#185 id=185 data-nosnippet>185</a><span class="kw">use </span><span class="kw">crate</span>::npyffi::{_PyArray_GET_ITEM_DATA, flags};
 <a href=#186 id=186 data-nosnippet>186</a><span class="kw">use </span><span class="kw">crate</span>::untyped_array::PyUntypedArrayMethods;
 <a href=#187 id=187 data-nosnippet>187</a>
 <a href=#188 id=188 data-nosnippet>188</a><span class="kw">use </span>shared::{acquire, acquire_mut, release, release_mut};
@@ -538,7 +538,7 @@
 <a href=#538 id=538 data-nosnippet>538</a>        <span class="comment">// SAFETY: consuming the only extant mutable reference guarantees we cannot invalidate an
 <a href=#539 id=539 data-nosnippet>539</a>        // existing reference, nor allow the caller to keep hold of one.
 <a href=#540 id=540 data-nosnippet>540</a>        </span><span class="kw">unsafe </span>{
-<a href=#541 id=541 data-nosnippet>541</a>            (<span class="kw-2">*</span><span class="self">self</span>.as_array_ptr()).flags &amp;= !flags::NPY_ARRAY_WRITEABLE;
+<a href=#541 id=541 data-nosnippet>541</a>            (<span class="kw-2">*</span>_PyArray_GET_ITEM_DATA(<span class="self">self</span>.as_array_ptr())).flags &amp;= !flags::NPY_ARRAY_WRITEABLE;
 <a href=#542 id=542 data-nosnippet>542</a>        }
 <a href=#543 id=543 data-nosnippet>543</a>        <span class="self">self</span>.into()
 <a href=#544 id=544 data-nosnippet>544</a>    }

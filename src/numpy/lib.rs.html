@@ -181,4 +181,7 @@
 <a href=#181 id=181 data-nosnippet>181</a>        <span class="macro-nonterminal">$crate::IntoPyArray::into_pyarray</span>(<span class="macro-nonterminal">$crate::array</span>![$(<span class="macro-nonterminal">$x</span>,)<span class="kw-2">*</span>], <span class="macro-nonterminal">$py</span>)
 <a href=#182 id=182 data-nosnippet>182</a>    }};
 <a href=#183 id=183 data-nosnippet>183</a>}
+<a href=#184 id=184 data-nosnippet>184</a>
+<a href=#185 id=185 data-nosnippet>185</a><span class="attr">#[cfg(all(not(Py_3_15), Py_GIL_DISABLED, target_pointer_width = <span class="string">"32"</span>))]
+<a href=#186 id=186 data-nosnippet>186</a></span><span class="macro">compile_error!</span>(<span class="string">"free-threaded Python on 32bit platforms is only supported from 3.15+"</span>);
 </code></pre></div></section></main></body></html>
