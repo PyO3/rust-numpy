@@ -58,12 +58,15 @@ pub fn is_numpy_2<'py>(py: Python<'py>) -> bool {
 macro_rules! impl_api {
     // API available on all versions
     [$offset: expr; $fname: ident ($($arg: ident: $t: ty),* $(,)?) $(-> $ret: ty)?] => {
+        impl_api![$offset; pub $fname($($arg : $t), *) $(-> $ret)*];
+    };
+    [$offset: expr; $vis:vis $fname: ident ($($arg: ident: $t: ty),* $(,)?) $(-> $ret: ty)?] => {
         #[allow(non_snake_case)]
-        pub unsafe fn $fname<'py>(&self, py: Python<'py>, $($arg : $t), *) $(-> $ret)* {
+        $vis unsafe fn $fname<'py>(&self, py: Python<'py>, $($arg : $t), *) $(-> $ret)* {
             let f: extern "C" fn ($($arg : $t), *) $(-> $ret)* = self.get(py, $offset).cast().read();
             f($($arg), *)
         }
-    };
+    }
 }
 
 // Define type objects associated with the NumPy API
@@ -80,6 +83,21 @@ macro_rules! impl_array_type {
             }
         }
     }
+}
+
+// Until `extern type` is stabilized, use the recommended approach to
+// model opaque types:
+// https://doc.rust-lang.org/nomicon/ffi.html#representing-opaque-structs
+#[cfg(all(Py_LIMITED_API, Py_GIL_DISABLED))]
+macro_rules! opaque_struct {
+    ($(#[$attrs:meta])* $pub:vis $name:ident) => {
+        $(#[$attrs])*
+        #[repr(C)]
+        $pub struct $name {
+            _data: (),
+            _marker: core::marker::PhantomData<(*mut u8, core::marker::PhantomPinned)>,
+        }
+    };
 }
 
 impl_array_type! {

@@ -181,3 +181,6 @@ macro_rules! pyarray {
         $crate::IntoPyArray::into_pyarray($crate::array![$($x,)*], $py)
     }};
 }
+
+#[cfg(all(not(Py_3_15), Py_GIL_DISABLED, target_pointer_width = "32"))]
+compile_error!("free-threaded Python on 32bit platforms is only supported from 3.15+");

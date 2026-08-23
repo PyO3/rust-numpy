@@ -2,6 +2,8 @@
 
 - Unreleased
   - `PyReadonlyArray`/`PyReadwriteArray` extraction now returns a `PyErr` which reports the actual dtype/dimensionality mismatch instead of nonsensical `CastError` messages like “'ndarray' is not an instance of 'ndarray'” ([#562](https://github.com/PyO3/rust-numpy/pull/562))
+  - Add support for free-threaded stable abi (abi3t) from Python 3.15t+ ([#556](https://github.com/PyO3/rust-numpy/pull/556))
+  - fixed free-threaded builds for 32 bit platforms from Python 3.15+ ([#556](https://github.com/PyO3/rust-numpy/pull/556))
 
 - v0.29.0
   - Fix PyArray_DTypeMeta definition when Py_LIMITED_API is disabled ([#532](https://github.com/PyO3/rust-numpy/pull/532))

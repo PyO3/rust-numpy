@@ -17,9 +17,9 @@ use pyo3::{
 };
 
 use crate::npyffi::{
-    self, NpyTypes, PyArray_Descr, PyDataType_ALIGNMENT, PyDataType_ELSIZE, PyDataType_FIELDS,
-    PyDataType_FLAGS, PyDataType_NAMES, PyDataType_SUBARRAY, NPY_ALIGNED_STRUCT,
-    NPY_BYTEORDER_CHAR, NPY_ITEM_HASOBJECT, NPY_TYPES, PY_ARRAY_API,
+    self, _PyDataType_GET_ITEM_DATA, NpyTypes, PyArray_Descr, PyDataType_ALIGNMENT,
+    PyDataType_ELSIZE, PyDataType_FIELDS, PyDataType_FLAGS, PyDataType_NAMES, PyDataType_SUBARRAY,
+    NPY_ALIGNED_STRUCT, NPY_BYTEORDER_CHAR, NPY_ITEM_HASOBJECT, NPY_TYPES, PY_ARRAY_API,
 };
 
 pub use num_complex::{Complex32, Complex64};
@@ -159,7 +159,7 @@ pub trait PyArrayDescrMethods<'py>: Sealed {
     /// [enumerated-types]: https://numpy.org/doc/stable/reference/c-api/dtype.html#enumerated-types
     /// [dtype-num]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.num.html
     fn num(&self) -> c_int {
-        unsafe { &*self.as_dtype_ptr() }.type_num
+        unsafe { &*_PyDataType_GET_ITEM_DATA(self.as_dtype_ptr()) }.type_num
     }
 
     /// Returns the element size of this type descriptor.
@@ -184,7 +184,9 @@ pub trait PyArrayDescrMethods<'py>: Sealed {
     ///
     /// [dtype-byteorder]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.byteorder.html
     fn byteorder(&self) -> u8 {
-        unsafe { &*self.as_dtype_ptr() }.byteorder.max(0) as _
+        unsafe { &*_PyDataType_GET_ITEM_DATA(self.as_dtype_ptr()) }
+            .byteorder
+            .max(0) as _
     }
 
     /// Returns a unique ASCII character for each of the 21 different built-in types.
@@ -195,7 +197,9 @@ pub trait PyArrayDescrMethods<'py>: Sealed {
     ///
     /// [dtype-char]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.char.html
     fn char(&self) -> u8 {
-        unsafe { &*self.as_dtype_ptr() }.type_.max(0) as _
+        unsafe { &*_PyDataType_GET_ITEM_DATA(self.as_dtype_ptr()) }
+            .type_
+            .max(0) as _
     }
 
     /// Returns an ASCII character (one of `biufcmMOSUV`) identifying the general kind of data.
@@ -206,7 +210,9 @@ pub trait PyArrayDescrMethods<'py>: Sealed {
     ///
     /// [dtype-kind]: https://numpy.org/doc/stable/reference/generated/numpy.dtype.kind.html
     fn kind(&self) -> u8 {
-        unsafe { &*self.as_dtype_ptr() }.kind.max(0) as _
+        unsafe { &*_PyDataType_GET_ITEM_DATA(self.as_dtype_ptr()) }
+            .kind
+            .max(0) as _
     }
 
     /// Returns bit-flags describing how this type descriptor is to be interpreted.
@@ -330,7 +336,7 @@ impl<'py> PyArrayDescrMethods<'py> for Bound<'py, PyArrayDescr> {
     }
 
     fn typeobj(&self) -> Bound<'py, PyType> {
-        let dtype_type_ptr = unsafe { &*self.as_dtype_ptr() }.typeobj;
+        let dtype_type_ptr = unsafe { &*_PyDataType_GET_ITEM_DATA(self.as_dtype_ptr()) }.typeobj;
         unsafe { PyType::from_borrowed_type_ptr(self.py(), dtype_type_ptr) }
     }
 

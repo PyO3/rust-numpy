@@ -28,7 +28,7 @@ use crate::error::{
     AsSliceError, BorrowError, DimensionalityError, FromVecError, IgnoreError, TypeError,
     DIMENSIONALITY_MISMATCH_ERR, MAX_DIMENSIONALITY_ERR,
 };
-use crate::npyffi::{self, npy_intp, NPY_ORDER, PY_ARRAY_API};
+use crate::npyffi::{self, _PyArray_GET_ITEM_DATA, npy_intp, NPY_ORDER, PY_ARRAY_API};
 use crate::slice_container::PySliceContainer;
 use crate::untyped_array::{PyUntypedArray, PyUntypedArrayMethods};
 
@@ -1481,7 +1481,7 @@ impl<'py, T, D> PyArrayMethods<'py, T, D> for Bound<'py, PyArray<T, D>> {
 
     #[inline(always)]
     fn data(&self) -> *mut T {
-        unsafe { (*self.as_array_ptr()).data.cast() }
+        unsafe { (*_PyArray_GET_ITEM_DATA(self.as_array_ptr())).data.cast() }
     }
 
     #[inline(always)]

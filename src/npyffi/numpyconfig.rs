@@ -5,8 +5,14 @@ use std::ffi::c_uint;
 /// The current target ABI version
 const NPY_ABI_VERSION: c_uint = 0x02000000;
 
-/// The current target API version (v1.15)
-const NPY_API_VERSION: c_uint = 0x0000000c;
+/// The current target API version
+const NPY_API_VERSION: c_uint = if cfg!(all(Py_LIMITED_API, Py_GIL_DISABLED)) {
+    // (v2.5)
+    0x00000016
+} else {
+    // (v1.15)
+    0x0000000c
+};
 
 pub(super) const NPY_2_0_API_VERSION: c_uint = 0x00000012;
 
@@ -15,4 +21,8 @@ pub const NPY_VERSION: c_uint = NPY_ABI_VERSION;
 /// The current version of C API.
 pub const NPY_FEATURE_VERSION: c_uint = NPY_API_VERSION;
 /// The string representation of current version C API.
-pub const NPY_FEATURE_VERSION_STRING: &str = "1.15";
+pub const NPY_FEATURE_VERSION_STRING: &str = if cfg!(all(Py_LIMITED_API, Py_GIL_DISABLED)) {
+    "2.5"
+} else {
+    "1.15"
+};

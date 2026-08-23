@@ -8,7 +8,7 @@ use pyo3::{ffi, pyobject_native_type_named, Bound, PyAny, PyTypeInfo, Python};
 use crate::array::{PyArray, PyArrayMethods};
 use crate::cold;
 use crate::dtype::PyArrayDescr;
-use crate::npyffi;
+use crate::npyffi::{self, _PyArray_GET_ITEM_DATA};
 
 /// A safe, untyped wrapper for NumPy's [`ndarray`] class.
 ///
@@ -197,7 +197,7 @@ pub trait PyUntypedArrayMethods<'py>: Sealed {
     /// [PyArray_NDIM]: https://numpy.org/doc/stable/reference/c-api/array.html#c.PyArray_NDIM
     #[inline]
     fn ndim(&self) -> usize {
-        unsafe { (*self.as_array_ptr()).nd as usize }
+        unsafe { (*_PyArray_GET_ITEM_DATA(self.as_array_ptr().cast_const())).nd as usize }
     }
 
     /// Returns a slice indicating how many bytes to advance when iterating along each axis.
@@ -225,7 +225,7 @@ pub trait PyUntypedArrayMethods<'py>: Sealed {
             cold();
             return &[];
         }
-        let ptr = self.as_array_ptr();
+        let ptr = unsafe { _PyArray_GET_ITEM_DATA(self.as_array_ptr().cast_const()) };
         unsafe {
             let p = (*ptr).strides;
             slice::from_raw_parts(p, n)
@@ -258,7 +258,7 @@ pub trait PyUntypedArrayMethods<'py>: Sealed {
             cold();
             return &[];
         }
-        let ptr = self.as_array_ptr();
+        let ptr = unsafe { _PyArray_GET_ITEM_DATA(self.as_array_ptr().cast_const()) };
         unsafe {
             let p = (*ptr).dimensions as *mut usize;
             slice::from_raw_parts(p, n)
@@ -283,7 +283,7 @@ mod sealed {
 use sealed::Sealed;
 
 fn check_flags(obj: &npyffi::PyArrayObject, flags: i32) -> bool {
-    obj.flags & flags != 0
+    unsafe { (*_PyArray_GET_ITEM_DATA(obj)).flags & flags != 0 }
 }
 
 impl<'py> PyUntypedArrayMethods<'py> for Bound<'py, PyUntypedArray> {
@@ -294,7 +294,8 @@ impl<'py> PyUntypedArrayMethods<'py> for Bound<'py, PyUntypedArray> {
 
     fn dtype(&self) -> Bound<'py, PyArrayDescr> {
         unsafe {
-            let descr_ptr = (*self.as_array_ptr()).descr;
+            let descr_ptr =
+                (*npyffi::_PyArray_GET_ITEM_DATA(self.as_array_ptr().cast_const())).descr;
             Bound::from_borrowed_ptr(self.py(), descr_ptr.cast()).cast_into_unchecked()
         }
     }
