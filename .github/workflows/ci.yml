@@ -33,7 +33,6 @@ jobs:
       matrix:
         python-version:
           [
-            "3.8",
             "3.9",
             "3.10",
             "3.11",
@@ -69,13 +68,9 @@ jobs:
             },
           ]
         include:
-          - python-version: 3.8
-            platform: { os: "macos-15-intel", python-architecture: "x64", rust-target: "x86_64-apple-darwin" }
           - python-version: 3.9
             platform: { os: "macos-15-intel", python-architecture: "x64", rust-target: "x86_64-apple-darwin" }
         exclude:
-          - python-version: 3.8
-            platform: { os: "macOS-latest", python-architecture: "arm64", rust-target: "aarch64-apple-darwin" }
           - python-version: 3.9
             platform: { os: "macOS-latest", python-architecture: "arm64", rust-target: "aarch64-apple-darwin" }
           # no 32 bit windows PyPy
@@ -126,7 +121,7 @@ jobs:
     strategy:
       fail-fast: ${{ !contains(github.event.pull_request.labels.*.name, 'CI-no-fail-fast') }}
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"] # last numpy 1 release for 3.12
+        python-version: ["3.9", "3.10", "3.11", "3.12"] # last numpy 1 release for 3.12
         platform:
           [
             {
@@ -151,13 +146,9 @@ jobs:
             },
           ]
         include:
-          - python-version: 3.8
-            platform: { os: "macos-15-intel", python-architecture: "x64", rust-target: "x86_64-apple-darwin" }
           - python-version: 3.9
             platform: { os: "macos-15-intel", python-architecture: "x64", rust-target: "x86_64-apple-darwin" }
         exclude:
-          - python-version: 3.8
-            platform: { os: "macOS-latest", python-architecture: "arm64", rust-target: "aarch64-apple-darwin" }
           - python-version: 3.9
             platform: { os: "macOS-latest", python-architecture: "arm64", rust-target: "aarch64-apple-darwin" }
     steps:
