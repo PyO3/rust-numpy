@@ -431,9 +431,9 @@
 <a href=#431 id=431 data-nosnippet>431</a>    <span class="kw">pub </span>core_signature: <span class="kw-2">*mut </span>c_char,
 <a href=#432 id=432 data-nosnippet>432</a>    <span class="kw">pub </span>type_resolver: PyUFunc_TypeResolutionFunc,
 <a href=#433 id=433 data-nosnippet>433</a>    <span class="kw">pub </span>reserved2: <span class="kw-2">*mut </span>c_void, <span class="comment">// Was the legacy loop resolver
-<a href=#434 id=434 data-nosnippet>434</a>    </span><span class="attr">#[cfg(all(Py_3_8, not(Py_LIMITED_API)))]
+<a href=#434 id=434 data-nosnippet>434</a>    </span><span class="attr">#[cfg(not(Py_LIMITED_API))]
 <a href=#435 id=435 data-nosnippet>435</a>    </span><span class="kw">pub </span>vectorcall: <span class="prelude-ty">Option</span>&lt;vectorcallfunc&gt;,
-<a href=#436 id=436 data-nosnippet>436</a>    <span class="attr">#[cfg(not(all(Py_3_8, not(Py_LIMITED_API))))]
+<a href=#436 id=436 data-nosnippet>436</a>    <span class="attr">#[cfg(Py_LIMITED_API)]
 <a href=#437 id=437 data-nosnippet>437</a>    </span><span class="kw">pub </span>vectorcall: <span class="kw-2">*mut </span>c_void,
 <a href=#438 id=438 data-nosnippet>438</a>    <span class="kw">pub </span>reserved3: <span class="kw-2">*mut </span>c_void, <span class="comment">// Was previously the `PyUFunc_MaskedInnerLoopSelectionFunc`
 <a href=#439 id=439 data-nosnippet>439</a>    </span><span class="kw">pub </span>op_flags: <span class="kw-2">*mut </span>npy_uint32,
