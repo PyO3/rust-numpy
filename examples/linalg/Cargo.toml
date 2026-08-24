@@ -2,15 +2,13 @@
 name = "rust-linalg"
 version = "0.1.0"
 authors = ["Yuji Kanagawa <yuji.kngw.80s.revive@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 [lib]
-name = "rust_linalg"
 crate-type = ["cdylib"]
+name = "rust_linalg"
 
 [dependencies]
-pyo3 = { version = "0.29.0" }
+ndarray-linalg = { version = "0.18.1", features = ["openblas-system"] }
 numpy = { path = "../.." }
-ndarray-linalg = { version = "0.14.1", features = ["openblas-system"] }
-
-[workspace]
+pyo3 = { version = "0.29.0" }
