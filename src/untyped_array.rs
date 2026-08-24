@@ -112,7 +112,7 @@ pub trait PyUntypedArrayMethods<'py>: Sealed {
     ///
     /// ```
     /// use numpy::{PyArray1, PyUntypedArrayMethods};
-    /// use pyo3::{types::{IntoPyDict, PyAnyMethods}, Python, ffi::c_str};
+    /// use pyo3::{types::{IntoPyDict, PyAnyMethods}, Python};
     ///
     /// # fn main() -> pyo3::PyResult<()> {
     /// Python::attach(|py| {
@@ -121,7 +121,7 @@ pub trait PyUntypedArrayMethods<'py>: Sealed {
     ///
     ///     let view = py
     ///         .eval(
-    ///             c_str!("array.view('u1')[1:-1].view('u2')"),
+    ///             c"array.view('u1')[1:-1].view('u2')",
     ///             None,
     ///             Some(&[("array", array)].into_py_dict(py)?),
     ///         )?
@@ -142,7 +142,7 @@ pub trait PyUntypedArrayMethods<'py>: Sealed {
     ///
     /// ```
     /// use numpy::{PyArray1, PyUntypedArrayMethods};
-    /// use pyo3::{types::{IntoPyDict, PyAnyMethods}, Python, ffi::c_str};
+    /// use pyo3::{types::{IntoPyDict, PyAnyMethods}, Python};
     ///
     /// # fn main() -> pyo3::PyResult<()> {
     /// Python::attach(|py| {
@@ -150,7 +150,7 @@ pub trait PyUntypedArrayMethods<'py>: Sealed {
     ///     assert!(array.is_contiguous());
     ///
     ///     let view = py
-    ///         .eval(c_str!("array[::2]"), None, Some(&[("array", array)].into_py_dict(py)?))?
+    ///         .eval(c"array[::2]", None, Some(&[("array", array)].into_py_dict(py)?))?
     ///         .cast_into::<PyArray1<i32>>()?;
     ///     assert!(!view.is_contiguous());
     /// #   Ok(())

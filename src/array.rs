@@ -953,12 +953,12 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> + Sized {
     ///
     /// ```
     /// use numpy::{PyArray2, PyArrayMethods};
-    /// use pyo3::{Python, types::PyAnyMethods, ffi::c_str};
+    /// use pyo3::{Python, types::PyAnyMethods};
     ///
     /// # fn main() -> pyo3::PyResult<()> {
     /// Python::attach(|py| {
     ///     let pyarray= py
-    ///         .eval(c_str!("__import__('numpy').array([[0, 1], [2, 3]], dtype='int64')"), None, None)?
+    ///         .eval(c"__import__('numpy').array([[0, 1], [2, 3]], dtype='int64')", None, None)?
     ///         .cast_into::<PyArray2<i64>>()?;
     ///
     ///     assert_eq!(pyarray.to_vec()?, vec![0, 1, 2, 3]);

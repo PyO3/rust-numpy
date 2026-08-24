@@ -3,7 +3,6 @@ use std::hint::black_box;
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use numpy::{PyArrayLike1, PyArrayLike2, PyArrayLike3};
 use pyo3::{
-    ffi::c_str,
     types::{PyAnyMethods, PyDict},
     Python,
 };
@@ -18,11 +17,7 @@ fn extract_array_like_1(c: &mut Criterion) {
             locals.set_item("size", size).unwrap();
 
             let list = py
-                .eval(
-                    c_str!("[float(i) for i in range(size)]"),
-                    Some(&locals),
-                    None,
-                )
+                .eval(c"[float(i) for i in range(size)]", Some(&locals), None)
                 .unwrap();
 
             group.throughput(Throughput::Elements(size as u64));
@@ -48,7 +43,7 @@ fn extract_array_like_2(c: &mut Criterion) {
 
             let list = py
                 .eval(
-                    c_str!("[[float(i + j) for i in range(size)] for j in range(size)]"),
+                    c"[[float(i + j) for i in range(size)] for j in range(size)]",
                     Some(&locals),
                     None,
                 )
@@ -77,7 +72,7 @@ fn extract_array_like_3(c: &mut Criterion) {
 
             let list = py
                 .eval(
-                    c_str!("[[[float(i + j + k) for i in range(size)] for j in range(size)] for k in range(size)]"),
+                    c"[[[float(i + j + k) for i in range(size)] for j in range(size)] for k in range(size)]",
                     Some(&locals),
                     None,
                 )

@@ -11,18 +11,18 @@
 //!
 //! ```
 //! use numpy::{datetime::{units, Datetime, Timedelta}, PyArray1, PyArrayMethods};
-//! use pyo3::{Python, types::PyAnyMethods, ffi::c_str};
+//! use pyo3::{Python, types::PyAnyMethods};
 //! # use pyo3::types::PyDict;
 //!
 //! # fn main() -> pyo3::PyResult<()> {
 //! Python::attach(|py| {
 //! #    let locals = py
-//! #        .eval(c_str!("{ 'np': __import__('numpy') }"), None, None)?
+//! #        .eval(c"{ 'np': __import__('numpy') }", None, None)?
 //! #        .cast_into::<PyDict>()?;
 //! #
 //!     let array = py
 //!         .eval(
-//!             c_str!("np.array([np.datetime64('2017-04-21')])"),
+//!             c"np.array([np.datetime64('2017-04-21')])",
 //!             None,
 //!             Some(&locals),
 //!         )?
@@ -35,7 +35,7 @@
 //!
 //!     let array = py
 //!         .eval(
-//!             c_str!("np.array([np.datetime64('2022-03-29')]) - np.array([np.datetime64('2017-04-21')])"),
+//!             c"np.array([np.datetime64('2022-03-29')]) - np.array([np.datetime64('2017-04-21')])",
 //!             None,
 //!             Some(&locals),
 //!         )?
@@ -256,7 +256,6 @@ mod tests {
     use super::*;
 
     use pyo3::{
-        ffi::c_str,
         py_run,
         types::{PyDict, PyModule},
     };
@@ -267,14 +266,14 @@ mod tests {
     fn from_python_to_rust() {
         Python::attach(|py| {
             let locals = py
-                .eval(c_str!("{ 'np': __import__('numpy') }"), None, None)
+                .eval(c"{ 'np': __import__('numpy') }", None, None)
                 .unwrap()
                 .cast_into::<PyDict>()
                 .unwrap();
 
             let array = py
                 .eval(
-                    c_str!("np.array([np.datetime64('1970-01-01')])"),
+                    c"np.array([np.datetime64('1970-01-01')])",
                     None,
                     Some(&locals),
                 )
@@ -295,7 +294,7 @@ mod tests {
             *array.readwrite().get_mut(0).unwrap() = Timedelta::<units::Minutes>::from(5);
 
             let np = py
-                .eval(c_str!("__import__('numpy')"), None, None)
+                .eval(c"__import__('numpy')", None, None)
                 .unwrap()
                 .cast_into::<PyModule>()
                 .unwrap();

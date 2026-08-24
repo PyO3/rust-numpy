@@ -30,14 +30,14 @@ pub use num_complex::{Complex32, Complex64};
 ///
 /// ```
 /// use numpy::{dtype, get_array_module, PyArrayDescr, PyArrayDescrMethods};
-/// use numpy::pyo3::{types::{IntoPyDict, PyAnyMethods}, Python, ffi::c_str};
+/// use numpy::pyo3::{types::{IntoPyDict, PyAnyMethods}, Python};
 ///
 /// # fn main() -> pyo3::PyResult<()> {
 /// Python::attach(|py| {
 ///     let locals = [("np", get_array_module(py)?)].into_py_dict(py)?;
 ///
 ///     let dt = py
-///         .eval(c_str!("np.array([1, 2, 3.0]).dtype"), Some(&locals), None)?
+///         .eval(c"np.array([1, 2, 3.0]).dtype", Some(&locals), None)?
 ///         .cast_into::<PyArrayDescr>()?;
 ///
 ///     assert!(dt.is_equiv_to(&dtype::<f64>(py)));

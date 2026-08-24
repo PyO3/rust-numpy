@@ -6,7 +6,6 @@ use std::slice::from_raw_parts;
 use std::sync::Mutex;
 
 use num_integer::gcd;
-use pyo3::ffi::c_str;
 use pyo3::sync::PyOnceLock;
 use pyo3::types::{PyAnyMethods, PyCapsuleMethods};
 use pyo3::{exceptions::PyTypeError, types::PyCapsule, PyResult, Python};
@@ -154,7 +153,7 @@ fn insert_shared<'py>(py: Python<'py>) -> PyResult<NonNull<Shared>> {
     // SAFETY: All versions of the shared borrow checking API start with a version field.
     let version = unsafe {
         *capsule
-            .pointer_checked(Some(c_str!("_RUST_NUMPY_BORROW_CHECKING_API")))?
+            .pointer_checked(Some(c"_RUST_NUMPY_BORROW_CHECKING_API"))?
             .cast::<u64>()
             .as_ptr() // FIXME(icxolu): use read on MSRV 1.80
     };
@@ -164,7 +163,7 @@ fn insert_shared<'py>(py: Python<'py>) -> PyResult<NonNull<Shared>> {
         )));
     }
 
-    let ptr = capsule.pointer_checked(Some(c_str!("_RUST_NUMPY_BORROW_CHECKING_API")))?;
+    let ptr = capsule.pointer_checked(Some(c"_RUST_NUMPY_BORROW_CHECKING_API"))?;
 
     // Intentionally leak a reference to the capsule
     // so we can safely cache a pointer into its interior.
@@ -455,7 +454,6 @@ mod tests {
     use crate::array::{PyArray, PyArray1, PyArray2, PyArray3, PyArrayMethods};
     use crate::convert::IntoPyArray;
     use crate::untyped_array::PyUntypedArrayMethods;
-    use pyo3::ffi::c_str;
 
     struct BorrowFlagsState {
         #[cfg(not(Py_GIL_DISABLED))]
@@ -535,7 +533,7 @@ mod tests {
 
             let locals = [("array", &array)].into_py_dict(py).unwrap();
             let view = py
-                .eval(c_str!("array[:,:,0]"), None, Some(&locals))
+                .eval(c"array[:,:,0]", None, Some(&locals))
                 .unwrap()
                 .cast_into::<PyArray2<f64>>()
                 .unwrap();
@@ -564,7 +562,7 @@ mod tests {
 
             let locals = [("array", &array)].into_py_dict(py).unwrap();
             let view = py
-                .eval(c_str!("array[:,:,0]"), None, Some(&locals))
+                .eval(c"array[:,:,0]", None, Some(&locals))
                 .unwrap()
                 .cast_into::<PyArray2<f64>>()
                 .unwrap();
@@ -599,7 +597,7 @@ mod tests {
 
             let locals = [("array", &array)].into_py_dict(py).unwrap();
             let view1 = py
-                .eval(c_str!("array[:,:,0]"), None, Some(&locals))
+                .eval(c"array[:,:,0]", None, Some(&locals))
                 .unwrap()
                 .cast_into::<PyArray2<f64>>()
                 .unwrap();
@@ -610,7 +608,7 @@ mod tests {
 
             let locals = [("view1", &view1)].into_py_dict(py).unwrap();
             let view2 = py
-                .eval(c_str!("view1[:,0]"), None, Some(&locals))
+                .eval(c"view1[:,0]", None, Some(&locals))
                 .unwrap()
                 .cast_into::<PyArray1<f64>>()
                 .unwrap();
@@ -647,7 +645,7 @@ mod tests {
 
             let locals = [("array", &array)].into_py_dict(py).unwrap();
             let view1 = py
-                .eval(c_str!("array[:,:,0]"), None, Some(&locals))
+                .eval(c"array[:,:,0]", None, Some(&locals))
                 .unwrap()
                 .cast_into::<PyArray2<f64>>()
                 .unwrap();
@@ -658,7 +656,7 @@ mod tests {
 
             let locals = [("view1", &view1)].into_py_dict(py).unwrap();
             let view2 = py
-                .eval(c_str!("view1[:,0]"), None, Some(&locals))
+                .eval(c"view1[:,0]", None, Some(&locals))
                 .unwrap()
                 .cast_into::<PyArray1<f64>>()
                 .unwrap();
@@ -701,7 +699,7 @@ mod tests {
 
             let locals = [("array", &array)].into_py_dict(py).unwrap();
             let view = py
-                .eval(c_str!("array[::-1,:,::-1]"), None, Some(&locals))
+                .eval(c"array[::-1,:,::-1]", None, Some(&locals))
                 .unwrap()
                 .cast_into::<PyArray3<f64>>()
                 .unwrap();
@@ -750,7 +748,7 @@ mod tests {
             let locals = [("array", array)].into_py_dict(py).unwrap();
 
             let view1 = py
-                .eval(c_str!("array[:,::3]"), None, Some(&locals))
+                .eval(c"array[:,::3]", None, Some(&locals))
                 .unwrap()
                 .cast_into::<PyArray2<f64>>()
                 .unwrap();
@@ -761,7 +759,7 @@ mod tests {
             assert_eq!(key1.gcd_strides, 8);
 
             let view2 = py
-                .eval(c_str!("array[:,1::3]"), None, Some(&locals))
+                .eval(c"array[:,1::3]", None, Some(&locals))
                 .unwrap()
                 .cast_into::<PyArray2<f64>>()
                 .unwrap();
@@ -772,7 +770,7 @@ mod tests {
             assert_eq!(key2.gcd_strides, 8);
 
             let view3 = py
-                .eval(c_str!("array[:,::2]"), None, Some(&locals))
+                .eval(c"array[:,::2]", None, Some(&locals))
                 .unwrap()
                 .cast_into::<PyArray2<f64>>()
                 .unwrap();
@@ -783,7 +781,7 @@ mod tests {
             assert_eq!(key3.gcd_strides, 16);
 
             let view4 = py
-                .eval(c_str!("array[:,1::2]"), None, Some(&locals))
+                .eval(c"array[:,1::2]", None, Some(&locals))
                 .unwrap()
                 .cast_into::<PyArray2<f64>>()
                 .unwrap();
@@ -852,7 +850,7 @@ mod tests {
             let locals = [("array", array)].into_py_dict(py).unwrap();
 
             let view1 = py
-                .eval(c_str!("array[:5]"), None, Some(&locals))
+                .eval(c"array[:5]", None, Some(&locals))
                 .unwrap()
                 .cast_into::<PyArray1<f64>>()
                 .unwrap();
@@ -871,7 +869,7 @@ mod tests {
             }
 
             let view2 = py
-                .eval(c_str!("array[5:]"), None, Some(&locals))
+                .eval(c"array[5:]", None, Some(&locals))
                 .unwrap()
                 .cast_into::<PyArray1<f64>>()
                 .unwrap();
@@ -892,7 +890,7 @@ mod tests {
             }
 
             let view3 = py
-                .eval(c_str!("array[5:]"), None, Some(&locals))
+                .eval(c"array[5:]", None, Some(&locals))
                 .unwrap()
                 .cast_into::<PyArray1<f64>>()
                 .unwrap();
@@ -916,7 +914,7 @@ mod tests {
             }
 
             let view4 = py
-                .eval(c_str!("array[7:]"), None, Some(&locals))
+                .eval(c"array[7:]", None, Some(&locals))
                 .unwrap()
                 .cast_into::<PyArray1<f64>>()
                 .unwrap();

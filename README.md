@@ -85,7 +85,7 @@ mod rust_ext {
 
 ### Execute a Python program from Rust and get results
 
-``` toml
+```toml
 [package]
 name = "numpy-test"
 
@@ -96,7 +96,7 @@ numpy = "0.29"
 
 ```rust
 use numpy::{PyArray1, PyArrayMethods};
-use pyo3::{types::{IntoPyDict, PyAnyMethods}, PyResult, Python, ffi::c_str};
+use pyo3::{types::{IntoPyDict, PyAnyMethods}, PyResult, Python};
 
 fn main() -> PyResult<()> {
     Python::attach(|py| {
@@ -104,7 +104,7 @@ fn main() -> PyResult<()> {
         let locals = [("np", np)].into_py_dict(py)?;
 
         let pyarray = py
-            .eval(c_str!("np.absolute(np.array([-1, -2, -3], dtype='int32'))"), Some(&locals), None)?
+            .eval(c"np.absolute(np.array([-1, -2, -3], dtype='int32'))", Some(&locals), None)?
             .cast_into::<PyArray1<i32>>()?;
 
         let readonly = pyarray.readonly();
