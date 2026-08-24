@@ -2,17 +2,15 @@
 name = "rust-parallel"
 version = "0.1.0"
 authors = ["Yuji Kanagawa <yuji.kngw.80s.revive@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 [lib]
-name = "rust_parallel"
 crate-type = ["cdylib"]
+name = "rust_parallel"
 
 [dependencies]
-pyo3 = { version = "0.29.0", features = ["multiple-pymethods"] }
+blas-src = { version = "0.14", features = ["openblas"] }
+ndarray = { version = "0.17", features = ["blas", "rayon"] }
 numpy = { path = "../.." }
-ndarray = { version = "0.17", features = ["rayon", "blas"] }
-blas-src = { version = "0.8", features = ["openblas"] }
 openblas-src = { version = "0.10", features = ["cblas", "system"] }
-
-[workspace]
+pyo3 = { version = "0.29.0", features = ["multiple-pymethods"] }
