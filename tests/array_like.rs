@@ -1,5 +1,8 @@
 use ndarray::array;
-use numpy::{get_array_module, AllowTypeChange, PyArrayLike1, PyArrayLike2, PyArrayLikeDyn};
+use numpy::{
+    get_array_module, AllowTypeChange, PyArrayLike1, PyArrayLike2, PyArrayLikeDyn,
+    PyUntypedArrayMethods as _,
+};
 use pyo3::{
     ffi::c_str,
     types::{IntoPyDict, PyAnyMethods, PyDict},
@@ -113,6 +116,25 @@ fn convert_1d_list_on_extract() {
             extracted_array_dyn.as_array()
         );
     });
+}
+
+#[test]
+fn preserve_trailing_singleton_dims() {
+    Python::attach(|py| {
+        let locals = get_np_locals(py);
+        let py_array = py
+            .eval(
+                c_str!("np.array([[1], [2], [3]], dtype='int32')"),
+                Some(&locals),
+                None,
+            )
+            .unwrap();
+        let extracted_array = py_array
+            .extract::<PyArrayLikeDyn<'_, f64, AllowTypeChange>>()
+            .unwrap();
+
+        assert_eq!(extracted_array.shape(), &[3, 1]);
+    })
 }
 
 #[test]

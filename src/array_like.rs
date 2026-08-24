@@ -87,7 +87,7 @@ impl Coerce for AllowTypeChange {
 ///     let np = get_array_module(py).unwrap();
 ///     let sum_up = wrap_pyfunction!(sum_up)(py).unwrap();
 ///
-///     py_run!(py, np sum_up, r"assert sum_up((1., 2., 3.)) == 6");
+///     py_run!(py, np sum_up, r"assert sum_up(np.array([1., 2., 3.])) == 6");
 /// });
 /// ```
 ///
@@ -107,6 +107,7 @@ impl Coerce for AllowTypeChange {
 ///     let np = get_array_module(py).unwrap();
 ///     let sum_up = wrap_pyfunction!(sum_up)(py).unwrap();
 ///
+///     py_run!(py, np sum_up, r"assert sum_up(np.array([1.5, 2.5])) == 3");
 ///     py_run!(py, np sum_up, r"assert sum_up((1.5, 2.5)) == 3");
 /// });
 /// ```
@@ -150,7 +151,7 @@ where
         // If the input is already an ndarray and `TypeMustMatch` is used then no type conversion
         // should be performed.
         if (C::ALLOW_TYPE_CHANGE || ob.cast::<PyUntypedArray>().is_err())
-            && matches!(D::NDIM, None | Some(1))
+            && matches!(D::NDIM, Some(1))
         {
             if let Ok(vec) = ob.extract::<Vec<T>>() {
                 let array = Array1::from(vec)
@@ -162,7 +163,7 @@ where
             }
         }
 
-        let (dtype, flags) = if C::ALLOW_TYPE_CHANGE {
+        let (dtype, flags) = if C::ALLOW_TYPE_CHANGE || ob.cast::<PyUntypedArray>().is_err() {
             (Some(T::get_dtype(py)), NPY_ARRAY_FORCECAST)
         } else {
             (None, 0)
