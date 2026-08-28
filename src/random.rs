@@ -140,7 +140,7 @@ pub trait PyBitGeneratorMethods: Sealed {
 
 thread_local! {
     /// Addresses of the `bitgen_t`s currently locked on this thread.
-    /// `BitGenerator.lock` is a reentrant `RLock` preventing cross-thread use,
+    /// `BitGenerator.lock` is (since numpy 2.4) a reentrant `RLock` preventing cross-thread use,
     /// and this helps rejecting same thread re-locking.
     static LOCKED: RefCell<HashSet<usize>> = RefCell::new(HashSet::new());
 }
