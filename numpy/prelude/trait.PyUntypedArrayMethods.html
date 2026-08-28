@@ -32,7 +32,7 @@ which is a weaker condition than Rust’s slice guarantees.  <a href="../array/t
 safely handle the case of a misaligned zero-length array.</p>
 <h5 id="example-1"><a class="doc-anchor" href="#example-1">§</a>Example</h5>
 <div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>numpy::{PyArray1, PyUntypedArrayMethods};
-<span class="kw">use </span>pyo3::{types::{IntoPyDict, PyAnyMethods}, Python, ffi::c_str};
+<span class="kw">use </span>pyo3::{types::{IntoPyDict, PyAnyMethods}, Python};
 
 Python::attach(|py| {
     <span class="kw">let </span>array = PyArray1::&lt;u16&gt;::zeros(py, <span class="number">8</span>, <span class="bool-val">false</span>);
@@ -40,7 +40,7 @@ Python::attach(|py| {
 
     <span class="kw">let </span>view = py
         .eval(
-            <span class="macro">c_str!</span>(<span class="string">"array.view('u1')[1:-1].view('u2')"</span>),
+            <span class="string">c"array.view('u1')[1:-1].view('u2')"</span>,
             <span class="prelude-val">None</span>,
             <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>[(<span class="string">"array"</span>, array)].into_py_dict(py)<span class="question-mark">?</span>),
         )<span class="question-mark">?
@@ -50,14 +50,14 @@ Python::attach(|py| {
 independently of whether C-style/row-major or Fortran-style/column-major.</p>
 <h5 id="example-2"><a class="doc-anchor" href="#example-2">§</a>Example</h5>
 <div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>numpy::{PyArray1, PyUntypedArrayMethods};
-<span class="kw">use </span>pyo3::{types::{IntoPyDict, PyAnyMethods}, Python, ffi::c_str};
+<span class="kw">use </span>pyo3::{types::{IntoPyDict, PyAnyMethods}, Python};
 
 Python::attach(|py| {
     <span class="kw">let </span>array = PyArray1::arange(py, <span class="number">0</span>, <span class="number">10</span>, <span class="number">1</span>);
     <span class="macro">assert!</span>(array.is_contiguous());
 
     <span class="kw">let </span>view = py
-        .eval(<span class="macro">c_str!</span>(<span class="string">"array[::2]"</span>), <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>[(<span class="string">"array"</span>, array)].into_py_dict(py)<span class="question-mark">?</span>))<span class="question-mark">?
+        .eval(<span class="string">c"array[::2]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>[(<span class="string">"array"</span>, array)].into_py_dict(py)<span class="question-mark">?</span>))<span class="question-mark">?
         </span>.cast_into::&lt;PyArray1&lt;i32&gt;&gt;()<span class="question-mark">?</span>;
     <span class="macro">assert!</span>(!view.is_contiguous());
 })</code></pre></div></div></details><details class="toggle method-toggle" open><summary><section id="method.is_fortran_contiguous" class="method"><a class="src rightside" href="../../src/numpy/untyped_array.rs.html#170-172">Source</a><h4 class="code-header">fn <a href="#method.is_fortran_contiguous" class="fn">is_fortran_contiguous</a>(&amp;self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/1.98.0/std/primitive.bool.html">bool</a></h4></section></summary><div class="docblock"><p>Returns <code>true</code> if the internal data of the array is Fortran-style/column-major contiguous.</p>

@@ -63,17 +63,17 @@
 <a href=#63 id=63 data-nosnippet>63</a>//!
 <a href=#64 id=64 data-nosnippet>64</a>//! ```rust
 <a href=#65 id=65 data-nosnippet>65</a>//! use numpy::{PyArray1, PyArrayMethods};
-<a href=#66 id=66 data-nosnippet>66</a>//! use pyo3::{types::{IntoPyDict, PyAnyMethods}, Python, ffi::c_str};
+<a href=#66 id=66 data-nosnippet>66</a>//! use pyo3::{types::{IntoPyDict, PyAnyMethods}, Python};
 <a href=#67 id=67 data-nosnippet>67</a>//!
 <a href=#68 id=68 data-nosnippet>68</a>//! # fn main() -&gt; pyo3::PyResult&lt;()&gt; {
 <a href=#69 id=69 data-nosnippet>69</a>//! Python::attach(|py| {
 <a href=#70 id=70 data-nosnippet>70</a>//!     let array = PyArray1::arange(py, 0.0, 10.0, 1.0);
 <a href=#71 id=71 data-nosnippet>71</a>//!     let locals = [("array", array)].into_py_dict(py)?;
 <a href=#72 id=72 data-nosnippet>72</a>//!
-<a href=#73 id=73 data-nosnippet>73</a>//!     let view1 = py.eval(c_str!("array[:5]"), None, Some(&amp;locals))?.cast_into::&lt;PyArray1&lt;f64&gt;&gt;()?;
-<a href=#74 id=74 data-nosnippet>74</a>//!     let view2 = py.eval(c_str!("array[5:]"), None, Some(&amp;locals))?.cast_into::&lt;PyArray1&lt;f64&gt;&gt;()?;
-<a href=#75 id=75 data-nosnippet>75</a>//!     let view3 = py.eval(c_str!("array[::2]"), None, Some(&amp;locals))?.cast_into::&lt;PyArray1&lt;f64&gt;&gt;()?;
-<a href=#76 id=76 data-nosnippet>76</a>//!     let view4 = py.eval(c_str!("array[1::2]"), None, Some(&amp;locals))?.cast_into::&lt;PyArray1&lt;f64&gt;&gt;()?;
+<a href=#73 id=73 data-nosnippet>73</a>//!     let view1 = py.eval(c"array[:5]", None, Some(&amp;locals))?.cast_into::&lt;PyArray1&lt;f64&gt;&gt;()?;
+<a href=#74 id=74 data-nosnippet>74</a>//!     let view2 = py.eval(c"array[5:]", None, Some(&amp;locals))?.cast_into::&lt;PyArray1&lt;f64&gt;&gt;()?;
+<a href=#75 id=75 data-nosnippet>75</a>//!     let view3 = py.eval(c"array[::2]", None, Some(&amp;locals))?.cast_into::&lt;PyArray1&lt;f64&gt;&gt;()?;
+<a href=#76 id=76 data-nosnippet>76</a>//!     let view4 = py.eval(c"array[1::2]", None, Some(&amp;locals))?.cast_into::&lt;PyArray1&lt;f64&gt;&gt;()?;
 <a href=#77 id=77 data-nosnippet>77</a>//!
 <a href=#78 id=78 data-nosnippet>78</a>//!     {
 <a href=#79 id=79 data-nosnippet>79</a>//!         let _view1 = view1.readwrite();
@@ -95,15 +95,15 @@
 <a href=#95 id=95 data-nosnippet>95</a>//! # use std::panic::{catch_unwind, AssertUnwindSafe};
 <a href=#96 id=96 data-nosnippet>96</a>//! #
 <a href=#97 id=97 data-nosnippet>97</a>//! use numpy::{PyArray2, PyArrayMethods};
-<a href=#98 id=98 data-nosnippet>98</a>//! use pyo3::{types::{IntoPyDict, PyAnyMethods}, Python, ffi::c_str};
+<a href=#98 id=98 data-nosnippet>98</a>//! use pyo3::{types::{IntoPyDict, PyAnyMethods}, Python};
 <a href=#99 id=99 data-nosnippet>99</a>//!
 <a href=#100 id=100 data-nosnippet>100</a>//! # fn main() -&gt; pyo3::PyResult&lt;()&gt; {
 <a href=#101 id=101 data-nosnippet>101</a>//! Python::attach(|py| {
 <a href=#102 id=102 data-nosnippet>102</a>//!     let array = PyArray2::&lt;f64&gt;::zeros(py, (10, 10), false);
 <a href=#103 id=103 data-nosnippet>103</a>//!     let locals = [("array", array)].into_py_dict(py)?;
 <a href=#104 id=104 data-nosnippet>104</a>//!
-<a href=#105 id=105 data-nosnippet>105</a>//!     let view1 = py.eval(c_str!("array[:, ::3]"), None, Some(&amp;locals))?.cast_into::&lt;PyArray2&lt;f64&gt;&gt;()?;
-<a href=#106 id=106 data-nosnippet>106</a>//!     let view2 = py.eval(c_str!("array[:, 1::3]"), None, Some(&amp;locals))?.cast_into::&lt;PyArray2&lt;f64&gt;&gt;()?;
+<a href=#105 id=105 data-nosnippet>105</a>//!     let view1 = py.eval(c"array[:, ::3]", None, Some(&amp;locals))?.cast_into::&lt;PyArray2&lt;f64&gt;&gt;()?;
+<a href=#106 id=106 data-nosnippet>106</a>//!     let view2 = py.eval(c"array[:, 1::3]", None, Some(&amp;locals))?.cast_into::&lt;PyArray2&lt;f64&gt;&gt;()?;
 <a href=#107 id=107 data-nosnippet>107</a>//!
 <a href=#108 id=108 data-nosnippet>108</a>//!     // A false conflict as the views do not actually share any elements.
 <a href=#109 id=109 data-nosnippet>109</a>//!     let res = catch_unwind(AssertUnwindSafe(|| {
@@ -300,7 +300,7 @@
 <a href=#300 id=300 data-nosnippet>300</a>    ///
 <a href=#301 id=301 data-nosnippet>301</a>    /// ```rust
 <a href=#302 id=302 data-nosnippet>302</a>    /// # use pyo3::prelude::*;
-<a href=#303 id=303 data-nosnippet>303</a>    /// use pyo3::{py_run, ffi::c_str};
+<a href=#303 id=303 data-nosnippet>303</a>    /// use pyo3::py_run;
 <a href=#304 id=304 data-nosnippet>304</a>    /// use numpy::{get_array_module, PyReadonlyArray2};
 <a href=#305 id=305 data-nosnippet>305</a>    /// use nalgebra::{MatrixView, Const, Dyn};
 <a href=#306 id=306 data-nosnippet>306</a>    ///
@@ -318,7 +318,7 @@
 <a href=#318 id=318 data-nosnippet>318</a>    ///
 <a href=#319 id=319 data-nosnippet>319</a>    /// # fn main() -&gt; pyo3::PyResult&lt;()&gt; {
 <a href=#320 id=320 data-nosnippet>320</a>    /// Python::attach(|py| {
-<a href=#321 id=321 data-nosnippet>321</a>    ///     let np = py.eval(c_str!("__import__('numpy')"), None, None)?;
+<a href=#321 id=321 data-nosnippet>321</a>    ///     let np = py.eval(c"__import__('numpy')", None, None)?;
 <a href=#322 id=322 data-nosnippet>322</a>    ///     let sum_standard_layout = wrap_pyfunction!(sum_standard_layout)(py)?;
 <a href=#323 id=323 data-nosnippet>323</a>    ///     let sum_dynamic_strides = wrap_pyfunction!(sum_dynamic_strides)(py)?;
 <a href=#324 id=324 data-nosnippet>324</a>    ///
@@ -682,102 +682,101 @@
 <a href=#682 id=682 data-nosnippet>682</a>    };
 <a href=#683 id=683 data-nosnippet>683</a>
 <a href=#684 id=684 data-nosnippet>684</a>    <span class="kw">use </span><span class="kw">crate</span>::array::PyArray1;
-<a href=#685 id=685 data-nosnippet>685</a>    <span class="kw">use </span>pyo3::ffi::c_str;
-<a href=#686 id=686 data-nosnippet>686</a>
-<a href=#687 id=687 data-nosnippet>687</a>    <span class="attr">#[test]
-<a href=#688 id=688 data-nosnippet>688</a>    </span><span class="kw">fn </span>test_debug_formatting() {
-<a href=#689 id=689 data-nosnippet>689</a>        Python::attach(|py| {
-<a href=#690 id=690 data-nosnippet>690</a>            <span class="kw">let </span>array = PyArray::&lt;f64, <span class="kw">_</span>&gt;::zeros(py, (<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>), <span class="bool-val">false</span>);
-<a href=#691 id=691 data-nosnippet>691</a>
-<a href=#692 id=692 data-nosnippet>692</a>            {
-<a href=#693 id=693 data-nosnippet>693</a>                <span class="kw">let </span>shared = array.readonly();
-<a href=#694 id=694 data-nosnippet>694</a>
-<a href=#695 id=695 data-nosnippet>695</a>                <span class="macro">assert_eq!</span>(
-<a href=#696 id=696 data-nosnippet>696</a>                    <span class="macro">format!</span>(<span class="string">"{shared:?}"</span>),
-<a href=#697 id=697 data-nosnippet>697</a>                    <span class="string">"PyReadonlyArray&lt;f64, ndarray::dimension::dim::Dim&lt;[usize; 3]&gt;&gt;"
-<a href=#698 id=698 data-nosnippet>698</a>                </span>);
-<a href=#699 id=699 data-nosnippet>699</a>            }
-<a href=#700 id=700 data-nosnippet>700</a>
-<a href=#701 id=701 data-nosnippet>701</a>            {
-<a href=#702 id=702 data-nosnippet>702</a>                <span class="kw">let </span>exclusive = array.readwrite();
-<a href=#703 id=703 data-nosnippet>703</a>
-<a href=#704 id=704 data-nosnippet>704</a>                <span class="macro">assert_eq!</span>(
-<a href=#705 id=705 data-nosnippet>705</a>                    <span class="macro">format!</span>(<span class="string">"{exclusive:?}"</span>),
-<a href=#706 id=706 data-nosnippet>706</a>                    <span class="string">"PyReadwriteArray&lt;f64, ndarray::dimension::dim::Dim&lt;[usize; 3]&gt;&gt;"
-<a href=#707 id=707 data-nosnippet>707</a>                </span>);
-<a href=#708 id=708 data-nosnippet>708</a>            }
-<a href=#709 id=709 data-nosnippet>709</a>        });
-<a href=#710 id=710 data-nosnippet>710</a>    }
-<a href=#711 id=711 data-nosnippet>711</a>
-<a href=#712 id=712 data-nosnippet>712</a>    <span class="attr">#[test]
-<a href=#713 id=713 data-nosnippet>713</a>    #[should_panic(expected = <span class="string">"AlreadyBorrowed"</span>)]
-<a href=#714 id=714 data-nosnippet>714</a>    </span><span class="kw">fn </span>cannot_clone_exclusive_borrow_via_deref() {
-<a href=#715 id=715 data-nosnippet>715</a>        Python::attach(|py| {
-<a href=#716 id=716 data-nosnippet>716</a>            <span class="kw">let </span>array = PyArray::&lt;f64, <span class="kw">_</span>&gt;::zeros(py, (<span class="number">3</span>, <span class="number">2</span>, <span class="number">1</span>), <span class="bool-val">false</span>);
-<a href=#717 id=717 data-nosnippet>717</a>
-<a href=#718 id=718 data-nosnippet>718</a>            <span class="kw">let </span>exclusive = array.readwrite();
-<a href=#719 id=719 data-nosnippet>719</a>            <span class="kw">let </span>_shared = exclusive.clone();
-<a href=#720 id=720 data-nosnippet>720</a>        });
-<a href=#721 id=721 data-nosnippet>721</a>    }
-<a href=#722 id=722 data-nosnippet>722</a>
-<a href=#723 id=723 data-nosnippet>723</a>    <span class="attr">#[test]
-<a href=#724 id=724 data-nosnippet>724</a>    </span><span class="kw">fn </span>failed_resize_does_not_double_release() {
-<a href=#725 id=725 data-nosnippet>725</a>        Python::attach(|py| {
-<a href=#726 id=726 data-nosnippet>726</a>            <span class="kw">let </span>array = PyArray::&lt;f64, <span class="kw">_</span>&gt;::zeros(py, <span class="number">10</span>, <span class="bool-val">false</span>);
-<a href=#727 id=727 data-nosnippet>727</a>
-<a href=#728 id=728 data-nosnippet>728</a>            <span class="comment">// The view will make the internal reference check of `PyArray_Resize` fail.
-<a href=#729 id=729 data-nosnippet>729</a>            </span><span class="kw">let </span>locals = [(<span class="string">"array"</span>, <span class="kw-2">&amp;</span>array)].into_py_dict(py).unwrap();
-<a href=#730 id=730 data-nosnippet>730</a>            <span class="kw">let </span>_view = py
-<a href=#731 id=731 data-nosnippet>731</a>                .eval(<span class="macro">c_str!</span>(<span class="string">"array[:]"</span>), <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>locals))
-<a href=#732 id=732 data-nosnippet>732</a>                .unwrap()
-<a href=#733 id=733 data-nosnippet>733</a>                .cast_into::&lt;PyArray1&lt;f64&gt;&gt;()
-<a href=#734 id=734 data-nosnippet>734</a>                .unwrap();
-<a href=#735 id=735 data-nosnippet>735</a>
-<a href=#736 id=736 data-nosnippet>736</a>            <span class="kw">let </span>exclusive = array.into_readwrite();
-<a href=#737 id=737 data-nosnippet>737</a>            <span class="macro">assert!</span>(exclusive.resize(<span class="number">100</span>).is_err());
-<a href=#738 id=738 data-nosnippet>738</a>        });
-<a href=#739 id=739 data-nosnippet>739</a>    }
-<a href=#740 id=740 data-nosnippet>740</a>
-<a href=#741 id=741 data-nosnippet>741</a>    <span class="attr">#[test]
-<a href=#742 id=742 data-nosnippet>742</a>    </span><span class="kw">fn </span>ineffective_resize_does_not_conflict() {
-<a href=#743 id=743 data-nosnippet>743</a>        Python::attach(|py| {
-<a href=#744 id=744 data-nosnippet>744</a>            <span class="kw">let </span>array = PyArray::&lt;f64, <span class="kw">_</span>&gt;::zeros(py, <span class="number">10</span>, <span class="bool-val">false</span>);
-<a href=#745 id=745 data-nosnippet>745</a>
-<a href=#746 id=746 data-nosnippet>746</a>            <span class="kw">let </span>exclusive = array.into_readwrite();
-<a href=#747 id=747 data-nosnippet>747</a>            <span class="macro">assert!</span>(exclusive.resize(<span class="number">10</span>).is_ok());
-<a href=#748 id=748 data-nosnippet>748</a>        });
-<a href=#749 id=749 data-nosnippet>749</a>    }
-<a href=#750 id=750 data-nosnippet>750</a>
-<a href=#751 id=751 data-nosnippet>751</a>    <span class="attr">#[test]
-<a href=#752 id=752 data-nosnippet>752</a>    </span><span class="kw">fn </span>extraction_reports_dtype_mismatch() {
-<a href=#753 id=753 data-nosnippet>753</a>        Python::attach(|py| {
-<a href=#754 id=754 data-nosnippet>754</a>            <span class="kw">let </span>array = PyArray::&lt;f64, <span class="kw">_</span>&gt;::zeros(py, (<span class="number">2</span>, <span class="number">2</span>), <span class="bool-val">false</span>);
-<a href=#755 id=755 data-nosnippet>755</a>            <span class="kw">let </span>any = array.as_any();
-<a href=#756 id=756 data-nosnippet>756</a>
-<a href=#757 id=757 data-nosnippet>757</a>            <span class="kw">let </span>err = any.extract::&lt;PyReadonlyArray2&lt;<span class="lifetime">'_</span>, f32&gt;&gt;().unwrap_err();
-<a href=#758 id=758 data-nosnippet>758</a>            <span class="kw">let </span>msg = err.to_string();
-<a href=#759 id=759 data-nosnippet>759</a>            <span class="macro">assert_eq!</span>(msg, <span class="string">"TypeError: type mismatch:\n from=float64, to=float32"</span>);
-<a href=#760 id=760 data-nosnippet>760</a>
-<a href=#761 id=761 data-nosnippet>761</a>            <span class="kw">let </span>err = any.extract::&lt;PyReadwriteArray2&lt;<span class="lifetime">'_</span>, f32&gt;&gt;().unwrap_err();
-<a href=#762 id=762 data-nosnippet>762</a>            <span class="kw">let </span>msg = err.to_string();
-<a href=#763 id=763 data-nosnippet>763</a>            <span class="macro">assert_eq!</span>(msg, <span class="string">"TypeError: type mismatch:\n from=float64, to=float32"</span>);
-<a href=#764 id=764 data-nosnippet>764</a>        });
-<a href=#765 id=765 data-nosnippet>765</a>    }
-<a href=#766 id=766 data-nosnippet>766</a>
-<a href=#767 id=767 data-nosnippet>767</a>    <span class="attr">#[test]
-<a href=#768 id=768 data-nosnippet>768</a>    </span><span class="kw">fn </span>extraction_reports_dimensionality_mismatch() {
-<a href=#769 id=769 data-nosnippet>769</a>        Python::attach(|py| {
-<a href=#770 id=770 data-nosnippet>770</a>            <span class="kw">let </span>array = PyArray::&lt;f64, <span class="kw">_</span>&gt;::zeros(py, (<span class="number">2</span>, <span class="number">2</span>), <span class="bool-val">false</span>);
-<a href=#771 id=771 data-nosnippet>771</a>            <span class="kw">let </span>any = array.as_any();
-<a href=#772 id=772 data-nosnippet>772</a>
-<a href=#773 id=773 data-nosnippet>773</a>            <span class="kw">let </span>err = any.extract::&lt;PyReadonlyArray3&lt;<span class="lifetime">'_</span>, f64&gt;&gt;().unwrap_err();
-<a href=#774 id=774 data-nosnippet>774</a>            <span class="kw">let </span>msg = err.to_string();
-<a href=#775 id=775 data-nosnippet>775</a>            <span class="macro">assert_eq!</span>(msg, <span class="string">"TypeError: dimensionality mismatch:\n from=2, to=3"</span>);
-<a href=#776 id=776 data-nosnippet>776</a>
-<a href=#777 id=777 data-nosnippet>777</a>            <span class="kw">let </span>err = any.extract::&lt;PyReadwriteArray3&lt;<span class="lifetime">'_</span>, f64&gt;&gt;().unwrap_err();
-<a href=#778 id=778 data-nosnippet>778</a>            <span class="kw">let </span>msg = err.to_string();
-<a href=#779 id=779 data-nosnippet>779</a>            <span class="macro">assert_eq!</span>(msg, <span class="string">"TypeError: dimensionality mismatch:\n from=2, to=3"</span>);
-<a href=#780 id=780 data-nosnippet>780</a>        });
-<a href=#781 id=781 data-nosnippet>781</a>    }
-<a href=#782 id=782 data-nosnippet>782</a>}
+<a href=#685 id=685 data-nosnippet>685</a>
+<a href=#686 id=686 data-nosnippet>686</a>    <span class="attr">#[test]
+<a href=#687 id=687 data-nosnippet>687</a>    </span><span class="kw">fn </span>test_debug_formatting() {
+<a href=#688 id=688 data-nosnippet>688</a>        Python::attach(|py| {
+<a href=#689 id=689 data-nosnippet>689</a>            <span class="kw">let </span>array = PyArray::&lt;f64, <span class="kw">_</span>&gt;::zeros(py, (<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>), <span class="bool-val">false</span>);
+<a href=#690 id=690 data-nosnippet>690</a>
+<a href=#691 id=691 data-nosnippet>691</a>            {
+<a href=#692 id=692 data-nosnippet>692</a>                <span class="kw">let </span>shared = array.readonly();
+<a href=#693 id=693 data-nosnippet>693</a>
+<a href=#694 id=694 data-nosnippet>694</a>                <span class="macro">assert_eq!</span>(
+<a href=#695 id=695 data-nosnippet>695</a>                    <span class="macro">format!</span>(<span class="string">"{shared:?}"</span>),
+<a href=#696 id=696 data-nosnippet>696</a>                    <span class="string">"PyReadonlyArray&lt;f64, ndarray::dimension::dim::Dim&lt;[usize; 3]&gt;&gt;"
+<a href=#697 id=697 data-nosnippet>697</a>                </span>);
+<a href=#698 id=698 data-nosnippet>698</a>            }
+<a href=#699 id=699 data-nosnippet>699</a>
+<a href=#700 id=700 data-nosnippet>700</a>            {
+<a href=#701 id=701 data-nosnippet>701</a>                <span class="kw">let </span>exclusive = array.readwrite();
+<a href=#702 id=702 data-nosnippet>702</a>
+<a href=#703 id=703 data-nosnippet>703</a>                <span class="macro">assert_eq!</span>(
+<a href=#704 id=704 data-nosnippet>704</a>                    <span class="macro">format!</span>(<span class="string">"{exclusive:?}"</span>),
+<a href=#705 id=705 data-nosnippet>705</a>                    <span class="string">"PyReadwriteArray&lt;f64, ndarray::dimension::dim::Dim&lt;[usize; 3]&gt;&gt;"
+<a href=#706 id=706 data-nosnippet>706</a>                </span>);
+<a href=#707 id=707 data-nosnippet>707</a>            }
+<a href=#708 id=708 data-nosnippet>708</a>        });
+<a href=#709 id=709 data-nosnippet>709</a>    }
+<a href=#710 id=710 data-nosnippet>710</a>
+<a href=#711 id=711 data-nosnippet>711</a>    <span class="attr">#[test]
+<a href=#712 id=712 data-nosnippet>712</a>    #[should_panic(expected = <span class="string">"AlreadyBorrowed"</span>)]
+<a href=#713 id=713 data-nosnippet>713</a>    </span><span class="kw">fn </span>cannot_clone_exclusive_borrow_via_deref() {
+<a href=#714 id=714 data-nosnippet>714</a>        Python::attach(|py| {
+<a href=#715 id=715 data-nosnippet>715</a>            <span class="kw">let </span>array = PyArray::&lt;f64, <span class="kw">_</span>&gt;::zeros(py, (<span class="number">3</span>, <span class="number">2</span>, <span class="number">1</span>), <span class="bool-val">false</span>);
+<a href=#716 id=716 data-nosnippet>716</a>
+<a href=#717 id=717 data-nosnippet>717</a>            <span class="kw">let </span>exclusive = array.readwrite();
+<a href=#718 id=718 data-nosnippet>718</a>            <span class="kw">let </span>_shared = exclusive.clone();
+<a href=#719 id=719 data-nosnippet>719</a>        });
+<a href=#720 id=720 data-nosnippet>720</a>    }
+<a href=#721 id=721 data-nosnippet>721</a>
+<a href=#722 id=722 data-nosnippet>722</a>    <span class="attr">#[test]
+<a href=#723 id=723 data-nosnippet>723</a>    </span><span class="kw">fn </span>failed_resize_does_not_double_release() {
+<a href=#724 id=724 data-nosnippet>724</a>        Python::attach(|py| {
+<a href=#725 id=725 data-nosnippet>725</a>            <span class="kw">let </span>array = PyArray::&lt;f64, <span class="kw">_</span>&gt;::zeros(py, <span class="number">10</span>, <span class="bool-val">false</span>);
+<a href=#726 id=726 data-nosnippet>726</a>
+<a href=#727 id=727 data-nosnippet>727</a>            <span class="comment">// The view will make the internal reference check of `PyArray_Resize` fail.
+<a href=#728 id=728 data-nosnippet>728</a>            </span><span class="kw">let </span>locals = [(<span class="string">"array"</span>, <span class="kw-2">&amp;</span>array)].into_py_dict(py).unwrap();
+<a href=#729 id=729 data-nosnippet>729</a>            <span class="kw">let </span>_view = py
+<a href=#730 id=730 data-nosnippet>730</a>                .eval(<span class="string">c"array[:]"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>locals))
+<a href=#731 id=731 data-nosnippet>731</a>                .unwrap()
+<a href=#732 id=732 data-nosnippet>732</a>                .cast_into::&lt;PyArray1&lt;f64&gt;&gt;()
+<a href=#733 id=733 data-nosnippet>733</a>                .unwrap();
+<a href=#734 id=734 data-nosnippet>734</a>
+<a href=#735 id=735 data-nosnippet>735</a>            <span class="kw">let </span>exclusive = array.into_readwrite();
+<a href=#736 id=736 data-nosnippet>736</a>            <span class="macro">assert!</span>(exclusive.resize(<span class="number">100</span>).is_err());
+<a href=#737 id=737 data-nosnippet>737</a>        });
+<a href=#738 id=738 data-nosnippet>738</a>    }
+<a href=#739 id=739 data-nosnippet>739</a>
+<a href=#740 id=740 data-nosnippet>740</a>    <span class="attr">#[test]
+<a href=#741 id=741 data-nosnippet>741</a>    </span><span class="kw">fn </span>ineffective_resize_does_not_conflict() {
+<a href=#742 id=742 data-nosnippet>742</a>        Python::attach(|py| {
+<a href=#743 id=743 data-nosnippet>743</a>            <span class="kw">let </span>array = PyArray::&lt;f64, <span class="kw">_</span>&gt;::zeros(py, <span class="number">10</span>, <span class="bool-val">false</span>);
+<a href=#744 id=744 data-nosnippet>744</a>
+<a href=#745 id=745 data-nosnippet>745</a>            <span class="kw">let </span>exclusive = array.into_readwrite();
+<a href=#746 id=746 data-nosnippet>746</a>            <span class="macro">assert!</span>(exclusive.resize(<span class="number">10</span>).is_ok());
+<a href=#747 id=747 data-nosnippet>747</a>        });
+<a href=#748 id=748 data-nosnippet>748</a>    }
+<a href=#749 id=749 data-nosnippet>749</a>
+<a href=#750 id=750 data-nosnippet>750</a>    <span class="attr">#[test]
+<a href=#751 id=751 data-nosnippet>751</a>    </span><span class="kw">fn </span>extraction_reports_dtype_mismatch() {
+<a href=#752 id=752 data-nosnippet>752</a>        Python::attach(|py| {
+<a href=#753 id=753 data-nosnippet>753</a>            <span class="kw">let </span>array = PyArray::&lt;f64, <span class="kw">_</span>&gt;::zeros(py, (<span class="number">2</span>, <span class="number">2</span>), <span class="bool-val">false</span>);
+<a href=#754 id=754 data-nosnippet>754</a>            <span class="kw">let </span>any = array.as_any();
+<a href=#755 id=755 data-nosnippet>755</a>
+<a href=#756 id=756 data-nosnippet>756</a>            <span class="kw">let </span>err = any.extract::&lt;PyReadonlyArray2&lt;<span class="lifetime">'_</span>, f32&gt;&gt;().unwrap_err();
+<a href=#757 id=757 data-nosnippet>757</a>            <span class="kw">let </span>msg = err.to_string();
+<a href=#758 id=758 data-nosnippet>758</a>            <span class="macro">assert_eq!</span>(msg, <span class="string">"TypeError: type mismatch:\n from=float64, to=float32"</span>);
+<a href=#759 id=759 data-nosnippet>759</a>
+<a href=#760 id=760 data-nosnippet>760</a>            <span class="kw">let </span>err = any.extract::&lt;PyReadwriteArray2&lt;<span class="lifetime">'_</span>, f32&gt;&gt;().unwrap_err();
+<a href=#761 id=761 data-nosnippet>761</a>            <span class="kw">let </span>msg = err.to_string();
+<a href=#762 id=762 data-nosnippet>762</a>            <span class="macro">assert_eq!</span>(msg, <span class="string">"TypeError: type mismatch:\n from=float64, to=float32"</span>);
+<a href=#763 id=763 data-nosnippet>763</a>        });
+<a href=#764 id=764 data-nosnippet>764</a>    }
+<a href=#765 id=765 data-nosnippet>765</a>
+<a href=#766 id=766 data-nosnippet>766</a>    <span class="attr">#[test]
+<a href=#767 id=767 data-nosnippet>767</a>    </span><span class="kw">fn </span>extraction_reports_dimensionality_mismatch() {
+<a href=#768 id=768 data-nosnippet>768</a>        Python::attach(|py| {
+<a href=#769 id=769 data-nosnippet>769</a>            <span class="kw">let </span>array = PyArray::&lt;f64, <span class="kw">_</span>&gt;::zeros(py, (<span class="number">2</span>, <span class="number">2</span>), <span class="bool-val">false</span>);
+<a href=#770 id=770 data-nosnippet>770</a>            <span class="kw">let </span>any = array.as_any();
+<a href=#771 id=771 data-nosnippet>771</a>
+<a href=#772 id=772 data-nosnippet>772</a>            <span class="kw">let </span>err = any.extract::&lt;PyReadonlyArray3&lt;<span class="lifetime">'_</span>, f64&gt;&gt;().unwrap_err();
+<a href=#773 id=773 data-nosnippet>773</a>            <span class="kw">let </span>msg = err.to_string();
+<a href=#774 id=774 data-nosnippet>774</a>            <span class="macro">assert_eq!</span>(msg, <span class="string">"TypeError: dimensionality mismatch:\n from=2, to=3"</span>);
+<a href=#775 id=775 data-nosnippet>775</a>
+<a href=#776 id=776 data-nosnippet>776</a>            <span class="kw">let </span>err = any.extract::&lt;PyReadwriteArray3&lt;<span class="lifetime">'_</span>, f64&gt;&gt;().unwrap_err();
+<a href=#777 id=777 data-nosnippet>777</a>            <span class="kw">let </span>msg = err.to_string();
+<a href=#778 id=778 data-nosnippet>778</a>            <span class="macro">assert_eq!</span>(msg, <span class="string">"TypeError: dimensionality mismatch:\n from=2, to=3"</span>);
+<a href=#779 id=779 data-nosnippet>779</a>        });
+<a href=#780 id=780 data-nosnippet>780</a>    }
+<a href=#781 id=781 data-nosnippet>781</a>}
 </code></pre></div></section></main></body></html>

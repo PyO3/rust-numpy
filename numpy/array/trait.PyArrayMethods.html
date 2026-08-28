@@ -197,11 +197,11 @@ Python::attach(|py| {
 <p>Fails if the internal array is not contiguous. See also <a href="trait.PyArrayMethods.html#method.as_slice" title="method numpy::array::PyArrayMethods::as_slice"><code>as_slice</code></a>.</p>
 <h5 id="example-3"><a class="doc-anchor" href="#example-3">§</a>Example</h5>
 <div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>numpy::{PyArray2, PyArrayMethods};
-<span class="kw">use </span>pyo3::{Python, types::PyAnyMethods, ffi::c_str};
+<span class="kw">use </span>pyo3::{Python, types::PyAnyMethods};
 
 Python::attach(|py| {
     <span class="kw">let </span>pyarray= py
-        .eval(<span class="macro">c_str!</span>(<span class="string">"__import__('numpy').array([[0, 1], [2, 3]], dtype='int64')"</span>), <span class="prelude-val">None</span>, <span class="prelude-val">None</span>)<span class="question-mark">?
+        .eval(<span class="string">c"__import__('numpy').array([[0, 1], [2, 3]], dtype='int64')"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>)<span class="question-mark">?
         </span>.cast_into::&lt;PyArray2&lt;i64&gt;&gt;()<span class="question-mark">?</span>;
 
     <span class="macro">assert_eq!</span>(pyarray.to_vec()<span class="question-mark">?</span>, <span class="macro">vec!</span>[<span class="number">0</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>]);

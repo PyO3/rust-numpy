@@ -252,7 +252,7 @@
 <a href=#252 id=252 data-nosnippet>252</a>            .getattr(<span class="macro">intern!</span>(py, <span class="string">"capsule"</span>))<span class="question-mark">?
 <a href=#253 id=253 data-nosnippet>253</a>            </span>.cast_into::&lt;PyCapsule&gt;()<span class="question-mark">?</span>;
 <a href=#254 id=254 data-nosnippet>254</a>        <span class="kw">let </span>raw = capsule
-<a href=#255 id=255 data-nosnippet>255</a>            .pointer_checked(<span class="prelude-val">Some</span>(<span class="macro">ffi::c_str!</span>(<span class="string">"BitGenerator"</span>)))
+<a href=#255 id=255 data-nosnippet>255</a>            .pointer_checked(<span class="prelude-val">Some</span>(<span class="string">c"BitGenerator"</span>))
 <a href=#256 id=256 data-nosnippet>256</a>            .map_err(|<span class="kw">_</span>| PyRuntimeError::new_err(<span class="string">"Invalid BitGenerator capsule"</span>))<span class="question-mark">?</span>;
 <a href=#257 id=257 data-nosnippet>257</a>        <span class="prelude-val">Ok</span>(BitGenerator {
 <a href=#258 id=258 data-nosnippet>258</a>            raw: raw.cast(),

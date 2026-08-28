@@ -112,7 +112,7 @@
 <a href=#112 id=112 data-nosnippet>112</a>    ///
 <a href=#113 id=113 data-nosnippet>113</a>    /// ```
 <a href=#114 id=114 data-nosnippet>114</a>    /// use numpy::{PyArray1, PyUntypedArrayMethods};
-<a href=#115 id=115 data-nosnippet>115</a>    /// use pyo3::{types::{IntoPyDict, PyAnyMethods}, Python, ffi::c_str};
+<a href=#115 id=115 data-nosnippet>115</a>    /// use pyo3::{types::{IntoPyDict, PyAnyMethods}, Python};
 <a href=#116 id=116 data-nosnippet>116</a>    ///
 <a href=#117 id=117 data-nosnippet>117</a>    /// # fn main() -&gt; pyo3::PyResult&lt;()&gt; {
 <a href=#118 id=118 data-nosnippet>118</a>    /// Python::attach(|py| {
@@ -121,7 +121,7 @@
 <a href=#121 id=121 data-nosnippet>121</a>    ///
 <a href=#122 id=122 data-nosnippet>122</a>    ///     let view = py
 <a href=#123 id=123 data-nosnippet>123</a>    ///         .eval(
-<a href=#124 id=124 data-nosnippet>124</a>    ///             c_str!("array.view('u1')[1:-1].view('u2')"),
+<a href=#124 id=124 data-nosnippet>124</a>    ///             c"array.view('u1')[1:-1].view('u2')",
 <a href=#125 id=125 data-nosnippet>125</a>    ///             None,
 <a href=#126 id=126 data-nosnippet>126</a>    ///             Some(&amp;[("array", array)].into_py_dict(py)?),
 <a href=#127 id=127 data-nosnippet>127</a>    ///         )?
@@ -142,7 +142,7 @@
 <a href=#142 id=142 data-nosnippet>142</a>    ///
 <a href=#143 id=143 data-nosnippet>143</a>    /// ```
 <a href=#144 id=144 data-nosnippet>144</a>    /// use numpy::{PyArray1, PyUntypedArrayMethods};
-<a href=#145 id=145 data-nosnippet>145</a>    /// use pyo3::{types::{IntoPyDict, PyAnyMethods}, Python, ffi::c_str};
+<a href=#145 id=145 data-nosnippet>145</a>    /// use pyo3::{types::{IntoPyDict, PyAnyMethods}, Python};
 <a href=#146 id=146 data-nosnippet>146</a>    ///
 <a href=#147 id=147 data-nosnippet>147</a>    /// # fn main() -&gt; pyo3::PyResult&lt;()&gt; {
 <a href=#148 id=148 data-nosnippet>148</a>    /// Python::attach(|py| {
@@ -150,7 +150,7 @@
 <a href=#150 id=150 data-nosnippet>150</a>    ///     assert!(array.is_contiguous());
 <a href=#151 id=151 data-nosnippet>151</a>    ///
 <a href=#152 id=152 data-nosnippet>152</a>    ///     let view = py
-<a href=#153 id=153 data-nosnippet>153</a>    ///         .eval(c_str!("array[::2]"), None, Some(&amp;[("array", array)].into_py_dict(py)?))?
+<a href=#153 id=153 data-nosnippet>153</a>    ///         .eval(c"array[::2]", None, Some(&amp;[("array", array)].into_py_dict(py)?))?
 <a href=#154 id=154 data-nosnippet>154</a>    ///         .cast_into::&lt;PyArray1&lt;i32&gt;&gt;()?;
 <a href=#155 id=155 data-nosnippet>155</a>    ///     assert!(!view.is_contiguous());
 <a href=#156 id=156 data-nosnippet>156</a>    /// #   Ok(())

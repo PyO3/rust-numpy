@@ -77,7 +77,7 @@ Furthermore, array views created by slicing into existing arrays will often have
 <p>If you do not fully control the memory layout of a given array, e.g. at your API entry points,
 it can be useful to opt into nalgebra’s support for <a href="https://docs.rs/nalgebra/0.25.0/nalgebra/base/dimension/struct.Dyn.html" title="struct nalgebra::base::dimension::Dyn">dynamic strides</a>, for example</p>
 
-<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>pyo3::{py_run, ffi::c_str};
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>pyo3::py_run;
 <span class="kw">use </span>numpy::{get_array_module, PyReadonlyArray2};
 <span class="kw">use </span>nalgebra::{MatrixView, Const, Dyn};
 
@@ -94,7 +94,7 @@ it can be useful to opt into nalgebra’s support for <a href="https://docs.rs/n
 }
 
 Python::attach(|py| {
-    <span class="kw">let </span>np = py.eval(<span class="macro">c_str!</span>(<span class="string">"__import__('numpy')"</span>), <span class="prelude-val">None</span>, <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>np = py.eval(<span class="string">c"__import__('numpy')"</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span>sum_standard_layout = <span class="macro">wrap_pyfunction!</span>(sum_standard_layout)(py)<span class="question-mark">?</span>;
     <span class="kw">let </span>sum_dynamic_strides = <span class="macro">wrap_pyfunction!</span>(sum_dynamic_strides)(py)<span class="question-mark">?</span>;
 

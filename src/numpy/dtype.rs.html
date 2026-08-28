@@ -30,14 +30,14 @@
 <a href=#30 id=30 data-nosnippet>30</a>///
 <a href=#31 id=31 data-nosnippet>31</a>/// ```
 <a href=#32 id=32 data-nosnippet>32</a>/// use numpy::{dtype, get_array_module, PyArrayDescr, PyArrayDescrMethods};
-<a href=#33 id=33 data-nosnippet>33</a>/// use numpy::pyo3::{types::{IntoPyDict, PyAnyMethods}, Python, ffi::c_str};
+<a href=#33 id=33 data-nosnippet>33</a>/// use numpy::pyo3::{types::{IntoPyDict, PyAnyMethods}, Python};
 <a href=#34 id=34 data-nosnippet>34</a>///
 <a href=#35 id=35 data-nosnippet>35</a>/// # fn main() -&gt; pyo3::PyResult&lt;()&gt; {
 <a href=#36 id=36 data-nosnippet>36</a>/// Python::attach(|py| {
 <a href=#37 id=37 data-nosnippet>37</a>///     let locals = [("np", get_array_module(py)?)].into_py_dict(py)?;
 <a href=#38 id=38 data-nosnippet>38</a>///
 <a href=#39 id=39 data-nosnippet>39</a>///     let dt = py
-<a href=#40 id=40 data-nosnippet>40</a>///         .eval(c_str!("np.array([1, 2, 3.0]).dtype"), Some(&amp;locals), None)?
+<a href=#40 id=40 data-nosnippet>40</a>///         .eval(c"np.array([1, 2, 3.0]).dtype", Some(&amp;locals), None)?
 <a href=#41 id=41 data-nosnippet>41</a>///         .cast_into::&lt;PyArrayDescr&gt;()?;
 <a href=#42 id=42 data-nosnippet>42</a>///
 <a href=#43 id=43 data-nosnippet>43</a>///     assert!(dt.is_equiv_to(&amp;dtype::&lt;f64&gt;(py)));

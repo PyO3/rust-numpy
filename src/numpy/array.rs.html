@@ -953,12 +953,12 @@
 <a href=#953 id=953 data-nosnippet>953</a>    ///
 <a href=#954 id=954 data-nosnippet>954</a>    /// ```
 <a href=#955 id=955 data-nosnippet>955</a>    /// use numpy::{PyArray2, PyArrayMethods};
-<a href=#956 id=956 data-nosnippet>956</a>    /// use pyo3::{Python, types::PyAnyMethods, ffi::c_str};
+<a href=#956 id=956 data-nosnippet>956</a>    /// use pyo3::{Python, types::PyAnyMethods};
 <a href=#957 id=957 data-nosnippet>957</a>    ///
 <a href=#958 id=958 data-nosnippet>958</a>    /// # fn main() -&gt; pyo3::PyResult&lt;()&gt; {
 <a href=#959 id=959 data-nosnippet>959</a>    /// Python::attach(|py| {
 <a href=#960 id=960 data-nosnippet>960</a>    ///     let pyarray= py
-<a href=#961 id=961 data-nosnippet>961</a>    ///         .eval(c_str!("__import__('numpy').array([[0, 1], [2, 3]], dtype='int64')"), None, None)?
+<a href=#961 id=961 data-nosnippet>961</a>    ///         .eval(c"__import__('numpy').array([[0, 1], [2, 3]], dtype='int64')", None, None)?
 <a href=#962 id=962 data-nosnippet>962</a>    ///         .cast_into::&lt;PyArray2&lt;i64&gt;&gt;()?;
 <a href=#963 id=963 data-nosnippet>963</a>    ///
 <a href=#964 id=964 data-nosnippet>964</a>    ///     assert_eq!(pyarray.to_vec()?, vec![0, 1, 2, 3]);
