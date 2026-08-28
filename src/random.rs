@@ -473,6 +473,13 @@ mod tests {
         })
     }
 
+    #[test]
+    fn use_owned() -> PyResult<()> {
+        let mut bitgen = Python::attach(|py| get_bit_generator(py)?.spawn_one())?;
+        assert_eq!(bitgen.next_raw(), 16910944855483863638);
+        Ok(())
+    }
+
     /// Use single shared generator from multiple threads (not very useful but possible)
     #[cfg(feature = "rand_core")]
     #[test]
@@ -526,6 +533,43 @@ mod tests {
                     assert!(!bitgen.random_ratio(0, 1));
                 }
             })
+        })
+    }
+
+    /// Re-locking the same generator on the same thread is rejected
+    /// even though numpy’s `lock` is a reentrant `RLock`.
+    #[test]
+    fn reject_reentrant_lock() -> PyResult<()> {
+        Python::attach(|py| {
+            let bit_generator = get_bit_generator(py)?;
+            let shared = bit_generator.clone().unbind();
+            let err = bit_generator
+                .lock(|_| Python::attach(|py| shared.bind(py).lock(|_| ()).unwrap_err()))?;
+            assert!(err.is_instance_of::<PyRuntimeError>(py));
+            assert_eq!(err.value(py).to_string(), "BitGenerator is already locked");
+            // the reentrancy marker was cleaned up, so locking again afterwards works
+            bit_generator.lock(|mut bitgen| bitgen.next_u64())?;
+            Ok(())
+        })
+    }
+
+    /// A panicking closure still releases the lock and clears the reentrancy marker
+    /// (via the guard’s `Drop`), so the generator stays usable.
+    #[test]
+    fn release_lock_on_panic() -> PyResult<()> {
+        Python::attach(|py| {
+            let bit_generator = get_bit_generator(py)?;
+            let panic = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                bit_generator.lock(|_| panic!("boom"))
+            }))
+            .unwrap_err();
+            assert_eq!(panic.downcast_ref::<&str>(), Some(&"boom"));
+
+            assert_eq!(
+                bit_generator.lock(|mut bitgen| bitgen.next_raw())?,
+                14276969152011380360
+            );
+            Ok(())
         })
     }
 
