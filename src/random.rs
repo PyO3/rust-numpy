@@ -505,7 +505,10 @@ mod tests {
                     }
                 })
             })?;
-            assert_eq!(arr, ndarray::array![[26, 157, 134], [93, 92, 173]]);
+            // The rows are filled in whichever order the threads win the lock.
+            let mut rows: Vec<Vec<u32>> = arr.rows().into_iter().map(|r| r.to_vec()).collect();
+            rows.sort();
+            assert_eq!(rows, vec![vec![26, 157, 134], vec![93, 92, 173]]);
             Ok(())
         })
     }
