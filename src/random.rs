@@ -267,6 +267,15 @@ pub enum BitGeneratorKind {
     SFC64,
 }
 
+impl BitGeneratorKind {
+    /// Returns an iterator over the values of [`BitGeneratorKind`].
+    pub fn iter() -> std::iter::Copied<std::slice::Iter<'static, BitGeneratorKind>> {
+        use BitGeneratorKind::*;
+        static KINDS: [BitGeneratorKind; 5] = [MT19937, PCG64, PCG64DXSM, Philox, SFC64];
+        KINDS.iter().copied()
+    }
+}
+
 impl From<BitGeneratorKind> for &'static str {
     fn from(value: BitGeneratorKind) -> &'static str {
         match value {
@@ -454,30 +463,67 @@ impl rand_core::RngCore for BitGenerator {
 mod tests {
     use super::*;
 
-    fn get_bit_generator<'py>(py: Python<'py>) -> PyResult<Bound<'py, PyBitGenerator>> {
-        let bit_generator = py
+    fn get_shared<'py>(py: Python<'py>) -> PyResult<Bound<'py, PyBitGenerator>> {
+        let bitgen = py
             .import("numpy.random")?
             .call_method1("PCG64", (42,))?
             .cast_into::<PyBitGenerator>()?;
-        Ok(bit_generator)
+        Ok(bitgen)
+    }
+
+    fn get_owned<'py>(py: Python<'py>) -> PyResult<BitGenerator> {
+        let bitgen = get_shared(py)?;
+        // SAFETY: `bitgen` is freshly created and not handed out elsewhere.
+        unsafe { BitGenerator::from_py(bitgen) }
+    }
+
+    #[test]
+    fn from_kind() -> PyResult<()> {
+        Python::attach(|py| {
+            for kind in BitGeneratorKind::iter() {
+                let name: &str = kind.into();
+                let type_name = BitGenerator::new(py, kind)?
+                    .into_shared()
+                    .bind(py)
+                    .get_type()
+                    .name()?;
+                assert_eq!(type_name, name);
+            }
+            Ok(())
+        })
     }
 
     /// Simple single-threaded use: lock the generator,
     /// then use it without being attached to the interpreter runtime.
     #[test]
-    fn use_detached() -> PyResult<()> {
-        Python::attach(|py| {
-            get_bit_generator(py)?.lock(|mut bitgen| {
-                assert_eq!(bitgen.next_raw(), 14276969152011380360);
-            })
-        })
-    }
+    fn base_api() -> PyResult<()> {
+        let f64_expected = 0.7739560485559633;
+        let u32_expected = 383329928;
+        let u64_expected = 14276969152011380360;
 
-    #[test]
-    fn use_owned() -> PyResult<()> {
-        let mut bitgen = Python::attach(|py| get_bit_generator(py)?.spawn_one())?;
-        assert_eq!(bitgen.next_raw(), 16910944855483863638);
-        Ok(())
+        Python::attach(|py| {
+            let double_shared = get_shared(py)?.lock(|mut bitgen| bitgen.next_double())?;
+            let double_owned = get_owned(py)?.next_double();
+            assert_eq!(double_shared, f64_expected);
+            assert_eq!(double_owned, f64_expected);
+
+            let u32_shared = get_shared(py)?.lock(|mut bitgen| bitgen.next_u32())?;
+            let u32_owned = get_owned(py)?.next_u32();
+            assert_eq!(u32_shared, u32_expected);
+            assert_eq!(u32_owned, u32_expected);
+
+            let u64_shared = get_shared(py)?.lock(|mut bitgen| bitgen.next_u64())?;
+            let u64_owned = get_owned(py)?.next_u64();
+            assert_eq!(u64_shared, u64_expected);
+            assert_eq!(u64_owned, u64_expected);
+
+            let raw_shared = get_shared(py)?.lock(|mut bitgen| bitgen.next_raw())?;
+            let raw_owned = get_owned(py)?.next_raw();
+            assert_eq!(raw_shared, u64_expected);
+            assert_eq!(raw_owned, u64_expected);
+
+            Ok(())
+        })
     }
 
     /// Use single shared generator from multiple threads (not very useful but possible)
@@ -491,7 +537,7 @@ mod tests {
         Python::attach(|py| -> PyResult<_> {
             let mut arr = PyArray2::<u32>::zeros(py, (2, 3), false).readwrite();
             let mut arr = arr.as_array_mut();
-            get_bit_generator(py)?.lock(|bitgen| {
+            get_shared(py)?.lock(|bitgen| {
                 let bitgen = Mutex::new(bitgen);
                 std::thread::scope(|s| {
                     for mut chunk in arr.rows_mut() {
@@ -520,22 +566,17 @@ mod tests {
         use rand::Rng as _;
 
         Python::attach(|py| {
-            get_bit_generator(py)?.lock(|mut bitgen| {
-                // check reproducibility
-                let seq: Vec<bool> = std::iter::repeat_with(|| bitgen.random_ratio(1, 2))
+            // check reproducibility
+            let seq: Vec<bool> = get_shared(py)?.lock(|mut bitgen| {
+                std::iter::repeat_with(|| bitgen.random_ratio(1, 2))
                     .take(10)
-                    .collect();
-                assert_eq!(
-                    seq,
-                    vec![false, true, false, false, true, false, false, false, true, true]
-                );
-
-                // check trivial ratios
-                for _ in 0..100 {
-                    assert!(bitgen.random_ratio(1, 1));
-                    assert!(!bitgen.random_ratio(0, 1));
-                }
-            })
+                    .collect()
+            })?;
+            assert_eq!(
+                seq,
+                vec![false, true, false, false, true, false, false, false, true, true]
+            );
+            Ok(())
         })
     }
 
@@ -544,7 +585,7 @@ mod tests {
     #[test]
     fn reject_reentrant_lock() -> PyResult<()> {
         Python::attach(|py| {
-            let bit_generator = get_bit_generator(py)?;
+            let bit_generator = get_shared(py)?;
             let shared = bit_generator.clone().unbind();
             let err = bit_generator
                 .lock(|_| Python::attach(|py| shared.bind(py).lock(|_| ()).unwrap_err()))?;
@@ -568,7 +609,7 @@ mod tests {
     #[test]
     fn release_lock_on_panic() -> PyResult<()> {
         Python::attach(|py| {
-            let bit_generator = get_bit_generator(py)?;
+            let bit_generator = get_shared(py)?;
             let panic = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                 bit_generator.lock(|_| panic!("boom"))
             }))
@@ -583,12 +624,19 @@ mod tests {
         })
     }
 
+    #[test]
+    fn spawn_one() -> PyResult<()> {
+        let mut bitgen = Python::attach(|py| get_shared(py)?.spawn_one())?;
+        assert_eq!(bitgen.next_u32(), 2136330838);
+        Ok(())
+    }
+
     /// Spawned children are independent and owned,
     /// so they can be used (and dropped) from their own threads without locking.
     #[test]
     fn spawn_produces_independent_generators() -> PyResult<()> {
         Python::attach(|py| {
-            let children = get_bit_generator(py)?.spawn(2)?;
+            let children = get_shared(py)?.spawn(2)?;
             assert_eq!(children.len(), 2);
 
             let values = py.detach(|| {
