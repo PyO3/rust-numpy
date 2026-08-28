@@ -1,0 +1,67 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Safe interface for NumPy’s random `BitGenerator`."><title>numpy::random - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-1ed95124.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="numpy" data-themes="" data-resource-suffix="" data-rustdoc-version="1.98.0 (88d9e12ae 2026-08-18)" data-channel="1.98.0" data-search-js="search-9944d736.js" data-stringdex-js="stringdex-2da4960a.js" data-settings-js="settings-170eb4bf.js" ><script src="../../static.files/storage-41dd4d93.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../static.files/main-417ebf0a.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-f7c3ffd8.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc mod"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Module random</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../numpy/index.html">numpy</a><span class="version">0.29.0</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Module random</a></h2><h3><a href="#structs">Module Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li><li><a href="#traits" title="Traits">Traits</a></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="../index.html">In crate numpy</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">numpy</a></div><h1>Module <span>random</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/numpy/random.rs.html#1-419">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Safe interface for NumPy’s random <a href="https://numpy.org/doc/stable//reference/random/bit_generators/generated/numpy.random.BitGenerator.html"><code>BitGenerator</code></a>.</p>
+<p>Using the patterns described in <a href="https://numpy.org/doc/stable/reference/random/extending.html">“Extending <code>numpy.random</code>”</a>,
+you can generate random numbers without being attached to the interpreter runtime by:</p>
+<ul>
+<li><a href="trait.PyBitGeneratorMethods.html#tymethod.spawn" title="method numpy::random::PyBitGeneratorMethods::spawn">spawning</a> fresh <a href="struct.BitGenerator.html" title="struct numpy::random::BitGenerator"><code>BitGenerator</code></a>s
+from a <a href="struct.PyBitGenerator.html" title="struct numpy::random::PyBitGenerator"><code>PyBitGenerator</code></a> you received from Python</li>
+<li>creating a fresh <a href="struct.BitGenerator.html" title="struct numpy::random::BitGenerator"><code>BitGenerator</code></a> <a href="struct.BitGenerator.html#method.new" title="associated function numpy::random::BitGenerator::new">from numpy</a>:</li>
+</ul>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>pyo3::prelude::<span class="kw-2">*</span>;
+<span class="kw">use </span>numpy::random::BitGenerator;
+
+<span class="kw">let </span><span class="kw-2">mut </span>bitgen = Python::attach(|py| {
+    BitGenerator::new(py, Default::default())
+})<span class="question-mark">?</span>;
+<span class="kw">let </span>random_number = bitgen.next_u64();</code></pre></div>
+<p>If you write a pyo3 extension, you would extract
+a <a href="https://numpy.org/doc/stable/reference/random/bit_generators/generated/numpy.random.BitGenerator.html"><code>numpy.random.BitGenerator</code></a> into a <code>[Bound]&lt;’_, <a href="struct.PyBitGenerator.html" title="struct numpy::random::PyBitGenerator">PyBitGenerator</a>&gt;</code>:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>numpy::random::{BitGenerator, PyBitGenerator, PyBitGeneratorMethods <span class="kw">as _</span>};
+
+<span class="attr">#[pyfunction]
+</span><span class="kw">fn </span>make_random_number(bitgen: Bound&lt;PyBitGenerator&gt;) -&gt; PyResult&lt;u64&gt; {
+    <span class="comment">// spawn an owned child, then use it without being attached to the interpreter runtime
+    </span><span class="prelude-val">Ok</span>(bitgen.spawn_one()<span class="question-mark">?</span>.next_u64())
+}
+
+Python::attach(|py| -&gt; PyResult&lt;<span class="kw">_</span>&gt; {
+    <span class="kw">let </span>bitgen: Bound&lt;PyBitGenerator&gt; = default_bit_gen(py)<span class="question-mark">?</span>;
+    <span class="kw">let </span>random_number = make_random_number(bitgen)<span class="question-mark">?</span>;
+    <span class="macro">println!</span>(<span class="string">"{random_number}"</span>);
+    <span class="prelude-val">Ok</span>(())
+})<span class="question-mark">?</span>;</code></pre></div>
+<p>With the <code>rand</code> crate installed, you can also use its <code>Rng</code> APIs on any generator,
+since <a href="struct.BitGenerator.html" title="struct numpy::random::BitGenerator"><code>BitGenerator</code></a> implements <a href="https://rust-random.github.io/rand/rand_core/trait.RngCore.html" title="trait rand_core::RngCore"><code>rand_core::RngCore</code></a>.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>pyo3::prelude::<span class="kw-2">*</span>;
+<span class="kw">use </span>rand::Rng <span class="kw">as _</span>;
+<span class="kw">use </span>numpy::random::{BitGenerator, BitGeneratorKind::SFC64};
+
+<span class="kw">let </span><span class="kw-2">mut </span>bitgen = Python::attach(|py| BitGenerator::new(py, SFC64))<span class="question-mark">?</span>;
+<span class="kw">if </span>bitgen.random_ratio(<span class="number">1</span>, <span class="number">1_000_000</span>) {
+    <span class="macro">println!</span>(<span class="string">"a sure thing"</span>);
+};</code></pre></div>
+<p>Using <code>spawn</code>, you can create multiple <a href="struct.BitGenerator.html" title="struct numpy::random::BitGenerator"><code>BitGenerator</code></a>s to generate random numbers truly in parallel,
+all without being attached to the interpreter runtime:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>numpy::{PyArray2, PyArrayMethods <span class="kw">as _</span>};
+
+Python::attach(|py| -&gt; PyResult&lt;<span class="kw">_</span>&gt; {
+    <span class="kw">let </span>bitgen: Bound&lt;PyBitGenerator&gt; = default_bit_gen(py)<span class="question-mark">?</span>;
+    <span class="kw">let </span>children = bitgen.spawn(<span class="number">4</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>arr = PyArray2::&lt;u32&gt;::zeros(py, (<span class="number">4</span>, <span class="number">300</span>), <span class="bool-val">false</span>).readwrite();
+    <span class="kw">let </span><span class="kw-2">mut </span>ndarr = arr.as_array_mut();  <span class="comment">// ndarray for more convenience
+    </span>py.detach(|| std::thread::scope(|s| {
+        <span class="kw">for </span>(<span class="kw-2">mut </span>chunk, <span class="kw-2">mut </span>child) <span class="kw">in </span>ndarr.rows_mut().into_iter().zip(children) {
+            s.spawn(<span class="kw">move </span>|| {
+                <span class="kw">for </span>x <span class="kw">in </span>chunk.iter_mut() {
+                    <span class="kw-2">*</span>x = child.random_range(<span class="number">10</span>..<span class="number">200</span>);
+                }
+            });
+        }
+    }));
+    <span class="macro">println!</span>(<span class="string">"Now filled: {arr:?}"</span>);
+    <span class="prelude-val">Ok</span>(())
+})<span class="question-mark">?</span>;</code></pre></div></div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.BitGenerator.html" title="struct numpy::random::BitGenerator">BitGenerator</a></dt><dd>A numpy <code>BitGenerator</code> usable without being attached to the interpreter runtime,
+with exclusive access to its state.</dd><dt><a class="struct" href="struct.PyBitGenerator.html" title="struct numpy::random::PyBitGenerator">PyBit<wbr>Generator</a></dt><dd>Wrapper for <a href="https://numpy.org/doc/stable//reference/random/bit_generators/generated/numpy.random.BitGenerator.html"><code>np.random.BitGenerator</code></a>.</dd></dl><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><dl class="item-table"><dt><a class="enum" href="enum.BitGeneratorKind.html" title="enum numpy::random::BitGeneratorKind">BitGenerator<wbr>Kind</a></dt><dd>Which of numpy’s bit generator algorithms <a href="struct.BitGenerator.html#method.new" title="associated function numpy::random::BitGenerator::new"><code>BitGenerator::new</code></a> should create.</dd></dl><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><dl class="item-table"><dt><a class="trait" href="trait.PyBitGeneratorMethods.html" title="trait numpy::random::PyBitGeneratorMethods">PyBit<wbr>Generator<wbr>Methods</a></dt><dd>Methods for <a href="struct.PyBitGenerator.html" title="struct numpy::random::PyBitGenerator"><code>PyBitGenerator</code></a>.</dd></dl></section></div></main></body></html>

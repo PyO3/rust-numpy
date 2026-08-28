@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/lib.rs`."><title>lib.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-17e0aaed.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="numpy" data-themes="" data-resource-suffix="" data-rustdoc-version="1.97.1 (8bab26f4f 2026-07-14)" data-channel="1.97.1" data-search-js="search-fd9372ac.js" data-stringdex-js="stringdex-2da4960a.js" data-settings-js="settings-170eb4bf.js" ><script src="../../static.files/storage-41dd4d93.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-fcd733ba.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-f7c3ffd8.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">numpy/</div>lib.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="doccomment">//! This crate provides Rust interfaces for [NumPy C APIs][c-api],
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/lib.rs`."><title>lib.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-1ed95124.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="numpy" data-themes="" data-resource-suffix="" data-rustdoc-version="1.98.0 (88d9e12ae 2026-08-18)" data-channel="1.98.0" data-search-js="search-9944d736.js" data-stringdex-js="stringdex-2da4960a.js" data-settings-js="settings-170eb4bf.js" ><script src="../../static.files/storage-41dd4d93.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-417ebf0a.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-f7c3ffd8.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">numpy/</div>lib.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="doccomment">//! This crate provides Rust interfaces for [NumPy C APIs][c-api],
 <a href=#2 id=2 data-nosnippet>2</a>//! especially for the [ndarray][ndarray] class.
 <a href=#3 id=3 data-nosnippet>3</a>//!
 <a href=#4 id=4 data-nosnippet>4</a>//! It uses [`pyo3`] for Rust bindings to CPython, and uses
@@ -79,109 +79,110 @@
 <a href=#79 id=79 data-nosnippet>79</a><span class="kw">mod </span>dtype;
 <a href=#80 id=80 data-nosnippet>80</a><span class="kw">mod </span>error;
 <a href=#81 id=81 data-nosnippet>81</a><span class="kw">pub mod </span>npyffi;
-<a href=#82 id=82 data-nosnippet>82</a><span class="kw">mod </span>slice_container;
-<a href=#83 id=83 data-nosnippet>83</a><span class="kw">mod </span>strings;
-<a href=#84 id=84 data-nosnippet>84</a><span class="kw">mod </span>sum_products;
-<a href=#85 id=85 data-nosnippet>85</a><span class="kw">mod </span>untyped_array;
-<a href=#86 id=86 data-nosnippet>86</a>
-<a href=#87 id=87 data-nosnippet>87</a><span class="kw">pub use </span>ndarray;
-<a href=#88 id=88 data-nosnippet>88</a><span class="kw">pub use </span>pyo3;
-<a href=#89 id=89 data-nosnippet>89</a>
-<a href=#90 id=90 data-nosnippet>90</a><span class="attr">#[cfg(feature = <span class="string">"nalgebra"</span>)]
-<a href=#91 id=91 data-nosnippet>91</a></span><span class="kw">pub use </span>nalgebra;
-<a href=#92 id=92 data-nosnippet>92</a>
-<a href=#93 id=93 data-nosnippet>93</a><span class="kw">pub use </span><span class="kw">crate</span>::array::{
-<a href=#94 id=94 data-nosnippet>94</a>    get_array_module, PyArray, PyArray0, PyArray0Methods, PyArray1, PyArray2, PyArray3, PyArray4,
-<a href=#95 id=95 data-nosnippet>95</a>    PyArray5, PyArray6, PyArrayDyn, PyArrayMethods,
-<a href=#96 id=96 data-nosnippet>96</a>};
-<a href=#97 id=97 data-nosnippet>97</a><span class="kw">pub use </span><span class="kw">crate</span>::array_like::{
-<a href=#98 id=98 data-nosnippet>98</a>    AllowTypeChange, PyArrayLike, PyArrayLike0, PyArrayLike1, PyArrayLike2, PyArrayLike3,
-<a href=#99 id=99 data-nosnippet>99</a>    PyArrayLike4, PyArrayLike5, PyArrayLike6, PyArrayLikeDyn, TypeMustMatch,
-<a href=#100 id=100 data-nosnippet>100</a>};
-<a href=#101 id=101 data-nosnippet>101</a><span class="kw">pub use </span><span class="kw">crate</span>::borrow::{
-<a href=#102 id=102 data-nosnippet>102</a>    PyReadonlyArray, PyReadonlyArray0, PyReadonlyArray1, PyReadonlyArray2, PyReadonlyArray3,
-<a href=#103 id=103 data-nosnippet>103</a>    PyReadonlyArray4, PyReadonlyArray5, PyReadonlyArray6, PyReadonlyArrayDyn, PyReadwriteArray,
-<a href=#104 id=104 data-nosnippet>104</a>    PyReadwriteArray0, PyReadwriteArray1, PyReadwriteArray2, PyReadwriteArray3, PyReadwriteArray4,
-<a href=#105 id=105 data-nosnippet>105</a>    PyReadwriteArray5, PyReadwriteArray6, PyReadwriteArrayDyn,
-<a href=#106 id=106 data-nosnippet>106</a>};
-<a href=#107 id=107 data-nosnippet>107</a><span class="kw">pub use </span><span class="kw">crate</span>::convert::{IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
-<a href=#108 id=108 data-nosnippet>108</a><span class="kw">pub use </span><span class="kw">crate</span>::dtype::{dtype, Complex32, Complex64, Element, PyArrayDescr, PyArrayDescrMethods};
-<a href=#109 id=109 data-nosnippet>109</a><span class="kw">pub use </span><span class="kw">crate</span>::error::{AsSliceError, BorrowError, FromVecError};
-<a href=#110 id=110 data-nosnippet>110</a><span class="kw">pub use </span><span class="kw">crate</span>::npyffi::{PY_ARRAY_API, PY_UFUNC_API};
-<a href=#111 id=111 data-nosnippet>111</a><span class="kw">pub use </span><span class="kw">crate</span>::strings::{PyFixedString, PyFixedUnicode};
-<a href=#112 id=112 data-nosnippet>112</a><span class="kw">pub use </span><span class="kw">crate</span>::sum_products::{dot, einsum, inner};
-<a href=#113 id=113 data-nosnippet>113</a><span class="kw">pub use </span><span class="kw">crate</span>::untyped_array::{PyUntypedArray, PyUntypedArrayMethods};
-<a href=#114 id=114 data-nosnippet>114</a>
-<a href=#115 id=115 data-nosnippet>115</a><span class="kw">pub use </span>ndarray::{array, Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};
-<a href=#116 id=116 data-nosnippet>116</a>
-<a href=#117 id=117 data-nosnippet>117</a><span class="doccomment">/// A prelude
-<a href=#118 id=118 data-nosnippet>118</a>///
-<a href=#119 id=119 data-nosnippet>119</a>/// The purpose of this module is to avoid direct imports of
-<a href=#120 id=120 data-nosnippet>120</a>/// the method traits defined by this crate via a glob import:
-<a href=#121 id=121 data-nosnippet>121</a>///
-<a href=#122 id=122 data-nosnippet>122</a>/// ```
-<a href=#123 id=123 data-nosnippet>123</a>/// # #![allow(unused_imports)]
-<a href=#124 id=124 data-nosnippet>124</a>/// use numpy::prelude::*;
-<a href=#125 id=125 data-nosnippet>125</a>/// ```
-<a href=#126 id=126 data-nosnippet>126</a></span><span class="kw">pub mod </span>prelude {
-<a href=#127 id=127 data-nosnippet>127</a>    <span class="kw">pub use </span><span class="kw">crate</span>::array::{PyArray0Methods, PyArrayMethods};
-<a href=#128 id=128 data-nosnippet>128</a>    <span class="kw">pub use </span><span class="kw">crate</span>::convert::{IntoPyArray, ToPyArray};
-<a href=#129 id=129 data-nosnippet>129</a>    <span class="kw">pub use </span><span class="kw">crate</span>::dtype::PyArrayDescrMethods;
-<a href=#130 id=130 data-nosnippet>130</a>    <span class="kw">pub use </span><span class="kw">crate</span>::untyped_array::PyUntypedArrayMethods;
-<a href=#131 id=131 data-nosnippet>131</a>}
-<a href=#132 id=132 data-nosnippet>132</a>
-<a href=#133 id=133 data-nosnippet>133</a><span class="doccomment">/// Deprecated type alias to [`AsSliceError`].  The new name is preferred because arrays might also
-<a href=#134 id=134 data-nosnippet>134</a>/// fail to view as a slice due to misalignment.
-<a href=#135 id=135 data-nosnippet>135</a></span><span class="attr">#[deprecated(note = <span class="string">"use AsSliceError instead"</span>, since = <span class="string">"0.28.0"</span>)]
-<a href=#136 id=136 data-nosnippet>136</a></span><span class="kw">pub type </span>NonContiguousError = AsSliceError;
-<a href=#137 id=137 data-nosnippet>137</a>
-<a href=#138 id=138 data-nosnippet>138</a><span class="attr">#[cfg(doctest)]
-<a href=#139 id=139 data-nosnippet>139</a></span><span class="kw">mod </span>doctest {
-<a href=#140 id=140 data-nosnippet>140</a>    <span class="macro">macro_rules!</span> doc_comment {
-<a href=#141 id=141 data-nosnippet>141</a>        (<span class="macro-nonterminal">$doc_string</span>:expr, <span class="macro-nonterminal">$mod_name</span>:ident) =&gt; {
-<a href=#142 id=142 data-nosnippet>142</a>            <span class="attr">#[doc = <span class="macro-nonterminal">$doc_string</span>]
-<a href=#143 id=143 data-nosnippet>143</a>            </span><span class="kw">mod </span><span class="macro-nonterminal">$mod_name </span>{}
-<a href=#144 id=144 data-nosnippet>144</a>        };
-<a href=#145 id=145 data-nosnippet>145</a>    }
-<a href=#146 id=146 data-nosnippet>146</a>    <span class="macro">doc_comment!</span>(<span class="macro">include_str!</span>(<span class="string">"../README.md"</span>), readme);
-<a href=#147 id=147 data-nosnippet>147</a>}
-<a href=#148 id=148 data-nosnippet>148</a>
-<a href=#149 id=149 data-nosnippet>149</a><span class="attr">#[cold]
-<a href=#150 id=150 data-nosnippet>150</a>#[inline(always)]
-<a href=#151 id=151 data-nosnippet>151</a></span><span class="kw">fn </span>cold() {}
-<a href=#152 id=152 data-nosnippet>152</a>
-<a href=#153 id=153 data-nosnippet>153</a><span class="doccomment">/// Create a [`PyArray`] with one, two or three dimensions.
-<a href=#154 id=154 data-nosnippet>154</a>///
-<a href=#155 id=155 data-nosnippet>155</a>/// This macro is backed by [`ndarray::array`].
-<a href=#156 id=156 data-nosnippet>156</a>///
-<a href=#157 id=157 data-nosnippet>157</a>/// # Example
-<a href=#158 id=158 data-nosnippet>158</a>///
-<a href=#159 id=159 data-nosnippet>159</a>/// ```
-<a href=#160 id=160 data-nosnippet>160</a>/// use numpy::pyo3::Python;
-<a href=#161 id=161 data-nosnippet>161</a>/// use numpy::ndarray::array;
-<a href=#162 id=162 data-nosnippet>162</a>/// use numpy::{pyarray, PyArrayMethods};
-<a href=#163 id=163 data-nosnippet>163</a>///
-<a href=#164 id=164 data-nosnippet>164</a>/// Python::attach(|py| {
-<a href=#165 id=165 data-nosnippet>165</a>///     let array = pyarray![py, [1, 2], [3, 4]];
-<a href=#166 id=166 data-nosnippet>166</a>///
-<a href=#167 id=167 data-nosnippet>167</a>///     assert_eq!(
-<a href=#168 id=168 data-nosnippet>168</a>///         array.readonly().as_array(),
-<a href=#169 id=169 data-nosnippet>169</a>///         array![[1, 2], [3, 4]]
-<a href=#170 id=170 data-nosnippet>170</a>///     );
-<a href=#171 id=171 data-nosnippet>171</a>/// });
-<a href=#172 id=172 data-nosnippet>172</a></span><span class="attr">#[macro_export]
-<a href=#173 id=173 data-nosnippet>173</a></span><span class="macro">macro_rules!</span> pyarray {
-<a href=#174 id=174 data-nosnippet>174</a>    (<span class="macro-nonterminal">$py</span>: ident, $([$([$(<span class="macro-nonterminal">$x</span>:expr),* $(,)<span class="kw-2">*</span>]),+ $(,)<span class="kw-2">*</span>]),+ $(,)<span class="kw-2">*</span>) =&gt; {{
-<a href=#175 id=175 data-nosnippet>175</a>        <span class="macro-nonterminal">$crate::IntoPyArray::into_pyarray</span>(<span class="macro-nonterminal">$crate::array</span>![$([$([$(<span class="macro-nonterminal">$x</span>,)<span class="kw-2">*</span>],)<span class="kw-2">*</span>],)<span class="kw-2">*</span>], <span class="macro-nonterminal">$py</span>)
-<a href=#176 id=176 data-nosnippet>176</a>    }};
-<a href=#177 id=177 data-nosnippet>177</a>    (<span class="macro-nonterminal">$py</span>: ident, $([$(<span class="macro-nonterminal">$x</span>:expr),* $(,)<span class="kw-2">*</span>]),+ $(,)<span class="kw-2">*</span>) =&gt; {{
-<a href=#178 id=178 data-nosnippet>178</a>        <span class="macro-nonterminal">$crate::IntoPyArray::into_pyarray</span>(<span class="macro-nonterminal">$crate::array</span>![$([$(<span class="macro-nonterminal">$x</span>,)<span class="kw-2">*</span>],)<span class="kw-2">*</span>], <span class="macro-nonterminal">$py</span>)
-<a href=#179 id=179 data-nosnippet>179</a>    }};
-<a href=#180 id=180 data-nosnippet>180</a>    (<span class="macro-nonterminal">$py</span>: ident, $(<span class="macro-nonterminal">$x</span>:expr),* $(,)<span class="kw-2">*</span>) =&gt; {{
-<a href=#181 id=181 data-nosnippet>181</a>        <span class="macro-nonterminal">$crate::IntoPyArray::into_pyarray</span>(<span class="macro-nonterminal">$crate::array</span>![$(<span class="macro-nonterminal">$x</span>,)<span class="kw-2">*</span>], <span class="macro-nonterminal">$py</span>)
-<a href=#182 id=182 data-nosnippet>182</a>    }};
-<a href=#183 id=183 data-nosnippet>183</a>}
-<a href=#184 id=184 data-nosnippet>184</a>
-<a href=#185 id=185 data-nosnippet>185</a><span class="attr">#[cfg(all(not(Py_3_15), Py_GIL_DISABLED, target_pointer_width = <span class="string">"32"</span>))]
-<a href=#186 id=186 data-nosnippet>186</a></span><span class="macro">compile_error!</span>(<span class="string">"free-threaded Python on 32bit platforms is only supported from 3.15+"</span>);
+<a href=#82 id=82 data-nosnippet>82</a><span class="kw">pub mod </span>random;
+<a href=#83 id=83 data-nosnippet>83</a><span class="kw">mod </span>slice_container;
+<a href=#84 id=84 data-nosnippet>84</a><span class="kw">mod </span>strings;
+<a href=#85 id=85 data-nosnippet>85</a><span class="kw">mod </span>sum_products;
+<a href=#86 id=86 data-nosnippet>86</a><span class="kw">mod </span>untyped_array;
+<a href=#87 id=87 data-nosnippet>87</a>
+<a href=#88 id=88 data-nosnippet>88</a><span class="kw">pub use </span>ndarray;
+<a href=#89 id=89 data-nosnippet>89</a><span class="kw">pub use </span>pyo3;
+<a href=#90 id=90 data-nosnippet>90</a>
+<a href=#91 id=91 data-nosnippet>91</a><span class="attr">#[cfg(feature = <span class="string">"nalgebra"</span>)]
+<a href=#92 id=92 data-nosnippet>92</a></span><span class="kw">pub use </span>nalgebra;
+<a href=#93 id=93 data-nosnippet>93</a>
+<a href=#94 id=94 data-nosnippet>94</a><span class="kw">pub use </span><span class="kw">crate</span>::array::{
+<a href=#95 id=95 data-nosnippet>95</a>    get_array_module, PyArray, PyArray0, PyArray0Methods, PyArray1, PyArray2, PyArray3, PyArray4,
+<a href=#96 id=96 data-nosnippet>96</a>    PyArray5, PyArray6, PyArrayDyn, PyArrayMethods,
+<a href=#97 id=97 data-nosnippet>97</a>};
+<a href=#98 id=98 data-nosnippet>98</a><span class="kw">pub use </span><span class="kw">crate</span>::array_like::{
+<a href=#99 id=99 data-nosnippet>99</a>    AllowTypeChange, PyArrayLike, PyArrayLike0, PyArrayLike1, PyArrayLike2, PyArrayLike3,
+<a href=#100 id=100 data-nosnippet>100</a>    PyArrayLike4, PyArrayLike5, PyArrayLike6, PyArrayLikeDyn, TypeMustMatch,
+<a href=#101 id=101 data-nosnippet>101</a>};
+<a href=#102 id=102 data-nosnippet>102</a><span class="kw">pub use </span><span class="kw">crate</span>::borrow::{
+<a href=#103 id=103 data-nosnippet>103</a>    PyReadonlyArray, PyReadonlyArray0, PyReadonlyArray1, PyReadonlyArray2, PyReadonlyArray3,
+<a href=#104 id=104 data-nosnippet>104</a>    PyReadonlyArray4, PyReadonlyArray5, PyReadonlyArray6, PyReadonlyArrayDyn, PyReadwriteArray,
+<a href=#105 id=105 data-nosnippet>105</a>    PyReadwriteArray0, PyReadwriteArray1, PyReadwriteArray2, PyReadwriteArray3, PyReadwriteArray4,
+<a href=#106 id=106 data-nosnippet>106</a>    PyReadwriteArray5, PyReadwriteArray6, PyReadwriteArrayDyn,
+<a href=#107 id=107 data-nosnippet>107</a>};
+<a href=#108 id=108 data-nosnippet>108</a><span class="kw">pub use </span><span class="kw">crate</span>::convert::{IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
+<a href=#109 id=109 data-nosnippet>109</a><span class="kw">pub use </span><span class="kw">crate</span>::dtype::{dtype, Complex32, Complex64, Element, PyArrayDescr, PyArrayDescrMethods};
+<a href=#110 id=110 data-nosnippet>110</a><span class="kw">pub use </span><span class="kw">crate</span>::error::{AsSliceError, BorrowError, FromVecError};
+<a href=#111 id=111 data-nosnippet>111</a><span class="kw">pub use </span><span class="kw">crate</span>::npyffi::{PY_ARRAY_API, PY_UFUNC_API};
+<a href=#112 id=112 data-nosnippet>112</a><span class="kw">pub use </span><span class="kw">crate</span>::strings::{PyFixedString, PyFixedUnicode};
+<a href=#113 id=113 data-nosnippet>113</a><span class="kw">pub use </span><span class="kw">crate</span>::sum_products::{dot, einsum, inner};
+<a href=#114 id=114 data-nosnippet>114</a><span class="kw">pub use </span><span class="kw">crate</span>::untyped_array::{PyUntypedArray, PyUntypedArrayMethods};
+<a href=#115 id=115 data-nosnippet>115</a>
+<a href=#116 id=116 data-nosnippet>116</a><span class="kw">pub use </span>ndarray::{array, Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};
+<a href=#117 id=117 data-nosnippet>117</a>
+<a href=#118 id=118 data-nosnippet>118</a><span class="doccomment">/// A prelude
+<a href=#119 id=119 data-nosnippet>119</a>///
+<a href=#120 id=120 data-nosnippet>120</a>/// The purpose of this module is to avoid direct imports of
+<a href=#121 id=121 data-nosnippet>121</a>/// the method traits defined by this crate via a glob import:
+<a href=#122 id=122 data-nosnippet>122</a>///
+<a href=#123 id=123 data-nosnippet>123</a>/// ```
+<a href=#124 id=124 data-nosnippet>124</a>/// # #![allow(unused_imports)]
+<a href=#125 id=125 data-nosnippet>125</a>/// use numpy::prelude::*;
+<a href=#126 id=126 data-nosnippet>126</a>/// ```
+<a href=#127 id=127 data-nosnippet>127</a></span><span class="kw">pub mod </span>prelude {
+<a href=#128 id=128 data-nosnippet>128</a>    <span class="kw">pub use </span><span class="kw">crate</span>::array::{PyArray0Methods, PyArrayMethods};
+<a href=#129 id=129 data-nosnippet>129</a>    <span class="kw">pub use </span><span class="kw">crate</span>::convert::{IntoPyArray, ToPyArray};
+<a href=#130 id=130 data-nosnippet>130</a>    <span class="kw">pub use </span><span class="kw">crate</span>::dtype::PyArrayDescrMethods;
+<a href=#131 id=131 data-nosnippet>131</a>    <span class="kw">pub use </span><span class="kw">crate</span>::untyped_array::PyUntypedArrayMethods;
+<a href=#132 id=132 data-nosnippet>132</a>}
+<a href=#133 id=133 data-nosnippet>133</a>
+<a href=#134 id=134 data-nosnippet>134</a><span class="doccomment">/// Deprecated type alias to [`AsSliceError`].  The new name is preferred because arrays might also
+<a href=#135 id=135 data-nosnippet>135</a>/// fail to view as a slice due to misalignment.
+<a href=#136 id=136 data-nosnippet>136</a></span><span class="attr">#[deprecated(note = <span class="string">"use AsSliceError instead"</span>, since = <span class="string">"0.28.0"</span>)]
+<a href=#137 id=137 data-nosnippet>137</a></span><span class="kw">pub type </span>NonContiguousError = AsSliceError;
+<a href=#138 id=138 data-nosnippet>138</a>
+<a href=#139 id=139 data-nosnippet>139</a><span class="attr">#[cfg(doctest)]
+<a href=#140 id=140 data-nosnippet>140</a></span><span class="kw">mod </span>doctest {
+<a href=#141 id=141 data-nosnippet>141</a>    <span class="macro">macro_rules!</span> doc_comment {
+<a href=#142 id=142 data-nosnippet>142</a>        (<span class="macro-nonterminal">$doc_string</span>:expr, <span class="macro-nonterminal">$mod_name</span>:ident) =&gt; {
+<a href=#143 id=143 data-nosnippet>143</a>            <span class="attr">#[doc = <span class="macro-nonterminal">$doc_string</span>]
+<a href=#144 id=144 data-nosnippet>144</a>            </span><span class="kw">mod </span><span class="macro-nonterminal">$mod_name </span>{}
+<a href=#145 id=145 data-nosnippet>145</a>        };
+<a href=#146 id=146 data-nosnippet>146</a>    }
+<a href=#147 id=147 data-nosnippet>147</a>    <span class="macro">doc_comment!</span>(<span class="macro">include_str!</span>(<span class="string">"../README.md"</span>), readme);
+<a href=#148 id=148 data-nosnippet>148</a>}
+<a href=#149 id=149 data-nosnippet>149</a>
+<a href=#150 id=150 data-nosnippet>150</a><span class="attr">#[cold]
+<a href=#151 id=151 data-nosnippet>151</a>#[inline(always)]
+<a href=#152 id=152 data-nosnippet>152</a></span><span class="kw">fn </span>cold() {}
+<a href=#153 id=153 data-nosnippet>153</a>
+<a href=#154 id=154 data-nosnippet>154</a><span class="doccomment">/// Create a [`PyArray`] with one, two or three dimensions.
+<a href=#155 id=155 data-nosnippet>155</a>///
+<a href=#156 id=156 data-nosnippet>156</a>/// This macro is backed by [`ndarray::array`].
+<a href=#157 id=157 data-nosnippet>157</a>///
+<a href=#158 id=158 data-nosnippet>158</a>/// # Example
+<a href=#159 id=159 data-nosnippet>159</a>///
+<a href=#160 id=160 data-nosnippet>160</a>/// ```
+<a href=#161 id=161 data-nosnippet>161</a>/// use numpy::pyo3::Python;
+<a href=#162 id=162 data-nosnippet>162</a>/// use numpy::ndarray::array;
+<a href=#163 id=163 data-nosnippet>163</a>/// use numpy::{pyarray, PyArrayMethods};
+<a href=#164 id=164 data-nosnippet>164</a>///
+<a href=#165 id=165 data-nosnippet>165</a>/// Python::attach(|py| {
+<a href=#166 id=166 data-nosnippet>166</a>///     let array = pyarray![py, [1, 2], [3, 4]];
+<a href=#167 id=167 data-nosnippet>167</a>///
+<a href=#168 id=168 data-nosnippet>168</a>///     assert_eq!(
+<a href=#169 id=169 data-nosnippet>169</a>///         array.readonly().as_array(),
+<a href=#170 id=170 data-nosnippet>170</a>///         array![[1, 2], [3, 4]]
+<a href=#171 id=171 data-nosnippet>171</a>///     );
+<a href=#172 id=172 data-nosnippet>172</a>/// });
+<a href=#173 id=173 data-nosnippet>173</a></span><span class="attr">#[macro_export]
+<a href=#174 id=174 data-nosnippet>174</a></span><span class="macro">macro_rules!</span> pyarray {
+<a href=#175 id=175 data-nosnippet>175</a>    (<span class="macro-nonterminal">$py</span>: ident, $([$([$(<span class="macro-nonterminal">$x</span>:expr),* $(,)<span class="kw-2">*</span>]),+ $(,)<span class="kw-2">*</span>]),+ $(,)<span class="kw-2">*</span>) =&gt; {{
+<a href=#176 id=176 data-nosnippet>176</a>        <span class="macro-nonterminal">$crate::IntoPyArray::into_pyarray</span>(<span class="macro-nonterminal">$crate::array</span>![$([$([$(<span class="macro-nonterminal">$x</span>,)<span class="kw-2">*</span>],)<span class="kw-2">*</span>],)<span class="kw-2">*</span>], <span class="macro-nonterminal">$py</span>)
+<a href=#177 id=177 data-nosnippet>177</a>    }};
+<a href=#178 id=178 data-nosnippet>178</a>    (<span class="macro-nonterminal">$py</span>: ident, $([$(<span class="macro-nonterminal">$x</span>:expr),* $(,)<span class="kw-2">*</span>]),+ $(,)<span class="kw-2">*</span>) =&gt; {{
+<a href=#179 id=179 data-nosnippet>179</a>        <span class="macro-nonterminal">$crate::IntoPyArray::into_pyarray</span>(<span class="macro-nonterminal">$crate::array</span>![$([$(<span class="macro-nonterminal">$x</span>,)<span class="kw-2">*</span>],)<span class="kw-2">*</span>], <span class="macro-nonterminal">$py</span>)
+<a href=#180 id=180 data-nosnippet>180</a>    }};
+<a href=#181 id=181 data-nosnippet>181</a>    (<span class="macro-nonterminal">$py</span>: ident, $(<span class="macro-nonterminal">$x</span>:expr),* $(,)<span class="kw-2">*</span>) =&gt; {{
+<a href=#182 id=182 data-nosnippet>182</a>        <span class="macro-nonterminal">$crate::IntoPyArray::into_pyarray</span>(<span class="macro-nonterminal">$crate::array</span>![$(<span class="macro-nonterminal">$x</span>,)<span class="kw-2">*</span>], <span class="macro-nonterminal">$py</span>)
+<a href=#183 id=183 data-nosnippet>183</a>    }};
+<a href=#184 id=184 data-nosnippet>184</a>}
+<a href=#185 id=185 data-nosnippet>185</a>
+<a href=#186 id=186 data-nosnippet>186</a><span class="attr">#[cfg(all(not(Py_3_15), Py_GIL_DISABLED, target_pointer_width = <span class="string">"32"</span>))]
+<a href=#187 id=187 data-nosnippet>187</a></span><span class="macro">compile_error!</span>(<span class="string">"free-threaded Python on 32bit platforms is only supported from 3.15+"</span>);
 </code></pre></div></section></main></body></html>
