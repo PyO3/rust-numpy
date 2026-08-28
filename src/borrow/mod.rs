@@ -63,17 +63,17 @@
 //!
 //! ```rust
 //! use numpy::{PyArray1, PyArrayMethods};
-//! use pyo3::{types::{IntoPyDict, PyAnyMethods}, Python, ffi::c_str};
+//! use pyo3::{types::{IntoPyDict, PyAnyMethods}, Python};
 //!
 //! # fn main() -> pyo3::PyResult<()> {
 //! Python::attach(|py| {
 //!     let array = PyArray1::arange(py, 0.0, 10.0, 1.0);
 //!     let locals = [("array", array)].into_py_dict(py)?;
 //!
-//!     let view1 = py.eval(c_str!("array[:5]"), None, Some(&locals))?.cast_into::<PyArray1<f64>>()?;
-//!     let view2 = py.eval(c_str!("array[5:]"), None, Some(&locals))?.cast_into::<PyArray1<f64>>()?;
-//!     let view3 = py.eval(c_str!("array[::2]"), None, Some(&locals))?.cast_into::<PyArray1<f64>>()?;
-//!     let view4 = py.eval(c_str!("array[1::2]"), None, Some(&locals))?.cast_into::<PyArray1<f64>>()?;
+//!     let view1 = py.eval(c"array[:5]", None, Some(&locals))?.cast_into::<PyArray1<f64>>()?;
+//!     let view2 = py.eval(c"array[5:]", None, Some(&locals))?.cast_into::<PyArray1<f64>>()?;
+//!     let view3 = py.eval(c"array[::2]", None, Some(&locals))?.cast_into::<PyArray1<f64>>()?;
+//!     let view4 = py.eval(c"array[1::2]", None, Some(&locals))?.cast_into::<PyArray1<f64>>()?;
 //!
 //!     {
 //!         let _view1 = view1.readwrite();
@@ -95,15 +95,15 @@
 //! # use std::panic::{catch_unwind, AssertUnwindSafe};
 //! #
 //! use numpy::{PyArray2, PyArrayMethods};
-//! use pyo3::{types::{IntoPyDict, PyAnyMethods}, Python, ffi::c_str};
+//! use pyo3::{types::{IntoPyDict, PyAnyMethods}, Python};
 //!
 //! # fn main() -> pyo3::PyResult<()> {
 //! Python::attach(|py| {
 //!     let array = PyArray2::<f64>::zeros(py, (10, 10), false);
 //!     let locals = [("array", array)].into_py_dict(py)?;
 //!
-//!     let view1 = py.eval(c_str!("array[:, ::3]"), None, Some(&locals))?.cast_into::<PyArray2<f64>>()?;
-//!     let view2 = py.eval(c_str!("array[:, 1::3]"), None, Some(&locals))?.cast_into::<PyArray2<f64>>()?;
+//!     let view1 = py.eval(c"array[:, ::3]", None, Some(&locals))?.cast_into::<PyArray2<f64>>()?;
+//!     let view2 = py.eval(c"array[:, 1::3]", None, Some(&locals))?.cast_into::<PyArray2<f64>>()?;
 //!
 //!     // A false conflict as the views do not actually share any elements.
 //!     let res = catch_unwind(AssertUnwindSafe(|| {
@@ -300,7 +300,7 @@ where
     ///
     /// ```rust
     /// # use pyo3::prelude::*;
-    /// use pyo3::{py_run, ffi::c_str};
+    /// use pyo3::py_run;
     /// use numpy::{get_array_module, PyReadonlyArray2};
     /// use nalgebra::{MatrixView, Const, Dyn};
     ///
@@ -318,7 +318,7 @@ where
     ///
     /// # fn main() -> pyo3::PyResult<()> {
     /// Python::attach(|py| {
-    ///     let np = py.eval(c_str!("__import__('numpy')"), None, None)?;
+    ///     let np = py.eval(c"__import__('numpy')", None, None)?;
     ///     let sum_standard_layout = wrap_pyfunction!(sum_standard_layout)(py)?;
     ///     let sum_dynamic_strides = wrap_pyfunction!(sum_dynamic_strides)(py)?;
     ///
@@ -682,7 +682,6 @@ mod tests {
     };
 
     use crate::array::PyArray1;
-    use pyo3::ffi::c_str;
 
     #[test]
     fn test_debug_formatting() {
@@ -728,7 +727,7 @@ mod tests {
             // The view will make the internal reference check of `PyArray_Resize` fail.
             let locals = [("array", &array)].into_py_dict(py).unwrap();
             let _view = py
-                .eval(c_str!("array[:]"), None, Some(&locals))
+                .eval(c"array[:]", None, Some(&locals))
                 .unwrap()
                 .cast_into::<PyArray1<f64>>()
                 .unwrap();

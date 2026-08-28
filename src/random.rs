@@ -252,7 +252,7 @@ impl BitGenerator {
             .getattr(intern!(py, "capsule"))?
             .cast_into::<PyCapsule>()?;
         let raw = capsule
-            .pointer_checked(Some(ffi::c_str!("BitGenerator")))
+            .pointer_checked(Some(c"BitGenerator"))
             .map_err(|_| PyRuntimeError::new_err("Invalid BitGenerator capsule"))?;
         Ok(BitGenerator {
             raw: raw.cast(),

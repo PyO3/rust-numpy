@@ -8,7 +8,6 @@ use numpy::{
     dtype, get_array_module, npyffi::NPY_ORDER, pyarray, PyArray, PyArray1, PyArray2, PyArrayDescr,
     PyFixedString, PyFixedUnicode,
 };
-use pyo3::ffi::c_str;
 use pyo3::{
     py_run, pyclass, pymethods,
     types::{IntoPyDict, PyAnyMethods, PyDict, PyList},
@@ -23,7 +22,7 @@ fn get_np_locals(py: Python<'_>) -> Bound<'_, PyDict> {
 
 fn not_contiguous_array(py: Python<'_>) -> Bound<'_, PyArray1<i32>> {
     py.eval(
-        c_str!("np.array([1, 2, 3, 4], dtype='int32')[::2]"),
+        c"np.array([1, 2, 3, 4], dtype='int32')[::2]",
         None,
         Some(&get_np_locals(py)),
     )
@@ -34,7 +33,7 @@ fn not_contiguous_array(py: Python<'_>) -> Bound<'_, PyArray1<i32>> {
 
 fn not_aligned_array(py: Python<'_>) -> Bound<'_, PyArray1<u16>> {
     py.eval(
-        c_str!("np.zeros(8, dtype='u2').view('u1')[1:-1].view('u2')"),
+        c"np.zeros(8, dtype='u2').view('u1')[1:-1].view('u2')",
         None,
         Some(&get_np_locals(py)),
     )
@@ -218,7 +217,7 @@ fn as_slice() {
         let misaligned_empty: Bound<'_, PyArray1<u16>> = {
             let arr = not_aligned_array(py);
             py.eval(
-                c_str!("arr[0:0]"),
+                c"arr[0:0]",
                 None,
                 Some(&[("arr", arr)].into_py_dict(py).unwrap()),
             )
@@ -272,9 +271,7 @@ fn cast_exact_checks_dtype_and_shape() {
         // cast_exact should reject subclasses of ndarray; cast should accept them
         let masked = py
             .eval(
-                pyo3::ffi::c_str!(
-                    "__import__('numpy').ma.MaskedArray([[1.0, 2.0], [3.0, 4.0]], dtype='float64')"
-                ),
+                c"__import__('numpy').ma.MaskedArray([[1.0, 2.0], [3.0, 4.0]], dtype='float64')",
                 None,
                 None,
             )
@@ -370,7 +367,7 @@ fn handle_negative_strides() {
 
         let neg_str_pyarr = py
             .eval(
-                c_str!("a[::-1]"),
+                c"a[::-1]",
                 Some(&[("a", pyarr)].into_py_dict(py).unwrap()),
                 None,
             )
@@ -393,7 +390,7 @@ fn dtype_via_python_attribute() {
 
         let dt = py
             .eval(
-                c_str!("a.dtype"),
+                c"a.dtype",
                 Some(&[("a", pyarr)].into_py_dict(py).unwrap()),
                 None,
             )
@@ -566,12 +563,12 @@ fn reshape() {
 #[test]
 fn half_f16_works() {
     Python::attach(|py| {
-        let np = py.eval(c_str!("__import__('numpy')"), None, None).unwrap();
+        let np = py.eval(c"__import__('numpy')", None, None).unwrap();
         let locals = [("np", &np)].into_py_dict(py).unwrap();
 
         let array = py
             .eval(
-                c_str!("np.array([[1, 2], [3, 4]], dtype='float16')"),
+                c"np.array([[1, 2], [3, 4]], dtype='float16')",
                 None,
                 Some(&locals),
             )
@@ -604,17 +601,15 @@ fn half_f16_works() {
 #[test]
 fn half_bf16_works() {
     Python::attach(|py| {
-        let np = py.eval(c_str!("__import__('numpy')"), None, None).unwrap();
+        let np = py.eval(c"__import__('numpy')", None, None).unwrap();
         // NumPy itself does not provide a `bfloat16` dtype itself,
         // so we import ml_dtypes which does register such a dtype.
-        let mldt = py
-            .eval(c_str!("__import__('ml_dtypes')"), None, None)
-            .unwrap();
+        let mldt = py.eval(c"__import__('ml_dtypes')", None, None).unwrap();
         let locals = [("np", &np), ("mldt", &mldt)].into_py_dict(py).unwrap();
 
         let array = py
             .eval(
-                c_str!("np.array([[1, 2], [3, 4]], dtype='bfloat16')"),
+                c"np.array([[1, 2], [3, 4]], dtype='bfloat16')",
                 None,
                 Some(&locals),
             )
@@ -646,12 +641,12 @@ fn half_bf16_works() {
 #[test]
 fn ascii_strings_with_explicit_dtype_works() {
     Python::attach(|py| {
-        let np = py.eval(c_str!("__import__('numpy')"), None, None).unwrap();
+        let np = py.eval(c"__import__('numpy')", None, None).unwrap();
         let locals = [("np", &np)].into_py_dict(py).unwrap();
 
         let array = py
             .eval(
-                c_str!("np.array([b'foo', b'bar', b'foobar'], dtype='S6')"),
+                c"np.array([b'foo', b'bar', b'foobar'], dtype='S6')",
                 None,
                 Some(&locals),
             )
@@ -682,12 +677,12 @@ fn ascii_strings_with_explicit_dtype_works() {
 #[test]
 fn unicode_strings_with_explicit_dtype_works() {
     Python::attach(|py| {
-        let np = py.eval(c_str!("__import__('numpy')"), None, None).unwrap();
+        let np = py.eval(c"__import__('numpy')", None, None).unwrap();
         let locals = [("np", &np)].into_py_dict(py).unwrap();
 
         let array = py
             .eval(
-                c_str!("np.array(['foo', 'bar', 'foobar'], dtype='U6')"),
+                c"np.array(['foo', 'bar', 'foobar'], dtype='U6')",
                 None,
                 Some(&locals),
             )
@@ -728,12 +723,12 @@ fn unicode_strings_with_explicit_dtype_works() {
 #[test]
 fn ascii_strings_ignore_byteorder() {
     Python::attach(|py| {
-        let np = py.eval(c_str!("__import__('numpy')"), None, None).unwrap();
+        let np = py.eval(c"__import__('numpy')", None, None).unwrap();
         let locals = [("np", &np)].into_py_dict(py).unwrap();
 
         let native_endian_works = py
             .eval(
-                c_str!("np.array([b'foo', b'bar'], dtype='=S3')"),
+                c"np.array([b'foo', b'bar'], dtype='=S3')",
                 None,
                 Some(&locals),
             )
@@ -743,7 +738,7 @@ fn ascii_strings_ignore_byteorder() {
 
         let little_endian_works = py
             .eval(
-                c_str!("np.array(['bfoo', b'bar'], dtype='<S3')"),
+                c"np.array(['bfoo', b'bar'], dtype='<S3')",
                 None,
                 Some(&locals),
             )
@@ -753,7 +748,7 @@ fn ascii_strings_ignore_byteorder() {
 
         let big_endian_works = py
             .eval(
-                c_str!("np.array([b'foo', b'bar'], dtype='>S3')"),
+                c"np.array([b'foo', b'bar'], dtype='>S3')",
                 None,
                 Some(&locals),
             )
@@ -771,12 +766,12 @@ fn ascii_strings_ignore_byteorder() {
 #[test]
 fn unicode_strings_respect_byteorder() {
     Python::attach(|py| {
-        let np = py.eval(c_str!("__import__('numpy')"), None, None).unwrap();
+        let np = py.eval(c"__import__('numpy')", None, None).unwrap();
         let locals = [("np", &np)].into_py_dict(py).unwrap();
 
         let native_endian_works = py
             .eval(
-                c_str!("np.array(['foo', 'bar'], dtype='=U3')"),
+                c"np.array(['foo', 'bar'], dtype='=U3')",
                 None,
                 Some(&locals),
             )
@@ -786,7 +781,7 @@ fn unicode_strings_respect_byteorder() {
 
         let little_endian_works = py
             .eval(
-                c_str!("np.array(['foo', 'bar'], dtype='<U3')"),
+                c"np.array(['foo', 'bar'], dtype='<U3')",
                 None,
                 Some(&locals),
             )
@@ -796,7 +791,7 @@ fn unicode_strings_respect_byteorder() {
 
         let big_endian_works = py
             .eval(
-                c_str!("np.array(['foo', 'bar'], dtype='>U3')"),
+                c"np.array(['foo', 'bar'], dtype='>U3')",
                 None,
                 Some(&locals),
             )

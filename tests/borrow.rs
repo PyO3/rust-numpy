@@ -6,7 +6,6 @@ use numpy::{
     PyArray, PyArray1, PyArray2, PyReadonlyArray3, PyReadwriteArray3, PyUntypedArrayMethods,
 };
 use pyo3::{
-    ffi::c_str,
     pyclass, pymethods,
     types::{IntoPyDict, PyAnyMethods},
     Py, Python,
@@ -160,14 +159,14 @@ fn overlapping_views_conflict() {
         let locals = [("array", array)].into_py_dict(py).unwrap();
 
         let view1 = py
-            .eval(c_str!("array[0,0,0:2]"), None, Some(&locals))
+            .eval(c"array[0,0,0:2]", None, Some(&locals))
             .unwrap()
             .cast_into::<PyArray1<f64>>()
             .unwrap();
         assert_eq!(view1.shape(), [2]);
 
         let view2 = py
-            .eval(c_str!("array[0,0,1:3]"), None, Some(&locals))
+            .eval(c"array[0,0,1:3]", None, Some(&locals))
             .unwrap()
             .cast_into::<PyArray1<f64>>()
             .unwrap();
@@ -185,14 +184,14 @@ fn non_overlapping_views_do_not_conflict() {
         let locals = [("array", array)].into_py_dict(py).unwrap();
 
         let view1 = py
-            .eval(c_str!("array[0,0,0:1]"), None, Some(&locals))
+            .eval(c"array[0,0,0:1]", None, Some(&locals))
             .unwrap()
             .cast_into::<PyArray1<f64>>()
             .unwrap();
         assert_eq!(view1.shape(), [1]);
 
         let view2 = py
-            .eval(c_str!("array[0,0,2:3]"), None, Some(&locals))
+            .eval(c"array[0,0,2:3]", None, Some(&locals))
             .unwrap()
             .cast_into::<PyArray1<f64>>()
             .unwrap();
@@ -214,14 +213,14 @@ fn conflict_due_to_overlapping_views() {
         let locals = [("array", array)].into_py_dict(py).unwrap();
 
         let view1 = py
-            .eval(c_str!("array[0:2]"), None, Some(&locals))
+            .eval(c"array[0:2]", None, Some(&locals))
             .unwrap()
             .cast_into::<PyArray1<f64>>()
             .unwrap();
         assert_eq!(view1.shape(), [2]);
 
         let view2 = py
-            .eval(c_str!("array[1:3]"), None, Some(&locals))
+            .eval(c"array[1:3]", None, Some(&locals))
             .unwrap()
             .cast_into::<PyArray1<f64>>()
             .unwrap();
@@ -240,14 +239,14 @@ fn conflict_due_to_reborrow_of_overlapping_views() {
         let locals = [("array", array)].into_py_dict(py).unwrap();
 
         let view1 = py
-            .eval(c_str!("array[0:2]"), None, Some(&locals))
+            .eval(c"array[0:2]", None, Some(&locals))
             .unwrap()
             .cast_into::<PyArray1<f64>>()
             .unwrap();
         assert_eq!(view1.shape(), [2]);
 
         let view2 = py
-            .eval(c_str!("array[1:3]"), None, Some(&locals))
+            .eval(c"array[1:3]", None, Some(&locals))
             .unwrap()
             .cast_into::<PyArray1<f64>>()
             .unwrap();
@@ -268,21 +267,21 @@ fn interleaved_views_do_not_conflict() {
         let locals = [("array", array)].into_py_dict(py).unwrap();
 
         let view1 = py
-            .eval(c_str!("array[:,:,0]"), None, Some(&locals))
+            .eval(c"array[:,:,0]", None, Some(&locals))
             .unwrap()
             .cast_into::<PyArray2<f64>>()
             .unwrap();
         assert_eq!(view1.shape(), [23, 42]);
 
         let view2 = py
-            .eval(c_str!("array[:,:,1]"), None, Some(&locals))
+            .eval(c"array[:,:,1]", None, Some(&locals))
             .unwrap()
             .cast_into::<PyArray2<f64>>()
             .unwrap();
         assert_eq!(view2.shape(), [23, 42]);
 
         let view3 = py
-            .eval(c_str!("array[:,:,2]"), None, Some(&locals))
+            .eval(c"array[:,:,2]", None, Some(&locals))
             .unwrap()
             .cast_into::<PyArray2<f64>>()
             .unwrap();
@@ -362,11 +361,7 @@ fn can_make_python_array_nonwriteable() {
         let locals = [("array", &array)].into_py_dict(py).unwrap();
         array.readwrite().make_nonwriteable();
         assert!(!py
-            .eval(
-                pyo3::ffi::c_str!("array.flags.writeable"),
-                None,
-                Some(&locals)
-            )
+            .eval(c"array.flags.writeable", None, Some(&locals))
             .unwrap()
             .extract::<bool>()
             .unwrap())
@@ -453,7 +448,7 @@ fn matrix_from_numpy() {
         let array = numpy::pyarray![py, [0, 1, 2], [3, 4, 5], [6, 7, 8]];
         let array = py
             .eval(
-                c_str!("a[::-1]"),
+                c"a[::-1]",
                 Some(&[("a", array)].into_py_dict(py).unwrap()),
                 None,
             )
@@ -471,7 +466,7 @@ fn matrix_from_numpy() {
         let array = numpy::pyarray![py, [[0, 1], [2, 3]], [[4, 5], [6, 7]]];
         let array = py
             .eval(
-                c_str!("a[:,:,0]"),
+                c"a[:,:,0]",
                 Some(&[("a", &array)].into_py_dict(py).unwrap()),
                 None,
             )
@@ -495,7 +490,7 @@ fn matrix_from_numpy() {
         let array = numpy::pyarray![py, [[0, 1], [2, 3]], [[4, 5], [6, 7]]];
         let array = py
             .eval(
-                c_str!("a[:,:,0]"),
+                c"a[:,:,0]",
                 Some(&[("a", &array)].into_py_dict(py).unwrap()),
                 None,
             )
