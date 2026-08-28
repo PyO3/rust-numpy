@@ -536,8 +536,8 @@ mod tests {
         })
     }
 
-    /// Re-locking the same generator on the same thread is rejected
-    /// even though numpy’s `lock` is a reentrant `RLock`.
+    /// Re-locking the same generator on the same thread is rejected,
+    /// even where numpy’s `lock` is a reentrant `RLock` (numpy ≥ 2.4) and would allow it.
     #[test]
     fn reject_reentrant_lock() -> PyResult<()> {
         Python::attach(|py| {
@@ -546,8 +546,15 @@ mod tests {
             let err = bit_generator
                 .lock(|_| Python::attach(|py| shared.bind(py).lock(|_| ()).unwrap_err()))?;
             assert!(err.is_instance_of::<PyRuntimeError>(py));
-            assert_eq!(err.value(py).to_string(), "BitGenerator is already locked");
-            // the reentrancy marker was cleaned up, so locking again afterwards works
+            assert!(
+                matches!(
+                    err.value(py).to_string().as_str(),
+                    // numpy < 2.4 uses a plain `Lock`, so there `acquire` fails before our check
+                    "BitGenerator is already locked" | "Failed to acquire BitGenerator lock"
+                ),
+                "unexpected error: {err}"
+            );
+            // the lock and the reentrancy marker were cleaned up, so locking again works
             bit_generator.lock(|mut bitgen| bitgen.next_u64())?;
             Ok(())
         })
