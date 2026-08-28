@@ -18,7 +18,9 @@
 //! ```
 //!
 //! If you write a pyo3 extension, you would extract
-//! a `numpy.random.BitGenerator` into a [`PyBitGenerator`]:
+//! a [`numpy.random.BitGenerator`] into a <code>[Bound]<'_, [PyBitGenerator]></code>:
+//!
+//! [`numpy.random.BitGenerator`]: https://numpy.org/doc/stable/reference/random/bit_generators/generated/numpy.random.BitGenerator.html
 //!
 //! ```
 //! # use pyo3::prelude::*;
@@ -29,7 +31,6 @@
 //!
 //! #[pyfunction]
 //! fn super_fast_random_number(bitgen: Bound<PyBitGenerator>) -> PyResult<u64> {
-//!     let py = bitgen.py();
 //!     // lock the generator, then use it without being attached to the interpreter runtime
 //!     bitgen.lock(|mut bitgen| bitgen.next_u64())
 //! }
@@ -109,8 +110,14 @@ use pyo3::{
 
 use crate::npyffi::bitgen_t;
 
+mod sealed {
+    pub trait Sealed {}
+}
+
+use sealed::Sealed;
+
 /// Methods for [`PyBitGenerator`].
-pub trait PyBitGeneratorMethods {
+pub trait PyBitGeneratorMethods: Sealed {
     /// Lock the bit generator, run `f` with exclusive access to it,
     /// then release the lock (even on panic).
     /// `f` may use it without being attached to the interpreter runtime via [`Python::detach`].
@@ -242,6 +249,8 @@ impl<'py> PyBitGeneratorMethods for Bound<'py, PyBitGenerator> {
     }
 }
 
+impl Sealed for Bound<'_, PyBitGenerator> {}
+
 /// Which of numpy’s bit generator algorithms [`BitGenerator::new`] should create.
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum BitGeneratorKind {
@@ -263,7 +272,7 @@ impl From<BitGeneratorKind> for &'static str {
         match value {
             BitGeneratorKind::MT19937 => "MT19937",
             BitGeneratorKind::PCG64 => "PCG64",
-            BitGeneratorKind::PCG64DXSM => "PCG64dxsm",
+            BitGeneratorKind::PCG64DXSM => "PCG64DXSM",
             BitGeneratorKind::Philox => "Philox",
             BitGeneratorKind::SFC64 => "SFC64",
         }
