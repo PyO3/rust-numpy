@@ -79,6 +79,7 @@ pub mod datetime;
 mod dtype;
 mod error;
 pub mod npyffi;
+pub mod random;
 mod slice_container;
 mod strings;
 mod sum_products;

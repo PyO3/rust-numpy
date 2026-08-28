@@ -155,6 +155,7 @@ pub mod flags;
 mod npy_common;
 mod numpyconfig;
 pub mod objects;
+pub mod random;
 pub mod types;
 pub mod ufunc;
 
@@ -163,5 +164,6 @@ pub use self::flags::*;
 pub use self::npy_common::*;
 pub use self::numpyconfig::*;
 pub use self::objects::*;
+pub use self::random::*;
 pub use self::types::*;
 pub use self::ufunc::*;
