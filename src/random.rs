@@ -455,9 +455,9 @@ mod tests {
     use super::*;
 
     fn get_bit_generator<'py>(py: Python<'py>) -> PyResult<Bound<'py, PyBitGenerator>> {
-        let default_rng = py.import("numpy.random")?.call_method0("default_rng")?;
-        let bit_generator = default_rng
-            .getattr("bit_generator")?
+        let bit_generator = py
+            .import("numpy.random")?
+            .call_method1("PCG64", (42,))?
             .cast_into::<PyBitGenerator>()?;
         Ok(bit_generator)
     }
@@ -468,7 +468,7 @@ mod tests {
     fn use_detached() -> PyResult<()> {
         Python::attach(|py| {
             get_bit_generator(py)?.lock(|mut bitgen| {
-                let _ = bitgen.next_raw();
+                assert_eq!(bitgen.next_raw(), 14276969152011380360);
             })
         })
     }
@@ -482,7 +482,7 @@ mod tests {
         use std::sync::Mutex;
 
         Python::attach(|py| -> PyResult<_> {
-            let mut arr = PyArray2::<u32>::zeros(py, (2, 300), false).readwrite();
+            let mut arr = PyArray2::<u32>::zeros(py, (2, 3), false).readwrite();
             let mut arr = arr.as_array_mut();
             get_bit_generator(py)?.lock(|bitgen| {
                 let bitgen = Mutex::new(bitgen);
@@ -497,7 +497,9 @@ mod tests {
                         });
                     }
                 })
-            })
+            })?;
+            assert_eq!(arr, ndarray::array![[26, 157, 134], [93, 92, 173]]);
+            Ok(())
         })
     }
 
@@ -509,8 +511,20 @@ mod tests {
 
         Python::attach(|py| {
             get_bit_generator(py)?.lock(|mut bitgen| {
-                assert!(bitgen.random_ratio(1, 1));
-                assert!(!bitgen.random_ratio(0, 1));
+                // check reproducibility
+                let seq: Vec<bool> = std::iter::repeat_with(|| bitgen.random_ratio(1, 2))
+                    .take(10)
+                    .collect();
+                assert_eq!(
+                    seq,
+                    vec![false, true, false, false, true, false, false, false, true, true]
+                );
+
+                // check trivial ratios
+                for _ in 0..100 {
+                    assert!(bitgen.random_ratio(1, 1));
+                    assert!(!bitgen.random_ratio(0, 1));
+                }
             })
         })
     }
@@ -535,7 +549,7 @@ mod tests {
                 })
             });
 
-            assert_ne!(values[0], values[1]);
+            assert_eq!(values, vec![16910944855483863638, 8623682774590505111]);
             Ok(())
         })
     }
