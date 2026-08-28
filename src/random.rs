@@ -566,16 +566,20 @@ mod tests {
         use rand::Rng as _;
 
         Python::attach(|py| {
-            // check reproducibility
-            let seq: Vec<bool> = get_shared(py)?.lock(|mut bitgen| {
+            let seq_shared: Vec<bool> = get_shared(py)?.lock(|mut bitgen| {
                 std::iter::repeat_with(|| bitgen.random_ratio(1, 2))
                     .take(10)
                     .collect()
             })?;
-            assert_eq!(
-                seq,
-                vec![false, true, false, false, true, false, false, false, true, true]
-            );
+            let seq_owned: Vec<bool> = get_owned(py)?
+                .sample_iter(rand::distr::Bernoulli::new(0.5).unwrap())
+                .take(10)
+                .collect();
+            let seq_expected = vec![
+                false, true, false, false, true, false, false, false, true, true,
+            ];
+            assert_eq!(&seq_shared, &seq_expected);
+            assert_eq!(&seq_owned, &seq_expected);
             Ok(())
         })
     }
@@ -604,20 +608,87 @@ mod tests {
         })
     }
 
+    /// A generator locked by another thread can’t be acquired.
+    #[test]
+    fn reject_lock_held_by_other_thread() -> PyResult<()> {
+        use std::sync::mpsc::channel;
+
+        Python::attach(|py| {
+            let bitgen = get_shared(py)?;
+            let lock = bitgen.getattr(intern!(py, "lock"))?.unbind();
+            let (acquired_tx, acquired_rx) = channel::<()>();
+            let (done_tx, done_rx) = channel::<()>();
+
+            let holder = std::thread::spawn(move || {
+                Python::attach(|py| {
+                    let lock = lock.bind(py);
+                    lock.call_method1(intern!(py, "acquire"), (true,)).unwrap();
+                    acquired_tx.send(()).unwrap();
+                    py.detach(move || done_rx.recv().unwrap());
+                    lock.call_method0(intern!(py, "release")).unwrap();
+                })
+            });
+            py.detach(move || acquired_rx.recv().unwrap());
+
+            let err = bitgen.lock(|_| ()).unwrap_err();
+            assert!(err.is_instance_of::<PyRuntimeError>(py));
+            assert_eq!(
+                err.value(py).to_string(),
+                "Failed to acquire BitGenerator lock"
+            );
+
+            done_tx.send(()).unwrap();
+            // detach so the holder thread can re-attach and release the lock
+            py.detach(move || holder.join().unwrap());
+
+            // the other thread released the lock, so locking works again
+            bitgen.lock(|mut bitgen| bitgen.next_u64())?;
+            Ok(())
+        })
+    }
+
+    /// If the capsule can’t be extracted, `lock` releases the lock before erroring out.
+    #[test]
+    fn release_lock_on_invalid_capsule() -> PyResult<()> {
+        Python::attach(|py| {
+            let bitgen = PyModule::from_code(
+                py,
+                c"import numpy.random\n\nclass Broken(numpy.random.PCG64):\n    capsule = 'not a capsule'\n",
+                c"broken.py",
+                c"broken",
+            )?
+            .getattr("Broken")?
+            .call0()?
+            .cast_into::<PyBitGenerator>()?;
+
+            let err = bitgen.lock(|_| ()).unwrap_err();
+            assert!(
+                err.is_instance_of::<pyo3::exceptions::PyTypeError>(py),
+                "unexpected error: {err}"
+            );
+            // the lock was released again, so it can be acquired
+            assert!(bitgen
+                .getattr(intern!(py, "lock"))?
+                .call_method1(intern!(py, "acquire"), (false,))?
+                .extract::<bool>()?);
+            Ok(())
+        })
+    }
+
     /// A panicking closure still releases the lock and clears the reentrancy marker
     /// (via the guard’s `Drop`), so the generator stays usable.
     #[test]
     fn release_lock_on_panic() -> PyResult<()> {
         Python::attach(|py| {
-            let bit_generator = get_shared(py)?;
+            let bitgen = get_shared(py)?;
             let panic = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                bit_generator.lock(|_| panic!("boom"))
+                bitgen.lock(|_| panic!("boom"))
             }))
             .unwrap_err();
             assert_eq!(panic.downcast_ref::<&str>(), Some(&"boom"));
 
             assert_eq!(
-                bit_generator.lock(|mut bitgen| bitgen.next_raw())?,
+                bitgen.lock(|mut bitgen| bitgen.next_raw())?,
                 14276969152011380360
             );
             Ok(())
