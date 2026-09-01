@@ -731,6 +731,9 @@ mod tests {
             assert_eq!(dt.byteorder(), b'=');
             assert_eq!(dt.is_native_byteorder(), Some(true));
             assert_eq!(dt.itemsize(), 8);
+            #[cfg(target_pointer_width = "32")]
+            assert_eq!(dt.alignment(), 4);
+            #[cfg(target_pointer_width = "64")]
             assert_eq!(dt.alignment(), 8);
             assert!(!dt.has_object());
             assert!(dt.names().is_none());
@@ -767,6 +770,9 @@ mod tests {
             assert_eq!(dt.byteorder(), b'|');
             assert_eq!(dt.is_native_byteorder(), None);
             assert_eq!(dt.itemsize(), 48);
+            #[cfg(target_pointer_width = "32")]
+            assert_eq!(dt.alignment(), 4);
+            #[cfg(target_pointer_width = "64")]
             assert_eq!(dt.alignment(), 8);
             assert!(!dt.has_object());
             assert!(dt.names().is_none());
@@ -804,8 +810,16 @@ mod tests {
             assert_eq!(dt.kind(), b'V');
             assert_eq!(dt.byteorder(), b'|');
             assert_eq!(dt.is_native_byteorder(), None);
-            assert_eq!(dt.itemsize(), 24);
-            assert_eq!(dt.alignment(), 8);
+            #[cfg(target_pointer_width = "32")]
+            {
+                assert_eq!(dt.itemsize(), 16);
+                assert_eq!(dt.alignment(), 4);
+            }
+            #[cfg(target_pointer_width = "64")]
+            {
+                assert_eq!(dt.itemsize(), 24);
+                assert_eq!(dt.alignment(), 8);
+            }
             assert!(dt.has_object());
             assert_eq!(
                 dt.names(),
