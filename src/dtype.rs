@@ -53,9 +53,6 @@ pub struct PyArrayDescr(PyAny);
 pyobject_native_type_named!(PyArrayDescr);
 
 unsafe impl PyTypeInfo for PyArrayDescr {
-    const NAME: &'static str = "PyArrayDescr";
-    const MODULE: Option<&'static str> = Some("numpy");
-
     #[inline]
     fn type_object_raw<'py>(py: Python<'py>) -> *mut ffi::PyTypeObject {
         unsafe { npyffi::get_type_object(py, NpyTypes::PyArrayDescr_Type) }

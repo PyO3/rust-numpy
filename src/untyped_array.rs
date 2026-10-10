@@ -60,9 +60,6 @@ use crate::npyffi::{self, _PyArray_GET_ITEM_DATA};
 pub struct PyUntypedArray(PyAny);
 
 unsafe impl PyTypeInfo for PyUntypedArray {
-    const NAME: &'static str = "PyUntypedArray";
-    const MODULE: Option<&'static str> = Some("numpy");
-
     fn type_object_raw<'py>(py: Python<'py>) -> *mut ffi::PyTypeObject {
         unsafe { npyffi::get_type_object(py, npyffi::NpyTypes::PyArray_Type) }
     }
