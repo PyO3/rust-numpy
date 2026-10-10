@@ -97,12 +97,12 @@
 use std::ptr::NonNull;
 
 use pyo3::{
+    PyTypeInfo,
     exceptions::PyRuntimeError,
     ffi, intern,
     prelude::*,
     sync::PyOnceLock,
     types::{DerefToPyAny, PyCapsule, PyType},
-    PyTypeInfo,
 };
 
 use crate::npyffi::bitgen_t;

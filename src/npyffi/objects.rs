@@ -141,7 +141,7 @@ pub unsafe fn _PyArray_GET_ITEM_DATA(arr: *const PyArrayObject) -> *mut PyArrayO
         PY_ARRAY_API._PyArray_GET_ITEM_DATA(Python::assume_attached(), arr)
     }
     #[cfg(not(all(Py_LIMITED_API, Py_GIL_DISABLED)))]
-    {
+    unsafe {
         &raw mut (*arr.cast_mut()).fields
     }
 }
@@ -156,7 +156,7 @@ pub unsafe fn _PyDataType_GET_ITEM_DATA(dtype: *const PyArray_Descr) -> *mut PyA
         PY_ARRAY_API._PyDataType_GET_ITEM_DATA(Python::assume_attached(), dtype)
     }
     #[cfg(not(all(Py_LIMITED_API, Py_GIL_DISABLED)))]
-    {
+    unsafe {
         &raw mut (*dtype.cast_mut()).fields
     }
 }
@@ -173,7 +173,7 @@ unsafe fn _PyArray_LegacyDescr_GET_ITEM_DATA(
         PY_ARRAY_API._PyArray_LegacyDescr_GET_ITEM_DATA(Python::assume_attached(), dtype)
     }
     #[cfg(not(all(Py_LIMITED_API, Py_GIL_DISABLED)))]
-    {
+    unsafe {
         &raw mut (*dtype.cast_mut()).fields
     }
 }
@@ -181,8 +181,10 @@ unsafe fn _PyArray_LegacyDescr_GET_ITEM_DATA(
 #[allow(non_snake_case)]
 #[inline(always)]
 pub unsafe fn PyDataType_ISLEGACY(dtype: *const PyArray_Descr) -> bool {
-    let dtype = _PyDataType_GET_ITEM_DATA(dtype);
-    (*dtype).type_num < NPY_TYPES::NPY_VSTRING as _ && (*dtype).type_num >= 0
+    unsafe {
+        let dtype = _PyDataType_GET_ITEM_DATA(dtype);
+        (*dtype).type_num < NPY_TYPES::NPY_VSTRING as _ && (*dtype).type_num >= 0
+    }
 }
 
 #[allow(non_snake_case)]
@@ -232,7 +234,7 @@ macro_rules! define_descr_accessor {
         #[allow(non_snake_case)]
         #[inline(always)]
         pub unsafe fn $name<'py>(py: Python<'py>, dtype: *const PyArray_Descr) -> $type {
-            if $legacy_only && !PyDataType_ISLEGACY(dtype) {
+            if $legacy_only && unsafe { !PyDataType_ISLEGACY(dtype) } {
                 $default
             } else {
                 #[cfg(not(all(Py_LIMITED_API, Py_GIL_DISABLED)))]

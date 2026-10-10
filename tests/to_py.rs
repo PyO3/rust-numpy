@@ -1,12 +1,11 @@
 use std::cmp::Ordering;
 use std::mem::size_of;
 
-use ndarray::{array, s, Array2, Array3};
-use numpy::{prelude::*, PyArray};
+use ndarray::{Array2, Array3, array, s};
+use numpy::{PyArray, prelude::*};
 use pyo3::{
-    py_run,
+    Python, py_run,
     types::{PyAnyMethods, PyDict, PyString},
-    Python,
 };
 
 #[test]

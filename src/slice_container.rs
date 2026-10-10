@@ -25,8 +25,11 @@ unsafe impl Sync for PySliceContainer {}
 
 impl<T: Send + Sync> From<Box<[T]>> for PySliceContainer {
     fn from(data: Box<[T]>) -> Self {
+        /// # Safety
+        /// `ptr` and `len` need to originate from a boxed slice
         unsafe fn drop_boxed_slice<T>(ptr: *mut u8, len: usize, _cap: usize) {
-            let _ = Box::from_raw(ptr::slice_from_raw_parts_mut(ptr as *mut T, len));
+            // SAFETY: guaranteed by caller
+            let _ = unsafe { Box::from_raw(ptr::slice_from_raw_parts_mut(ptr as *mut T, len)) };
         }
 
         // FIXME(adamreichold): Use `Box::into_raw` when
@@ -49,8 +52,11 @@ impl<T: Send + Sync> From<Box<[T]>> for PySliceContainer {
 
 impl<T: Send + Sync> From<Vec<T>> for PySliceContainer {
     fn from(data: Vec<T>) -> Self {
+        /// # Safety
+        /// See [Vec::from_raw_parts]
         unsafe fn drop_vec<T>(ptr: *mut u8, len: usize, cap: usize) {
-            let _ = Vec::from_raw_parts(ptr as *mut T, len, cap);
+            // Safety: guaranteed by caller
+            let _ = unsafe { Vec::from_raw_parts(ptr as *mut T, len, cap) };
         }
 
         // FIXME(adamreichold): Use `Vec::into_raw_parts`

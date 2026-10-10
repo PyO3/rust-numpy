@@ -1,11 +1,11 @@
 use ndarray::array;
 use numpy::{
-    get_array_module, AllowTypeChange, PyArrayLike1, PyArrayLike2, PyArrayLikeDyn,
-    PyUntypedArrayMethods as _,
+    AllowTypeChange, PyArrayLike1, PyArrayLike2, PyArrayLikeDyn, PyUntypedArrayMethods as _,
+    get_array_module,
 };
 use pyo3::{
-    types::{IntoPyDict, PyAnyMethods, PyDict},
     Bound, Python,
+    types::{IntoPyDict, PyAnyMethods, PyDict},
 };
 
 fn get_np_locals(py: Python<'_>) -> Bound<'_, PyDict> {

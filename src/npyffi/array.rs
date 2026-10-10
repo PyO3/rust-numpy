@@ -83,13 +83,15 @@ unsafe impl Send for PyArrayAPI {}
 unsafe impl Sync for PyArrayAPI {}
 
 impl PyArrayAPI {
+    /// # Safety
+    /// `offset` has to in bounds of the array api capsule allocation
     pub(super) unsafe fn get<'py>(&self, py: Python<'py>, offset: isize) -> NonNull<*const c_void> {
         let api = self
             .0
             .get_or_try_init(py, || -> PyResult<_> {
                 let api = get_numpy_api(py, mod_name(py)?, CAPSULE_NAME)?;
 
-                let module_version = {
+                let module_version = unsafe {
                     // unsigned int PyArray_GetNDArrayCVersion();
                     let get_abi_version: extern "C" fn() -> c_uint =
                         api.add(0).cast().read();
@@ -140,7 +142,8 @@ impl PyArrayAPI {
             })
             .expect("Failed to access NumPy array API capsule");
 
-        api.offset(offset)
+        // SAFETY: guaranteed by caller
+        unsafe { api.offset(offset) }
     }
 }
 
@@ -450,13 +453,13 @@ impl PyArrayAPI {
 /// Checks that `op` is an instance of `PyArray` or not.
 #[allow(non_snake_case)]
 pub unsafe fn PyArray_Check<'py>(py: Python<'py>, op: *mut PyObject) -> c_int {
-    ffi::PyObject_TypeCheck(op, super::get_type_object(py, NpyTypes::PyArray_Type))
+    unsafe { ffi::PyObject_TypeCheck(op, super::get_type_object(py, NpyTypes::PyArray_Type)) }
 }
 
 /// Checks that `op` is an exact instance of `PyArray` or not.
 #[allow(non_snake_case)]
 pub unsafe fn PyArray_CheckExact<'py>(py: Python<'py>, op: *mut PyObject) -> c_int {
-    (ffi::Py_TYPE(op) == super::get_type_object(py, NpyTypes::PyArray_Type)) as _
+    unsafe { (ffi::Py_TYPE(op) == super::get_type_object(py, NpyTypes::PyArray_Type)) as _ }
 }
 
 #[cfg(test)]

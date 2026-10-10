@@ -2,11 +2,11 @@ use std::marker::PhantomData;
 use std::ops::Deref;
 
 use ndarray::{Array1, Dimension, Ix0, Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};
-use pyo3::{types::PyAnyMethods, Borrowed, FromPyObject, PyAny, PyErr, PyResult};
+use pyo3::{Borrowed, FromPyObject, PyAny, PyErr, PyResult, types::PyAnyMethods};
 
 use crate::npyffi::NPY_ARRAY_FORCECAST;
-use crate::{array::PyArrayMethods, PY_ARRAY_API};
 use crate::{Element, IntoPyArray, PyArray, PyReadonlyArray, PyUntypedArray};
+use crate::{PY_ARRAY_API, array::PyArrayMethods};
 
 pub trait Coerce: Sealed {
     const ALLOW_TYPE_CHANGE: bool;

@@ -677,8 +677,8 @@ mod tests {
     use super::*;
 
     use pyo3::{
-        types::{IntoPyDict, PyAnyMethods},
         Python,
+        types::{IntoPyDict, PyAnyMethods},
     };
 
     use crate::array::PyArray1;

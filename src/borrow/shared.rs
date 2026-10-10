@@ -8,14 +8,14 @@ use std::sync::Mutex;
 use num_integer::gcd;
 use pyo3::sync::PyOnceLock;
 use pyo3::types::{PyAnyMethods, PyCapsuleMethods};
-use pyo3::{exceptions::PyTypeError, types::PyCapsule, PyResult, Python};
+use pyo3::{PyResult, Python, exceptions::PyTypeError, types::PyCapsule};
 use rustc_hash::FxHashMap;
 
 use crate::array::get_array_module;
 use crate::cold;
 use crate::error::BorrowError;
 use crate::npyffi::{
-    _PyArray_GET_ITEM_DATA, PyArrayObject, PyArray_Check, PyDataType_ELSIZE, NPY_ARRAY_WRITEABLE,
+    _PyArray_GET_ITEM_DATA, NPY_ARRAY_WRITEABLE, PyArray_Check, PyArrayObject, PyDataType_ELSIZE,
 };
 
 /// Defines the shared C API used for borrow checking
@@ -45,8 +45,8 @@ unsafe impl Send for Shared {}
 
 unsafe extern "C" fn acquire_shared(flags: *mut c_void, array: *mut PyArrayObject) -> c_int {
     // SAFETY: must be attached when calling `acquire_shared`.
-    let py = Python::assume_attached();
-    let flags = &*(flags as *mut BorrowFlags);
+    let py = unsafe { Python::assume_attached() };
+    let flags = unsafe { &*(flags as *mut BorrowFlags) };
 
     let address = base_address(py, array);
     let key = borrow_key(py, array);
@@ -58,13 +58,13 @@ unsafe extern "C" fn acquire_shared(flags: *mut c_void, array: *mut PyArrayObjec
 }
 
 unsafe extern "C" fn acquire_mut_shared(flags: *mut c_void, array: *mut PyArrayObject) -> c_int {
-    if (*_PyArray_GET_ITEM_DATA(array)).flags & NPY_ARRAY_WRITEABLE == 0 {
+    if unsafe { (*_PyArray_GET_ITEM_DATA(array)).flags } & NPY_ARRAY_WRITEABLE == 0 {
         return -2;
     }
 
-    // SAFETY: must be attached when calling `acquire_shared`.
-    let py = Python::assume_attached();
-    let flags = &*(flags as *mut BorrowFlags);
+    // SAFETY: must be attached when calling `acquire_mut_shared`.
+    let py = unsafe { Python::assume_attached() };
+    let flags = unsafe { &*(flags as *mut BorrowFlags) };
 
     let address = base_address(py, array);
     let key = borrow_key(py, array);
@@ -76,9 +76,9 @@ unsafe extern "C" fn acquire_mut_shared(flags: *mut c_void, array: *mut PyArrayO
 }
 
 unsafe extern "C" fn release_shared(flags: *mut c_void, array: *mut PyArrayObject) {
-    // SAFETY: must be attached when calling `acquire_shared`.
-    let py = Python::assume_attached();
-    let flags = &*(flags as *mut BorrowFlags);
+    // SAFETY: must be attached when calling `release_shared`.
+    let py = unsafe { Python::assume_attached() };
+    let flags = unsafe { &*(flags as *mut BorrowFlags) };
     let address = base_address(py, array);
     let key = borrow_key(py, array);
 
@@ -86,9 +86,9 @@ unsafe extern "C" fn release_shared(flags: *mut c_void, array: *mut PyArrayObjec
 }
 
 unsafe extern "C" fn release_mut_shared(flags: *mut c_void, array: *mut PyArrayObject) {
-    // SAFETY: must be attached when calling `acquire_shared`.
-    let py = Python::assume_attached();
-    let flags = &*(flags as *mut BorrowFlags);
+    // SAFETY: must be attached when calling `release_mut_shared`.
+    let py = unsafe { Python::assume_attached() };
+    let flags = unsafe { &*(flags as *mut BorrowFlags) };
 
     let address = base_address(py, array);
     let key = borrow_key(py, array);

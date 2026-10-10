@@ -29,13 +29,16 @@ unsafe impl Send for PyUFuncAPI {}
 unsafe impl Sync for PyUFuncAPI {}
 
 impl PyUFuncAPI {
+    /// # Safety
+    /// `offset` has to in bounds of the ufunc api capsule allocation
     pub(super) unsafe fn get<'py>(&self, py: Python<'py>, offset: isize) -> NonNull<*const c_void> {
         let api = self
             .0
             .get_or_try_init(py, || get_numpy_api(py, mod_name(py)?, CAPSULE_NAME))
             .expect("Failed to access NumPy ufunc API capsule");
 
-        api.offset(offset)
+        // SAFETY: guaranteed by caller
+        unsafe { api.offset(offset) }
     }
 }
 

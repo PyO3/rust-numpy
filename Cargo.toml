@@ -7,8 +7,8 @@ authors = [
 ]
 description = "PyO3-based Rust bindings of the NumPy C-API"
 documentation = "https://docs.rs/numpy"
-edition = "2021"
-rust-version = "1.83"
+edition = "2024"
+rust-version = "1.85"
 repository = "https://github.com/PyO3/rust-numpy"
 categories = ["api-bindings", "development-tools::ffi", "science"]
 keywords = ["python", "numpy", "ffi", "pyo3"]
@@ -58,7 +58,7 @@ all-features = true
 
 [lints.rust]
 # We usually want to make the GIL lifetime explicit.
-elided-lifetimes-in-paths = "deny"
+elided_lifetimes_in_paths = "deny"
 
 [lints.clippy]
-needless-lifetimes = "allow"
+needless_lifetimes = "allow"

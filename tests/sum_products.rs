@@ -1,5 +1,5 @@
 use numpy::prelude::*;
-use numpy::{array, dot, einsum, inner, pyarray, PyArray0, PyArray1, PyArray2};
+use numpy::{PyArray0, PyArray1, PyArray2, array, dot, einsum, inner, pyarray};
 use pyo3::{Bound, Python};
 
 #[test]

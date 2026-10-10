@@ -3,7 +3,7 @@
 //! [ndarray]: https://numpy.org/doc/stable/reference/arrays.ndarray.html
 use std::slice;
 
-use pyo3::{ffi, pyobject_native_type_named, Bound, PyAny, PyTypeInfo, Python};
+use pyo3::{Bound, PyAny, PyTypeInfo, Python, ffi, pyobject_native_type_named};
 
 use crate::array::{PyArray, PyArrayMethods};
 use crate::cold;
