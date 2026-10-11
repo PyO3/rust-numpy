@@ -92,8 +92,8 @@ pub use pyo3;
 pub use nalgebra;
 
 pub use crate::array::{
-    get_array_module, PyArray, PyArray0, PyArray0Methods, PyArray1, PyArray2, PyArray3, PyArray4,
-    PyArray5, PyArray6, PyArrayDyn, PyArrayMethods,
+    PyArray, PyArray0, PyArray0Methods, PyArray1, PyArray2, PyArray3, PyArray4, PyArray5, PyArray6,
+    PyArrayDyn, PyArrayMethods, get_array_module,
 };
 pub use crate::array_like::{
     AllowTypeChange, PyArrayLike, PyArrayLike0, PyArrayLike1, PyArrayLike2, PyArrayLike3,
@@ -106,14 +106,14 @@ pub use crate::borrow::{
     PyReadwriteArray5, PyReadwriteArray6, PyReadwriteArrayDyn,
 };
 pub use crate::convert::{IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
-pub use crate::dtype::{dtype, Complex32, Complex64, Element, PyArrayDescr, PyArrayDescrMethods};
+pub use crate::dtype::{Complex32, Complex64, Element, PyArrayDescr, PyArrayDescrMethods, dtype};
 pub use crate::error::{AsSliceError, BorrowError, FromVecError};
 pub use crate::npyffi::{PY_ARRAY_API, PY_UFUNC_API};
 pub use crate::strings::{PyFixedString, PyFixedUnicode};
 pub use crate::sum_products::{dot, einsum, inner};
 pub use crate::untyped_array::{PyUntypedArray, PyUntypedArrayMethods};
 
-pub use ndarray::{array, Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn};
+pub use ndarray::{Ix1, Ix2, Ix3, Ix4, Ix5, Ix6, IxDyn, array};
 
 /// A prelude
 ///

@@ -5,7 +5,7 @@ extern crate blas_src;
 mod rust_parallel {
     use numpy::ndarray::Zip;
     use numpy::{IntoPyArray, PyArray1, PyReadonlyArray1, PyReadonlyArray2};
-    use pyo3::{pyfunction, Bound, Python};
+    use pyo3::{Bound, Python, pyfunction};
 
     #[pyfunction]
     fn rows_dot<'py>(

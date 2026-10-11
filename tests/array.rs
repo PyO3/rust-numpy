@@ -2,16 +2,15 @@ use std::mem::size_of;
 
 #[cfg(feature = "half")]
 use half::{bf16, f16};
-use ndarray::{array, s, Array1, Dim};
+use ndarray::{Array1, Dim, array, s};
 use numpy::prelude::*;
 use numpy::{
-    dtype, get_array_module, npyffi::NPY_ORDER, pyarray, PyArray, PyArray1, PyArray2, PyArrayDescr,
-    PyFixedString, PyFixedUnicode,
+    PyArray, PyArray1, PyArray2, PyArrayDescr, PyFixedString, PyFixedUnicode, dtype,
+    get_array_module, npyffi::NPY_ORDER, pyarray,
 };
 use pyo3::{
-    py_run, pyclass, pymethods,
+    Bound, Py, Python, py_run, pyclass, pymethods,
     types::{IntoPyDict, PyAnyMethods, PyDict, PyList},
-    Bound, Py, Python,
 };
 
 fn get_np_locals(py: Python<'_>) -> Bound<'_, PyDict> {

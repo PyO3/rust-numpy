@@ -8,7 +8,7 @@ use pyo3::{Borrowed, Bound, FromPyObject, PyResult};
 
 use crate::array::PyArray;
 use crate::dtype::Element;
-use crate::npyffi::{array::PY_ARRAY_API, NPY_CASTING, NPY_ORDER};
+use crate::npyffi::{NPY_CASTING, NPY_ORDER, array::PY_ARRAY_API};
 
 /// Return value of a function that can yield either an array or a scalar.
 pub trait ArrayOrScalar<'a, 'py, T>: FromPyObject<'a, 'py> {}

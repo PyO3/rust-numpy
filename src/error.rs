@@ -4,8 +4,8 @@ use std::error::Error;
 use std::fmt;
 
 use pyo3::{
-    conversion::IntoPyObject, exceptions::PyTypeError, Bound, Py, PyAny, PyErr, PyErrArguments,
-    Python,
+    Bound, Py, PyAny, PyErr, PyErrArguments, Python, conversion::IntoPyObject,
+    exceptions::PyTypeError,
 };
 
 use crate::dtype::PyArrayDescr;

@@ -12,13 +12,13 @@ use std::sync::Mutex;
 
 use pyo3::sync::MutexExt;
 use pyo3::{
-    ffi::{Py_UCS1, Py_UCS4},
     Bound, Py, Python,
+    ffi::{Py_UCS1, Py_UCS4},
 };
 use rustc_hash::FxHashMap;
 
-use crate::dtype::{clone_methods_impl, Element, PyArrayDescr, PyArrayDescrMethods};
-use crate::npyffi::{_PyDataType_GET_ITEM_DATA, PyDataType_SET_ELSIZE, NPY_TYPES};
+use crate::dtype::{Element, PyArrayDescr, PyArrayDescrMethods, clone_methods_impl};
+use crate::npyffi::{_PyDataType_GET_ITEM_DATA, NPY_TYPES, PyDataType_SET_ELSIZE};
 
 /// A newtype wrapper around [`[u8; N]`][Py_UCS1] to handle [`byte` scalars][numpy-bytes] while satisfying coherence.
 ///
@@ -188,9 +188,11 @@ impl TypeDescriptors {
             Entry::Vacant(entry) => {
                 let dtype = PyArrayDescr::new_from_npy_type(py, npy_type);
 
-                let descr = &mut *dtype.as_dtype_ptr();
-                PyDataType_SET_ELSIZE(py, descr, size.try_into().unwrap());
-                (*_PyDataType_GET_ITEM_DATA(descr)).byteorder = byteorder;
+                let descr = dtype.as_dtype_ptr();
+                unsafe {
+                    PyDataType_SET_ELSIZE(py, descr, size.try_into().unwrap());
+                    (*_PyDataType_GET_ITEM_DATA(descr)).byteorder = byteorder;
+                }
 
                 entry.insert(dtype.into())
             }
@@ -225,8 +227,10 @@ mod tests {
             "🦀🐍"
         );
         assert_eq!(
-            PyFixedUnicode([b'f' as _, b'o' as _, b'o' as _, b'b' as _, b'a' as _, b'r' as _])
-                .to_string(),
+            PyFixedUnicode([
+                b'f' as _, b'o' as _, b'o' as _, b'b' as _, b'a' as _, b'r' as _
+            ])
+            .to_string(),
             "foobar"
         );
     }

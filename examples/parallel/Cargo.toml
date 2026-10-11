@@ -2,7 +2,7 @@
 name = "rust-parallel"
 version = "0.1.0"
 authors = ["Yuji Kanagawa <yuji.kngw.80s.revive@gmail.com>"]
-edition = "2021"
+edition = "2024"
 
 [lib]
 crate-type = ["cdylib"]

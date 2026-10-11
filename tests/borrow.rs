@@ -1,14 +1,13 @@
 use std::thread::spawn;
 
 use numpy::{
+    PyArray, PyArray1, PyArray2, PyReadonlyArray3, PyReadwriteArray3, PyUntypedArrayMethods,
     array::PyArrayMethods,
     npyffi::{_PyArray_GET_ITEM_DATA, NPY_ARRAY_WRITEABLE},
-    PyArray, PyArray1, PyArray2, PyReadonlyArray3, PyReadwriteArray3, PyUntypedArrayMethods,
 };
 use pyo3::{
-    pyclass, pymethods,
+    Py, Python, pyclass, pymethods,
     types::{IntoPyDict, PyAnyMethods},
-    Py, Python,
 };
 
 #[test]
@@ -360,11 +359,12 @@ fn can_make_python_array_nonwriteable() {
         let array = PyArray1::<f64>::zeros(py, 10, false);
         let locals = [("array", &array)].into_py_dict(py).unwrap();
         array.readwrite().make_nonwriteable();
-        assert!(!py
-            .eval(c"array.flags.writeable", None, Some(&locals))
-            .unwrap()
-            .extract::<bool>()
-            .unwrap())
+        assert!(
+            !py.eval(c"array.flags.writeable", None, Some(&locals))
+                .unwrap()
+                .extract::<bool>()
+                .unwrap()
+        )
     })
 }
 

@@ -2,15 +2,15 @@
 mod rust_ext {
     use numpy::ndarray::{Array1, ArrayD, ArrayView1, ArrayViewD, ArrayViewMutD, Zip};
     use numpy::{
-        datetime::{units, Timedelta},
         Complex64, IntoPyArray, PyArray1, PyArrayDyn, PyArrayMethods, PyReadonlyArray1,
         PyReadonlyArrayDyn, PyReadwriteArray1, PyReadwriteArrayDyn,
+        datetime::{Timedelta, units},
     };
     use pyo3::{
+        Bound, FromPyObject, Py, PyAny, PyResult, Python,
         exceptions::PyIndexError,
         pyfunction,
         types::{PyDict, PyDictMethods},
-        Bound, FromPyObject, Py, PyAny, PyResult, Python,
     };
     use std::ops::Add;
 

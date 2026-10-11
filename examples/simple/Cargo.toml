@@ -2,7 +2,7 @@
 name = "rust-ext"
 version = "0.1.0"
 authors = ["Toshiki Teramura <toshiki.teramura@gmail.com>", "Yuji Kanagawa <yuji.kngw.80s.revive@gmail.com>"]
-edition = "2021"
+edition = "2024"
 
 [lib]
 crate-type = ["cdylib"]

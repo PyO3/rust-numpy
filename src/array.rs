@@ -15,9 +15,8 @@ use ndarray::{
 };
 use num_traits::AsPrimitive;
 use pyo3::{
-    ffi,
+    Borrowed, Bound, CastError, Py, PyAny, PyErr, PyResult, PyTypeCheck, PyTypeInfo, Python, ffi,
     types::{DerefToPyAny, PyModule},
-    Borrowed, Bound, CastError, Py, PyAny, PyErr, PyResult, PyTypeCheck, PyTypeInfo, Python,
 };
 
 use crate::borrow::{PyReadonlyArray, PyReadwriteArray};
@@ -25,10 +24,10 @@ use crate::cold;
 use crate::convert::{ArrayExt, IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
 use crate::dtype::{Element, PyArrayDescrMethods};
 use crate::error::{
-    AsSliceError, BorrowError, DimensionalityError, FromVecError, IgnoreError, TypeError,
-    DIMENSIONALITY_MISMATCH_ERR, MAX_DIMENSIONALITY_ERR,
+    AsSliceError, BorrowError, DIMENSIONALITY_MISMATCH_ERR, DimensionalityError, FromVecError,
+    IgnoreError, MAX_DIMENSIONALITY_ERR, TypeError,
 };
-use crate::npyffi::{self, _PyArray_GET_ITEM_DATA, npy_intp, NPY_ORDER, PY_ARRAY_API};
+use crate::npyffi::{self, _PyArray_GET_ITEM_DATA, NPY_ORDER, PY_ARRAY_API, npy_intp};
 use crate::slice_container::PySliceContainer;
 use crate::untyped_array::{PyUntypedArray, PyUntypedArrayMethods};
 
@@ -222,7 +221,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         ID: IntoDimension<Dim = D>,
     {
         let flags = c_int::from(is_fortran);
-        Self::new_uninit(py, dims, ptr::null_mut(), flags)
+        unsafe { Self::new_uninit(py, dims, ptr::null_mut(), flags) }
     }
 
     pub(crate) unsafe fn new_uninit<'py, ID>(
@@ -235,19 +234,21 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         ID: IntoDimension<Dim = D>,
     {
         let mut dims = dims.into_dimension();
-        let ptr = PY_ARRAY_API.PyArray_NewFromDescr(
-            py,
-            npyffi::get_type_object(py, npyffi::NpyTypes::PyArray_Type),
-            T::get_dtype(py).into_dtype_ptr(),
-            dims.ndim_cint(),
-            dims.as_dims_ptr(),
-            strides as *mut npy_intp, // strides
-            ptr::null_mut(),          // data
-            flag,                     // flag
-            ptr::null_mut(),          // obj
-        );
+        let ptr = unsafe {
+            PY_ARRAY_API.PyArray_NewFromDescr(
+                py,
+                npyffi::get_type_object(py, npyffi::NpyTypes::PyArray_Type),
+                T::get_dtype(py).into_dtype_ptr(),
+                dims.ndim_cint(),
+                dims.as_dims_ptr(),
+                strides as *mut npy_intp, // strides
+                ptr::null_mut(),          // data
+                flag,                     // flag
+                ptr::null_mut(),          // obj
+            )
+        };
 
-        Bound::from_owned_ptr(py, ptr).cast_into_unchecked()
+        unsafe { Bound::from_owned_ptr(py, ptr).cast_into_unchecked() }
     }
 
     unsafe fn new_with_data<'py, ID>(
@@ -261,25 +262,29 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
         ID: IntoDimension<Dim = D>,
     {
         let mut dims = dims.into_dimension();
-        let ptr = PY_ARRAY_API.PyArray_NewFromDescr(
-            py,
-            npyffi::get_type_object(py, npyffi::NpyTypes::PyArray_Type),
-            T::get_dtype(py).into_dtype_ptr(),
-            dims.ndim_cint(),
-            dims.as_dims_ptr(),
-            strides as *mut npy_intp,    // strides
-            data_ptr as *mut c_void,     // data
-            npyffi::NPY_ARRAY_WRITEABLE, // flag
-            ptr::null_mut(),             // obj
-        );
+        let ptr = unsafe {
+            PY_ARRAY_API.PyArray_NewFromDescr(
+                py,
+                npyffi::get_type_object(py, npyffi::NpyTypes::PyArray_Type),
+                T::get_dtype(py).into_dtype_ptr(),
+                dims.ndim_cint(),
+                dims.as_dims_ptr(),
+                strides as *mut npy_intp,    // strides
+                data_ptr as *mut c_void,     // data
+                npyffi::NPY_ARRAY_WRITEABLE, // flag
+                ptr::null_mut(),             // obj
+            )
+        };
 
-        PY_ARRAY_API.PyArray_SetBaseObject(
-            py,
-            ptr as *mut npyffi::PyArrayObject,
-            container as *mut ffi::PyObject,
-        );
+        unsafe {
+            PY_ARRAY_API.PyArray_SetBaseObject(
+                py,
+                ptr as *mut npyffi::PyArrayObject,
+                container as *mut ffi::PyObject,
+            )
+        };
 
-        Bound::from_owned_ptr(py, ptr).cast_into_unchecked()
+        unsafe { Bound::from_owned_ptr(py, ptr).cast_into_unchecked() }
     }
 
     pub(crate) unsafe fn from_raw_parts<'py>(
@@ -293,7 +298,7 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
             .expect("Failed to create slice container")
             .into_ptr();
 
-        Self::new_with_data(py, dims, strides, data_ptr, container.cast())
+        unsafe { Self::new_with_data(py, dims, strides, data_ptr, container.cast()) }
     }
 
     /// Creates a NumPy array backed by `array` and ties its ownership to the Python object `container`.
@@ -341,13 +346,15 @@ impl<T: Element, D: Dimension> PyArray<T, D> {
 
         let py = container.py();
 
-        Self::new_with_data(
-            py,
-            dims,
-            strides.as_ptr(),
-            data_ptr,
-            container.into_ptr().cast(),
-        )
+        unsafe {
+            Self::new_with_data(
+                py,
+                dims,
+                strides.as_ptr(),
+                data_ptr,
+                container.into_ptr().cast(),
+            )
+        }
     }
 
     /// Construct a new NumPy array filled with zeros.
@@ -707,12 +714,16 @@ impl<T: Element + AsPrimitive<f64>> PyArray<T, Ix1> {
 
 unsafe fn clone_elements<T: Element>(py: Python<'_>, elems: &[T], data_ptr: &mut *mut T) {
     if T::IS_COPY {
-        ptr::copy_nonoverlapping(elems.as_ptr(), *data_ptr, elems.len());
-        *data_ptr = data_ptr.add(elems.len());
+        unsafe {
+            ptr::copy_nonoverlapping(elems.as_ptr(), *data_ptr, elems.len());
+            *data_ptr = data_ptr.add(elems.len());
+        }
     } else {
         for elem in elems {
-            data_ptr.write(elem.clone_ref(py));
-            *data_ptr = data_ptr.add(1);
+            unsafe {
+                data_ptr.write(elem.clone_ref(py));
+                *data_ptr = data_ptr.add(1);
+            }
         }
     }
 }
@@ -755,7 +766,10 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> + Sized {
             // the underlying pointer is aligned or not.
             Ok(&[])
         } else if self.is_aligned() && self.is_contiguous() {
-            Ok(slice::from_raw_parts(self.data(), len))
+            // SAFETY:
+            // - the pointer is non-null, aligned and contiguous for `len` elements
+            // - no mutable aliasing is promised by the caller
+            unsafe { Ok(slice::from_raw_parts(self.data(), len)) }
         } else {
             Err(AsSliceError)
         }
@@ -782,7 +796,10 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> + Sized {
             // the underlying pointer is aligned or not.
             Ok(&mut [])
         } else if self.is_aligned() && self.is_contiguous() {
-            Ok(slice::from_raw_parts_mut(self.data(), len))
+            // SAFETY:
+            // - the pointer is non-null, aligned and contiguous for `len` elements
+            // - no aliasing (mutable or not) is promised by the caller
+            unsafe { Ok(slice::from_raw_parts_mut(self.data(), len)) }
         } else {
             Err(AsSliceError)
         }
@@ -879,7 +896,7 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> + Sized {
         D: Dimension,
         Idx: NpyIndex<Dim = D>,
     {
-        &*self.uget_raw(index)
+        unsafe { &*self.uget_raw(index) }
     }
 
     /// Same as [`uget`](Self::uget), but returns `&mut T`.
@@ -899,7 +916,7 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> + Sized {
         D: Dimension,
         Idx: NpyIndex<Dim = D>,
     {
-        &mut *self.uget_raw(index)
+        unsafe { &mut *self.uget_raw(index) }
     }
 
     /// Same as [`uget`][Self::uget], but returns `*mut T`.
@@ -915,7 +932,8 @@ pub trait PyArrayMethods<'py, T, D>: PyUntypedArrayMethods<'py> + Sized {
         Idx: NpyIndex<Dim = D>,
     {
         let offset = index.get_unchecked::<T>(self.strides());
-        self.data().offset(offset) as *mut _
+        // SAFETY: valid index is promised by the caller
+        unsafe { self.data().offset(offset).cast() }
     }
 
     /// Get a copy of the specified element in the array.
@@ -1491,7 +1509,7 @@ impl<'py, T, D> PyArrayMethods<'py, T, D> for Bound<'py, PyArray<T, D>> {
         D: Dimension,
     {
         let ptr = get_raw(self, index)?;
-        Some(&*ptr)
+        unsafe { Some(&*ptr) }
     }
 
     #[inline(always)]
@@ -1501,7 +1519,7 @@ impl<'py, T, D> PyArrayMethods<'py, T, D> for Bound<'py, PyArray<T, D>> {
         D: Dimension,
     {
         let ptr = get_raw(self, index)?;
-        Some(&mut *ptr)
+        unsafe { Some(&mut *ptr) }
     }
 
     fn get_owned<Idx>(&self, index: Idx) -> Option<T>
@@ -1564,7 +1582,9 @@ impl<'py, T, D> PyArrayMethods<'py, T, D> for Bound<'py, PyArray<T, D>> {
         T: Element,
         D: Dimension,
     {
-        as_view(self, |shape, ptr| ArrayView::from_shape_ptr(shape, ptr))
+        as_view(self, |shape, ptr| unsafe {
+            ArrayView::from_shape_ptr(shape, ptr)
+        })
     }
 
     unsafe fn as_array_mut(&self) -> ArrayViewMut<'_, T, D>
@@ -1572,7 +1592,9 @@ impl<'py, T, D> PyArrayMethods<'py, T, D> for Bound<'py, PyArray<T, D>> {
         T: Element,
         D: Dimension,
     {
-        as_view(self, |shape, ptr| ArrayViewMut::from_shape_ptr(shape, ptr))
+        as_view(self, |shape, ptr| unsafe {
+            ArrayViewMut::from_shape_ptr(shape, ptr)
+        })
     }
 
     fn as_raw_array(&self) -> RawArrayView<T, D>
@@ -1676,13 +1698,15 @@ impl<'py, T, D> PyArrayMethods<'py, T, D> for Bound<'py, PyArray<T, D>> {
         let mut newshape = newshape.to_npy_dims();
 
         let py = self.py();
-        let res = PY_ARRAY_API.PyArray_Resize(
-            py,
-            self.as_array_ptr(),
-            &mut newshape as *mut npyffi::PyArray_Dims,
-            1,
-            NPY_ORDER::NPY_ANYORDER,
-        );
+        let res = unsafe {
+            PY_ARRAY_API.PyArray_Resize(
+                py,
+                self.as_array_ptr(),
+                &mut newshape as *mut npyffi::PyArray_Dims,
+                1,
+                NPY_ORDER::NPY_ANYORDER,
+            )
+        };
 
         if !res.is_null() {
             Ok(())
@@ -1705,7 +1729,7 @@ impl<'py, T, D> PyArrayMethods<'py, T, D> for Bound<'py, PyArray<T, D>> {
     {
         let (shape, strides) = try_as_matrix_shape_strides(self)?;
 
-        let storage = nalgebra::ViewStorage::from_raw_parts(self.data(), shape, strides);
+        let storage = unsafe { nalgebra::ViewStorage::from_raw_parts(self.data(), shape, strides) };
 
         Some(nalgebra::Matrix::from_data(storage))
     }
@@ -1724,7 +1748,8 @@ impl<'py, T, D> PyArrayMethods<'py, T, D> for Bound<'py, PyArray<T, D>> {
     {
         let (shape, strides) = try_as_matrix_shape_strides(self)?;
 
-        let storage = nalgebra::ViewStorageMut::from_raw_parts(self.data(), shape, strides);
+        let storage =
+            unsafe { nalgebra::ViewStorageMut::from_raw_parts(self.data(), shape, strides) };
 
         Some(nalgebra::Matrix::from_data(storage))
     }

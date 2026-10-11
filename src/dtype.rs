@@ -8,18 +8,18 @@ use num_traits::{Bounded, Zero};
 #[cfg(feature = "half")]
 use pyo3::sync::PyOnceLock;
 use pyo3::{
+    Borrowed, Bound, Py, PyAny, PyResult, PyTypeInfo, Python,
     conversion::IntoPyObject,
     exceptions::{PyIndexError, PyValueError},
     ffi::{self, PyTuple_Size},
     pyobject_native_type_named,
     types::{PyAnyMethods, PyDict, PyDictMethods, PyTuple, PyType},
-    Borrowed, Bound, Py, PyAny, PyResult, PyTypeInfo, Python,
 };
 
 use crate::npyffi::{
-    self, _PyDataType_GET_ITEM_DATA, NpyTypes, PyArray_Descr, PyDataType_ALIGNMENT,
-    PyDataType_ELSIZE, PyDataType_FIELDS, PyDataType_FLAGS, PyDataType_NAMES, PyDataType_SUBARRAY,
-    NPY_ALIGNED_STRUCT, NPY_BYTEORDER_CHAR, NPY_ITEM_HASOBJECT, NPY_TYPES, PY_ARRAY_API,
+    self, _PyDataType_GET_ITEM_DATA, NPY_ALIGNED_STRUCT, NPY_BYTEORDER_CHAR, NPY_ITEM_HASOBJECT,
+    NPY_TYPES, NpyTypes, PY_ARRAY_API, PyArray_Descr, PyDataType_ALIGNMENT, PyDataType_ELSIZE,
+    PyDataType_FIELDS, PyDataType_FLAGS, PyDataType_NAMES, PyDataType_SUBARRAY,
 };
 
 pub use num_complex::{Complex32, Complex64};
@@ -659,14 +659,16 @@ mod tests {
     use pyo3::types::PyString;
     use pyo3::{py_run, types::PyTypeMethods};
 
-    use crate::npyffi::{is_numpy_2, NPY_NEEDS_PYAPI};
+    use crate::npyffi::{NPY_NEEDS_PYAPI, is_numpy_2};
 
     #[test]
     fn test_dtype_new() {
         Python::attach(|py| {
-            assert!(PyArrayDescr::new(py, "float64")
-                .unwrap()
-                .is(dtype::<f64>(py)));
+            assert!(
+                PyArrayDescr::new(py, "float64")
+                    .unwrap()
+                    .is(dtype::<f64>(py))
+            );
 
             let dt = PyArrayDescr::new(py, [("a", "O"), ("b", "?")].as_ref()).unwrap();
             assert_eq!(dt.names(), Some(vec!["a".to_owned(), "b".to_owned()]));

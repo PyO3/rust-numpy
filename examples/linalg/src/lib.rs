@@ -2,7 +2,7 @@
 mod rust_linalg {
     use ndarray_linalg::solve::Inverse;
     use numpy::{IntoPyArray, PyArray2, PyReadonlyArray2};
-    use pyo3::{exceptions::PyRuntimeError, pyfunction, Bound, PyResult, Python};
+    use pyo3::{Bound, PyResult, Python, exceptions::PyRuntimeError, pyfunction};
 
     #[pyfunction]
     fn inv<'py>(

@@ -21,10 +21,10 @@ use std::mem::forget;
 use std::ptr::NonNull;
 
 use pyo3::{
+    PyResult, Python,
     ffi::PyTypeObject,
     sync::PyOnceLock,
     types::{PyAnyMethods, PyCapsule, PyCapsuleMethods, PyModule},
-    PyResult, Python,
 };
 
 static API_VERSION: PyOnceLock<c_uint> = PyOnceLock::new();
@@ -63,7 +63,7 @@ macro_rules! impl_api {
     [$offset: expr; $vis:vis $fname: ident ($($arg: ident: $t: ty),* $(,)?) $(-> $ret: ty)?] => {
         #[allow(non_snake_case)]
         $vis unsafe fn $fname<'py>(&self, py: Python<'py>, $($arg : $t), *) $(-> $ret)* {
-            let f: extern "C" fn ($($arg : $t), *) $(-> $ret)* = self.get(py, $offset).cast().read();
+            let f: extern "C" fn ($($arg : $t), *) $(-> $ret)* = unsafe { self.get(py, $offset).cast().read() };
             f($($arg), *)
         }
     }
@@ -79,7 +79,7 @@ macro_rules! impl_array_type {
         /// Get a pointer of the type object associated with `ty`.
         pub unsafe fn get_type_object<'py>(py: Python<'py>, ty: NpyTypes) -> *mut PyTypeObject {
             match ty {
-                $( NpyTypes::$tname => $api.get(py, $offset).read() as _ ),*
+                $( NpyTypes::$tname => unsafe { $api.get(py, $offset).read() as _ }),*
             }
         }
     }
