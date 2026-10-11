@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/strings.rs`."><title>strings.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-1ed95124.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="numpy" data-themes="" data-resource-suffix="" data-rustdoc-version="1.98.0 (88d9e12ae 2026-08-18)" data-channel="1.98.0" data-search-js="search-9944d736.js" data-stringdex-js="stringdex-2da4960a.js" data-settings-js="settings-170eb4bf.js" ><script src="../../static.files/storage-41dd4d93.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-417ebf0a.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-f7c3ffd8.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">numpy/</div>strings.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="doccomment">//! Types to support arrays of [ASCII][ascii] and [UCS4][ucs4] strings
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/strings.rs`."><title>strings.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-0c87338a.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="numpy" data-themes="" data-resource-suffix="" data-rustdoc-version="1.99.0 (b940084d7 2026-09-28)" data-channel="1.99.0" data-search-js="search-cf4fc35e.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-170eb4bf.js" ><script src="../../static.files/storage-41dd4d93.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-417ebf0a.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-9f56287d.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">numpy/</div>strings.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="doccomment">//! Types to support arrays of [ASCII][ascii] and [UCS4][ucs4] strings
 <a href=#2 id=2 data-nosnippet>2</a>//!
 <a href=#3 id=3 data-nosnippet>3</a>//! [ascii]: https://numpy.org/doc/stable/reference/c-api/dtype.html#c.NPY_STRING
 <a href=#4 id=4 data-nosnippet>4</a>//! [ucs4]: https://numpy.org/doc/stable/reference/c-api/dtype.html#c.NPY_UNICODE
@@ -12,13 +12,13 @@
 <a href=#12 id=12 data-nosnippet>12</a>
 <a href=#13 id=13 data-nosnippet>13</a><span class="kw">use </span>pyo3::sync::MutexExt;
 <a href=#14 id=14 data-nosnippet>14</a><span class="kw">use </span>pyo3::{
-<a href=#15 id=15 data-nosnippet>15</a>    ffi::{Py_UCS1, Py_UCS4},
-<a href=#16 id=16 data-nosnippet>16</a>    Bound, Py, Python,
+<a href=#15 id=15 data-nosnippet>15</a>    Bound, Py, Python,
+<a href=#16 id=16 data-nosnippet>16</a>    ffi::{Py_UCS1, Py_UCS4},
 <a href=#17 id=17 data-nosnippet>17</a>};
 <a href=#18 id=18 data-nosnippet>18</a><span class="kw">use </span>rustc_hash::FxHashMap;
 <a href=#19 id=19 data-nosnippet>19</a>
-<a href=#20 id=20 data-nosnippet>20</a><span class="kw">use </span><span class="kw">crate</span>::dtype::{clone_methods_impl, Element, PyArrayDescr, PyArrayDescrMethods};
-<a href=#21 id=21 data-nosnippet>21</a><span class="kw">use </span><span class="kw">crate</span>::npyffi::{_PyDataType_GET_ITEM_DATA, PyDataType_SET_ELSIZE, NPY_TYPES};
+<a href=#20 id=20 data-nosnippet>20</a><span class="kw">use </span><span class="kw">crate</span>::dtype::{Element, PyArrayDescr, PyArrayDescrMethods, clone_methods_impl};
+<a href=#21 id=21 data-nosnippet>21</a><span class="kw">use </span><span class="kw">crate</span>::npyffi::{_PyDataType_GET_ITEM_DATA, NPY_TYPES, PyDataType_SET_ELSIZE};
 <a href=#22 id=22 data-nosnippet>22</a>
 <a href=#23 id=23 data-nosnippet>23</a><span class="doccomment">/// A newtype wrapper around [`[u8; N]`][Py_UCS1] to handle [`byte` scalars][numpy-bytes] while satisfying coherence.
 <a href=#24 id=24 data-nosnippet>24</a>///
@@ -188,47 +188,51 @@
 <a href=#188 id=188 data-nosnippet>188</a>            Entry::Vacant(entry) =&gt; {
 <a href=#189 id=189 data-nosnippet>189</a>                <span class="kw">let </span>dtype = PyArrayDescr::new_from_npy_type(py, npy_type);
 <a href=#190 id=190 data-nosnippet>190</a>
-<a href=#191 id=191 data-nosnippet>191</a>                <span class="kw">let </span>descr = <span class="kw-2">&amp;mut *</span>dtype.as_dtype_ptr();
-<a href=#192 id=192 data-nosnippet>192</a>                PyDataType_SET_ELSIZE(py, descr, size.try_into().unwrap());
-<a href=#193 id=193 data-nosnippet>193</a>                (<span class="kw-2">*</span>_PyDataType_GET_ITEM_DATA(descr)).byteorder = byteorder;
-<a href=#194 id=194 data-nosnippet>194</a>
-<a href=#195 id=195 data-nosnippet>195</a>                entry.insert(dtype.into())
-<a href=#196 id=196 data-nosnippet>196</a>            }
-<a href=#197 id=197 data-nosnippet>197</a>        };
-<a href=#198 id=198 data-nosnippet>198</a>
-<a href=#199 id=199 data-nosnippet>199</a>        dtype.bind(py).to_owned()
-<a href=#200 id=200 data-nosnippet>200</a>    }
-<a href=#201 id=201 data-nosnippet>201</a>}
-<a href=#202 id=202 data-nosnippet>202</a>
-<a href=#203 id=203 data-nosnippet>203</a><span class="attr">#[cfg(test)]
-<a href=#204 id=204 data-nosnippet>204</a></span><span class="kw">mod </span>tests {
-<a href=#205 id=205 data-nosnippet>205</a>    <span class="kw">use super</span>::<span class="kw-2">*</span>;
-<a href=#206 id=206 data-nosnippet>206</a>
-<a href=#207 id=207 data-nosnippet>207</a>    <span class="attr">#[test]
-<a href=#208 id=208 data-nosnippet>208</a>    #[allow(clippy::byte_char_slices)]
-<a href=#209 id=209 data-nosnippet>209</a>    </span><span class="kw">fn </span>format_fixed_string() {
-<a href=#210 id=210 data-nosnippet>210</a>        <span class="macro">assert_eq!</span>(
-<a href=#211 id=211 data-nosnippet>211</a>            PyFixedString([<span class="string">b'f'</span>, <span class="string">b'o'</span>, <span class="string">b'o'</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>]).to_string(),
-<a href=#212 id=212 data-nosnippet>212</a>            <span class="string">"foo"
-<a href=#213 id=213 data-nosnippet>213</a>        </span>);
-<a href=#214 id=214 data-nosnippet>214</a>        <span class="macro">assert_eq!</span>(PyFixedString(<span class="kw-2">*</span><span class="string">b"foobar"</span>).to_string(), <span class="string">"foobar"</span>);
-<a href=#215 id=215 data-nosnippet>215</a>    }
-<a href=#216 id=216 data-nosnippet>216</a>
-<a href=#217 id=217 data-nosnippet>217</a>    <span class="attr">#[test]
-<a href=#218 id=218 data-nosnippet>218</a>    </span><span class="kw">fn </span>format_fixed_unicode() {
-<a href=#219 id=219 data-nosnippet>219</a>        <span class="macro">assert_eq!</span>(
-<a href=#220 id=220 data-nosnippet>220</a>            PyFixedUnicode([<span class="string">b'f' </span><span class="kw">as _</span>, <span class="string">b'o' </span><span class="kw">as _</span>, <span class="string">b'o' </span><span class="kw">as _</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>]).to_string(),
-<a href=#221 id=221 data-nosnippet>221</a>            <span class="string">"foo"
-<a href=#222 id=222 data-nosnippet>222</a>        </span>);
-<a href=#223 id=223 data-nosnippet>223</a>        <span class="macro">assert_eq!</span>(
-<a href=#224 id=224 data-nosnippet>224</a>            PyFixedUnicode([<span class="number">0x1F980</span>, <span class="number">0x1F40D</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>]).to_string(),
-<a href=#225 id=225 data-nosnippet>225</a>            <span class="string">"🦀🐍"
-<a href=#226 id=226 data-nosnippet>226</a>        </span>);
-<a href=#227 id=227 data-nosnippet>227</a>        <span class="macro">assert_eq!</span>(
-<a href=#228 id=228 data-nosnippet>228</a>            PyFixedUnicode([<span class="string">b'f' </span><span class="kw">as _</span>, <span class="string">b'o' </span><span class="kw">as _</span>, <span class="string">b'o' </span><span class="kw">as _</span>, <span class="string">b'b' </span><span class="kw">as _</span>, <span class="string">b'a' </span><span class="kw">as _</span>, <span class="string">b'r' </span><span class="kw">as _</span>])
-<a href=#229 id=229 data-nosnippet>229</a>                .to_string(),
-<a href=#230 id=230 data-nosnippet>230</a>            <span class="string">"foobar"
-<a href=#231 id=231 data-nosnippet>231</a>        </span>);
-<a href=#232 id=232 data-nosnippet>232</a>    }
-<a href=#233 id=233 data-nosnippet>233</a>}
+<a href=#191 id=191 data-nosnippet>191</a>                <span class="kw">let </span>descr = dtype.as_dtype_ptr();
+<a href=#192 id=192 data-nosnippet>192</a>                <span class="kw">unsafe </span>{
+<a href=#193 id=193 data-nosnippet>193</a>                    PyDataType_SET_ELSIZE(py, descr, size.try_into().unwrap());
+<a href=#194 id=194 data-nosnippet>194</a>                    (<span class="kw-2">*</span>_PyDataType_GET_ITEM_DATA(descr)).byteorder = byteorder;
+<a href=#195 id=195 data-nosnippet>195</a>                }
+<a href=#196 id=196 data-nosnippet>196</a>
+<a href=#197 id=197 data-nosnippet>197</a>                entry.insert(dtype.into())
+<a href=#198 id=198 data-nosnippet>198</a>            }
+<a href=#199 id=199 data-nosnippet>199</a>        };
+<a href=#200 id=200 data-nosnippet>200</a>
+<a href=#201 id=201 data-nosnippet>201</a>        dtype.bind(py).to_owned()
+<a href=#202 id=202 data-nosnippet>202</a>    }
+<a href=#203 id=203 data-nosnippet>203</a>}
+<a href=#204 id=204 data-nosnippet>204</a>
+<a href=#205 id=205 data-nosnippet>205</a><span class="attr">#[cfg(test)]
+<a href=#206 id=206 data-nosnippet>206</a></span><span class="kw">mod </span>tests {
+<a href=#207 id=207 data-nosnippet>207</a>    <span class="kw">use super</span>::<span class="kw-2">*</span>;
+<a href=#208 id=208 data-nosnippet>208</a>
+<a href=#209 id=209 data-nosnippet>209</a>    <span class="attr">#[test]
+<a href=#210 id=210 data-nosnippet>210</a>    #[allow(clippy::byte_char_slices)]
+<a href=#211 id=211 data-nosnippet>211</a>    </span><span class="kw">fn </span>format_fixed_string() {
+<a href=#212 id=212 data-nosnippet>212</a>        <span class="macro">assert_eq!</span>(
+<a href=#213 id=213 data-nosnippet>213</a>            PyFixedString([<span class="string">b'f'</span>, <span class="string">b'o'</span>, <span class="string">b'o'</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>]).to_string(),
+<a href=#214 id=214 data-nosnippet>214</a>            <span class="string">"foo"
+<a href=#215 id=215 data-nosnippet>215</a>        </span>);
+<a href=#216 id=216 data-nosnippet>216</a>        <span class="macro">assert_eq!</span>(PyFixedString(<span class="kw-2">*</span><span class="string">b"foobar"</span>).to_string(), <span class="string">"foobar"</span>);
+<a href=#217 id=217 data-nosnippet>217</a>    }
+<a href=#218 id=218 data-nosnippet>218</a>
+<a href=#219 id=219 data-nosnippet>219</a>    <span class="attr">#[test]
+<a href=#220 id=220 data-nosnippet>220</a>    </span><span class="kw">fn </span>format_fixed_unicode() {
+<a href=#221 id=221 data-nosnippet>221</a>        <span class="macro">assert_eq!</span>(
+<a href=#222 id=222 data-nosnippet>222</a>            PyFixedUnicode([<span class="string">b'f' </span><span class="kw">as _</span>, <span class="string">b'o' </span><span class="kw">as _</span>, <span class="string">b'o' </span><span class="kw">as _</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>]).to_string(),
+<a href=#223 id=223 data-nosnippet>223</a>            <span class="string">"foo"
+<a href=#224 id=224 data-nosnippet>224</a>        </span>);
+<a href=#225 id=225 data-nosnippet>225</a>        <span class="macro">assert_eq!</span>(
+<a href=#226 id=226 data-nosnippet>226</a>            PyFixedUnicode([<span class="number">0x1F980</span>, <span class="number">0x1F40D</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>]).to_string(),
+<a href=#227 id=227 data-nosnippet>227</a>            <span class="string">"🦀🐍"
+<a href=#228 id=228 data-nosnippet>228</a>        </span>);
+<a href=#229 id=229 data-nosnippet>229</a>        <span class="macro">assert_eq!</span>(
+<a href=#230 id=230 data-nosnippet>230</a>            PyFixedUnicode([
+<a href=#231 id=231 data-nosnippet>231</a>                <span class="string">b'f' </span><span class="kw">as _</span>, <span class="string">b'o' </span><span class="kw">as _</span>, <span class="string">b'o' </span><span class="kw">as _</span>, <span class="string">b'b' </span><span class="kw">as _</span>, <span class="string">b'a' </span><span class="kw">as _</span>, <span class="string">b'r' </span><span class="kw">as _
+<a href=#232 id=232 data-nosnippet>232</a>            </span>])
+<a href=#233 id=233 data-nosnippet>233</a>            .to_string(),
+<a href=#234 id=234 data-nosnippet>234</a>            <span class="string">"foobar"
+<a href=#235 id=235 data-nosnippet>235</a>        </span>);
+<a href=#236 id=236 data-nosnippet>236</a>    }
+<a href=#237 id=237 data-nosnippet>237</a>}
 </code></pre></div></section></main></body></html>
