@@ -1,11 +1,14 @@
 # Changelog
 
 - Unreleased
+
+- v0.30.0
   - `PyReadonlyArray`/`PyReadwriteArray` extraction now returns a `PyErr` which reports the actual dtype/dimensionality mismatch instead of nonsensical `CastError` messages like “'ndarray' is not an instance of 'ndarray'” ([#562](https://github.com/PyO3/rust-numpy/pull/562))
   - Add support for free-threaded stable abi (abi3t) from Python 3.15t+ ([#556](https://github.com/PyO3/rust-numpy/pull/556))
   - fixed free-threaded builds for 32 bit platforms from Python 3.15+ ([#556](https://github.com/PyO3/rust-numpy/pull/556))
   - Drop support for Python 3.8 ([#567](https://github.com/PyO3/rust-numpy/pull/567))
   - fix accidental removal of singleton dimensions when extracting `PyArrayLikeDyn<'_, T, AllowTypeChange>` ([#496](https://github.com/PyO3/rust-numpy/pull/496))
+  - add support for numpy BitGenerators ([#499](https://github.com/PyO3/rust-numpy/pull/499))
   - raise MSRV to 1.85 (following PyO3) ([#570](https://github.com/PyO3/rust-numpy/pull/570))
   - upgrade to 2024 edition ([#570](https://github.com/PyO3/rust-numpy/pull/570))
   - bump PyO3 dependency to 0.30 ([#572](https://github.com/PyO3/rust-numpy/pull/572))
