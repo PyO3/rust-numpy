@@ -2,7 +2,7 @@ rust-numpy
 ===========
 [![Actions Status](https://github.com/PyO3/rust-numpy/workflows/CI/badge.svg)](https://github.com/PyO3/rust-numpy/actions)
 [![Crate](https://img.shields.io/crates/v/numpy.svg)](https://crates.io/crates/numpy)
-[![Minimum rustc 1.83](https://img.shields.io/badge/rustc-1.83+-blue.svg)](https://rust-lang.github.io/rfcs/2495-min-rust-version.html)
+[![Minimum rustc 1.85](https://img.shields.io/badge/rustc-1.85+-blue.svg)](https://rust-lang.github.io/rfcs/2495-min-rust-version.html)
 [![Documentation](https://docs.rs/numpy/badge.svg)](https://docs.rs/numpy)
 [![codecov](https://codecov.io/gh/PyO3/rust-numpy/branch/main/graph/badge.svg)](https://codecov.io/gh/PyO3/rust-numpy)
 
@@ -13,7 +13,7 @@ Rust bindings for the NumPy C-API.
 - [Current main](https://pyo3.github.io/rust-numpy)
 
 ## Requirements
-- Rust >= 1.83.0
+- Rust >= 1.85.0
   - Basically, our MSRV follows the one of [PyO3](https://github.com/PyO3/pyo3)
 - Python >= 3.9
   - Python 3.7 support was dropped from 0.29
@@ -39,8 +39,8 @@ name = "rust_ext"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { version = "0.29" }
-numpy = "0.29"
+pyo3 = { version = "0.30" }
+numpy = "0.30"
 ```
 
 ```rust
@@ -90,8 +90,8 @@ mod rust_ext {
 name = "numpy-test"
 
 [dependencies]
-pyo3 = { version = "0.29", features = ["auto-initialize"] }
-numpy = "0.29"
+pyo3 = { version = "0.30", features = ["auto-initialize"] }
+numpy = "0.30"
 ```
 
 ```rust
@@ -129,7 +129,7 @@ on anything but that exact range. It can therefore be necessary to manually unif
 For example, if you specify the following dependencies
 
 ```toml
-numpy = "0.29"
+numpy = "0.30"
 ndarray = "0.15"
 ```
 
