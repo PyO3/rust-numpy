@@ -26,7 +26,6 @@ jobs:
   test:
     name: python${{ matrix.python-version }}-${{ matrix.platform.python-architecture }} ${{ matrix.platform.os }}
     runs-on: ${{ matrix.platform.os }}
-    continue-on-error: ${{ startsWith(matrix.python-version, '3.15') }} # remove once 3.15 releases
     needs: [lint, check-msrv, examples]
     strategy:
       fail-fast: ${{ !contains(github.event.pull_request.labels.*.name, 'CI-no-fail-fast') }}
@@ -87,7 +86,6 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           architecture: ${{ matrix.platform.python-architecture }}
-          allow-prereleases: ${{ startsWith(matrix.python-version, '3.15') }} # remove once 3.15 releases
       - name: Set up UV
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
       - name: Install Rust

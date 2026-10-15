@@ -141,9 +141,6 @@ pub struct PyBitGenerator(PyAny);
 impl DerefToPyAny for PyBitGenerator {}
 
 unsafe impl PyTypeInfo for PyBitGenerator {
-    const NAME: &'static str = "PyBitGenerator";
-    const MODULE: Option<&'static str> = Some("numpy.random");
-
     fn type_object_raw<'py>(py: Python<'py>) -> *mut ffi::PyTypeObject {
         static CLS: PyOnceLock<Py<PyType>> = PyOnceLock::new();
         let cls = CLS

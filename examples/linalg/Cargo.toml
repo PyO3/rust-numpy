@@ -11,4 +11,4 @@ name = "rust_linalg"
 [dependencies]
 ndarray-linalg = { version = "0.18.1", features = ["openblas-system"] }
 numpy = { path = "../.." }
-pyo3 = { version = "0.29.0" }
+pyo3 = { version = "0.30.0" }
