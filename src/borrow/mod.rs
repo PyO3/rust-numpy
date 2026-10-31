@@ -262,6 +262,7 @@ where
 
     /// Provides an immutable array view of the interior of the NumPy array.
     #[inline(always)]
+    #[track_caller]
     pub fn as_array(&self) -> ArrayView<'_, T, D> {
         // SAFETY: Global borrow flags ensure aliasing discipline.
         unsafe { self.array.as_array() }
@@ -505,6 +506,7 @@ where
 
     /// Provides a mutable array view of the interior of the NumPy array.
     #[inline(always)]
+    #[track_caller]
     pub fn as_array_mut(&mut self) -> ArrayViewMut<'_, T, D> {
         // SAFETY: Global borrow flags ensure aliasing discipline.
         unsafe { self.array.as_array_mut() }
