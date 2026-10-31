@@ -14,6 +14,8 @@ use crate::dtype::PyArrayDescr;
 ///
 /// [NPY_MAXDIMS]: https://github.com/numpy/numpy/blob/4c60b3263ac50e5e72f6a909e156314fc3c9cba0/numpy/core/include/numpy/ndarraytypes.h#L40
 pub(crate) const MAX_DIMENSIONALITY_ERR: &str = "unexpected dimensionality: NumPy is expected to limit arrays to 32 or fewer dimensions.\nPlease report a bug against the `rust-numpy` crate.";
+pub(crate) const UNSUPPORTED_STRIDES_ERR: &str =
+    "arrays with strides that are not a multiple of the element size are currently unsupported.";
 
 pub(crate) const DIMENSIONALITY_MISMATCH_ERR: &str = "inconsistent dimensionalities: The dimensionality expected by `PyArray` does not match that given by NumPy.\nPlease report a bug against the `rust-numpy` crate.";
 

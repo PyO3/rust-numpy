@@ -19,7 +19,6 @@ use pyo3::{
     types::{DerefToPyAny, PyModule},
 };
 
-use crate::borrow::{PyReadonlyArray, PyReadwriteArray};
 use crate::cold;
 use crate::convert::{ArrayExt, IntoPyArray, NpyIndex, ToNpyDims, ToPyArray};
 use crate::dtype::{Element, PyArrayDescrMethods};
@@ -30,6 +29,10 @@ use crate::error::{
 use crate::npyffi::{self, _PyArray_GET_ITEM_DATA, NPY_ORDER, PY_ARRAY_API, npy_intp};
 use crate::slice_container::PySliceContainer;
 use crate::untyped_array::{PyUntypedArray, PyUntypedArrayMethods};
+use crate::{
+    borrow::{PyReadonlyArray, PyReadwriteArray},
+    error::UNSUPPORTED_STRIDES_ERR,
+};
 
 /// A safe, statically-typed wrapper for NumPy's [`ndarray`][ndarray] class.
 ///
@@ -1373,6 +1376,7 @@ where
     Some(unsafe { slf.data().offset(offset) })
 }
 
+#[track_caller]
 fn as_view<T, D, S, F>(slf: &Bound<'_, PyArray<T, D>>, from_shape_ptr: F) -> ArrayBase<S, D>
 where
     T: Element,
@@ -1380,6 +1384,7 @@ where
     S: RawData,
     F: FnOnce(StrideShape<D>, *mut T) -> ArrayBase<S, D>,
 {
+    #[track_caller]
     fn inner<D: Dimension>(
         shape: &[usize],
         strides: &[isize],
@@ -1389,6 +1394,11 @@ where
         let shape = D::from_dimension(&Dim(shape)).expect(DIMENSIONALITY_MISMATCH_ERR);
 
         assert!(strides.len() <= 32, "{}", MAX_DIMENSIONALITY_ERR);
+        assert!(
+            strides.iter().all(|s| s % itemsize as isize == 0),
+            "{}",
+            UNSUPPORTED_STRIDES_ERR
+        );
 
         let mut new_strides = D::zeros(strides.len());
         let mut inverted_axes = 0_u32;
@@ -1450,7 +1460,10 @@ where
         return None;
     }
 
-    if strides.iter().any(|strides| *strides < 0) {
+    if strides
+        .iter()
+        .any(|strides| *strides < 0 || *strides as usize % mem::size_of::<N>() != 0)
+    {
         return None;
     }
 
@@ -1574,6 +1587,7 @@ impl<'py, T, D> PyArrayMethods<'py, T, D> for Bound<'py, PyArray<T, D>> {
         self.clone().try_into_readwrite()
     }
 
+    #[track_caller]
     unsafe fn as_array(&self) -> ArrayView<'_, T, D>
     where
         T: Element,
@@ -1584,6 +1598,7 @@ impl<'py, T, D> PyArrayMethods<'py, T, D> for Bound<'py, PyArray<T, D>> {
         })
     }
 
+    #[track_caller]
     unsafe fn as_array_mut(&self) -> ArrayViewMut<'_, T, D>
     where
         T: Element,
@@ -1594,6 +1609,7 @@ impl<'py, T, D> PyArrayMethods<'py, T, D> for Bound<'py, PyArray<T, D>> {
         })
     }
 
+    #[track_caller]
     fn as_raw_array(&self) -> RawArrayView<T, D>
     where
         T: Element,
@@ -1604,6 +1620,7 @@ impl<'py, T, D> PyArrayMethods<'py, T, D> for Bound<'py, PyArray<T, D>> {
         })
     }
 
+    #[track_caller]
     fn as_raw_array_mut(&self) -> RawArrayViewMut<T, D>
     where
         T: Element,

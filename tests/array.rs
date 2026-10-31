@@ -170,6 +170,23 @@ fn as_array() {
 }
 
 #[test]
+#[should_panic]
+fn test_unsupported_strides_panic() {
+    Python::attach(|py| {
+        let field = py.eval(
+            c"np.array([(1, 0), (2, 0), (3, 0)], dtype=[('num', 'c16'), ('other', 'f8')])['num']",
+            None,
+            Some(&get_np_locals(py)),
+        )?
+        .cast_into::<PyArray1<numpy::Complex64>>()?;
+
+        let _view = field.readonly().as_array(); // unrepresentable -> panic
+        Ok::<_, pyo3::PyErr>(())
+    })
+    .unwrap();
+}
+
+#[test]
 fn as_raw_array() {
     Python::attach(|py| {
         let not_contiguous = not_contiguous_array(py);
