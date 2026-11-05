@@ -1,6 +1,7 @@
 # Changelog
 
 - Unreleased
+  - Fix unsoundness when attempting to create a view to a numpy array with strides that are not a multiple of the element size ([#578](https://github.com/PyO3/rust-numpy/pull/578))
 
 - v0.30.0
   - `PyReadonlyArray`/`PyReadwriteArray` extraction now returns a `PyErr` which reports the actual dtype/dimensionality mismatch instead of nonsensical `CastError` messages like “'ndarray' is not an instance of 'ndarray'” ([#562](https://github.com/PyO3/rust-numpy/pull/562))
