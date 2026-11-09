@@ -1462,7 +1462,7 @@ where
 
     if strides
         .iter()
-        .any(|strides| *strides < 0 || *strides as usize % mem::size_of::<N>() != 0)
+        .any(|stride| *stride < 0 || *stride as usize % mem::size_of::<N>() != 0)
     {
         return None;
     }
