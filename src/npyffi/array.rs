@@ -59,7 +59,7 @@ const CAPSULE_NAME: &str = "_ARRAY_API";
 ///
 /// You can access raw C APIs via this variable.
 ///
-/// See [PyArrayAPI](struct.PyArrayAPI.html) for what methods you can use via this variable.
+/// See [PyArrayAPI] for what methods you can use via this variable.
 ///
 /// # Example
 /// ```

@@ -69,9 +69,15 @@ jobs:
         include:
           - python-version: 3.9
             platform: { os: "macos-15-intel", python-architecture: "x64", rust-target: "x86_64-apple-darwin" }
+          # ubuntu 26.04 runner does not support Python 3.9
+          - python-version: "3.9"
+            platform: { os: "ubuntu-24.04", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" }
         exclude:
           - python-version: 3.9
             platform: { os: "macOS-latest", python-architecture: "arm64", rust-target: "aarch64-apple-darwin" }
+          # ubuntu 26.04 runner does not support Python 3.9
+          - python-version: "3.9"
+            platform: { os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" }
           # no 32 bit windows PyPy
           - python-version: pypy-3.11
             platform: { os: "windows-latest", python-architecture: "x86", rust-target: "i686-pc-windows-msvc" }
@@ -146,9 +152,15 @@ jobs:
         include:
           - python-version: 3.9
             platform: { os: "macos-15-intel", python-architecture: "x64", rust-target: "x86_64-apple-darwin" }
+          # ubuntu 26.04 runner does not support Python 3.9
+          - python-version: "3.9"
+            platform: { os: "ubuntu-24.04", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" }
         exclude:
           - python-version: 3.9
             platform: { os: "macOS-latest", python-architecture: "arm64", rust-target: "aarch64-apple-darwin" }
+          # ubuntu 26.04 runner does not support Python 3.9
+          - python-version: "3.9"
+            platform: { os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" }
     steps:
       - uses: actions/checkout@v6
       - name: Set up Python ${{ matrix.python-version }}
