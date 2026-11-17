@@ -1,6 +1,7 @@
 # Changelog
 
 - Unreleased
+  - Add `experimental-inspect` feature: arrays are typed as `numpy.typing.NDArray[numpy.<scalar>]` in PyO3-generated stubs ([#580](https://github.com/PyO3/rust-numpy/pull/580))
 
 - v0.30.0
   - `PyReadonlyArray`/`PyReadwriteArray` extraction now returns a `PyErr` which reports the actual dtype/dimensionality mismatch instead of nonsensical `CastError` messages like “'ndarray' is not an instance of 'ndarray'” ([#562](https://github.com/PyO3/rust-numpy/pull/562))

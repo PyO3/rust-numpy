@@ -123,6 +123,12 @@ pub fn get_array_module<'py>(py: Python<'py>) -> PyResult<Bound<'py, PyModule>> 
 impl<T, D> DerefToPyAny for PyArray<T, D> {}
 
 unsafe impl<T: Element, D: Dimension> PyTypeInfo for PyArray<T, D> {
+    #[cfg(feature = "experimental-inspect")]
+    const TYPE_HINT: pyo3::inspect::PyStaticExpr = pyo3::type_hint_subscript!(
+        pyo3::type_hint_identifier!("numpy.typing", "NDArray"),
+        T::DTYPE_HINT
+    );
+
     fn type_object_raw<'py>(py: Python<'py>) -> *mut ffi::PyTypeObject {
         unsafe { npyffi::get_type_object(py, npyffi::NpyTypes::PyArray_Type) }
     }

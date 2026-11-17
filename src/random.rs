@@ -141,6 +141,10 @@ pub struct PyBitGenerator(PyAny);
 impl DerefToPyAny for PyBitGenerator {}
 
 unsafe impl PyTypeInfo for PyBitGenerator {
+    #[cfg(feature = "experimental-inspect")]
+    const TYPE_HINT: pyo3::inspect::PyStaticExpr =
+        pyo3::type_hint_identifier!("numpy.random", "BitGenerator");
+
     fn type_object_raw<'py>(py: Python<'py>) -> *mut ffi::PyTypeObject {
         static CLS: PyOnceLock<Py<PyType>> = PyOnceLock::new();
         let cls = CLS

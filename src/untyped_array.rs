@@ -60,6 +60,9 @@ use crate::npyffi::{self, _PyArray_GET_ITEM_DATA};
 pub struct PyUntypedArray(PyAny);
 
 unsafe impl PyTypeInfo for PyUntypedArray {
+    #[cfg(feature = "experimental-inspect")]
+    const TYPE_HINT: pyo3::inspect::PyStaticExpr = pyo3::type_hint_identifier!("numpy", "ndarray");
+
     fn type_object_raw<'py>(py: Python<'py>) -> *mut ffi::PyTypeObject {
         unsafe { npyffi::get_type_object(py, npyffi::NpyTypes::PyArray_Type) }
     }
