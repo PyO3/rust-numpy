@@ -242,6 +242,8 @@ impl<'a, 'py, T: Element + 'a, D: Dimension + 'a> FromPyObject<'a, 'py>
     for PyReadonlyArray<'py, T, D>
 {
     type Error = PyErr;
+    #[cfg(feature = "experimental-inspect")]
+    const INPUT_TYPE: pyo3::inspect::PyStaticExpr = <PyArray<T, D> as pyo3::PyTypeInfo>::TYPE_HINT;
 
     fn extract(obj: Borrowed<'a, 'py, PyAny>) -> Result<Self, Self::Error> {
         let array = PyArray::<T, D>::extract::<PyErr>(obj, npyffi::PyArray_Check)?;
@@ -485,6 +487,8 @@ impl<'a, 'py, T: Element + 'a, D: Dimension + 'a> FromPyObject<'a, 'py>
     for PyReadwriteArray<'py, T, D>
 {
     type Error = PyErr;
+    #[cfg(feature = "experimental-inspect")]
+    const INPUT_TYPE: pyo3::inspect::PyStaticExpr = <PyArray<T, D> as pyo3::PyTypeInfo>::TYPE_HINT;
 
     fn extract(obj: Borrowed<'a, 'py, PyAny>) -> Result<Self, Self::Error> {
         let array = PyArray::<T, D>::extract::<PyErr>(obj, npyffi::PyArray_Check)?;

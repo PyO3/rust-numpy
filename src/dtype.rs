@@ -53,6 +53,9 @@ pub struct PyArrayDescr(PyAny);
 pyobject_native_type_named!(PyArrayDescr);
 
 unsafe impl PyTypeInfo for PyArrayDescr {
+    #[cfg(feature = "experimental-inspect")]
+    const TYPE_HINT: pyo3::inspect::PyStaticExpr = pyo3::type_hint_identifier!("numpy", "dtype");
+
     #[inline]
     fn type_object_raw<'py>(py: Python<'py>) -> *mut ffi::PyTypeObject {
         unsafe { npyffi::get_type_object(py, NpyTypes::PyArrayDescr_Type) }
@@ -473,6 +476,10 @@ pub unsafe trait Element: Sized + Send + Sync {
     /// that contain object-type fields.
     const IS_COPY: bool;
 
+    /// NumPy scalar type for `numpy.typing.NDArray[...]` stubs; `typing.Any` if not fixed.
+    #[cfg(feature = "experimental-inspect")]
+    const DTYPE_HINT: pyo3::inspect::PyStaticExpr = pyo3::type_hint_identifier!("typing", "Any");
+
     /// Returns the associated type descriptor ("dtype") for the given element type.
     fn get_dtype(py: Python<'_>) -> Bound<'_, PyArrayDescr>;
 
@@ -579,10 +586,12 @@ pub(crate) use clone_methods_impl;
 use pyo3::BoundObject;
 
 macro_rules! impl_element_scalar {
-    (@impl: $ty:ty, $npy_type:expr $(,#[$meta:meta])*) => {
+    (@impl: $ty:ty, $npy_type:expr, $hint:literal $(,#[$meta:meta])*) => {
         $(#[$meta])*
         unsafe impl Element for $ty {
             const IS_COPY: bool = true;
+            #[cfg(feature = "experimental-inspect")]
+            const DTYPE_HINT: pyo3::inspect::PyStaticExpr = pyo3::type_hint_identifier!("numpy", $hint);
 
             fn get_dtype(py: Python<'_>) -> Bound<'_, PyArrayDescr> {
                 PyArrayDescr::from_npy_type(py, $npy_type)
@@ -591,24 +600,24 @@ macro_rules! impl_element_scalar {
             clone_methods_impl!($ty);
         }
     };
-    ($ty:ty => $npy_type:ident $(,#[$meta:meta])*) => {
-        impl_element_scalar!(@impl: $ty, NPY_TYPES::$npy_type $(,#[$meta])*);
+    ($ty:ty => $npy_type:ident, $hint:literal $(,#[$meta:meta])*) => {
+        impl_element_scalar!(@impl: $ty, NPY_TYPES::$npy_type, $hint $(,#[$meta])*);
     };
-    ($($tys:ty),+) => {
-        $(impl_element_scalar!(@impl: $tys, npy_int_type::<$tys>());)+
+    ($($tys:ty => $hint:literal),+) => {
+        $(impl_element_scalar!(@impl: $tys, npy_int_type::<$tys>(), $hint);)+
     };
 }
 
-impl_element_scalar!(bool => NPY_BOOL);
+impl_element_scalar!(bool => NPY_BOOL, "bool_");
 
-impl_element_scalar!(i8, i16, i32, i64);
-impl_element_scalar!(u8, u16, u32, u64);
+impl_element_scalar!(i8 => "int8", i16 => "int16", i32 => "int32", i64 => "int64");
+impl_element_scalar!(u8 => "uint8", u16 => "uint16", u32 => "uint32", u64 => "uint64");
 
-impl_element_scalar!(f32 => NPY_FLOAT);
-impl_element_scalar!(f64 => NPY_DOUBLE);
+impl_element_scalar!(f32 => NPY_FLOAT, "float32");
+impl_element_scalar!(f64 => NPY_DOUBLE, "float64");
 
 #[cfg(feature = "half")]
-impl_element_scalar!(f16 => NPY_HALF);
+impl_element_scalar!(f16 => NPY_HALF, "float16");
 
 #[cfg(feature = "half")]
 unsafe impl Element for bf16 {
@@ -628,16 +637,18 @@ unsafe impl Element for bf16 {
     clone_methods_impl!(Self);
 }
 
-impl_element_scalar!(Complex32 => NPY_CFLOAT,
+impl_element_scalar!(Complex32 => NPY_CFLOAT, "complex64",
     #[doc = "Complex type with `f32` components which maps to `numpy.csingle` (`numpy.complex64`)."]);
-impl_element_scalar!(Complex64 => NPY_CDOUBLE,
+impl_element_scalar!(Complex64 => NPY_CDOUBLE, "complex128",
     #[doc = "Complex type with `f64` components which maps to `numpy.cdouble` (`numpy.complex128`)."]);
 
 #[cfg(any(target_pointer_width = "32", target_pointer_width = "64"))]
-impl_element_scalar!(usize, isize);
+impl_element_scalar!(usize => "uintp", isize => "intp");
 
 unsafe impl Element for Py<PyAny> {
     const IS_COPY: bool = false;
+    #[cfg(feature = "experimental-inspect")]
+    const DTYPE_HINT: pyo3::inspect::PyStaticExpr = pyo3::type_hint_identifier!("numpy", "object_");
 
     fn get_dtype(py: Python<'_>) -> Bound<'_, PyArrayDescr> {
         PyArrayDescr::object(py)
@@ -675,6 +686,42 @@ mod tests {
 
             assert!(PyArrayDescr::new(py, 123_usize).is_err());
         });
+    }
+
+    #[cfg(feature = "experimental-inspect")]
+    #[test]
+    fn test_type_hints() {
+        use crate::{PyArrayDescr, PyUntypedArray, random::PyBitGenerator};
+        use pyo3::PyTypeInfo;
+
+        // each hint must name, in the installed numpy, the type object it describes
+        fn assert_names(hint: pyo3::inspect::PyStaticExpr, ty: &Bound<'_, PyAny>) {
+            let hint = hint.to_string();
+            let (module, name) = hint.rsplit_once('.').unwrap();
+            let named = ty.py().import(module).unwrap().getattr(name).unwrap();
+            assert!(named.is(ty), "{hint}");
+        }
+        macro_rules! check_all {
+            ($($ty:ty),+) => { Python::attach(|py| { $(assert_names(<$ty>::DTYPE_HINT, dtype::<$ty>(py).typeobj().as_any());)+ }) };
+        }
+        check_all!(bool, i8, i16, i32, i64, u8, u16, u32, u64, isize, usize);
+        check_all!(f32, f64, Complex32, Complex64, Py<PyAny>);
+        Python::attach(|py| {
+            assert_names(
+                PyUntypedArray::TYPE_HINT,
+                PyUntypedArray::type_object(py).as_any(),
+            );
+            assert_names(
+                PyArrayDescr::TYPE_HINT,
+                PyArrayDescr::type_object(py).as_any(),
+            );
+            assert_names(
+                PyBitGenerator::TYPE_HINT,
+                PyBitGenerator::type_object(py).as_any(),
+            );
+        });
+        let hint = crate::PyArray2::<f64>::TYPE_HINT.to_string();
+        assert_eq!(hint, "numpy.typing.NDArray[numpy.float64]");
     }
 
     #[test]

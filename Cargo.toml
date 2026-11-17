@@ -32,6 +32,9 @@ pyo3 = { version = "0.30.0", default-features = false, features = ["macros"] }
 rand_core = { version = "0.9.3", default-features = false, optional = true }
 rustc-hash = "2.0"
 
+[features]
+experimental-inspect = ["pyo3/experimental-inspect"]
+
 [dev-dependencies]
 pyo3 = { version = "0.30.0", default-features = false, features = ["auto-initialize"]}
 nalgebra = { version = ">=0.30, <0.35", default-features = false, features = ["std"] }
